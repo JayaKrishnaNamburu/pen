@@ -6,7 +6,7 @@ Pen must stay fully functional under:
 Content-Security-Policy: script-src 'self'; style-src 'self'
 ```
 
-See `spec-v2/12-security.md` SEC8. Automated smoke:
+See `spec/rules/security.md` SEC8. Automated smoke:
 `scenarios/sec8-csp-smoke.spec.ts` (production-shaped fixture page).
 
 ## Why not the live Vite harness

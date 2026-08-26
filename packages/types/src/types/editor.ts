@@ -48,7 +48,7 @@ export type InteractionModel = "content-first" | "block-first";
 
 /**
  * Which rung `Mod-a` enters the T1 select-all ladder on
- * (`spec-v2/03-selection.md` T1).
+ * (`spec/rules/selection.md` T1).
  *
  * `"block-first"` starts at the active block and escalates on each press.
  * `"document-first"` enters at the top rung, so one press covers all content.

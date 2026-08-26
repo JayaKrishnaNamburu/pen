@@ -7,7 +7,7 @@
  * usual three. Every instrument here otherwise runs only from a wave gate.
  *
  * Results accumulate: a failing instrument does not stop the rest, so one run
- * reports every failure instead of the first (spec-v4/02-instruments.md GA18).
+ * reports every failure instead of the first (spec/rules/reliability.md GA18).
  *
  * Excluded on purpose: codemods (`migrate-*`), recorders (`record-*`,
  * `*-inventory`), writers (`api-reports`, `sync:package-metadata` without

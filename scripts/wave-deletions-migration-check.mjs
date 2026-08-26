@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Wave Deletions ↔ MIGRATION.md heading cross-check (spec-v3 Wave 6
- * Step 6.6 / WA5). Not a GATE — `v3-gates.mjs` has no
- * `--migration-cross-check` flag; `migration-guide-check.mjs` audits
- * claims *inside* `spec-v2/MIGRATION.md` against the repo, not wave
- * Deletions against headings. This script is the other direction.
+ * Wave Deletions ↔ MIGRATION.md heading cross-check (WA5). Not a
+ * GATE — `v3-gates.mjs` has no `--migration-cross-check` flag;
+ * `migration-guide-check.mjs` audits claims *inside*
+ * `spec/MIGRATION.md` against the repo, not wave Deletions against
+ * headings. This script is the other direction.
  *
  * MATCHING RULE (must be able to fail on a real undocumented deletion)
  * -------------------------------------------------------------------
@@ -37,14 +37,14 @@
  *   - zero extractable entries across non-None in-scope waves
  *   - missing MIGRATION.md or zero headings
  *
- * Default scope is every discovered `wave-*.md` under both train
- * wave dirs (`spec-v3/waves` and `spec-v4/waves`), same closed-list
- * style as `coverage-rules.mjs` `SPEC_ROOTS`. A missing train dir is
- * skipped; zero files across all present dirs fails closed. Waves
- * 0–2 of each train are included because WA5 is per deletion, not
- * per wave number. `--waves-dir` replaces the default list (repeatable).
- * `--min-wave` / `--max-wave` exist if a later owner wants a numeric
- * slice; wave numbers collide across trains, so prefer `--waves-dir`.
+ * Default scope is every discovered `wave-*.md` under the executing
+ * train's wave dir, same closed-list style as `coverage-rules.mjs`
+ * `SPEC_ROOTS`. A missing train dir is skipped; zero files across all
+ * present dirs fails closed. Every wave is included because WA5 is
+ * per deletion, not per wave number. `--waves-dir` replaces the
+ * default list (repeatable). `--min-wave` / `--max-wave` exist if a
+ * later owner wants a numeric slice; wave numbers collide across
+ * trains, so prefer `--waves-dir`.
  */
 
 import fs from "node:fs";
@@ -56,11 +56,11 @@ import {
 	collectWaveFiles,
 } from "./v3-gates.mjs";
 
-export const DEFAULT_WAVES_DIR_RELS = ["spec-v3/waves", "spec-v4/waves"];
+export const DEFAULT_WAVES_DIR_RELS = ["spec-v5/waves"];
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
-const GUIDE_REL = "spec-v2/MIGRATION.md";
+const GUIDE_REL = "spec/MIGRATION.md";
 const WAVE_NUM_RE = /^wave-(\d+)/i;
 const DELETIONS_HEADING_RE = /^## Deletions\s*$/;
 const NEXT_H2_RE = /^## /;
@@ -785,14 +785,14 @@ export function runSelfTests(repoRoot = DEFAULT_REPO_ROOT) {
 		defaults.wavesDirs.length === DEFAULT_WAVES_DIR_RELS.length,
 		`self-test: default wavesDirs length, got ${defaults.wavesDirs.length}`,
 	);
-	assert(
-		defaults.wavesDirs.some((dir) => dir.endsWith(path.join("spec-v3", "waves"))),
-		`self-test: default must include spec-v3/waves, got ${JSON.stringify(defaults.wavesDirs)}`,
-	);
-	assert(
-		defaults.wavesDirs.some((dir) => dir.endsWith(path.join("spec-v4", "waves"))),
-		`self-test: default must include spec-v4/waves, got ${JSON.stringify(defaults.wavesDirs)}`,
-	);
+	for (const rel of DEFAULT_WAVES_DIR_RELS) {
+		assert(
+			defaults.wavesDirs.some((dir) =>
+				dir.endsWith(path.join(...rel.split("/"))),
+			),
+			`self-test: default must include ${rel}, got ${JSON.stringify(defaults.wavesDirs)}`,
+		);
+	}
 
 	const overridden = parseArgs(["--waves-dir", "scripts/__fixtures__"], repoRoot);
 	assert(
@@ -801,7 +801,7 @@ export function runSelfTests(repoRoot = DEFAULT_REPO_ROOT) {
 	);
 
 	const repeated = parseArgs(
-		["--waves-dir", "spec-v3/waves", "--waves-dir", "spec-v4/waves"],
+		["--waves-dir", "scripts/__fixtures__", "--waves-dir", "spec-v5/waves"],
 		repoRoot,
 	);
 	assert(
@@ -809,20 +809,18 @@ export function runSelfTests(repoRoot = DEFAULT_REPO_ROOT) {
 		`self-test: repeated --waves-dir accumulates, got ${JSON.stringify(repeated.wavesDirs)}`,
 	);
 
-	const bothTrains = collectFromWavesDirs(defaultWavesDirs(repoRoot));
+	const collected = collectFromWavesDirs(defaultWavesDirs(repoRoot));
 	assert(
-		bothTrains.error == null,
-		`self-test: both train dirs must collect, got ${bothTrains.error}`,
+		collected.error == null,
+		`self-test: the default train dirs must collect, got ${collected.error}`,
 	);
-	const bothRels = bothTrains.files.map((file) => posixRel(repoRoot, file));
-	assert(
-		bothRels.some((rel) => rel.startsWith("spec-v3/waves/")),
-		`self-test: collectFromWavesDirs must see spec-v3, got ${JSON.stringify(bothRels)}`,
-	);
-	assert(
-		bothRels.some((rel) => rel.startsWith("spec-v4/waves/")),
-		`self-test: collectFromWavesDirs must see spec-v4, got ${JSON.stringify(bothRels)}`,
-	);
+	const collectedRels = collected.files.map((file) => posixRel(repoRoot, file));
+	for (const rel of DEFAULT_WAVES_DIR_RELS) {
+		assert(
+			collectedRels.some((each) => each.startsWith(`${rel}/`)),
+			`self-test: collectFromWavesDirs must see ${rel}, got ${JSON.stringify(collectedRels)}`,
+		);
+	}
 
 	return { passing, failing, empty };
 }

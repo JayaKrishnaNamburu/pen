@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// CH1–CH6 grep gates (spec-v2/09-reliability-testing.md). CH2 is a host check
+// CH1–CH6 grep gates (spec/rules/reliability.md). CH2 is a host check
 // only — the blocking ESLint pass already runs in .github/workflows/ci.yml.
 // CH8/CH9 are owned by bench.yml / flake.yml and are linked, not re-run.
 

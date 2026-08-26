@@ -12,7 +12,7 @@ import type { AutocompleteController, AutocompleteExtensionConfig } from "./type
 import { AutocompleteControllerImpl } from "./autocompleteController";
 
 export const AI_AUTOCOMPLETE_EXTENSION_NAME = "ai-autocomplete";
-export const AUTOCOMPLETE_CONTROLLER_SLOT = AI_AUTOCOMPLETE_CONTROLLER_SLOT;
+const AUTOCOMPLETE_CONTROLLER_SLOT = AI_AUTOCOMPLETE_CONTROLLER_SLOT;
 
 export function autocompleteExtension(
 	config: AutocompleteExtensionConfig = {},

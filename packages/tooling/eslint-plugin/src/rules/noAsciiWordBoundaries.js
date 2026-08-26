@@ -19,7 +19,7 @@ function reportsWordLogic(source) {
 }
 
 /**
- * LOC4 (`spec-v2/16-localization.md`): word and character boundaries come from
+ * LOC4 (`spec/rules/localization.md`): word and character boundaries come from
  * `Intl.Segmenter` via the shared helpers. `\b`, `\w`, and `/\s/`-run word
  * logic encode "words are Latin letters separated by spaces".
  */
@@ -34,7 +34,7 @@ export const noAsciiWordBoundaries = {
 		schema: [],
 		messages: {
 			asciiWord:
-				"ASCII word logic (`\\b`, `\\w`, `/\\s/` runs) is banned. Use the shared segmenter helpers (spec-v2 LOC4).",
+				"ASCII word logic (`\\b`, `\\w`, `/\\s/` runs) is banned. Use the shared segmenter helpers (LOC4).",
 		},
 	},
 	create(context) {

@@ -1,4 +1,4 @@
-export const AI_REVIEW_INLINE_STYLE = [
+const AI_REVIEW_INLINE_STYLE = [
 	"padding-block: var(--pen-ai-review-inline-padding-block, 0.2em)",
 	"margin-block: var(--pen-ai-review-inline-margin-block, -0.2em)",
 	"border-radius: var(--pen-ai-review-border-radius, 3px)",

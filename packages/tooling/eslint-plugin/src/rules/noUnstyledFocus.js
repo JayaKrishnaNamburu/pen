@@ -37,7 +37,7 @@ function hasFocusVisibleReplacement(text, hitLine) {
 }
 
 /**
- * AX5 (`spec-v2/13-accessibility.md`): `outline: none` must ship with a
+ * AX5 (`spec/rules/accessibility.md`): `outline: none` must ship with a
  * nearby `:focus-visible` replacement that sets a non-none outline.
  */
 export const noUnstyledFocus = {
@@ -51,7 +51,7 @@ export const noUnstyledFocus = {
 		schema: [],
 		messages: {
 			outlineNone:
-				"`outline: none` needs a nearby `:focus-visible` replacement with a non-none outline (spec-v2 AX5).",
+				"`outline: none` needs a nearby `:focus-visible` replacement with a non-none outline (AX5).",
 		},
 	},
 	create(context) {

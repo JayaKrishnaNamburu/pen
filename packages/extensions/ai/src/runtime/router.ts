@@ -8,7 +8,6 @@ import type {
 	AIContentFormat,
 	AIMutationMode,
 	AIMutationPreference,
-	AIPlannerMode,
 	AIRouteLane,
 	AITargetKind,
 	AITransportKind,
@@ -22,10 +21,7 @@ import {
 	resolveMutationMode,
 	shouldStreamDirectAIOutput,
 } from "./mutationPolicy";
-import {
-	resolveGenerationTargetKind,
-	resolvePlannerMode,
-} from "./structuredPlanner";
+import { resolveGenerationTargetKind } from "./generationTarget";
 
 export interface RequestRouterInput {
 	prompt: string;
@@ -44,7 +40,6 @@ export interface RequestRouterDecision {
 	lane: AIRouteLane;
 	mutationMode: AIMutationMode;
 	contentFormat: AIContentFormat;
-	plannerMode: AIPlannerMode;
 	applyStrategy: AIApplyStrategy;
 	targetKind: AITargetKind;
 	blockClass: AIBlockClass;
@@ -155,11 +150,6 @@ export function routeAIRequest(
 	) {
 		targetKind = promptTargetKind;
 	}
-	let plannerMode = resolvePlannerMode({
-		target: input.target,
-		targetKind,
-		intent,
-	});
 	mutationMode = resolveStructuredMutationMode({
 		mutationMode,
 		target: input.target,
@@ -169,7 +159,6 @@ export function routeAIRequest(
 	});
 	const adapter = resolveBlockAdapter({
 		targetKind,
-		plannerMode,
 		target: input.target,
 		activeBlockType: input.blockType,
 		surface: input.surface,
@@ -183,19 +172,12 @@ export function routeAIRequest(
 		mutationMode,
 		fallback: input.contentFormat,
 	});
-	plannerMode = reconcilePlannerModeWithPrompt({
-		plannerMode,
-		adapterId: adapter.id,
-		contentFormat: resolvedContentFormat,
-		intent,
-	});
 
 	return {
 		target: input.target,
 		lane,
 		mutationMode,
 		contentFormat: resolvedContentFormat,
-		plannerMode,
 		applyStrategy: applyDurableEditStrategy(
 			resolveApplyStrategy({
 				target: input.target,
@@ -253,11 +235,6 @@ export function refineRouteWithNavigator(
 		}
 	}
 
-	let plannerMode = resolvePlannerMode({
-		target: decision.target,
-		targetKind,
-		intent: decision.intent,
-	});
 	const mutationMode = resolveStructuredMutationMode({
 		mutationMode:
 			lane === decision.lane
@@ -276,7 +253,6 @@ export function refineRouteWithNavigator(
 	});
 	const adapter = resolveBlockAdapter({
 		targetKind,
-		plannerMode,
 		target: decision.target,
 		activeBlockType: input.activeBlockType ?? null,
 		surface: decision.surface,
@@ -290,12 +266,6 @@ export function refineRouteWithNavigator(
 		mutationMode,
 		fallback: decision.contentFormat,
 	});
-	plannerMode = reconcilePlannerModeWithPrompt({
-		plannerMode,
-		adapterId: adapter.id,
-		contentFormat,
-		intent: decision.intent,
-	});
 
 	if (lane === decision.lane) {
 		return {
@@ -307,7 +277,6 @@ export function refineRouteWithNavigator(
 			transportKind: adapter.transportKind,
 			contentFormat,
 			mutationMode,
-			plannerMode,
 			applyStrategy: applyDurableEditStrategy(
 				resolveApplyStrategy({
 					target: decision.target,
@@ -328,7 +297,6 @@ export function refineRouteWithNavigator(
 		lane,
 		mutationMode,
 		contentFormat,
-		plannerMode,
 		applyStrategy: applyDurableEditStrategy(
 			resolveApplyStrategy({
 				target: decision.target,
@@ -383,34 +351,6 @@ export function classifyPromptIntent(prompt: string): PromptIntent {
 
 function isStructuralBlockType(blockType: string | null): boolean {
 	return blockType === "table" || blockType === "kanban";
-}
-
-/**
- * The flow-markdown adapter with markdown content sends the fast-apply
- * prompt, so the finalize path must commit the buffered markdown instead of
- * expecting a structured JSON plan. Review intent stays structured because it
- * produces review bundles, not edits.
- *
- * This runs as a second pass because `resolveBlockAdapter` takes `plannerMode`
- * as input, so the content format that decides the prompt shape is only known
- * after the planner mode has been picked. Fold it upstream only by breaking
- * that parameter dependency first.
- */
-function reconcilePlannerModeWithPrompt(input: {
-	plannerMode: AIPlannerMode;
-	adapterId: AIBlockAdapterId;
-	contentFormat: AIContentFormat;
-	intent: PromptIntent;
-}): AIPlannerMode {
-	if (
-		input.plannerMode === "structured" &&
-		input.adapterId === "flow-markdown" &&
-		input.contentFormat === "markdown" &&
-		input.intent !== "review"
-	) {
-		return "text";
-	}
-	return input.plannerMode;
 }
 
 function inferPromptTargetKind(prompt: string): AITargetKind | null {

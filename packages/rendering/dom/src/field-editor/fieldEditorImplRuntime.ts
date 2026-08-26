@@ -56,7 +56,7 @@ import { FieldEditorImplSelection } from "./fieldEditorImplSelection";
 import { areBlockIdsEqual, resolveInputMode } from "./fieldEditorImplHelpers";
 
 /**
- * HOST4 backend split (`spec-v2/15-host-integration.md`). See
+ * HOST4 backend split (`spec/rules/host.md`). See
  * `FIELD-EDITOR-BACKENDS.md`.
  *
  * `_resolveBackendClass` feature-detects `globalThis.EditContext` as a

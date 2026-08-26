@@ -13,12 +13,12 @@ Fix: one short remediation heuristic.
 ## Pipeline bypass
 
 Signal: code writes `Y.Text`/`Y.Map` directly, calls `adapter.transact`, or mutates document state outside `editor.apply` / the sanctioned stream writer.
-Fix: express the change as `DocumentOp[]` through `editor.apply(ops, { origin })`, or use `TextStreamWriter` for high-frequency writes (`spec-v2/06-commit-pipeline.md`).
+Fix: express the change as `DocumentOp[]` through `editor.apply(ops, { origin })`, or use `TextStreamWriter` for high-frequency writes (`spec/rules/pipeline.md`).
 
 ## Selection timer hack
 
 Signal: `requestAnimationFrame`, `setTimeout`, retry counters, suppression booleans, or intent epochs added to selection, projection, or focus code to "make it stick".
-Fix: remove; selection writes are versioned through the authority and projected once per flush (`spec-v2/03-selection.md` S4). If the bug seems to need a timer, the bug is elsewhere — investigate instead.
+Fix: remove; selection writes are versioned through the authority and projected once per flush (`spec/rules/selection.md` S4). If the bug seems to need a timer, the bug is elsewhere — investigate instead.
 
 ## Guard-flag accretion
 
@@ -33,12 +33,12 @@ Fix: use the logical offset domain helpers; if a case seems to need sentinel kno
 ## Op union sprawl
 
 Signal: a new `DocumentOp` variant for something expressible by composing existing ops, or for behavior that belongs in a command handler.
-Fix: compose existing ops in a command (`spec-v2/05-commands.md`); reserve new op types for genuinely new document effects.
+Fix: compose existing ops in a command (`spec/rules/commands.md`); reserve new op types for genuinely new document effects.
 
 ## Slot revival
 
 Signal: a new string-keyed slot, service locator, or `getSlot`/`setSlot` call for wiring extensions together.
-Fix: use a typed facet with explicit precedence (`spec-v2/04-facets.md`); single-controller seams use the `singleController` combine.
+Fix: use a typed facet with explicit precedence (`spec/rules/facets.md`); single-controller seams use the `singleController` combine.
 
 ## Extension throw
 
@@ -63,7 +63,7 @@ Fix: inline it, reuse the canonical helper, or rename/move it to match the ownin
 ## Renderer logic smuggle
 
 Signal: behavior (offset math, clipboard parsing, selection logic, scheduling) implemented inside `rendering/react` or `rendering/vue` instead of `rendering/dom` or core.
-Fix: move behavior to pen-dom (or core when DOM-free); renderer packages hold bindings only (`spec-v2/14-api-and-packaging.md` API6).
+Fix: move behavior to pen-dom (or core when DOM-free); renderer packages hold bindings only (`spec/rules/api.md` API6).
 
 ## Decorative comments
 
@@ -83,7 +83,7 @@ Fix: collapse to the direct local shape until variation exists.
 ## Unused shared symbol export
 
 Signal: exported types, constants, or helpers introduced for one caller, speculative reuse, or a single local use where inline code would be clearer.
-Fix: keep single-use symbols private or inline; export only when a second real consumer exists. Public exports are API surface (`spec-v2/14-api-and-packaging.md` API4).
+Fix: keep single-use symbols private or inline; export only when a second real consumer exists. Public exports are API surface (`spec/rules/api.md` API4).
 
 ## Utility file confetti
 
@@ -93,7 +93,7 @@ Fix: group related declarations in the nearest domain file unless the model is g
 ## Symbol file impurity
 
 Signal: type files export values, constants files export behavior, or the types package gains runtime logic.
-Fix: keep type files type-only and constants files constant-only; runtime logic lives with its domain owner (`spec-v2/14-api-and-packaging.md` API3).
+Fix: keep type files type-only and constants files constant-only; runtime logic lives with its domain owner (`spec/rules/api.md` API3).
 
 ## Alias export indirection
 

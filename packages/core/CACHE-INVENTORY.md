@@ -1,6 +1,6 @@
 # SCALE4 cache inventory
 
-Canonical list of hot-path caches for Wave F step F.4 (`spec-v2/22-scale-envelope.md` SCALE4). A cache is in this inventory when it persists across commits and is consulted on the apply / decoration / suggestion / presence path. Listener sets, schema registries, one-shot local `Map`s, and current UI state (search matches, the visible autocomplete suggestion) are not caches.
+Canonical list of hot-path caches for Wave F step F.4 (`spec/rules/scale.md` SCALE4). A cache is in this inventory when it persists across commits and is consulted on the apply / decoration / suggestion / presence path. Listener sets, schema registries, one-shot local `Map`s, and current UI state (search matches, the visible autocomplete suggestion) are not caches.
 
 SCALE4 accepts three bounds: a maximum entry count, a TTL, or a lifetime tied to a document / editor / DOM node (`WeakMap` or an index that only holds live document ids). A cache with none of those is **unbounded**.
 

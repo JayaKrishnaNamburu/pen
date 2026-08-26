@@ -1,6 +1,6 @@
 # Styling
 
-Pen is headless. `@input/pen-react` ships no required stylesheet, and an editor with no host CSS is functional: editable, with a visible caret, native text selection, and the user-agent focus outline. Hosts own taste. This file is the HOST6 contract (`spec-v2/15-host-integration.md`) and the workspace custom-property catalog.
+Pen is headless. `@input/pen-react` ships no required stylesheet, and an editor with no host CSS is functional: editable, with a visible caret, native text selection, and the user-agent focus outline. Hosts own taste. This file is the HOST6 contract (`spec/rules/host.md`) and the workspace custom-property catalog.
 
 Set override tokens on a parent of the editor (typically `[data-pen-editor-root]` or `:root`). There is no `.css` file under `packages/rendering/{react,vue,dom}`. The only injected sheet is the AI suggestion underline hover/active remaps, mounted when `<Pen.AISuggestions.Root>` is in the tree (`#pen-ai-suggestions-styles`).
 

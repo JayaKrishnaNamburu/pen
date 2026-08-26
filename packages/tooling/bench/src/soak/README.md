@@ -1,6 +1,6 @@
 # SCALE4 soak
 
-Nightly heap-trend soak for `spec-v2/22-scale-envelope.md` SCALE4.
+Nightly heap-trend soak for `spec/rules/scale.md` SCALE4.
 
 Session growth is a printed trend (CH8: do not fail CI on in-session heap). The only hard assertion is post teardown-and-recreate: `heapUsed` must stay within `TEARDOWN_HEAP_MULTIPLE` of the baseline sample. Exit code is non-zero only when that assertion fails.
 

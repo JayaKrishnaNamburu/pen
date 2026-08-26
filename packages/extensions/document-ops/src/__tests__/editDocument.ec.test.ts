@@ -6,7 +6,7 @@ import { documentOpsExtension, getDocumentToolRuntime } from "../index";
 
 /**
  * EC probes for the `edit_document` channel.
- * Spec: `spec-better-ai/01-edit-channel.md`.
+ * Spec: `spec/packages/extensions/ai.md`.
  */
 
 interface EditResult {

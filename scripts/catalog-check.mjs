@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LOC1 catalog completeness (spec-v2/16-localization.md).
+ * LOC1 catalog completeness (spec/rules/localization.md).
  *
  * Both directions, inside already-known catalog areas only:
  * - every referenced `pen.<area>.*` key whose `<area>` already appears

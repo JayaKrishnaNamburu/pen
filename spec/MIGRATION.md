@@ -1,10 +1,10 @@
 # Host adoption guide (first publish)
 
-This is the first-publish contract, not an upgrade guide. Pen has never cut a release: no git tags, no changelog files, nothing on a registry. Every publishable package is still `0.0.1`. The published train is **0.x**; v3 ships as **0.3** (`14-api-and-packaging.md` API7). Under that convention a breaking change takes the **minor** position, so there is no deprecation period and none is required. Nothing publishes to npm until the owner explicitly says so. There is no prior published version to migrate from. If you assembled from this repository, treat the sections below as the host-facing surface you are adopting — not as a diff from a version you could have installed.
+This is the first-publish contract, not an upgrade guide. Pen has never cut a release: no git tags, no changelog files, nothing on a registry. Every publishable package is still `0.0.1`. Versioning is a single **0.x** train and the first published release is numbered **0.3** (`spec/rules/api.md` API7). Under that convention a breaking change takes the **minor** position, so there is no deprecation period and none is required. Nothing publishes to npm until the owner explicitly says so. There is no prior published version to migrate from. If you assembled from this repository, treat the sections below as the host-facing surface you are adopting — not as a diff from a version you could have installed.
 
-Adapters named below (`change` / `documentCommit`, `getSlot` / `setSlot`, v1 `keyBindings`) are in-train scaffolding in the current tree, not a promised compatibility window.
+Adapters named below (`change` / `documentCommit`, `getSlot` / `setSlot`, v1 `keyBindings`) are transitional scaffolding in the current tree, not a promised compatibility window.
 
-Status: in-train. No release date. Organised by what a host will observe, not by internal wave numbers. Deleted package names, exports, and file paths also have their own headings at the bottom, so a compile error greps. Every package name, export, and repo path here is meant to resolve; if a sentence cannot be checked against source, it is marked **provisional** or **not yet shipped**.
+Status: nothing has been published and there is no release date. The sections are organised by what a host will observe rather than by how the work was sequenced. Deleted package names, exports, and file paths also have their own headings at the bottom, so a compile error greps. Every package name, export, and repo path here is meant to resolve; if a sentence cannot be checked against source, it is marked **provisional** or **not yet shipped**.
 
 Do these first, in this order:
 
@@ -16,7 +16,7 @@ Do these first, in this order:
 6. Convert host `keyBindings` arrays to `keymapFacet` providers when you next touch that file. Do not wait for `Editor.dispatch`.
 7. Read selection predicates through helpers. `TextSelection` is a record (`anchor` / `focus` / optional `affinity` / `goalX`). `isCollapsed`, `isMultiBlock`, `blockRange`, and `toRange()` are gone from the live type — see Computed selection fields.
 
-Corrected 2026-08-25: Wave 3 (DL5) shipped the field → helper table under Computed selection fields. Item 7 above is the post-deletion position.
+Corrected 2026-08-25: the computed selection fields are gone and the helpers listed under Computed selection fields replace them. Item 7 above is the current position.
 
 ---
 
@@ -177,7 +177,7 @@ Published `.d.ts` strips `/** @internal */` exports. Use `editor.openTextStream`
 
 1. Stop passing the prop.
 2. If you window blocks yourself, follow `packages/rendering/react/VIRTUALIZATION.md`: unmount is allowed, remount is a no-op, `selection-target-unmounted` is a future diagnostic.
-3. Read the published envelope — grades only (`verified` / `measured` / `untested-above`), not a number to copy — in `packages/tooling/test/ENVELOPE.md`. Headless ladder only; no renderer suite at those sizes. Another lane is re-measuring; treat that table as the source of truth.
+3. Read the published envelope — grades only (`verified` / `measured` / `untested-above`), not a number to copy — in `packages/tooling/test/ENVELOPE.md`. Headless ladder only; no renderer suite at those sizes. Treat that table as the source of truth.
 
 ---
 
@@ -266,7 +266,7 @@ Library IDs go through `generateId` from `@input/pen-types`. `createEditor()` do
 
 `@input/pen-react` entry points carry `"use client"`: `@input/pen-react`, `@input/pen-react/ai`, `@input/pen-react/ai-suggestions`, `@input/pen-react/history`, `@input/pen-react/multiplayer`, `@input/pen-react/search`. SSR is shell-only (`packages/rendering/react/README.md`) — indexed HTML comes from the host's own interop HTML export pass, not from the React tree. Styling references: `packages/rendering/react/STYLING.md` and `packages/rendering/vue/STYLING.md`. Pen ships no required stylesheet.
 
-**Not yet shipped.** Wave D quickstarts and example apps covering SSR and styling are not written. Until they are, the two `STYLING.md` files and the React README are the host-facing description.
+**Not yet shipped.** Quickstarts and example apps covering SSR and styling are not written. Until they are, the two `STYLING.md` files and the React README are the host-facing description.
 
 Published packages declare `engines.node: >=22`. Browser floor in the root README: Chromium 93 / Firefox 92 / Safari 15.4.
 
@@ -278,7 +278,7 @@ Published packages declare `engines.node: >=22`. Browser floor in the root READM
 
 `getSlot` / `setSlot` are deleted. Production writes still use `internals.assignSlot` (string key → facet override). Read with `editor.facet(...)`. The slot-key → facet table is under The three v1 adapters and their police.
 
-A headless probe (`spec-v4/evidence/DL2-CLIPBOARD-SLOT-EQUIVALENCE.md`) shows `assignSlot("paste:importers", …)` and `editor.facet(clipboardFacet)` are identical in all three reachable states: never assigned both read `[]`, after `assignSlot(key, importers)` both read the importer object itself (`assignSlot` replaces the facet value rather than appending to the list combine), and after the teardown write `assignSlot(key, undefined)` both read `undefined`.
+A headless probe shows `assignSlot("paste:importers", …)` and `editor.facet(clipboardFacet)` are identical in all three reachable states: never assigned both read `[]`, after `assignSlot(key, importers)` both read the importer object itself (`assignSlot` replaces the facet value rather than appending to the list combine), and after the teardown write `assignSlot(key, undefined)` both read `undefined`.
 
 Replace lifecycle-slot waits with `await editor.whenReady()`. Do not add new `*_SLOT` / `*_SLOT_KEY` constants.
 
@@ -319,9 +319,9 @@ This is the one-time rewrite table for 0.3, not a supported host API for the del
 | `set-selection`                                                                                                                                    | deleted; command `{ selection }` results / `authority.set`                                                                                 |
 | `stream-open`                                                                                                                                      | unchanged                                                                                                                                  |
 
-Retired apply codes for deleted variants are listed with the wave; surviving `PEN_APPLY_*` codes keep their meaning. `origin.intent` already names the dispatched command (`pen.splitBlock`, `pen.deleteBackward`, `pen.deleteForward`) — do not invent a `pen.mergeBlocks` command.
+Apply codes whose meaning existed only for a deleted variant retire with that variant; surviving `PEN_APPLY_*` codes keep their meaning. `origin.intent` already names the dispatched command (`pen.splitBlock`, `pen.deleteBackward`, `pen.deleteForward`) — do not invent a `pen.mergeBlocks` command.
 
-The recipes below are a one-time rewrite. There is no compatibility layer and no dual-form `apply` (`spec-v2/14-api-and-packaging.md` API7; `spec-v2/V3-BOUNDARY.md` trap 4). The retired names were never published.
+The recipes below are a one-time rewrite. There is no compatibility layer and no dual-form `apply` (`spec/rules/api.md` API7). The retired names were never published.
 
 ### `insert-text` / `delete-text` / `replace-text`
 
@@ -431,7 +431,7 @@ Core's validate phase and executors no longer have a case per deleted v2 op. The
 
 ### Retired `PEN_APPLY_*` codes
 
-Surviving apply codes (same meaning as v2): `PEN_APPLY_002` (unknown / unregistered block type), `PEN_APPLY_003`, `PEN_APPLY_004` (malformed op), `PEN_APPLY_005`, `PEN_APPLY_007`, `PEN_APPLY_008`, `PEN_APPLY_009` (proto keys). The wave retires codes whose meaning existed only for a deleted variant. No retired-code number list exists in the wave docs beyond that rule — a host matching on a code that is no longer emitted should treat the op as dropped and follow the rewrite table. `PEN_APPLY_001` and `PEN_APPLY_006` are not in the live pipeline.
+Surviving apply codes (same meaning as v2): `PEN_APPLY_002` (unknown / unregistered block type), `PEN_APPLY_003`, `PEN_APPLY_004` (malformed op), `PEN_APPLY_005`, `PEN_APPLY_007`, `PEN_APPLY_008`, `PEN_APPLY_009` (proto keys). A code whose meaning existed only for a deleted variant retires with that variant. There is no enumerated list of retired code numbers beyond that rule — a host matching on a code that is no longer emitted should treat the op as dropped and follow the rewrite table. `PEN_APPLY_001` and `PEN_APPLY_006` are not in the live pipeline.
 
 ### op-shape sniffing in suggest-mode
 
@@ -457,7 +457,7 @@ The sections above are organised by symptom. This index is organised by the name
 
 ## Every per-consumer mapping loop named in the sub-steps
 
-**What it was:** each Wave 2 consumer (autocomplete continuation, stream write head, undo cursor restore, suggestions, multiplayer awareness) remapped positions through `mapPoint` / `mapRange` / `mapOffset` / `summaryLog.between` on every commit.
+**What it was:** each of those consumers (autocomplete continuation, stream write head, undo cursor restore, suggestions, multiplayer awareness) remapped positions through `mapPoint` / `mapRange` / `mapOffset` / `summaryLog.between` on every commit.
 
 **Replacement:** mint an anchor (or `AnchorRange`) when the position becomes interesting; resolve it when you need the current point. Undo keeps its stack-item selection snapshots and adds local-provenance drift anchors (`followUndoneDeletions: true`). Decorations stay derived-tier: they may call `mapOffsetThroughSplices` inside one summary and must not mint anchors.
 
@@ -469,8 +469,8 @@ The sections above are organised by symptom. This index is organised by the name
 
 **What it was:** the `ChangeSummary` mapping algebra (`mapOffset` / `mapPoint` / `mapRange` / `compose`) and its factory.
 
-**Replacement:** single-commit derived shifts use `mapOffsetThroughSplices` from `@input/pen-core`. Positions that must survive more than one commit use the editor anchors API (`EditorAnchors` on `@input/pen-types`).
-The file is deleted (spec-v4 CS4).
+**Replacement:** single-commit derived shifts use `mapOffsetThroughSplices` from `@input/pen-core`. Positions that must survive more than one commit use the editor anchors API (`EditorAnchors` on `@input/pen-types`). See CS4 in `spec/rules/api.md`.
+The file is deleted.
 Its `createChangeSummary` factory folded into the internal summary builder and is not a public export.
 
 ---
@@ -495,7 +495,7 @@ Its `createChangeSummary` factory folded into the internal summary builder and i
 
 **What it was:** the summary ring buffer and `summaryLog.between`.
 
-**Replacement:** none. A `CommitEvent` carries its summary; flushes carry batched `CommitEvent[]`. Nothing retains summaries. Undo and multiplayer were the last `between` callers; both moved to anchors in Wave 2.
+**Replacement:** none. A `CommitEvent` carries its summary; flushes carry batched `CommitEvent[]`. Nothing retains summaries. Undo and multiplayer were the last `between` callers; both now use anchors.
 
 **Before / after:** `summaryLog.between(a, b).mapPoint(...)` → mint an anchor at `a` and resolve it at `b`.
 
@@ -503,7 +503,7 @@ Its `createChangeSummary` factory folded into the internal summary builder and i
 
 ## `core/src/changes/types.ts`
 
-**What it was:** a local duplicate of the change-summary types (GATE 3.8 failed while it named `block-split` / `blocks-merged` off the allowlist).
+**What it was:** a local duplicate of the change-summary types, which had drifted from core's union by omitting `block-split` and `blocks-merged`.
 
 **Replacement:** the file is now a re-export shim from `@input/pen-types` (`Assoc`, `BlockTextChange`, `ChangeSummary`, `Point`, `StructuralChange`, `TextSplice`). Import those names from `@input/pen-types`, not from a core-internal types path.
 
@@ -539,7 +539,7 @@ Its `createChangeSummary` factory folded into the internal summary builder and i
 
 ## `types/changes.ts` mapping declarations
 
-Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packages/types/src/types/changes.ts`. The file stays as the `ChangeSummary` / `TextSplice` / `StructuralChange` contract; `mapOffsetThroughSplices` has since moved to `@input/pen-core` (spec-v4 DL12).
+Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packages/types/src/types/changes.ts`. The file stays as the `ChangeSummary` / `TextSplice` / `StructuralChange` contract; `mapOffsetThroughSplices` has since moved to `@input/pen-core` (`spec/packages/core.md`).
 
 ---
 
@@ -553,7 +553,7 @@ Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packa
 
 ## `fromDocument.ts`
 
-**What it was:** a Wave 3 deletion candidate if its only consumers were mapping paths.
+**What it was:** a deletion candidate if its only consumers were mapping paths.
 
 **Replacement:** it was reviewed and **kept**. `createBlockIndexSnapshotFromDocument` still builds the shadow block index the summary builder reads. Not a public export. Hosts never imported this file; there is nothing to migrate.
 
@@ -651,9 +651,9 @@ Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packa
 
 ## I11 two-seam wording in v2 specs
 
-**What it was:** v2 I11 confined U+200B to two sanctioned seams (`spec-v2/03-selection.md` §2).
+**What it was:** v2 I11 confined U+200B to two sanctioned seams (`spec/rules/selection.md`).
 
-**Replacement:** I11 is retired. I14 is the rule: do not name the character in production except the temporary EM4 heal, which the Wave 6 release PR deletes. There is no sanctioned-seam end state. Read `spec-v3/04-empty-blocks.md`.
+**Replacement:** I11 is retired. I14 is the rule: do not name the character in production except the temporary EM4 heal, which the release PR deletes. There is no sanctioned-seam end state. Read `spec/rules/empty-blocks.md`.
 
 ---
 
@@ -661,7 +661,7 @@ Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packa
 
 **What it was:** the autocomplete satellite package.
 
-**Replacement:** Wave 6 SF1 folds it into the `autocomplete` subpath of `@input/pen-ai`. Run `node scripts/migrate-imports-v3.mjs` (specifier-position rewrite; string literals stay put). Manifest dependency becomes `@input/pen-ai`.
+**Replacement:** SF1 folds it into the `autocomplete` subpath of `@input/pen-ai`. Run `node scripts/migrate-imports-v3.mjs` (specifier-position rewrite; string literals stay put). Manifest dependency becomes `@input/pen-ai`.
 
 **Before / after:** point `autocompleteExtension` at `@input/pen-ai/autocomplete`. The codemod's `SOURCE_REWRITE` table is the closed mapping.
 
@@ -711,7 +711,7 @@ Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packa
 
 **What it was:** HTML exporter (`htmlExporter`).
 
-**Replacement:** Wave 6 SF2 folds the import/export family into one interop package. HTML import and export share the `html` format subpath. Run `node scripts/migrate-imports-v3.mjs` — `SOURCE_REWRITE` and `MANIFEST_REWRITE` are the closed table. `@input/pen-markdown-serialization` survives and is not merged (`document-ops` still consumes it).
+**Replacement:** SF2 folds the import/export family into one interop package. HTML import and export share the `html` format subpath. Run `node scripts/migrate-imports-v3.mjs` — `SOURCE_REWRITE` and `MANIFEST_REWRITE` are the closed table. `@input/pen-markdown-serialization` survives and is not merged (`document-ops` still consumes it).
 
 **Before / after:** point `htmlExporter` at the html format subpath the codemod writes.
 
@@ -788,13 +788,13 @@ Both land on the same `json` format subpath.
 
 ## Deleted names (0.4 look-up)
 
-The 0.3 index ends above. This index is the v4 scaffolding and structure train (Wave 3 DL1–DL14, plus Wave 1 / Wave 4 tokens the same check must see). Headings are grep targets. Deletions that have not landed stay **not yet shipped** — do not treat a heading as proof the identifier is already gone.
+The 0.3 index ends above. This index covers the scaffolding and internal-structure deletions that follow it. Headings are grep targets. Deletions that have not landed stay **not yet shipped** — do not treat a heading as proof the identifier is already gone.
 
 ---
 
 ## The three v1 adapters and their police
 
-**Shipped.** Wave 3 (DL2, DL3, DL4) deleted `getSlot` / `setSlot`, v1 `change` / `documentCommit` emission, `v1ExtensionProviders`, `SLOT_DEPRECATED_CODE`, `EVENT_DEPRECATED_CODE`, and the `no-new-slots` gate. `internals.assignSlot` is the sanctioned write path and stays. The slot-key constants in `@input/pen-types` stay — they are the assignSlot write contract, not the deleted adapter.
+**Shipped.** `getSlot` / `setSlot`, v1 `change` / `documentCommit` emission, `v1ExtensionProviders`, `SLOT_DEPRECATED_CODE`, `EVENT_DEPRECATED_CODE`, and the `no-new-slots` gate are all deleted. `internals.assignSlot` is the sanctioned write path and stays. The slot-key constants in `@input/pen-types` stay — they are the assignSlot write contract, not the deleted adapter.
 
 ### Slot table
 
@@ -852,7 +852,7 @@ Declare `facets: [keymapFacet.of(...), inputRulesFacet.of(...), decorationsFacet
 
 ## Computed selection fields
 
-Shipped 2026-08-25 (Wave 3 / DL5). `TextSelection` is a record. The four v1 computed fields are gone; constructors no longer stamp them.
+Shipped 2026-08-25. `TextSelection` is a record. The four v1 computed fields are gone; constructors no longer stamp them.
 
 | Field / method                       | Helper                                                                                               |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
@@ -897,19 +897,19 @@ const range = selectionToRange(editor.internals.doc, sel);
 
 ## `isProgrammaticDomTextSelection`
 
-**Shipped.** Wave 3 (DL6) removed this pen-dom flag, along with the projection-controller helpers that existed only to compute it. Of DL6's two permitted resolutions it took the first: the call sites were unreachable rather than a surviving decision, so nothing moved into `decideDomSelectionRead` and no replacement flag exists. The one real caller branched on the flag to decide whether to record user selection intent, and its skip side could not be reached — both contenteditable backends forward to the reader before that path, and the remaining production caller opens the pointer gesture window before it writes, which made the flag always `false`. Intent is now always recorded. Echo suppression on the sanctioned read path is owned by the snap and equivalent-stop rules, as `spec-v2/03-selection.md` specifies. Hosts never imported this name; there is no host replacement.
+**Shipped.** This pen-dom flag is removed, along with the projection-controller helpers that existed only to compute it. The call sites were unreachable rather than a surviving decision, so nothing moved into `decideDomSelectionRead` and no replacement flag exists. The one real caller branched on the flag to decide whether to record user selection intent, and its skip side could not be reached — both contenteditable backends forward to the reader before that path, and the remaining production caller opens the pointer gesture window before it writes, which made the flag always `false`. Intent is now always recorded. Echo suppression on the sanctioned read path is owned by the snap and equivalent-stop rules, as `spec/rules/selection.md` specifies. Hosts never imported this name; there is no host replacement.
 
 ---
 
 ## the S4 waiver timer
 
-**Not yet shipped.** Wave 3 (DL8) resolves the three S4 waivers (`contenteditableBackendSelection.ts` / `scheduleActiveDOMMatchCheck`, react `inlineAtomSelectionInteraction.ts`, react `useSelectionToolbar.ts`) with a no-Pen-code browser probe, then deletes the timer and its allowlist `entries`. Hosts never imported these; there is no host replacement. An investigation that concludes a timer is required becomes an S4 spec amendment, not a renewed waiver.
+**Not yet shipped.** The three S4 waivers (`contenteditableBackendSelection.ts` / `scheduleActiveDOMMatchCheck`, react `inlineAtomSelectionInteraction.ts`, react `useSelectionToolbar.ts`) are resolved with a no-Pen-code browser probe, after which the timer and its allowlist `entries` are deleted. Hosts never imported these; there is no host replacement. An investigation that concludes a timer is required becomes an S4 spec amendment, not a renewed waiver.
 
 ---
 
 ## `clipboardSerialization.ts`
 
-**Shipped.** Wave 3 (DL7) removed the react clipboard serializer.
+**Shipped.** The react clipboard serializer is removed.
 `packages/rendering/react/src/utils/clipboardSerialization.ts` is deleted; it had zero importers and had drifted from the live implementation.
 The one clipboard serializer is `packages/rendering/dom/src/utils/clipboardSerialization.ts`.
 No host recipe — nothing consumed the react copy.
@@ -918,7 +918,7 @@ No host recipe — nothing consumed the react copy.
 
 ## `overlays/`
 
-**Shipped.** Wave 3 (DL9) moved pen-dom's overlay helpers into the conformance harness.
+**Shipped.** Pen-dom's overlay helpers moved into the conformance harness.
 `packages/rendering/dom/src/overlays/` is deleted and pen-dom's export map carries no overlay keys.
 The harness owns them under `packages/tooling/conformance/suites/overlays/`.
 Hosts that imported overlay helpers from `@input/pen-dom` stop; the shipped caret overlay stays the react O2 owner recorded in `spec/packages/rendering/dom.md`.
@@ -927,7 +927,7 @@ Hosts that imported overlay helpers from `@input/pen-dom` stop; the shipped care
 
 ## `DecorationSet.map`
 
-**Not yet shipped.** Wave 3 (DL10) removes `DecorationSet.map` and `PositionMapping` from `packages/types/src/types/decorations.ts`. Zero callers. Decorations that must survive commits already have the sanctioned mechanisms: per-block recompute off `affectedBlockIds`, or anchors for the durable few. Do not add a mapping-era replacement.
+**Not yet shipped.** `DecorationSet.map` and `PositionMapping` are removed from `packages/types/src/types/decorations.ts`. Zero callers. Decorations that must survive commits already have the sanctioned mechanisms: per-block recompute off `affectedBlockIds`, or anchors for the durable few. Do not add a mapping-era replacement.
 
 ---
 
@@ -939,13 +939,13 @@ Same cut as `DecorationSet.map`. The mapping-era decoration contract goes; recom
 
 ## core barrel migration exports
 
-**Not yet shipped.** Wave 3 (DL11) takes `isLoneEmptyBlockZwsp`, `createStripEmptyBlockZwspMigration`, and the `STRIP_*` constants off the `@input/pen-core` barrel. The load path stays wired internally via the migrations module. Hosts never needed these; `runMigrations` from `@input/pen-core` remains the host API.
+**Not yet shipped.** `isLoneEmptyBlockZwsp`, `createStripEmptyBlockZwspMigration`, and the `STRIP_*` constants come off the `@input/pen-core` barrel. The load path stays wired internally via the migrations module. Hosts never needed these; `runMigrations` from `@input/pen-core` remains the host API.
 
 ---
 
 ## content-ops shims
 
-**Shipped.** Wave 3 (DL13) deletes the 1-line re-export modules in `@input/pen-content-ops` and the barrel passthroughs of the same names. Import those names from `@input/pen-core`. The package keeps its real code (`parseMarkdownToBlocks`, `splitPlainTextLineBlocks`, `buildDocumentWriteOps`, structured-target / plan helpers).
+**Shipped.** The 1-line re-export modules in `@input/pen-content-ops` and the barrel passthroughs of the same names are deleted. Import those names from `@input/pen-core`. The package keeps its real code (`parseMarkdownToBlocks`, `splitPlainTextLineBlocks`, `buildDocumentWriteOps`, structured-target / plan helpers).
 
 | Deleted shim                  | Old import                                                                                            | New import                                                                                     |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
@@ -958,7 +958,7 @@ Same cut as `DecorationSet.map`. The mapping-era decoration contract goes; recom
 
 ## Types runtime outliers
 
-**Shipped, with one half withdrawn.** spec-v4 DL12 moved `mapOffsetThroughSplices` to `@input/pen-core`; import it from there. `DEFAULT_MESSAGE_CATALOG` and its dependent guard **stay on `@input/pen-types`** — the relocation was withdrawn because six non-core consumers (`@input/pen-ai`, three React primitives, and the docs) make the catalog a shared contract rather than a core internal. `generateId` stays on `@input/pen-types` (HOST4), and `types-runtime-allowlist.json` now holds only `generateId` and its private `formatUuidV4`.
+**Shipped, with one half withdrawn.** `mapOffsetThroughSplices` moved to `@input/pen-core`; import it from there. `DEFAULT_MESSAGE_CATALOG` and its dependent guard **stay on `@input/pen-types`** — the relocation was withdrawn because six non-core consumers (`@input/pen-ai`, three React primitives, and the docs) make the catalog a shared contract rather than a core internal. `generateId` stays on `@input/pen-types` (HOST4), and `types-runtime-allowlist.json` now holds only `generateId` and its private `formatUuidV4`.
 
 | Name                      | Was                | Now                            |
 | ------------------------- | ------------------ | ------------------------------ |
@@ -970,70 +970,168 @@ Same cut as `DecorationSet.map`. The mapping-era decoration contract goes; recom
 
 ## `.size-limit.json`
 
-Wave 1 (GA7). The orphan root file is gone. `size-limit.mjs` reads only `.size-limit.baseline.json`. Hosts never imported this file.
+The orphan root file is gone. `size-limit.mjs` reads only `.size-limit.baseline.json`. Hosts never imported this file.
 
 ---
 
 ## 23 tracked artifact files
 
-Wave 1 (GA8). The 23 tracked Playwright artifacts under the conformance `test-results-n2*` directories left the index. Suffixed result dirs are gitignored. Hosts never imported these.
+The 23 tracked Playwright artifacts under the conformance `test-results-n2*` directories left the index. Suffixed result dirs are gitignored. Hosts never imported these.
 
 ---
 
 ## `static-gates.yml`
 
-Wave 1 (GA10). The `ch-gates` matrix entry left `.github/workflows/static-gates.yml`. `health-gates.yml` is the single execution. Hosts never imported this file.
+The `ch-gates` matrix entry left `.github/workflows/static-gates.yml`. `health-gates.yml` is the single execution. Hosts never imported this file.
 
 ---
 
 ## `turbo.json`
 
-Wave 1 (GA12). The root `turbo.json` `lint` task is gone; every package answers `pnpm --filter … lint`. Hosts never imported this file.
+The root `turbo.json` `lint` task is gone; every package answers `pnpm --filter … lint`. Hosts never imported this file.
 
 ---
 
 ## four one-shot scripts with aliases and references
 
-Wave 1 (GA13). The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `v3-gates.mjs`, `gate-mutation.mjs`, `verdaccio-closure-check.mjs`, and `wave-deletions-migration-check.mjs` stay. Hosts never imported these.
+The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `v3-gates.mjs`, `gate-mutation.mjs`, `verdaccio-closure-check.mjs`, and `wave-deletions-migration-check.mjs` stay. Hosts never imported these.
 
 ---
 
 ## The `any` seam types and forwarding wrappers
 
-**Not yet shipped.** Wave 4 (CS1) replaces `ApplyPipelineRuntime = any` / `EditorImplRuntime = any` with typed internal context interfaces and deletes the private forwarding wrappers. Public surface stays byte-identical. Hosts never named these types.
+**Not yet shipped.** CS1 replaces `ApplyPipelineRuntime = any` / `EditorImplRuntime = any` with typed internal context interfaces and deletes the private forwarding wrappers. Public surface stays byte-identical. Hosts never named these types.
 
 ---
 
 ## `CRDTText`
 
-**Not yet shipped.** Wave 4 (CS1) collapses the local `CRDTText` interface copies into `crdtShapes.ts`. Not a public export. Hosts never imported this name.
+**Not yet shipped.** CS1 collapses the local `CRDTText` interface copies into `crdtShapes.ts`. Not a public export. Hosts never imported this name.
 
 ---
 
 ## `shouldRestoreStale*`
 
-**Not yet shipped.** Wave 4 (CS5) folds the four `shouldRestoreStale*` helpers into the owned reader/projector decision path. Hosts never imported these.
+**Not yet shipped.** CS5 folds the four `shouldRestoreStale*` helpers into the owned reader/projector decision path. Hosts never imported these.
 
 ---
 
 ## `sessionReconciler`
 
-**Not yet shipped.** Wave 4 (CS6) moves `sessionReconciler`'s rAF coalesce onto `DomScheduler` and retires its allowlist entry. Hosts never imported this module.
+**Not yet shipped.** CS6 moves `sessionReconciler`'s rAF coalesce onto `DomScheduler` and retires its allowlist entry. Hosts never imported this module.
 
 ---
 
 ## react's hand-rolled sibling builds
 
-**Not yet shipped.** Wave 4 (CS8) replaces the react `test` script's hand-rolled sibling builds with the turbo dependency graph. Hosts never invoked this script.
+**Not yet shipped.** CS8 replaces the react `test` script's hand-rolled sibling builds with the turbo dependency graph. Hosts never invoked this script.
 
 ---
 
 ## two redundant offsetDomain test files
 
-**Not yet shipped.** Wave 4 (CS10) collapses the `offsetDomain` test trio to one file. Hosts never imported these.
+**Not yet shipped.** CS10 collapses the `offsetDomain` test trio to one file. Hosts never imported these.
 
 ---
 
 ## per-format interop fixture copies (folded into the shared helper)
 
-**Not yet shipped.** Wave 4 (CS10) extracts one shared corpus helper in `@input/pen-test`. Hosts that copied per-format fixtures can point at that helper when it ships; there is no public API change.
+**Not yet shipped.** CS10 extracts one shared corpus helper in `@input/pen-test`. Hosts that copied per-format fixtures can point at that helper when it ships; there is no public API change.
+
+---
+
+## `AI_EDIT_CHANNELS` and `AIEditChannel`
+
+**Shipped 2026-08-26.** UC1 leaves one AI edit channel, so there is nothing left to select between. Hosts that passed `editChannel` to `aiExtension` drop the option; the tool channel is the only behavior.
+
+---
+
+## `pen-fast-apply`
+
+**Shipped 2026-08-26.** The XML edit contract is gone with UC1. A host system prompt that still instructs a model to emit `<pen-fast-apply>` produces no mutation and no error — the text is treated as text (UC2). Hosts that shipped their own prompt copy describing the XML block must delete that paragraph; the loop mounts `edit_document` and the model calls it.
+
+---
+
+## `MARKDOWN_FAST_APPLY_OMISSION_MARKER`
+
+**Shipped 2026-08-26.** The channel-control token that the XML channel embedded in preview payloads. Hosts that stripped this marker from displayed text can delete that filter.
+
+---
+
+## `markdownPatchPlan.ts`, `markdownFastApply.ts`, and `markdownFastApplyMethods.ts`
+
+**Shipped 2026-08-26.** The XML channel's patch planner, runtime, and controller method bag. Internal to `@input/pen-ai`; no host imported them.
+
+---
+
+## `AIPlannerMode` and `AI_PLANNER_MODES`
+
+**Shipped 2026-08-26.** UC3 removes the planner-mode vocabulary with the text-parsed plan channel it selected. Both were exported from `@input/pen-ai`; a host that imported either has a compile error and no replacement to reach for, because there is no longer a second channel to name. `route.plannerMode` is also gone from the routing decision.
+
+---
+
+## `structuredPlanner`
+
+**Shipped 2026-08-26.** The plan prompt, the plan parse, and the streamed plan preview. A model that emits a JSON plan into the assistant text stream now gets no mutation (UC2); block conversion and mark changes go through `set_block_props` and `format_text` on `edit_document`.
+
+One capability is removed rather than replaced: previews of a partially-arrived plan. That preview re-parsed half-written JSON on every text delta, which a tool call cannot produce — a tool call arrives complete. Hosts that read `data-structured-preview-*` off the AI progress primitive to render an in-flight plan should render staged suggestions instead.
+
+---
+
+## `planValidation`
+
+**Not yet shipped.** UC3 deletes the plan schema validator once the plan executor is extracted for review resolution. Internal to `@input/pen-ai`; no host imported it.
+
+---
+
+## `AIApplyStrategy` and `AI_APPLY_STRATEGIES`
+
+**Not yet shipped.** UC5 folds the strategy vocabulary into a mutation preference. Hosts that passed `applyStrategy` will pass a mutation preference; the surviving streaming-generation strategies are renamed in the same fold, so their string values change too.
+
+---
+
+## `getBlockRevision`
+
+**Not yet shipped.** UC4 leaves one staleness authority. The per-block revision counter leaves edit gating and tool payloads; working-set view fingerprints are what a mutating tool consults. Hosts that echoed a revision from a tool payload read the fingerprint instead.
+
+---
+
+## `useAIStructuredPreview.ts`, `structuredTargetPreview.tsx`, and `utils/structuredPreview.ts`
+
+**Not yet shipped.** With UC3's text-parsed plan door closed, this surface has no reachable producer, so RS1 deletes it rather than migrating it. Hosts that mounted `Pen.AI.StructuredTargetPreview` or called `useAIStructuredPreview` render staged suggestions through the review surface instead.
+
+---
+
+## `data-structured-preview-*` attributes
+
+**Not yet shipped.** The progress attributes hosts could read off the structured-preview surface, removed with it. Hosts that styled or asserted on `data-structured-preview-count`, `-state`, or `-patch-count` should target the review surface's attributes.
+
+---
+
+## the selection-rewrite decoration stack
+
+**Not yet shipped.** RS2 stages selection rewrites through the suggest-mode interceptor and renders them as review-surface suggestions. Hosts that styled the bespoke rewrite decoration classes restyle against the review class vocabulary that RS4 exports.
+
+---
+
+## the four unscheduled next-paint callbacks outside the scheduler
+
+**Not yet shipped.** FE3 adjudicates each one: real next-paint work moves onto a scheduler-owned callback, and any site that is a selection retry in disguise is dropped under the S4 fence. Internal to `@input/pen-dom`; hosts observe only that selection settles without a frame's delay.
+
+---
+
+## the harness-fed typing-budget mode
+
+**Not yet shipped.** FE4 puts `DomScheduler.acceptCommit` on the production apply path, so the conformance scenario measures that path instead of a harness-fed one. Affects `@input/pen-conformance` consumers only.
+
+---
+
+## undemonstrable capability matrix cells
+
+**Not yet shipped.** HB1 deletes any matrix cell claiming support that no test exercises. A host reading the matrix as a feature list will see fewer claimed cells, and every remaining one has a test behind it.
+
+---
+
+## transport packages without a host integration test
+
+**Not yet shipped.** HB6 requires each transport to document its tier and carry one host-driven integration test, or be deleted under the inventory rule. Hosts depending on a transport that cannot produce one lose that package in the 0.5 release.

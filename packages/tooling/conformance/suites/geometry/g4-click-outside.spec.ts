@@ -9,7 +9,7 @@ const LAST_ID = "two-p2";
 const LAST_TEXT = "Delta echo foxtrot";
 
 /**
- * G4 is GeometryReader.pointAt (`spec-v2/07-dom-scheduling.md`): coordinates
+ * G4 is GeometryReader.pointAt (`spec/rules/dom.md`): coordinates
  * outside any block map to the nearest block edge. A Playwright mouse.click
  * in this harness does not observe that rule — React's
  * `handleClickOutsideBlocks` inserts a paragraph when the adjacent block is

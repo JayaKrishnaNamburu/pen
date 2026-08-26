@@ -1,5 +1,5 @@
 /**
- * SF3 closed package list (spec-v3/05-surface.md, Wave 6).
+ * SF3 closed package list (spec/rules/api.md, Wave 6).
  *
  * After the SF1/SF2 merges the workspace package list (named manifests
  * under packages/, private included) must equal the closed no-merge list
@@ -11,8 +11,8 @@
  * Frozen 2026-08-24 from that walk minus the twelve SF1/SF2 satellites
  * minus @input/pen-ai. Re-derive only if 05-surface.md is amended.
  *
- * This pin replaced scripts/sf3-package-list-check.mjs when spec-v4
- * GA13 retired the one-shot (spec-v4/waves/wave-1-instruments.md,
+ * This pin replaced scripts/sf3-package-list-check.mjs when the structure train
+ * GA13 retired the one-shot (
  * Step 1.7: the pin moves to a test before the script dies).
  */
 import assert from "node:assert/strict";

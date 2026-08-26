@@ -1,9 +1,6 @@
 import { buildDocumentMutationPlanExecution } from "../runtime/planExecutor";
 import { buildStructuralReviewItems } from "../runtime/reviewArtifacts";
-import {
-	parseStructuredPlanResult,
-	resolveExecutionMode,
-} from "../runtime/structuredPlanner";
+import { resolveExecutionMode } from "../runtime/generationTarget";
 import { buildGenerationStructuredPreviewState } from "../runtime/structuredPreview";
 import type { AIApplyStrategy } from "../runtime/contracts";
 import type { AIMutationReceiptStatus, GenerationState } from "../types";
@@ -25,7 +22,7 @@ const EDIT_NOT_APPLIED_REASON =
  * Whether the assistant text stream may become a durable document mutation.
  *
  * On the tool channel it may not: the edit arrives as an `edit_document` call,
- * and text is the model talking (`spec-better-ai/01-edit-channel.md` EC1). The
+ * and text is the model talking (`spec/packages/extensions/ai.md` EC1). The
  * commit paths below cannot infer this themselves — `_commitBufferedBlockGeneration`
  * reads markdown it was handed and builds insert ops, so a model that answers
  * with prose instead of calling the tool gets that prose appended to the
@@ -44,7 +41,7 @@ function textCanCommitMutation(applyStrategy: AIApplyStrategy): boolean {
  * that does not parse, or that names blocks the document does not have, leaves
  * the document untouched with nothing thrown. Reporting that as a completed
  * turn is what makes the channel look like it silently ignored the request
- * (`spec-better-ai/00-concept.md`, Defect 4).
+ * (`spec/charter/working-agreements.md`, Defect 4).
  *
  * `tool-edit` is excluded: its edits land through tool calls, which apply
  * directly and never produce a mutation receipt.
@@ -110,8 +107,7 @@ export function finalizeGenerationExecution(
 				state.currentText.length > 0 &&
 				!shouldStreamDirectly &&
 				!canStreamBlockSuggestions &&
-				!canStreamMarkdownBlockSuggestions &&
-				route.plannerMode !== "structured"
+				!canStreamMarkdownBlockSuggestions
 			) {
 				state.currentMutationReceipt = controller._commitBufferedBlockGeneration(
 					target.blockId,
@@ -133,11 +129,6 @@ export function finalizeGenerationExecution(
 			const suggestionIds = controller.getSuggestions()
 				.map((item) => item.id)
 				.filter((id) => !baselineSuggestionIds.has(id));
-			const structuredPlanResult =
-				route.plannerMode === "structured" &&
-				!useStructuredIntentTransport
-					? parseStructuredPlanResult(state.currentText, route.targetKind)
-					: null;
 			const structuredIntentResolution = useStructuredIntentTransport
 				? (adapter.resolveResult?.({
 						value: state.currentStructuredIntent,
@@ -150,9 +141,7 @@ export function finalizeGenerationExecution(
 			const structuredIntentCompilation =
 				structuredIntentResolution?.compilation ?? null;
 			const resolvedStructuredPlan =
-				structuredIntentCompilation?.plan ??
-				structuredPlanResult?.plan ??
-				null;
+				structuredIntentCompilation?.plan ?? null;
 			const planExecution = resolvedStructuredPlan
 				? buildDocumentMutationPlanExecution(
 						controller._editor,
@@ -196,11 +185,9 @@ export function finalizeGenerationExecution(
 				});
 			}
 			const structuredDebug = {
-				plannerMode: route.plannerMode,
 				executionMode: resolveExecutionMode(route.mutationMode),
 				targetKind: route.targetKind,
 				validationIssueCount:
-					(structuredPlanResult?.issues.length ?? 0) +
 					(structuredIntentResult?.issues.length ?? 0) +
 					(structuredIntentCompilation?.issues.length ?? 0) +
 					(planExecution?.issues.length ?? 0),
@@ -220,8 +207,7 @@ export function finalizeGenerationExecution(
 						? "validated"
 						: structuredIntentResult?.intentState === "drafted"
 							? "drafted"
-							: (structuredPlanResult?.planState ??
-								seedGeneration.planState);
+							: seedGeneration.planState;
 
 			const unappliedEdit =
 				result.status === "complete" &&

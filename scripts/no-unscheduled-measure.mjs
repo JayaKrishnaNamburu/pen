@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SCH1 lint (spec-v2/07-dom-scheduling.md, Wave 3 step 3.4).
+ * SCH1 lint (spec/rules/dom.md, Wave 3 step 3.4).
  *
  * Greps getBoundingClientRect, getClientRects, elementFromPoint,
  * caretPositionFromPoint, and caretRangeFromPoint in packages/rendering

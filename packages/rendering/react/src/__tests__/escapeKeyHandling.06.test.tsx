@@ -321,7 +321,7 @@ describe("@input/pen-react escape key handling", () => {
 
 		// mousedown opened a pointer gesture window, and a proposal spanning two
 		// text blocks becomes a multi-block TextSelection while it is open
-		// (spec-v2/03-selection.md §4.2 step 5). This assertion used to expect the
+		// (spec/rules/selection.md §4.2 step 5). This assertion used to expect the
 		// single-block range to survive until mouseup, which was v1's
 		// _pointerSelectionDepth deferral — deleted in Wave 05 PR 7.
 		expect(editor.selection).toMatchObject({

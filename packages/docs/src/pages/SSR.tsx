@@ -5,7 +5,7 @@ export function SSRPage() {
 			<p>
 				SSR is <strong>shell-only</strong>: the server renders the
 				editor container and no document content. This is HOST5 in{" "}
-				<code>spec-v2/15-host-integration.md</code>. It is a decision,
+				<code>spec/rules/host.md</code>. It is a decision,
 				not a gap. Faithful SSR of a CRDT document would require that
 				document on the server. Pen does not own that transport and does
 				not run a server CRDT.

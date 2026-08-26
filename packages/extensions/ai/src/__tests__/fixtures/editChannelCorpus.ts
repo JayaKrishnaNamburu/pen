@@ -2,7 +2,7 @@ import type { Editor } from "@input/pen-types";
 
 /**
  * Wave 0.1 reference corpus. Fixed before the channel is measured
- * (`spec-better-ai/waves/wave-0-prototype.md` Step 0.1).
+ * (`spec/packages/extensions/ai.md`, the EC rules).
  */
 
 export const EDIT_CHANNEL_CORPUS_HEADING_TEXT = "Quarterly Report";

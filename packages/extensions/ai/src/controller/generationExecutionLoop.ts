@@ -5,7 +5,6 @@ import {
 	buildGenerationStructuredPreviewState,
 	buildStructuredPreviewPatchOperations,
 } from "../runtime/structuredPreview";
-import { parseStructuredPlanPreview } from "../runtime/structuredPlanner";
 import type { GenerationState } from "../types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 import {
@@ -233,66 +232,6 @@ export async function runGenerationLoop(
 						text: state.currentText,
 					}),
 				);
-				if (
-					route.plannerMode === "structured" &&
-					!useStructuredIntentTransport
-				) {
-					const previewResult = parseStructuredPlanPreview(
-						state.currentText,
-						route.targetKind,
-					);
-					if (previewResult?.plan) {
-						const nextStructuredPreview =
-							buildGenerationStructuredPreviewState(
-								controller._editor,
-								{
-									planState:
-										previewResult.planState === "validated"
-											? "validated"
-											: "drafted",
-									plan: previewResult.plan,
-								},
-							);
-						if (
-							!areStructuredValuesEqual(
-								state.currentStructuredPreview,
-								nextStructuredPreview,
-							)
-						) {
-							const patches =
-								buildStructuredPreviewPatchOperations(
-									state.currentStructuredPreview,
-									nextStructuredPreview,
-								);
-							state.currentStructuredPreview =
-								nextStructuredPreview;
-							controller._resolveActiveGeneration({
-								structuredPreview: nextStructuredPreview,
-							});
-							if (context?.sessionId && sessionTurnId) {
-								controller._updateSessionTurn(
-									context.sessionId,
-									sessionTurnId,
-									{
-										reviewItemIds:
-											nextStructuredPreview.reviewItems.map(
-												(item) => item.id,
-											),
-										structuredPreview:
-											nextStructuredPreview,
-									},
-								);
-							}
-							controller._appendStreamEvent(
-								createAIStreamEvent(seedGeneration, {
-									type: "structured-preview",
-									preview: nextStructuredPreview,
-									patches,
-								}),
-							);
-						}
-					}
-				}
 			},
 			onStructuredData: (event) => {
 				if (!useStructuredIntentTransport) {

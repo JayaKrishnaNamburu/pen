@@ -17,7 +17,7 @@ function formatUuidV4(bytes: Uint8Array): string {
 }
 
 /**
- * The only ID source in Pen (HOST4, `spec-v2/15-host-integration.md`). Returns a v4 UUID.
+ * The only ID source in Pen (HOST4, `spec/rules/host.md`). Returns a v4 UUID.
  *
  * `crypto.randomUUID` is secure-context-only, so it is absent on plain-HTTP origins — which
  * is how a phone on the LAN reaches a dev server — and on Safari below 15.4. Calling it

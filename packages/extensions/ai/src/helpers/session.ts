@@ -85,7 +85,7 @@ export function createInlineHistorySnapshot(
 	};
 }
 
-export function cloneSessionTarget(
+function cloneSessionTarget(
 	editor: Editor,
 	target: AISessionTarget,
 ): AISessionTarget {
@@ -173,57 +173,6 @@ export function recreateTextSelection(
 		anchor: snapshot.anchor,
 		focus: snapshot.focus,
 	});
-}
-
-export function resolveSelectionSnapshotBlockRange(
-	editor: Editor,
-	snapshot: AISessionSelectionSnapshot,
-): string[] {
-	if (snapshot.blockRange.length > 0) {
-		return [...snapshot.blockRange];
-	}
-	const blockOrder = editor.documentState.blockOrder;
-	const anchorIndex = blockOrder.indexOf(snapshot.anchor.blockId);
-	const focusIndex = blockOrder.indexOf(snapshot.focus.blockId);
-	if (anchorIndex === -1 || focusIndex === -1) {
-		return [snapshot.anchor.blockId];
-	}
-	const startIndex = Math.min(anchorIndex, focusIndex);
-	const endIndex = Math.max(anchorIndex, focusIndex);
-	return blockOrder.slice(startIndex, endIndex + 1);
-}
-
-export function resolveSelectionSnapshotRangeStart(
-	snapshot: AISessionSelectionSnapshot,
-	blockRange: readonly string[],
-): { blockId: string; offset: number } {
-	if (blockRange.length <= 1) {
-		return {
-			blockId: snapshot.anchor.blockId,
-			offset: Math.min(snapshot.anchor.offset, snapshot.focus.offset),
-		};
-	}
-	const firstBlockId = blockRange[0] ?? snapshot.anchor.blockId;
-	return snapshot.anchor.blockId === firstBlockId
-		? { ...snapshot.anchor }
-		: { ...snapshot.focus };
-}
-
-export function resolveSelectionSnapshotRangeEnd(
-	snapshot: AISessionSelectionSnapshot,
-	blockRange: readonly string[],
-): { blockId: string; offset: number } {
-	if (blockRange.length <= 1) {
-		return {
-			blockId: snapshot.anchor.blockId,
-			offset: Math.max(snapshot.anchor.offset, snapshot.focus.offset),
-		};
-	}
-	const lastBlockId =
-		blockRange[blockRange.length - 1] ?? snapshot.focus.blockId;
-	return snapshot.anchor.blockId === lastBlockId
-		? { ...snapshot.anchor }
-		: { ...snapshot.focus };
 }
 
 export function resolveSessionTarget(

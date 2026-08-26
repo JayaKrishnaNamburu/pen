@@ -1,5 +1,5 @@
 /**
- * HOST2 (`spec-v2/15-host-integration.md`): import every published exports path
+ * HOST2 (`spec/rules/host.md`): import every published exports path
  * in a plain Node process with no DOM globals, ESM via import() and CJS via
  * require(), then construct a headless editor, apply an op, read the text back,
  * and destroy.

@@ -2,7 +2,7 @@
 
 Generated from `packages/tooling/test/src/fixtures/envelope/metadata.json`. Do not edit by hand. Regenerate with `node scripts/envelope-table.mjs`.
 
-Published next to the HOST3 runtime floor (`spec-v2/15-host-integration.md`). Rule: SCALE1 (`spec-v2/22-scale-envelope.md`).
+Published next to the HOST3 runtime floor (`spec/rules/host.md`). Rule: SCALE1 (`spec/rules/scale.md`).
 
 ## Envelope
 
@@ -33,7 +33,7 @@ Verification for the ladder is headless (`createTestEditor`). No renderer suite 
 
 ## Past the ceiling
 
-Past these sizes, per-commit decoration collection and full-document render degrade first — Pen does not virtualize (`spec-v2/07-dom-scheduling.md`). Hosts that need larger documents window blocks themselves (`packages/rendering/react/VIRTUALIZATION.md`, SCALE5).
+Past these sizes, per-commit decoration collection and full-document render degrade first — Pen does not virtualize (`spec/rules/dom.md`). Hosts that need larger documents window blocks themselves (`packages/rendering/react/VIRTUALIZATION.md`, SCALE5).
 
 ## Correction notes
 

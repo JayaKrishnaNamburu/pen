@@ -1,5 +1,5 @@
 /**
- * Wave 7.1 (`spec-v2/waves/wave-07-hardening-release.md`): delete the v1
+ * Hardening (`spec/rules/api.md`): delete the v1
  * `Extension` fields `keyBindings`, `inputRules`, and `decorations`. Facet
  * providers are the only contribution channel after that deletion. This rule
  * flags those fields when they are declared on an extension object.
@@ -252,7 +252,7 @@ export const noV1ExtensionFields = {
 		schema: [],
 		messages: {
 			v1Field:
-				"`Extension.{{field}}` is a v1 field. Provide it through `{{facet}}` instead (spec-v2 Wave 7.1).",
+				"`Extension.{{field}}` is a v1 field. Provide it through `{{facet}}` instead (the v1-field hardening).",
 		},
 	},
 	create(context) {

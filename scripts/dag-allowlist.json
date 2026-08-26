@@ -1,4 +1,4 @@
 {
-	"_comment": "API1 (spec-v2/14-api-and-packaging.md): known inverted workspace edges. The DAG check reports these and stays green until the P.1 inversions land. Each entry needs from, to, and a reason naming the owning wave or finding. Remove an entry in the same PR that drops the edge.",
+	"_comment": "API1 (spec/rules/api.md): known inverted workspace edges. The DAG check reports these and stays green until the P.1 inversions land. Each entry needs from, to, and a reason naming the owning wave or finding. Remove an entry in the same PR that drops the edge.",
 	"inversions": []
 }

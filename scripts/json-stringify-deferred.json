@@ -1,4 +1,4 @@
 {
-  "_comment": "SCALE2 (spec-v2/22-scale-envelope.md, Wave F step F.2): JSON.stringify change-detection / signature suspects in packages/rendering and packages/core runtime src. Reported in the job summary; they do not fail this slice. The four decoration-collection and per-render signature sites have been replaced. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes the last call in that symbol.",
+  "_comment": "SCALE2 (spec/rules/scale.md, Wave F step F.2): JSON.stringify change-detection / signature suspects in packages/rendering and packages/core runtime src. Reported in the job summary; they do not fail this slice. The four decoration-collection and per-render signature sites have been replaced. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes the last call in that symbol.",
   "entries": []
 }

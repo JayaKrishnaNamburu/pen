@@ -23,7 +23,6 @@ import type {
 	AIBlockAdapterId,
 	AIBlockClass,
 	AIExecutionMode,
-	AIPlannerMode,
 	AIQualityMetricId,
 	AITargetKind,
 	AITransportKind,

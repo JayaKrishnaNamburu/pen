@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API4 API-report check (spec-v2/14-api-and-packaging.md, Wave P step P.4).
+ * API4 API-report check (spec/rules/api.md, Wave P step P.4).
  *
  * Asserts two properties, named separately because they are not the same:
  *

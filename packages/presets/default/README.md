@@ -74,7 +74,7 @@ The public exports are `defaultPreset` and `DefaultPresetOptions`.
 
 ## HOST1 — client boundary
 
-This package has no `"use client"` directive. It is a non-rendering assembler and stays importable from server modules (`spec-v2/15-host-integration.md` HOST1). The React client boundary lives on `@input/pen-react` entry points, not here.
+This package has no `"use client"` directive. It is a non-rendering assembler and stays importable from server modules (`spec/rules/host.md` HOST1). The React client boundary lives on `@input/pen-react` entry points, not here.
 
 In Next.js App Router, import `PenEditor` from a Client Component. `defaultPreset` does not need that wrapper.
 

@@ -56,3 +56,8 @@ One lifecycle module owns attach/teardown/listener bookkeeping for the EditConte
   expect: exit 0 — repo-wide green at wave close.
 - GATE 4.12 [test]: `pnpm test:e2e`
   expect: exit 0 — the Playwright suite passes against the playground: real-browser selection, typing, and gesture behavior survived the spine.
+
+## Deletions
+
+- the four unscheduled next-paint callbacks outside the scheduler, moved onto a scheduler-owned callback or dropped as selection retries under the S4 fence.
+- the harness-fed typing-budget mode, whose scenario measures the production apply path or measures nothing.

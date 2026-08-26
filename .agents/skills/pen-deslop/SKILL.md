@@ -13,9 +13,9 @@ Keep the audit sharp. Prefer a few high-confidence slop findings with concrete r
 
 ### 1. Learn the neighborhood
 
-Read the relevant project instructions first: root `AGENTS.md`, `.cursor/rules/*.mdc`, the matching `spec/` and `spec-v2/` documents, and nearby files.
+Read the relevant project instructions first: root `AGENTS.md`, `.cursor/rules/*.mdc`, the matching `spec/` documents, and nearby files.
 
-Inspect caller, callee, sibling implementations, existing tests, and the owning package before judging a pattern. A thing is slop only when it fails the local system, not merely because it resembles a general smell. In Pen the local system is unusually explicit: the apply pipeline, extension seams, offset domains, and selection rules are specified with rule IDs in `spec-v2/` — cite them.
+Inspect caller, callee, sibling implementations, existing tests, and the owning package before judging a pattern. A thing is slop only when it fails the local system, not merely because it resembles a general smell. In Pen the local system is unusually explicit: the apply pipeline, extension seams, offset domains, and selection rules are specified with rule IDs in `spec/rules/` — cite them.
 
 ### 2. Load pattern rules lazily
 

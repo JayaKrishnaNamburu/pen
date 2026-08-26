@@ -24,7 +24,7 @@ import { validateToolPayloads } from "../utils/payloadValidation";
  * against (EC5), and a payload that cannot be understood never becomes
  * document content (EC6).
  *
- * Spec: `spec-better-ai/01-edit-channel.md`.
+ * Spec: `spec/packages/extensions/ai.md`.
  */
 
 const EDIT_OPERATIONS = [

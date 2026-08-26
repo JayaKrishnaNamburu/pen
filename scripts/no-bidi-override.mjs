@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * RI1 lint (spec-v2/08-bidi.md, Wave 6 step 6.5).
+ * RI1 lint (spec/rules/dom.md, Wave 6 step 6.5).
  *
  * Greps packages/rendering (pen-dom / react / vue) for `bidi-override`,
  * including `unicode-bidi: bidi-override` on style objects. Marks and

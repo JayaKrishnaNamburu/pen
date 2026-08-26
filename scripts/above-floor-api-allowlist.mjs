@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * HOST4 allowlist schema (spec-v2/15-host-integration.md).
+ * HOST4 allowlist schema (spec/rules/host.md).
  *
  * A site is a legacy path string (still valid) or `{ path, reason }`.
  * New sites must be objects with a reason. A path-only object fails.

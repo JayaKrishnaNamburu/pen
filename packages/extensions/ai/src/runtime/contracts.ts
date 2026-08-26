@@ -1,27 +1,4 @@
-export const AI_REFERENCE_ARCHITECTURE = {
-	production: {
-		mode: "Mode A",
-		driver: "native-model-adapter",
-		authority: "server-owned-headless-pen",
-	},
-	agents: {
-		mode: "skills",
-		driver: "external-agent",
-		authority: "ai-skills-lane",
-	},
-	demo: {
-		mode: "playground",
-		driver: "http-session-adapter",
-		authority: "demo-only",
-	},
-	research: {
-		mode: "review-or-branch",
-		driver: "isolated-lane",
-		authority: "evidence-gated",
-	},
-} as const;
-
-export const AI_ROUTE_LANES = [
+const AI_ROUTE_LANES = [
 	"selection-rewrite",
 	"cursor-context",
 	"tool-loop",
@@ -30,7 +7,7 @@ export const AI_ROUTE_LANES = [
 
 export type AIRouteLane = (typeof AI_ROUTE_LANES)[number];
 
-export const AI_MUTATION_MODES = [
+const AI_MUTATION_MODES = [
 	"ephemeral-preview",
 	"direct-stream",
 	"persistent-suggestions",
@@ -46,9 +23,9 @@ export type AIMutationMode = (typeof AI_MUTATION_MODES)[number];
  * immediately for hosts without one. Suggest mode and the review lane
  * always stage regardless of this preference.
  */
-export const AI_MUTATION_PREFERENCES = ["suggestions", "direct"] as const;
+const AI_MUTATION_PREFERENCES = ["suggestions", "direct"] as const;
 
-/** One of {@link AI_MUTATION_PREFERENCES}. */
+/** Host default: `"suggestions"` stages review, `"direct"` applies immediately. */
 export type AIMutationPreference = (typeof AI_MUTATION_PREFERENCES)[number];
 
 export function isAIMutationPreference(
@@ -75,7 +52,7 @@ export type PromptIntent =
 	| "question"
 	| "unknown";
 
-export const AI_CONTENT_FORMATS = [
+const AI_CONTENT_FORMATS = [
 	"text",
 	"markdown",
 ] as const;
@@ -88,7 +65,7 @@ export const AI_APPLY_STRATEGIES = [
 	/**
 	 * Durable document edits arrive as `edit_document` tool calls. Nothing is
 	 * parsed out of the assistant text stream
-	 * (`spec-better-ai/01-edit-channel.md` EC1). Streaming lanes still use
+	 * (`spec/packages/extensions/ai.md` EC1). Streaming lanes still use
 	 * `text-fast-apply` / `markdown-full-replace` for generation into a
 	 * target, which is not an edit plan.
 	 */
@@ -106,10 +83,6 @@ export const AI_STRUCTURED_LANES = [
 ] as const;
 
 export type AIStructuredLane = (typeof AI_STRUCTURED_LANES)[number];
-
-export const AI_PLANNER_MODES = ["text", "structured"] as const;
-
-export type AIPlannerMode = (typeof AI_PLANNER_MODES)[number];
 
 export const AI_EXECUTION_MODES = [
 	"direct-stream",
@@ -140,7 +113,7 @@ export const AI_TRANSPORT_KINDS = [
 
 export type AITransportKind = (typeof AI_TRANSPORT_KINDS)[number];
 
-export const AI_QUALITY_METRIC_IDS = [
+const AI_QUALITY_METRIC_IDS = [
 	"wrongLaneRate",
 	"staleContextRate",
 	"unnecessaryToolCallRate",

@@ -1,5 +1,5 @@
 {
-  "_comment": "SCH1 (spec-v2/07-dom-scheduling.md, Wave 3 step 3.4): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a site that cannot move onto GeometryReader. Each entry needs file, enclosing symbol, and a reason that names why this site cannot move. Remove an entry in the same PR that deletes or reschedules the last call in that symbol.",
+  "_comment": "SCH1 (spec/rules/dom.md, Wave 3 step 3.4): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a site that cannot move onto GeometryReader. Each entry needs file, enclosing symbol, and a reason that names why this site cannot move. Remove an entry in the same PR that deletes or reschedules the last call in that symbol.",
   "entries": [
     {
       "file": "packages/rendering/dom/src/field-editor/contenteditableDomHelpers.ts",

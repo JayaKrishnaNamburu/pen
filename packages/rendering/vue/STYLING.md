@@ -1,6 +1,6 @@
 # Styling (`@input/pen-vue`)
 
-This is the HOST6 styling contract for `@input/pen-vue` (`spec-v2/15-host-integration.md`).
+This is the HOST6 styling contract for `@input/pen-vue` (`spec/rules/host.md`).
 
 `@input/pen-vue` ships no stylesheet and injects none. An editor with no host CSS is functional: editable, caret visible, blocks in document order. The host owns taste — typography, spacing, colors, list markers, callout chrome, table chrome.
 

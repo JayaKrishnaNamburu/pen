@@ -1,6 +1,6 @@
 # AX3 gap: Vue slash / command menus
 
-`@input/pen-vue` has no slash-menu or command-menu primitives. AX3 (`spec-v2/13-accessibility.md`) cannot be applied here without inventing a menu. No Vue files under `src/` implement slash/command UI; the public surface is editor shell only (`PenEditor`, `PenContent`, `PenBlock`, `PenInlineContent`, `PenFieldEditor` and the matching composables).
+`@input/pen-vue` has no slash-menu or command-menu primitives. AX3 (`spec/rules/accessibility.md`) cannot be applied here without inventing a menu. No Vue files under `src/` implement slash/command UI; the public surface is editor shell only (`PenEditor`, `PenContent`, `PenBlock`, `PenInlineContent`, `PenFieldEditor` and the matching composables).
 
 ## Missing vs React (`@input/pen-react`)
 

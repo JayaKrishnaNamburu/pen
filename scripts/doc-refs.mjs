@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * DOC1 package/version gate and DOC2 sample typecheck
- * (spec-v2/17-documentation.md, Wave D steps D.1 / D.2 / D.3).
+ * (spec/rules/documentation.md, Wave D steps D.1 / D.2 / D.3).
  *
  * Checks markdown that adopters read (root README, CONTRIBUTING,
  * examples, per-package READMEs):

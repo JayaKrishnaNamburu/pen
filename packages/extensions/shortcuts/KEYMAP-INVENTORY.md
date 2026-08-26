@@ -1,9 +1,9 @@
 # @input/pen-shortcuts — Wave 4 named-command map
 
-Inventory for spec-v2 Wave 4 steps 4.3 (keymap) and 4.4 (beforeinput). Not a keymap rewrite. Wave 3/4 gates are not closed. Do not convert this package to `pen.keymap` facet providers here (Wave 1 owns the facet; 4.3 conversion happens when those gates close).
+Inventory for the built-in catalog inventory. Not a keymap rewrite. Wave 3/4 gates are not closed. Do not convert this package to `pen.keymap` facet providers here (Wave 1 owns the facet; 4.3 conversion happens when those gates close).
 
 Current bindings: `src/richTextShortcutsExtension.ts` (`buildKeyBindings`).
-Future names: `spec-v2/05-commands.md` catalog, K2 default keymap, and beforeinput table.
+Future names: `spec/rules/commands.md` catalog, K2 default keymap, and beforeinput table.
 
 ## Current key → future command
 
@@ -22,7 +22,7 @@ Host-replaced keys for bold / italic / underline stay `pen.toggleMark` (not extr
 
 ## Overlap with the core default keymap (K2)
 
-`spec-v2/05-commands.md` K2 lists `Mod-b/i/u` on the core default keymap (`core/src/commands/defaultKeymap.ts`, not written yet). This package already ships those three keys. 4.3 conversion must not register the same binding twice.
+`spec/rules/commands.md` K2 lists `Mod-b/i/u` on the core default keymap (`core/src/commands/defaultKeymap.ts`, not written yet). This package already ships those three keys. 4.3 conversion must not register the same binding twice.
 
 ## Step 4.4 (beforeinput)
 

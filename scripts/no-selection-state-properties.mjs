@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Wave 5.1 selection-helper conversion (spec-v2/waves/wave-05-selection.md).
+ * Selection-helper conversion (`spec/rules/selection.md`).
  *
  * Replaces the checkpoint `rg -n "\\.isCollapsed" packages --glob '!*.test.ts'`.
  * That command can never go empty without a false green: it matches the

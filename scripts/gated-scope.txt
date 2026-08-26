@@ -85,12 +85,12 @@
 #   C1–C4, O1–O5, S1 — no test name asserts the rule yet.
 #
 # Inventory scope (coverage:rules, 2026-08-21; derived 2026-08-24):
-#   Walks spec-v2 and spec-v3 when the directory exists. spec-v3
+#   Walks each spec root when the directory exists. Every root
 #   families are derived from definition lines, not EXTRA_PREFIXES
 #   (that hand list went blind to OP/OPB/INT). PROCESS_PREFIXES (WA)
-#   is the documented exclusion. A missing spec-v3 is skipped; zero
+#   is the documented exclusion. A missing root is skipped; zero
 #   collected IDs is `empty inventory` and exits 1. Previously
-#   spec-v2 only, prefixes DUR/COL/AIB/IOP/SCALE — GATE 1.14
+#   prefixes DUR/COL/AIB/IOP/SCALE — GATE 1.14
 #   (AN/AS claimed) was unsatisfiable.
 #
 # Nightly slot (vitest.nightly.ts, 2026-08-21):

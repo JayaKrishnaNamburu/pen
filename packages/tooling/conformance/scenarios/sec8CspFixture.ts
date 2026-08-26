@@ -1,5 +1,5 @@
 /**
- * SEC8 (`spec-v2/12-security.md`): production-shaped host page for the
+ * SEC8 (`spec/rules/security.md`): production-shaped host page for the
  * strict-CSP smoke. The live Vite harness cannot take this policy —
  * `@vitejs/plugin-react` injects an inline Refresh preamble.
  *

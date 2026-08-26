@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Clean-install fixture for `@input/pen-core` (spec-v2 Wave P step P.1).
+ * Clean-install fixture for `@input/pen-core` (the clean-install proof).
  *
  * A consumer who installs `@input/pen-core` alone must receive zero
  * extension / feature / renderer / preset packages. The production

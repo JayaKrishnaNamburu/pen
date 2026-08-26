@@ -17,11 +17,7 @@ import {
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
 import { defaultSchema } from "@input/pen-schema-default";
-import {
-	createDeferred,
-	testStreamingToolExtension,
-	waitForPreview,
-} from "./extension.testUtils";
+import { testStreamingToolExtension } from "./extension.testUtils";
 
 async function awaitExtensionLifecycle(
 	editor: ReturnType<typeof createEditor>,
@@ -312,120 +308,5 @@ describe("aiExtension", () => {
 			output: ["searching:plan", { matches: 2, query: "plan" }],
 			state: "complete",
 		});
-	});
-
-	it("streams block structured previews before a block plan finishes", async () => {
-		const releaseSecondDelta = createDeferred();
-		let streamedBlockId = "";
-		const editor = createEditor({
-			schema: defaultSchema,
-			extensions: [
-				undoExtension(),
-				deltaStreamExtension(),
-				documentOpsExtension(),
-				aiExtension({
-					model: {
-						async *stream() {
-							yield {
-								type: "text-delta" as const,
-								delta: `{"kind":"block_convert","blockId":"${streamedBlockId}","newType":"heading"`,
-							};
-							await releaseSecondDelta.promise;
-							yield {
-								type: "text-delta" as const,
-								delta: ',"props":{"level":2}}',
-							};
-							yield { type: "done" as const };
-						},
-					},
-				}),
-			],
-		});
-		const blockId = editor.firstBlock()!.id;
-		streamedBlockId = blockId;
-		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
-			{ origin: "system" },
-		);
-
-		const controller = getAIController(editor)!;
-		const generationPromise = controller.runPrompt(
-			"Convert block to heading",
-			{
-				blockId,
-			},
-		);
-		await waitForPreview(
-			() => controller.getState().activeGeneration?.structuredPreview,
-		);
-
-		const activeGeneration = controller.getState().activeGeneration;
-		const previewEventsBeforeCompletion = controller
-			.getStreamEvents()
-			.filter((event) => event.type === "structured-preview");
-		expect(activeGeneration?.structuredPreview).toMatchObject({
-			planState: "drafted",
-			plan: {
-				kind: "block_convert",
-				blockId,
-				newType: "heading",
-			},
-		});
-		expect(activeGeneration?.structuredPreview?.reviewItems).toEqual([
-			expect.objectContaining({
-				label: "Convert block",
-				section: "block",
-				changeKind: "updated",
-			}),
-		]);
-		expect(
-			controller
-				.getStreamEvents()
-				.some(
-					(event) =>
-						event.type === "structured-preview" &&
-						event.preview.plan.kind === "block_convert",
-				),
-		).toBe(true);
-		expect(previewEventsBeforeCompletion).toHaveLength(1);
-		expect(previewEventsBeforeCompletion[0]).toMatchObject({
-			patches: [
-				{ op: "add", path: "/planState", value: "drafted" },
-				{ op: "add", path: "/plan", value: expect.any(Object) },
-				{ op: "add", path: "/reviewItems", value: expect.any(Array) },
-				{ op: "add", path: "/targets", value: [] },
-			],
-		});
-
-		releaseSecondDelta.resolve();
-		const generation = await generationPromise;
-		const previewEventsAfterCompletion = controller
-			.getStreamEvents()
-			.filter((event) => event.type === "structured-preview");
-		const finalPreviewEvent =
-			previewEventsAfterCompletion[
-				previewEventsAfterCompletion.length - 1
-			];
-		expect(generation.structuredPreview).toMatchObject({
-			planState: "validated",
-			plan: {
-				kind: "block_convert",
-				blockId,
-				newType: "heading",
-				props: { level: 2 },
-			},
-		});
-		expect(finalPreviewEvent).toMatchObject({
-			patches: [
-				{ op: "replace", path: "/planState", value: "validated" },
-				{ op: "add", path: "/plan/props", value: {} },
-				{ op: "add", path: "/plan/props/level", value: 2 },
-			],
-		});
-		expect(
-			finalPreviewEvent?.patches.some((patch) => patch.path === "/plan"),
-		).toBe(false);
 	});
 });

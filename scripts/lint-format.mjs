@@ -56,8 +56,7 @@ export const FORMAT_PATHS = [
 	"playground/package.json",
 	"playground/README.md",
 	"spec/**/*.md",
-	"spec-v2/**/*.md",
-	"spec-v3/**/*.md",
+	"spec-v5/**/*.md",
 ];
 
 export function expandFormatPaths(repoRoot, paths = FORMAT_PATHS) {

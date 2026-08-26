@@ -43,7 +43,6 @@ import type { RequestRouterDecision } from "../runtime/router";
 import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
 import type {
 	AIInlineHistoryRestoreRequest,
-	AIInlineShortcutHistoryState,
 	AIInlineShortcutHistoryWaypoint,
 	GenerationExecutionContext,
 	GenerationTarget,

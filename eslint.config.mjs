@@ -7,7 +7,7 @@ import tseslint from "typescript-eslint";
 const require = createRequire(import.meta.url);
 const selectionTimers = require("./packages/tooling/eslint-plugin/src/rules/no-selection-timers-allowlist.json");
 
-// CH2 (spec-v2/09-reliability-testing.md): this config is the host the waves mount
+// CH2 (spec/rules/reliability.md): this config is the host the waves mount
 // their invariants on. It starts permissive on purpose — rules that would demand mass
 // edits are warnings until the wave that owns the cleanup lands, so the error set stays
 // meaningful and the gate stays green.
@@ -128,7 +128,7 @@ export default tseslint.config(
 		// LOC5: matching paths fold through foldAndNormalize. Identifier folds
 		// (MIME, attribute names, shortcut patterns, markdown keys, regex-captured
 		// tokens) and single-character display casing are allowlisted in the rule.
-		// Globs follow Wave L's package list (`spec-v2/waves/wave-l-localization.md`).
+		// Globs follow the localization package list (`spec/rules/localization.md`).
 		files: [
 			"packages/types/src/**/*.{ts,tsx}",
 			"packages/core/src/**/*.{ts,tsx}",

@@ -1,5 +1,5 @@
 {
-  "_comment": "CH9 (spec-v2/09-reliability-testing.md): quarantine for tests that fail on an unchanged tree. Each entry names the test, the tracked issue, and the wave that replaces it. The flake job reports these; it does not re-run them. Geometry and synthetic-beforeinput assertions belong to Wave 0 (conformance), not in-place jsdom stabilization.",
+  "_comment": "CH9 (spec/rules/reliability.md): quarantine for tests that fail on an unchanged tree. Each entry names the test, the tracked issue, and the wave that replaces it. The flake job reports these; it does not re-run them. Geometry and synthetic-beforeinput assertions belong to Wave 0 (conformance), not in-place jsdom stabilization.",
   "testTimeoutMs": 10000,
   "tests": []
 }

@@ -10,11 +10,11 @@ Work orders for the v5 unification train (`../05-phases.md` is the map). The pro
 - Deletion lists are explicit file paths where knowable, so `git log --diff-filter=D` can be checked against the wave after the fact (WA5 posture).
 - WA11 (subtract before you shape) is checked at PR granularity inside each wave: deletions land first.
 
-| Wave | File                          |
-| ---- | ----------------------------- |
-| 0    | `wave-0-evidence-and-net.md`  |
-| 1    | `wave-1-one-channel.md`       |
-| 2    | `wave-2-one-preview.md`       |
-| 3    | `wave-3-routing-and-loop.md`  |
-| 4    | `wave-4-field-editor-spine.md`|
-| 5    | `wave-5-hosts-and-release.md` |
+| Wave | File                           |
+| ---- | ------------------------------ |
+| 0    | `wave-0-evidence-and-net.md`   |
+| 1    | `wave-1-one-channel.md`        |
+| 2    | `wave-2-one-preview.md`        |
+| 3    | `wave-3-routing-and-loop.md`   |
+| 4    | `wave-4-field-editor-spine.md` |
+| 5    | `wave-5-hosts-and-release.md`  |

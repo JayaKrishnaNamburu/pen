@@ -1,5 +1,5 @@
 {
-  "_comment": "SCALE2 (spec-v2/22-scale-envelope.md, Wave F step F.2): JSON.stringify sites in packages/rendering and packages/core runtime src that produce a wire format, debug display, HOST4 clone, or Intl cache key — not a per-commit / per-render change signature. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes the last call in that symbol.",
+  "_comment": "SCALE2 (spec/rules/scale.md, Wave F step F.2): JSON.stringify sites in packages/rendering and packages/core runtime src that produce a wire format, debug display, HOST4 clone, or Intl cache key — not a per-commit / per-render change signature. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes the last call in that symbol.",
   "entries": [
     {
       "file": "packages/core/src/i18n/formatters.ts",

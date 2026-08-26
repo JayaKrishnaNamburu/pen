@@ -196,7 +196,7 @@ export function resolveLocalOperationContentFormat(
 	return defaultBlockFormat;
 }
 
-export function canUseLocalBlockTextOperation(
+function canUseLocalBlockTextOperation(
 	editor: Editor,
 	blockId: string,
 ): boolean {
@@ -275,7 +275,7 @@ export function canReuseBottomChatSessionOperation(
 	);
 }
 
-export function resolveResolvedEditTargetFromRequestedOperation(
+function resolveResolvedEditTargetFromRequestedOperation(
 	operation: AIRequestedOperation,
 ): ResolvedEditTarget | null {
 	if (
@@ -287,7 +287,7 @@ export function resolveResolvedEditTargetFromRequestedOperation(
 	return operation.target;
 }
 
-export function areResolvedEditTargetsEqual(
+function areResolvedEditTargetsEqual(
 	previousTarget: ResolvedEditTarget,
 	nextTarget: ResolvedEditTarget,
 ): boolean {
@@ -356,7 +356,7 @@ export function buildSessionExecutionPrompt(
 	].join("\n");
 }
 
-export function createRewriteSelectionOperation(
+function createRewriteSelectionOperation(
 	editor: Editor,
 	selection: TextSelection,
 	promptIntent: string,
@@ -387,7 +387,7 @@ export function createRewriteSelectionOperation(
 	};
 }
 
-export function createRewriteSelectionOperationFromResolvedTarget(
+function createRewriteSelectionOperationFromResolvedTarget(
 	editor: Editor,
 	target: ResolvedEditTarget,
 	promptIntent: string,
@@ -437,7 +437,7 @@ export function createRewriteSelectionOperationFromResolvedTarget(
 	};
 }
 
-export function createRewriteBlockOperation(
+function createRewriteBlockOperation(
 	editor: Editor,
 	blockId: string,
 	promptIntent: string,
@@ -462,7 +462,7 @@ export function createRewriteBlockOperation(
 	};
 }
 
-export function createContinueBlockOperation(
+function createContinueBlockOperation(
 	editor: Editor,
 	blockId: string,
 	promptIntent: string,
@@ -488,7 +488,7 @@ export function createContinueBlockOperation(
 	};
 }
 
-export function createDocumentTransformOperation(
+function createDocumentTransformOperation(
 	editor: Editor,
 	activeBlockId: string | null,
 	promptIntent: string,
@@ -561,7 +561,7 @@ export function resolveReplacementDeleteBlockIds(
 	return deleteBlockIds.length > 0 ? deleteBlockIds : [blockId];
 }
 
-export function createResolvedSelectionEditTarget(
+function createResolvedSelectionEditTarget(
 	editor: Editor,
 	selection: TextSelection,
 ): ResolvedEditTarget {
@@ -575,7 +575,7 @@ export function createResolvedSelectionEditTarget(
 	};
 }
 
-export function createResolvedScopedEditTarget(
+function createResolvedScopedEditTarget(
 	editor: Editor,
 	selection: TextSelection,
 	scope: ModelOperationScopedRangeTarget["scope"],
@@ -594,7 +594,7 @@ export function createResolvedScopedEditTarget(
 	};
 }
 
-export function createResolvedEditProposal(
+function createResolvedEditProposal(
 	promptIntent: string,
 	target: ResolvedEditTarget,
 ): ResolvedEditProposal {
@@ -604,7 +604,7 @@ export function createResolvedEditProposal(
 	};
 }
 
-export function resolveResolvedEditProposal(
+function resolveResolvedEditProposal(
 	editor: Editor,
 	session: AISession,
 	prompt: string,
@@ -747,7 +747,7 @@ export function resolveFullBlockTextSelection(
 	});
 }
 
-export function resolveDocumentBlockRangeSelection(
+function resolveDocumentBlockRangeSelection(
 	editor: Editor,
 	blockIds: readonly string[],
 ): TextSelection | null {
@@ -773,7 +773,7 @@ export function resolveDocumentBlockRangeSelection(
 	});
 }
 
-export function resolveDocumentTitleSelection(
+function resolveDocumentTitleSelection(
 	editor: Editor,
 	prompt: string,
 ): TextSelection | null {
@@ -794,7 +794,7 @@ export function resolveDocumentTitleSelection(
 		: null;
 }
 
-export function resolveDocumentParagraphSelection(
+function resolveDocumentParagraphSelection(
 	editor: Editor,
 	prompt: string,
 ): TextSelection | null {
@@ -823,7 +823,7 @@ export function resolveDocumentParagraphSelection(
 		: null;
 }
 
-export function parseParagraphReference(prompt: string): number | null {
+function parseParagraphReference(prompt: string): number | null {
 	const match = prompt.match(
 		/\b(?:(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)|(\d+)(?:st|nd|rd|th))\s+paragraph\b/i,
 	);
@@ -840,7 +840,7 @@ export function parseParagraphReference(prompt: string): number | null {
 		: null;
 }
 
-export function resolveWordOrdinal(word: string): number | null {
+function resolveWordOrdinal(word: string): number | null {
 	switch (word) {
 		case "first":
 			return 1;
@@ -946,7 +946,7 @@ export function resolveRequestedOperationConflict(
 	return null;
 }
 
-export function resolveContinueInsertionOffset(
+function resolveContinueInsertionOffset(
 	editor: Editor,
 	blockId: string,
 ): number {
@@ -961,7 +961,7 @@ export function resolveContinueInsertionOffset(
 	return resolveBlockInsertionOffset(editor, blockId);
 }
 
-export function createSelectionSignature(selection: TextSelection): string {
+function createSelectionSignature(selection: TextSelection): string {
 	return [
 		"text",
 		selection.anchor.blockId,
@@ -972,7 +972,7 @@ export function createSelectionSignature(selection: TextSelection): string {
 	].join(":");
 }
 
-export function resolveSessionSelectionTarget(
+function resolveSessionSelectionTarget(
 	editor: Editor,
 	session: AISession,
 ): TextSelection | null {
@@ -1129,7 +1129,7 @@ export function resolveAcceptedInlineSelectionTarget(
 	};
 }
 
-export function shouldCloseInlineSessionPrompt(session: AISession): boolean {
+function shouldCloseInlineSessionPrompt(session: AISession): boolean {
 	return (
 		session.surface === "inline-edit" && session.contextualPrompt != null
 	);

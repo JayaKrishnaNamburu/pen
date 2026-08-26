@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * S4 (`spec-v2/03-selection.md`): selection modules must not defer with
+ * S4 (`spec/rules/selection.md`): selection modules must not defer with
  * `requestAnimationFrame`, `setTimeout`, `setInterval`, or `setImmediate`.
  * A timer in this path has repeatedly been a missing attach or a wrong seam,
  * not an engine accommodation.
@@ -257,11 +257,11 @@ export const noSelectionTimers = {
 			},
 		],
 		messages: {
-			timer: "`{{kind}}` in `{{symbol}}` ({{file}}) is banned (S4). A timer here is evidence of a missing attach or a wrong seam, not an engine accommodation. Delete it or add an allowlist entry that names the retiring wave (spec-v2 03-selection S4).",
+			timer: "`{{kind}}` in `{{symbol}}` ({{file}}) is banned (S4). A timer here is evidence of a missing attach or a wrong seam, not an engine accommodation. Delete it or add an allowlist entry that names the retiring wave (S4).",
 			incompleteAllowlist:
-				"S4 allowlist entry is missing `{{field}}`. Every entry must name file, symbol, kind, and a reason (spec-v2 03-selection S4).",
+				"S4 allowlist entry is missing `{{field}}`. Every entry must name file, symbol, kind, and a reason (S4).",
 			unusedAllowlist:
-				"S4 allowlist entry for `{{symbol}}` `{{kind}}` in {{file}} was not consumed. Remove it in the same change that deleted the timer (spec-v2 03-selection S4).",
+				"S4 allowlist entry for `{{symbol}}` `{{kind}}` in {{file}} was not consumed. Remove it in the same change that deleted the timer (S4).",
 		},
 	},
 	create(context) {

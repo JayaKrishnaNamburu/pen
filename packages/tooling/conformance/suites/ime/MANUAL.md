@@ -15,7 +15,7 @@ The suite is more honest, not merely bigger. A prior
 Automation covers Chromium CDP compositions and replayed
 `compositionstart` / `update` / `end` traces. This matrix is the
 release-train check against real IMEs. Tick every box before a
-release cut (`spec-v2/09-reliability-testing.md`, IME suite).
+release cut (`spec/rules/reliability.md`, IME suite).
 
 Release-blocking:
 

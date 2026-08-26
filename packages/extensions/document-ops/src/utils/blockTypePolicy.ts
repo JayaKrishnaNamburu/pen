@@ -13,7 +13,7 @@ export function getAvailableToolBlockSchemas(editor: Editor): BlockSchema[] {
 /**
  * Non-throwing form: the refusal reason, or `null` when the type is usable.
  * Tools that return refusals to the model rather than throwing use this
- * (`spec-better-ai/01-edit-channel.md` EC5).
+ * (`spec/packages/extensions/ai.md` EC5).
  */
 export function checkToolCanUseBlockType(
 	editor: Editor,

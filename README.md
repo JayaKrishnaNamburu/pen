@@ -17,7 +17,7 @@ Pen is an MIT-licensed SDK. Packages are intended for the public npm registry.
 
 The first release train has not been published (every package is `0.0.1`). Until it is, `pnpm add @input/pen-*` 404s on the public registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts. The commands below are the post-publish install path.
 
-Versioning is `0.x`; v3 ships as 0.3. The policy lives in [`spec-v2/14-api-and-packaging.md`](spec-v2/14-api-and-packaging.md) (API7).
+Versioning is `0.x`; v3 ships as 0.3. The policy lives in [`spec/rules/api.md`](spec/rules/api.md) (API7).
 
 ```bash
 pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols

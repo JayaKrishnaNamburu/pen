@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API8 positioning gate (spec-v2/14-api-and-packaging.md, Wave P step P.7).
+ * API8 positioning gate (spec/rules/api.md).
  *
  * LICENSE.md is MIT, copyright Input B.V. Retired source-available /
  * commercial wording must stay in the license decision record. A future
@@ -8,7 +8,7 @@
  * README is a legal-accuracy failure, not a style one.
  *
  * Allowlist is specific files, never a directory: a package README
- * dropped under spec-v2/ must still fail.
+ * dropped under spec/ must still fail.
  *
  * Fails closed on a walker that finds nothing (glob typo / empty root).
  * Self-tests on every run so a checker that cannot fail is visible.
@@ -39,7 +39,7 @@ const IGNORE_DIR_NAMES = new Set([
  * as finding zero files.
  */
 const REQUIRED_FILES = ["LICENSE.md", "README.md", "CONTRIBUTING.md"];
-const REQUIRED_PREFIXES = ["spec/", "spec-v2/", "packages/"];
+const REQUIRED_PREFIXES = ["spec/", "packages/"];
 
 /**
  * Phrases from the retired source-available license and adjacent
@@ -66,14 +66,8 @@ const TERMS = [
  * is permitted here — not a waiver for current positioning claims.
  */
 const ALLOWLIST = {
-	"spec-v2/14-api-and-packaging.md":
+	"spec/rules/api.md":
 		"API8 living decision record: records the retired source-available terms and the MIT relicense",
-	"spec-v2/11-audit.md":
-		"F17 audit finding: the OSI-incompatible-vs-commercial-license evidence that API8 resolved",
-	"spec-v2/waves/wave-p-api-packaging.md":
-		"Wave P work item: names the retired wording this gate confines",
-	"spec-v2/10-migration-waves.md":
-		"Wave plan deliverable line: source-available wording and the enforcement clause retired",
 	"CONTRIBUTING.md":
 		"API8: CLA inbound/outbound asymmetry and the retired enforcement-clause decision belong where contributors read them",
 };
@@ -246,7 +240,7 @@ export function runSelfTest() {
 		"self-test: stacked retired wording in a package README must fail",
 	);
 
-	const allowedHits = extractHits(sourceAvailable, "spec-v2/14-api-and-packaging.md");
+	const allowedHits = extractHits(sourceAvailable, "spec/rules/api.md");
 	const allowedEval = evaluateHits(allowedHits);
 	assert(
 		allowedEval.unexpected.length === 0 && allowedEval.allowed.length === 1,

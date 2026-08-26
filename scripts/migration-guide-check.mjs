@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Host migration guide truth (spec-v2/MIGRATION.md).
+ * Host migration guide truth (spec/MIGRATION.md).
  *
  * Adopters read this file to learn what broke. Nothing else checks it.
  * This gate covers the subset that is mechanically true or false:
@@ -43,7 +43,7 @@ import { parseApiReport, uniquePublicSymbols } from "./api-docs-coverage.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
-const GUIDE_REL = "spec-v2/MIGRATION.md";
+const GUIDE_REL = "spec/MIGRATION.md";
 const ORIGIN_SOURCE_REL = "packages/types/src/types/ops.ts";
 const YJS_ADAPTER = "@input/pen-crdt-yjs";
 const MIN_EXPORT_CLAIMS = 8;
@@ -253,14 +253,11 @@ export function extractPathClaims(text) {
 }
 
 export function resolveGuidePath(raw, repoRoot) {
-	if (raw.startsWith("waves/")) {
-		return path.join(repoRoot, "spec-v2", raw);
-	}
+	// The guide cites `core/src/...` without the `packages/` prefix
+	// because that is how a reader greps it. Everything else is a
+	// repo-root-relative path and resolves as written.
 	if (raw.startsWith("core/src/")) {
 		return path.join(repoRoot, "packages", raw);
-	}
-	if (/^\d{2}-/.test(raw)) {
-		return path.join(repoRoot, "spec-v2", raw);
 	}
 	return path.join(repoRoot, raw);
 }
@@ -809,10 +806,10 @@ export function runSelfTests() {
 	);
 
 	assert(
-		resolveGuidePath("waves/wave-01-facets.md", "/repo").endsWith(
-			"spec-v2/waves/wave-01-facets.md",
+		resolveGuidePath("spec/rules/api.md", "/repo").endsWith(
+			"spec/rules/api.md",
 		),
-		"self-test: waves/ resolves under spec-v2",
+		"self-test: a repo-root-relative spec path resolves as written",
 	);
 	assert(
 		resolveGuidePath("core/src/toZod.ts", "/repo").endsWith(

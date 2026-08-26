@@ -10,7 +10,7 @@ export function ExtensionsPage() {
 				delta-stream, undo, shortcuts, and{" "}
 				<code>createDefaultSchema()</code> unless those options are
 				turned off. Facet rules live in{" "}
-				<code>spec-v2/04-facets.md</code>.
+				<code>spec/rules/facets.md</code>.
 			</p>
 
 			<h2>Facets</h2>

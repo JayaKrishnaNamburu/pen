@@ -123,7 +123,7 @@ jobs:
     # firefox is held on ONE real defect, not on flake: after
     # editor.selectTextRange(0, 30) the authority carries the range and the
     # projector never writes it to window.getSelection(). That is an S1/S2 miss
-    # (see spec-v2/03-selection.md), not the §4.1 gesture rule — an untrusted
+    # (see spec/rules/selection.md), not the §4.1 gesture rule — an untrusted
     # addRange is correctly rejected, but a host calling the authority API is
     # not a proposal. Promote firefox when that projection lands; do not
     # promote it by widening a tolerance or skipping the spec.

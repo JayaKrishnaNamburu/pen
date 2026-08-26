@@ -1,6 +1,6 @@
 # v5 Field Editors: One Spine (FE)
 
-Status: adopted 2026-08-26. `FE` rules are normative. They govern the editor areas of `@input/pen-dom`: the field-editor backends (EditContext, contenteditable, expanded contenteditable), gestures, frame scheduling, and table-cell editing. Selection semantics stay owned by `spec-v2/03-selection.md` (S1–S6) and the v3 anchor documents; v4 `05-structure.md` CS5 (selection I/O consolidation) and CS6 (the sessionReconciler raf move) are prior tranches of the same debt this document finishes. FE changes no user-visible behavior; the conformance suites are the net for every rule here.
+Status: adopted 2026-08-26. `FE` rules are normative. They govern the editor areas of `@input/pen-dom`: the field-editor backends (EditContext, contenteditable, expanded contenteditable), gestures, frame scheduling, and table-cell editing. Selection semantics stay owned by `spec/rules/selection.md` (S1–S6) and `spec/rules/anchors.md`; `spec/rules/api.md` CS5 (selection I/O consolidation) and CS6 (the sessionReconciler rAF move) are prior tranches of the same debt this document finishes. FE changes no user-visible behavior; the conformance suites are the net for every rule here.
 
 ## 1. The Spine
 

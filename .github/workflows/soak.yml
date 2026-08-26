@@ -1,5 +1,5 @@
 # SCALE4 nightly soak (F.4). Heap during the session is a trend, not a gate.
-# spec-v2/22-scale-envelope.md SCALE4; spec-v2/09-reliability-testing.md CH8.
+# spec/rules/scale.md SCALE4; spec/rules/reliability.md CH8.
 name: Soak
 
 on:

@@ -12,7 +12,7 @@ import { createHeadlessEditor } from "../index";
 import { defaultSchema } from "./fixtures/testSchema";
 
 /**
- * ChangeSummary v3 own fields (`spec-v3/02-observation-and-intent.md` §1).
+ * ChangeSummary v3 own fields (`spec/rules/observation.md` §1).
  * Listed as a sorted array so the assertion is the exact set, both directions.
  */
 const SECTION_1_SUMMARY_KEYS = [

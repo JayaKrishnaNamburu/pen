@@ -10,7 +10,7 @@ function isDocumentObject(node) {
 }
 
 /**
- * SEC2 (`spec-v2/12-security.md`): the document is untrusted input forever, so no
+ * SEC2 (`spec/rules/security.md`): the document is untrusted input forever, so no
  * library code may turn a string into markup. Rendering builds DOM through
  * `createElement` / `textContent` / attribute setters instead.
  *
@@ -27,11 +27,11 @@ export const noHtmlInjectionSinks = {
 		schema: [],
 		messages: {
 			propertyAssignment:
-				"Assigning `{{name}}` injects markup. Build DOM with createElement/textContent (spec-v2 SEC2).",
-			method: "`{{name}}` parses a string into live DOM. Build DOM instead (spec-v2 SEC2).",
-			documentWrite: "`document.{{name}}` injects markup. Build DOM instead (spec-v2 SEC2).",
+				"Assigning `{{name}}` injects markup. Build DOM with createElement/textContent (SEC2).",
+			method: "`{{name}}` parses a string into live DOM. Build DOM instead (SEC2).",
+			documentWrite: "`document.{{name}}` injects markup. Build DOM instead (SEC2).",
 			jsxAttribute:
-				"`dangerouslySetInnerHTML` injects markup. Render children instead (spec-v2 SEC2).",
+				"`dangerouslySetInnerHTML` injects markup. Render children instead (SEC2).",
 		},
 	},
 	create(context) {

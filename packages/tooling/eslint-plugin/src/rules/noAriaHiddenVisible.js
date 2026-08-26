@@ -56,7 +56,7 @@ function isSanctioned(sourceCode, node) {
 }
 
 /**
- * AX4 / AX7 (`spec-v2/13-accessibility.md`): `aria-hidden` is banned on
+ * AX4 / AX7 (`spec/rules/accessibility.md`): `aria-hidden` is banned on
  * visible content in rendering packages. Overlay chrome (AX7) and the focus
  * sink are the sanctioned exceptions — mark them with a comment naming AX7,
  * "focus sink", or "Justified".
@@ -72,7 +72,7 @@ export const noAriaHiddenVisible = {
 		schema: [],
 		messages: {
 			hidden:
-				"`aria-hidden` hides visible content. Keep it for AX7 overlays or the focus sink, and name that reason in an adjacent comment (spec-v2 AX4).",
+				"`aria-hidden` hides visible content. Keep it for AX7 overlays or the focus sink, and name that reason in an adjacent comment (AX4).",
 		},
 	},
 	create(context) {

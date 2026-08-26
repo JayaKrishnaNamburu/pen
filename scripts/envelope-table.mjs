@@ -52,7 +52,7 @@ ${rungRows.join("\n")}
 
 ## Past the ceiling
 
-Past these sizes, per-commit decoration collection and full-document render degrade first — Pen does not virtualize (\`spec-v2/07-dom-scheduling.md\`). Hosts that need larger documents window blocks themselves (\`${metadata.virtualization}\`, SCALE5).
+Past these sizes, per-commit decoration collection and full-document render degrade first — Pen does not virtualize (\`spec/rules/dom.md\`). Hosts that need larger documents window blocks themselves (\`${metadata.virtualization}\`, SCALE5).
 ${renderNotes(metadata.notes)}`;
 }
 

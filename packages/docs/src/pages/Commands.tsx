@@ -10,7 +10,7 @@ export function CommandsPage() {
 				Contracts are <code>Command</code>, <code>CommandHandler</code>
 				, and <code>CommandHandlerProvider</code> on{" "}
 				<code>@input/pen-types</code>. The design record is{" "}
-				<code>spec-v2/05-commands.md</code>.
+				<code>spec/rules/commands.md</code>.
 			</p>
 			<p>
 				<code>Editor</code> has no <code>dispatch</code> or{" "}

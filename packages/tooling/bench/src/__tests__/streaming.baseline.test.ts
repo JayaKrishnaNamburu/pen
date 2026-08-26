@@ -46,7 +46,7 @@ describe("streaming drift-report baseline", () => {
 		const baseline = JSON.parse(raw) as StreamingBaseline;
 
 		expect(baseline.ruleId).toBe("WAVE02-STREAMING");
-		expect(baseline.spec).toBe("spec-v2/waves/wave-02-commit-pipeline.md");
+		expect(baseline.spec).toBe("spec/rules/pipeline.md");
 		expect(baseline.kind).toBe("drift-report");
 		expect(baseline.isV1Baseline).toBe(false);
 		expect(baseline.comparisonTo).toMatch(/not one/i);

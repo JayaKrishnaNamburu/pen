@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * F22 pin (spec-v2/11-audit.md).
+ * F22 pin (dead-binding audit finding).
  *
  * Wave H ticked F22 by wiring the streaming accumulators and deleting
  * `hasWarnedAboutWithoutOption`. The lint host that found them

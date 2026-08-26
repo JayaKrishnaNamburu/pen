@@ -8,7 +8,7 @@ export function SecurityPage() {
 				sanitization. The load-bearing boundary is render-time{" "}
 				<code>urlPolicy</code> (SEC1), not the HTML sanitizer. The host
 				owns who may write. The posture is{" "}
-				<code>spec-v2/12-security.md</code>.
+				<code>spec/rules/security.md</code>.
 			</p>
 			<p>
 				Disclosure, supported versions, and the 90-day coordinated

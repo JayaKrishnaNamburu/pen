@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Wave 0 gate runner. Parses `- GATE` lines from spec-v3/waves/*.md,
- * prints the population, and executes what can be checked. An absent
- * spec-v3 tree or a wave file with zero gates is a failure — never a
- * pass over an empty set.
+ * Wave gate runner. Parses `- GATE` lines from the executing train's
+ * `waves/*.md`, prints the population, and executes what can be
+ * checked. An absent wave directory or a wave file with zero gates is
+ * a failure — never a pass over an empty set. `--waves-dir` points the
+ * runner at a different train.
  *
  * `--scope-lint` classifies without executing and fails when a command
  * is structurally unable to fail: vitest `-t` / Node `--test-name-pattern`
@@ -24,8 +25,11 @@ const GATE_LINE_RE = /^- GATE (\d+\.\d+) \[(\w+)\]:\s*(.+)$/;
 const EXPECT_LINE_RE = /^\s+expect:\s+(.+)$/;
 const EXIT_EXPECT_RE = /\bexit\s+(\d+)\b/;
 const WAVE_FILE_RE = /^wave-.*\.md$/i;
+// The executing train. Retargeting a train is a one-line edit here;
+// any other train is reachable with `--waves-dir`.
+export const DEFAULT_WAVES_DIR_REL = "spec-v5";
 
-export const CANNOT_CHECK_ABSENT = "cannot check: spec-v3/waves is absent";
+export const CANNOT_CHECK_ABSENT = "cannot check: wave directory is absent";
 export const CANNOT_CHECK_EMPTY_DIR = "cannot check: wave directory matched 0 files";
 export const CANNOT_CHECK_ZERO_GATES = "cannot check: wave file yielded 0 gates";
 export const CANNOT_CHECK_CYCLE = "cannot check: gate cycle";
@@ -66,7 +70,7 @@ export function detectGateCycle(files, inheritedStack) {
 
 export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 	const files = [];
-	let wavesDir = path.join(repoRoot, "spec-v3", "waves");
+	let wavesDir = path.join(repoRoot, DEFAULT_WAVES_DIR_REL, "waves");
 	let preflight = false;
 	let selfTest = false;
 	let scopeLint = false;
@@ -255,7 +259,7 @@ export function classifyGate(gate, repoRoot, packages) {
 		}
 	}
 
-	if (/\bspec-v3-gates\.mjs\s+--count\b/.test(command) || /\bv3-gates\.mjs\s+--count\b/.test(command)) {
+	if (/\bv3-gates\.mjs\s+--count\b/.test(command)) {
 		return {
 			status: "cannot-run",
 			reason: "runner has no --count flag",

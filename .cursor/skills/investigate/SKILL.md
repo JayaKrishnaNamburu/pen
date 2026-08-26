@@ -15,7 +15,7 @@ Read the relevant repo entry points and rules:
 
 - `AGENTS.md`
 - `.cursor/rules/*.mdc` that match the touched area
-- the matching `spec/` and `spec-v2/` documents (selection bugs → `spec-v2/03-selection.md`, pipeline bugs → `spec-v2/06-commit-pipeline.md`, and so on)
+- the matching `spec/` documents (selection bugs → `spec/rules/selection.md`, pipeline bugs → `spec/rules/pipeline.md`, and so on)
 
 Then frame the issue:
 
@@ -56,7 +56,7 @@ Pen bugs usually live on one of these paths — name which one and walk it end t
 - remote: Yjs update → adapter events → extension observers → reconcile → selection restore
 - streaming: protocol part → delta-stream target → Y.Text writes → decorations/awareness
 
-For each relevant layer, identify: owner, input, output, boundary or contract, likely failure mode, current evidence. Check whether a `spec-v2` rule already defines the intended behavior — a bug is often a rule violation with a name.
+For each relevant layer, identify: owner, input, output, boundary or contract, likely failure mode, current evidence. Check whether a `spec/rules/` rule already defines the intended behavior — a bug is often a rule violation with a name.
 
 ## Hypotheses
 
@@ -97,7 +97,7 @@ Before fixing, report:
 
 - fixing the first plausible cause
 - patching the DOM layer for a bug whose owner is core (or vice versa)
-- adding a timer, retry, or suppression flag to make a race disappear (see `spec-v2/03-selection.md` S4)
+- adding a timer, retry, or suppression flag to make a race disappear (see `spec/rules/selection.md` S4)
 - inspecting only the package where the symptom appears
 - ignoring recent commits or local changes
 - treating typecheck as behavioral proof

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API7 manifest pin / artifact check (spec-v2/14-api-and-packaging.md, Wave P step P.8).
+ * API7 manifest pin / artifact check (spec/rules/api.md, Wave P step P.8).
  *
  * Reports, on published packages:
  *   - workspace:* vs workspace:^ in dependencies and peerDependencies

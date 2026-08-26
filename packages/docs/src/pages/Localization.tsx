@@ -60,7 +60,7 @@ export function LocalizationPage() {
 				Pen is translatable. It does not load translation files,
 				negotiate locales, or depend on an i18n framework. Docs stay
 				in English. Hosts pass a catalog. The product rule is{" "}
-				<code>spec-v2/16-localization.md</code>.
+				<code>spec/rules/localization.md</code>.
 			</p>
 
 			<h2>Locale and messages</h2>

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API4 lint (spec-v2/14-api-and-packaging.md, Wave P step P.4).
+ * API4 lint (spec/rules/api.md, Wave P step P.4).
  *
  * Greps @input/pen-* import specifiers in packages, examples, and playground.
  * A specifier is a hit when it uses a /src/ or /dist/ escape hatch, or when

@@ -228,7 +228,7 @@ function isSafeBinding(id, context, seen) {
 }
 
 /**
- * SEC5 (`spec-v2/12-security.md`): exporters and schema `toHTML` serializers
+ * SEC5 (`spec/rules/security.md`): exporters and schema `toHTML` serializers
  * must not concatenate unescaped document content into markup. Interpolations
  * go through an escaping helper, are already-serialized inner HTML, or are
  * named in an adjacent SEC5 comment (clamped enums, encoded payloads).
@@ -244,7 +244,7 @@ export const noUnescapedMarkupConcat = {
 		schema: [],
 		messages: {
 			unescaped:
-				"Unescaped value interpolated into markup. Escape it, use already-serialized content, or name SEC5 in a comment (spec-v2 SEC5).",
+				"Unescaped value interpolated into markup. Escape it, use already-serialized content, or name SEC5 in a comment (SEC5).",
 		},
 	},
 	create(context) {

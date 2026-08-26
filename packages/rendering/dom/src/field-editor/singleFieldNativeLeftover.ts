@@ -6,7 +6,7 @@ import type { SelectionState } from "@input/pen-types";
  * the engine reporting its own limit, not a user intent. Two paths produce it:
  *
  * - Document select-all. Firefox and WebKit confine it to the active field.
- *   Keyboard is not a gesture window (spec-v2/03-selection.md §4.2), so the
+ *   Keyboard is not a gesture window (spec/rules/selection.md §4.2), so the
  *   leftover must not write, and P2 must not run either: projecting the
  *   multi-block range makes the engine confine it again.
  * - A pointer drag whose far end is a structural block with no text position,

@@ -1,5 +1,5 @@
 /**
- * SCALE1 (`spec-v2/22-scale-envelope.md`): measurement points for the
+ * SCALE1 (`spec/rules/scale.md`): measurement points for the
  * published envelope axes. The generated table is
  * `packages/tooling/bench/ENVELOPE.md`, rendered from
  * `baselines/envelope.json` plus the fixture audit.

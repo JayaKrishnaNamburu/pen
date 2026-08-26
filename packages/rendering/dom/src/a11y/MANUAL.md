@@ -1,6 +1,6 @@
 # AX8 assistive-technology matrix
 
-Screen-reader behavior cannot be fully automated. This checklist is the release matrix in `spec-v2/13-accessibility.md` AX8 (extends the IME matrix in `spec-v2/09-reliability-testing.md`).
+Screen-reader behavior cannot be fully automated. This checklist is the release matrix in `spec/rules/accessibility.md` AX8 (extends the IME matrix in `spec/rules/reliability.md`).
 
 **Status: stub. Unexecuted.** Every matrix row is incomplete. No VoiceOver, NVDA, TalkBack, or JAWS session has been recorded. A release-train cut requires the VoiceOver and NVDA rows completed; TalkBack is in the matrix; JAWS is informational only.
 

@@ -17,14 +17,14 @@ Ordering inside the AI arm is load-bearing: the XML edit channel goes first (wav
 
 ## The Waves
 
-| Wave | Name                  | Rules discharged                       | Size | Packages touched                                             |
-| ---- | --------------------- | -------------------------------------- | ---- | ------------------------------------------------------------ |
-| 0    | Evidence and net      | none (baselines, registry, map)        | S    | `spec/`, `scripts/`, evidence only                           |
-| 1    | One channel           | UC1, UC2 (partial UC9)                 | L    | `pen-ai`, presets, playground, examples, docs                 |
-| 2    | One preview           | RS1–RS6                                | M    | `pen-ai`, `pen-dom` (styles), playground, binding docs        |
-| 3    | Routing and loop      | UC3–UC8, UC9 (release 0.5)             | L    | `pen-ai`, document-ops, types (if vocab exports move)         |
-| 4    | Field-editor spine    | FE1–FE5, FE7, FE8                      | L    | `pen-dom`, conformance                                        |
-| 5    | Hosts and release     | HB1–HB7, FE6 (release 0.6)             | M    | docs, examples, presets, transports, bindings, conformance    |
+| Wave | Name               | Rules discharged                | Size | Packages touched                                           |
+| ---- | ------------------ | ------------------------------- | ---- | ---------------------------------------------------------- |
+| 0    | Evidence and net   | none (baselines, registry, map) | S    | `spec/`, `scripts/`, evidence only                         |
+| 1    | One channel        | UC1, UC2 (partial UC9)          | L    | `pen-ai`, presets, playground, examples, docs              |
+| 2    | One preview        | RS1–RS6                         | M    | `pen-ai`, `pen-dom` (styles), playground, binding docs     |
+| 3    | Routing and loop   | UC3–UC8, UC9 (release 0.5)      | L    | `pen-ai`, document-ops, types (if vocab exports move)      |
+| 4    | Field-editor spine | FE1–FE5, FE7, FE8               | L    | `pen-dom`, conformance                                     |
+| 5    | Hosts and release  | HB1–HB7, FE6 (release 0.6)      | M    | docs, examples, presets, transports, bindings, conformance |
 
 ## Releases
 

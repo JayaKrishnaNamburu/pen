@@ -25,7 +25,7 @@ export const workingSetMethods = {
 			 * commit. Text alone does not imply one: on the tool channel the
 			 * text is the model talking and the edit arrives as a tool call,
 			 * which applies directly and leaves no receipt for this path to
-			 * describe (`spec-better-ai/01-edit-channel.md` EC1).
+			 * describe (`spec/packages/extensions/ai.md` EC1).
 			 */
 			committedText: boolean;
 			suggestionIds: readonly string[];

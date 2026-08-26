@@ -107,7 +107,7 @@ export function serializeBlockSuggestionMeta(
 	};
 }
 
-export function parseBlockSuggestionMeta(
+function parseBlockSuggestionMeta(
 	meta: unknown,
 ): BlockSuggestionMeta | null {
 	if (!meta || typeof meta !== "object") return null;

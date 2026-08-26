@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API1 dependency DAG check (spec-v2/14-api-and-packaging.md, Wave P step P.1).
+ * API1 dependency DAG check (spec/rules/api.md, Wave P step P.1).
  *
  * Target install DAG (arrow means "depends on"):
  *   types ← crdt-yjs ← core ← {extensions, shared, schema, transports}

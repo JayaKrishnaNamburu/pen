@@ -1,5 +1,5 @@
 export const PG1_RULE_ID = "PG1";
-export const PG1_SPEC = "spec-v3/01-anchors.md";
+export const PG1_SPEC = "spec/rules/anchors.md";
 export const PG1_SCHEMA_VERSION = 1;
 export const PG1_BASELINE_FILENAME = "v3-anchor-budget.chromium.json";
 

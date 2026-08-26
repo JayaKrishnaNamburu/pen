@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"ruleId": "PG1",
-	"spec": "spec-v3/01-anchors.md",
+	"spec": "spec/rules/anchors.md",
 	"recordedAt": "2026-08-24T09:43:20.329Z",
 	"caveat": "PG1 names Chromium and absolute µs/ms budgets. Those clocks are machine-dependent (CH8 / SCALE3) and are record-only here. The gate is counts: encode sizes for clientID 0, mint/resolve cardinalities, and the cell cohort. 4–6 byte encodings occur for clientID 0 ONLY. liveCount is a mint-ever counter, not a currently-held count.",
 	"fixture": {

@@ -1,5 +1,3 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { documentOpsExtension } from "@input/pen-document-ops";
@@ -25,8 +23,8 @@ import {
 } from "./fixtures/editChannelBenchDoubles";
 
 /**
- * GATE 0.14 harness, now running the remaining `edit_document` channel.
- * Spec: `spec-better-ai/waves/wave-0-prototype.md` Step 0.7.
+ * Corpus harness for the `edit_document` channel.
+ * Spec: `spec/packages/extensions/ai.md` (EC rules).
  */
 
 export type BenchChannel = "tool";
@@ -41,12 +39,6 @@ export interface BenchRow extends EditChannelCorpusMetrics {
 	documentChanged: boolean;
 	postconditionReason: string | null;
 	skipReason?: string;
-}
-
-export interface BenchReport {
-	generatedAt: string;
-	mutationPreference: "direct";
-	rows: BenchRow[];
 }
 
 const CHANNELS: readonly BenchChannel[] = ["tool"];
@@ -275,15 +267,6 @@ async function runOnce(options: {
 	return row;
 }
 
-function writeReportIfRequested(report: BenchReport): void {
-	const outPath = process.env.EDIT_CHANNEL_BENCH_OUT;
-	if (!outPath) {
-		return;
-	}
-	mkdirSync(path.dirname(outPath), { recursive: true });
-	writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
-}
-
 describe("edit channel corpus bench (GATE 0.14)", () => {
 	it(
 		"runs the tool channel on the full corpus plus the off-contract control",
@@ -314,13 +297,6 @@ describe("edit channel corpus bench (GATE 0.14)", () => {
 			);
 		}
 
-		const report: BenchReport = {
-			generatedAt: new Date().toISOString(),
-			mutationPreference: "direct",
-			rows,
-		};
-		writeReportIfRequested(report);
-
 		const toolCorpus = rows.filter(
 			(row) => row.channel === "tool" && row.promptId !== "off-contract",
 		);
@@ -336,10 +312,6 @@ describe("edit channel corpus bench (GATE 0.14)", () => {
 		)!;
 		expect(toolControl.documentChanged).toBe(false);
 		expect(toolControl.wrongEdit).toBe(false);
-
-		if (process.env.EDIT_CHANNEL_BENCH_OUT) {
-			expect(existsSync(process.env.EDIT_CHANNEL_BENCH_OUT)).toBe(true);
-		}
 		},
 	);
 });

@@ -1,5 +1,5 @@
 /**
- * Stream buffer/flush client (ST1–ST4, `spec-v2/06-commit-pipeline.md`).
+ * Stream buffer/flush client (ST1–ST4, `spec/rules/pipeline.md`).
  * `editor.openTextStream` wires this to apply, the write head, defer, and undo.
  */
 

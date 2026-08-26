@@ -11,7 +11,7 @@ import { deltaStreamExtension } from "../stream";
  * Agent-chat edits through `edit_document`. These run the whole chain the
  * playground runs — router lane, tool grant, agentic loop, tool handler,
  * apply — so a durable edit is proven end to end rather than only at the
- * handler (`spec-better-ai/01-edit-channel.md` EC1).
+ * handler (`spec/packages/extensions/ai.md` EC1).
  */
 
 const BLOCK_ANNOTATION_PATTERN = /<!-- block:(\S+) (\S+) -->/g;
@@ -247,7 +247,7 @@ describe("agent chat edits through the edit_document channel", () => {
  * This is the case the channel has to survive: the model ignores the tool and
  * answers with content instead. Whatever it says, the document must not move,
  * because on this channel text is conversation and the edit is a tool call
- * (`spec-better-ai/01-edit-channel.md` EC1, EC6).
+ * (`spec/packages/extensions/ai.md` EC1, EC6).
  */
 function talkingModel(text: string): ModelAdapter {
 	return {
@@ -311,7 +311,7 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 		editor.destroy();
 	});
 
-	// The probe named in `spec-better-ai/01-edit-channel.md` EC1: a well-formed
+	// The probe named in `spec/packages/extensions/ai.md` EC1: a well-formed
 	// payload for the *other* channel is still just text here. Unlike the
 	// markdown probe above, this one also passed before the guard existed — the
 	// markdown normalizer strips the wrapper and leaves nothing to insert — so it

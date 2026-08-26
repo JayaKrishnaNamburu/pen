@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SEC5 red-proof (spec-v4/02-instruments.md GA3, wave-1 GATE 1.4).
+ * SEC5 red-proof (spec/rules/reliability.md GA3, wave-1 GATE 1.4).
  *
  * Seeds a markup template literal with an unescaped interpolation inside
  * the retargeted rule's population and asserts eslint reports

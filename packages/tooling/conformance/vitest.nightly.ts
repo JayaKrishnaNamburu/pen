@@ -13,7 +13,7 @@ function posixGlob(pattern: string): string[] {
 }
 
 // Explicit include, pinned against the workspace `*.properties.test.ts` set
-// (spec-v2/09-reliability-testing.md: pin the list against the source).
+// (spec/rules/reliability.md: pin the list against the source).
 // Each file must honour PEN_FUZZ_NIGHTLY, PEN_FUZZ_SEED (incl. hyphenated
 // nightly seeds), and PEN_FUZZ_OP_COUNT. A new properties file fails this
 // config at load until it is added here *and* given that plumbing.

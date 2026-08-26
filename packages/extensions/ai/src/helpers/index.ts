@@ -1,6 +1,72 @@
-export * from "./types";
-export * from "./selection";
-export * from "./session";
-export * from "./equality";
-export * from "./operations";
-export * from "./aiApply";
+export {
+	AI_UNDO_HISTORY_METADATA_KEY,
+	createAIStreamEvent,
+	EMPTY_TOOL_RUNTIME,
+	isLocalRequestedOperation,
+	MAX_STREAM_EVENTS,
+	readModelId,
+	resolveActiveBlockId,
+	resolveGenerationRequestMode,
+	resolveOrderedReviewItems,
+	resolvePromptTarget,
+	resolveSessionAnchor,
+	resolveSessionSelectionSnapshot,
+	sortReviewItemsForRemoval,
+	supportsStructuredIntent,
+} from "./types";
+export type {
+	AIInlineHistoryRestoreRequest,
+	AIInlineShortcutHistoryWaypoint,
+	GenerationExecutionContext,
+	GenerationTarget,
+} from "./types";
+export {
+	buildSelectionReplacementOps,
+	resolveBlockInsertionOffset,
+	resolveSelectionText,
+	shouldReplaceEmptyMarkdownTarget,
+	shouldTrimLeadingBlankBlockGenerationText,
+	trimLeadingBlankBlockGenerationText,
+} from "./selection";
+export {
+	cloneInlineHistorySessions,
+	createInlineHistorySnapshot,
+	resolveContextualPromptAnchor,
+	resolveContextualPromptState,
+	resolveSessionTarget,
+} from "./session";
+export {
+	appendUniqueString,
+	areAIControllerStatesEqual,
+	areInlineHistorySnapshotsEqual,
+	areInlineShortcutHistoryStatesEqual,
+	areSessionsEqual,
+	areStringArraysEqual,
+	areStructuredValuesEqual,
+	areSuggestionsEqual,
+	didInlineHistoryCheckpointChange,
+	resolveInlineShortcutHistoryState,
+	sessionSelectionMatches,
+	sessionTargetMatches,
+	shouldReplaceInlineShortcutWaypointRepresentative,
+} from "./equality";
+export {
+	accumulateSessionFastApplyMetrics,
+	buildSessionExecutionPrompt,
+	canReuseBottomChatSessionOperation,
+	closeInlineSessionPrompt,
+	createDefaultSessionFastApplyMetrics,
+	resolveAcceptedInlineSelectionTarget,
+	resolveBlockIdForRequestedOperation,
+	resolveFullBlockTextSelection,
+	resolveLiveInlineSelectionTarget,
+	resolveLocalOperationContentFormat,
+	resolvePendingInlineSelectionTarget,
+	resolvePreviousGeneratedBlockIds,
+	resolveReplacementDeleteBlockIds,
+	resolveRequestedOperationConflict,
+	resolveRequestedOperationForSession,
+	resolveSelectionForRequestedOperation,
+	shouldReplacePreviousGeneratedBlocks,
+} from "./operations";
+export { aiGroupedApplyOptions } from "./aiApply";

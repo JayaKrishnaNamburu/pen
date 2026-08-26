@@ -1,7 +1,7 @@
 {
 	"ruleId": "SCALE1",
-	"spec": "spec-v2/22-scale-envelope.md",
-	"hostFloor": "spec-v2/15-host-integration.md",
+	"spec": "spec/rules/scale.md",
+	"hostFloor": "spec/rules/host.md",
 	"virtualization": "packages/rendering/react/VIRTUALIZATION.md",
 	"ladder": {
 		"blocks": [100, 1000, 5000],

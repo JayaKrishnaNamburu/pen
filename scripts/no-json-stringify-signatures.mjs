@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SCALE2 lint (spec-v2/22-scale-envelope.md, Wave F step F.2).
+ * SCALE2 lint (spec/rules/scale.md, Wave F step F.2).
  *
  * Greps JSON.stringify in packages/rendering and packages/core runtime src
  * (tests excluded). Wire-format / display / clone / diagnostic sites must be

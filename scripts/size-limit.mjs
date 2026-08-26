@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API7 bundle budgets (spec-v2/14-api-and-packaging.md, Wave P step P.7).
+ * API7 bundle budgets (spec/rules/api.md, Wave P step P.7).
  *
  * Weighs each published entry path against `.size-limit.baseline.json` via
  * `fs.stat` (same method that recorded the numbers) — `dist/index.mjs`, or

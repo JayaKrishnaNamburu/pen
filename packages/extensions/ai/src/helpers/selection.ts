@@ -86,7 +86,7 @@ export function buildSelectionReplacementOps(
 	return ops;
 }
 
-export function sliceInlineDeltasFromOffset(
+function sliceInlineDeltasFromOffset(
 	deltas: readonly { insert: string; attributes?: Record<string, unknown> }[],
 	startOffset: number,
 ): Array<{ insert: string; attributes?: Record<string, unknown> }> {
@@ -191,7 +191,7 @@ export function trimLeadingBlankBlockGenerationText(text: string): string {
 	return text.replace(/^(?:[ \t]*\r?\n)+/, "");
 }
 
-export function isVisuallyEmptyInlineText(text: string): boolean {
+function isVisuallyEmptyInlineText(text: string): boolean {
 	return text.trim().length === 0;
 }
 

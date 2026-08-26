@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SF5 import migration (spec-v3/05-surface.md, wave-6 Step 6.3).
+ * SF5 import migration (spec/rules/api.md, wave-6 Step 6.3).
  *
  * Rewrites retired Wave 6 specifiers to the merged `@input/pen-ai` and
  * `@input/pen-interop` subpaths. Source rewrite is specifier-position

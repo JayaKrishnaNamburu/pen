@@ -2,7 +2,7 @@
 
 Generated from `packages/tooling/bench/baselines/envelope.json`. Do not edit by hand. Regenerate with `pnpm --filter @input/pen-bench exec tsx src/envelope/writeTable.ts`.
 
-Rule: SCALE1 (`spec-v2/22-scale-envelope.md`). Grades: **verified** — a suite asserts behavior at this size on every run. **measured** — a benchmark records it, with harness floor subtracted, no pass/fail on the clock. **untested above** — the honest ceiling.
+Rule: SCALE1 (`spec/rules/scale.md`). Grades: **verified** — a suite asserts behavior at this size on every run. **measured** — a benchmark records it, with harness floor subtracted, no pass/fail on the clock. **untested above** — the honest ceiling.
 
 **Status: provisional.** Wall-clock medians are the 2026-08-20 macos-arm64 sample (n=21). Floors were recorded 2026-08-21 on the same class at load 7.87 on 14 CPUs while other lanes were running. Empty-timer floors are 0.00ms; the peer empty-sync floor is 0.02ms. A later isolated note recorded concurrentPeers-2 wall p50 at 0.198ms against this file's 1.49ms — that row is especially untrustworthy until a quiet-machine remeasure. This is not a quiet-machine envelope. Counts are the durable measure; do not re-record these clocks under load.
 
@@ -85,4 +85,4 @@ A check that cannot fail is record-only even when a clock column exists. The uni
 
 ## Past the ceiling
 
-Past these sizes, per-commit decoration collection and full-document render degrade first — Pen does not virtualize (`spec-v2/07-dom-scheduling.md`). Hosts that need larger documents window blocks themselves (`packages/rendering/react/VIRTUALIZATION.md`, SCALE5).
+Past these sizes, per-commit decoration collection and full-document render degrade first — Pen does not virtualize (`spec/rules/dom.md`). Hosts that need larger documents window blocks themselves (`packages/rendering/react/VIRTUALIZATION.md`, SCALE5).

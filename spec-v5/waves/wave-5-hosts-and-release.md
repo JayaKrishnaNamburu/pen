@@ -60,3 +60,9 @@ The evidence document gains a closing section: package and hotspot line counts a
   expect: exit 0 — the reference host works end to end at train close.
 - GATE 5.14 [script]: `node scripts/coverage-rules.mjs`
   expect: exit 0 — every UC/RS/FE/HB rule is claimed or carries a dated amendment explaining why not; the v5 unclaimed report is empty at train close.
+
+## Deletions
+
+- undemonstrable capability matrix cells, whose claims no test exercises.
+- transport packages without a host integration test, under the inventory rule.
+- barrel exports the docs and capability matrix do not admit.

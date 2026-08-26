@@ -1,5 +1,5 @@
 /**
- * HOST2 (`spec-v2/15-host-integration.md`): the import-smoke suite is generated
+ * HOST2 (`spec/rules/host.md`): the import-smoke suite is generated
  * from published manifests, not a handwritten list. A new package or export
  * subpath is covered the day it exists.
  */

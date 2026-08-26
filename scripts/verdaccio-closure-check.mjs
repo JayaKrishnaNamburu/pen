@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Host-shaped install proof (spec-v3 Wave 6 Step 6.5 / SF4).
+ * Host-shaped install proof (SF4).
  *
  * Publishes the production `@input/pen-*` closure of the top-level host
  * packages to a local Verdaccio, then `pnpm add`s those packages in a

@@ -1,5 +1,5 @@
 /**
- * HOST4 (`spec-v2/15-host-integration.md`): `crypto.randomUUID` is secure-context-only, so
+ * HOST4 (`spec/rules/host.md`): `crypto.randomUUID` is secure-context-only, so
  * calling it directly throws on plain-HTTP origins (a phone reaching a dev server over the
  * LAN) and on Safari below 15.4. `createEditor()` did exactly that from a field initializer,
  * which made the editor unconstructable in environments Pen supports (audit finding F24).
@@ -19,7 +19,7 @@ export const noBareRandomUuid = {
 		schema: [],
 		messages: {
 			bareCall:
-				"`crypto.randomUUID()` throws in non-secure contexts and on Safari < 15.4. Use `generateId()` from @input/pen-types (spec-v2 HOST4).",
+				"`crypto.randomUUID()` throws in non-secure contexts and on Safari < 15.4. Use `generateId()` from @input/pen-types (HOST4).",
 		},
 	},
 	create(context) {

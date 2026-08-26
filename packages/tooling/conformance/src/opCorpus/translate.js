@@ -2,11 +2,11 @@
  * Replay-only v2 → v3 DocumentOp translator.
  *
  * The committed corpus stores old-world ops. Production `editor.apply`
- * must not accept those shapes after the union slims (`spec-v3/03-ops.md`
+ * must not accept those shapes after the union slims (`spec/rules/pipeline.md`
  * Non-Goals: no dual-form apply path). This module is the checker seam:
  * translate at replay, compare bytes/snapshot, never rewrite the fixtures.
  *
- * Mapping cites `spec-v3/03-ops.md` §5 and `spec-v3/plans/wave-4-ops-plan.md`.
+ * Mapping cites `spec/rules/pipeline.md` §5.
  */
 
 export const SET_SELECTION_REPLAY = "__penReplaySetSelection";

@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * API6 (`spec-v2/14-api-and-packaging.md`): renderer packages are framework
+ * API6 (`spec/rules/api.md`): renderer packages are framework
  * bindings. A module under react/src or vue/src that imports neither its
  * framework nor a framework type belongs in `@input/pen-dom`. Pure stubs that
  * re-export a `utils` subpath of `@input/pen-dom` are the P.6 end state and
@@ -165,7 +165,7 @@ export const noFrameworkFreeModulesInRenderers = {
 		],
 		messages: {
 			frameworkFree:
-				"This renderer module imports neither its framework nor a framework type. Move the implementation to `@input/pen-dom` and re-export it, or justify the exception with API6 and a reason (spec-v2 API6).",
+				"This renderer module imports neither its framework nor a framework type. Move the implementation to `@input/pen-dom` and re-export it, or justify the exception with API6 and a reason (API6).",
 		},
 	},
 	create(context) {

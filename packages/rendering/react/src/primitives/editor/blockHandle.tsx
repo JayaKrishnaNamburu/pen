@@ -9,9 +9,9 @@ import { composeRefs } from "../../utils/composeRefs";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { buildMoveBlockOps } from "./blockDragSession";
 
-/** Wave 4 command name (`spec-v2/05-commands.md`). Menu items dispatch this even when the command is not wired. */
+/** Wave 4 command name (`spec/rules/commands.md`). Menu items dispatch this even when the command is not wired. */
 export const PEN_MOVE_BLOCK_UP = "pen.moveBlockUp";
-/** Wave 4 command name (`spec-v2/05-commands.md`). Menu items dispatch this even when the command is not wired. */
+/** Wave 4 command name (`spec/rules/commands.md`). Menu items dispatch this even when the command is not wired. */
 export const PEN_MOVE_BLOCK_DOWN = "pen.moveBlockDown";
 
 export type BlockHandleMoveCommand =

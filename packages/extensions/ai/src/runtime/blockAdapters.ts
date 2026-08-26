@@ -5,7 +5,6 @@ import type {
 	AIBlockClass,
 	AIContentFormat,
 	AIMutationMode,
-	AIPlannerMode,
 	AITargetKind,
 	AITransportKind,
 } from "./contracts";
@@ -36,7 +35,6 @@ export interface BlockAdapter {
 	id: AIBlockAdapterId;
 	blockClass: AIBlockClass;
 	targetKind: AITargetKind;
-	plannerMode: AIPlannerMode;
 	contentFormat: AIContentFormat;
 	transportKind: AITransportKind;
 	buildPrompt(input: BlockAdapterBuildPromptInput): string;
@@ -48,7 +46,6 @@ const FLOW_BLOCK_ADAPTER: BlockAdapter = {
 	id: "flow-markdown",
 	blockClass: "flow",
 	targetKind: "block",
-	plannerMode: "text",
 	contentFormat: "markdown",
 	transportKind: "flow-text",
 	buildPrompt(input) {
@@ -66,7 +63,6 @@ const BLOCK_ADAPTERS = [
 
 export interface ResolveBlockAdapterInput {
 	targetKind: AITargetKind;
-	plannerMode: AIPlannerMode;
 	target: "selection" | "block";
 	activeBlockType?: string | null;
 	surface?: "inline-edit" | "bottom-chat";

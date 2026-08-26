@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CH5 console.* inventory (spec-v2/09-reliability-testing.md CH5,
+ * CH5 console.* inventory (spec/rules/reliability.md CH5,
  * Wave H step H.4).
  *
  * Lists every console.log / console.warn / console.error / console.info /

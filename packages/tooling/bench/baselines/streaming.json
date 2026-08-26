@@ -1,6 +1,6 @@
 {
   "ruleId": "WAVE02-STREAMING",
-  "spec": "spec-v2/waves/wave-02-commit-pipeline.md",
+  "spec": "spec/rules/pipeline.md",
   "kind": "drift-report",
   "isV1Baseline": false,
   "comparisonTo": "2.5 TextStreamWriter path on this checkout. No recorded v1 baseline exists in git history or tags; this file is not one.",

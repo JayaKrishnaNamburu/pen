@@ -1,6 +1,6 @@
 # v5 Hosts and Bindings: A Declared Story (HB)
 
-Status: adopted 2026-08-26. `HB` rules are normative. They govern the surfaces through which Pen reaches applications: the React and Vue bindings, the vanilla/DOM path, the headless path, `packages/presets/default`, `examples/*`, `packages/docs`, the playground, and the transports. The premise (`00-concept.md` §3): the 9.7× size spread between the React binding (19,727 lines) and the Vue binding (2,037 lines) is not itself a defect — React carries headless primitives and the reference feature set — but the absence of any document saying *which* differences are intended is how parity gaps ship silently.
+Status: adopted 2026-08-26. `HB` rules are normative. They govern the surfaces through which Pen reaches applications: the React and Vue bindings, the vanilla/DOM path, the headless path, `packages/presets/default`, `examples/*`, `packages/docs`, the playground, and the transports. The premise (`00-concept.md` §3): the 9.7× size spread between the React binding (19,727 lines) and the Vue binding (2,037 lines) is not itself a defect — React carries headless primitives and the reference feature set — but the absence of any document saying _which_ differences are intended is how parity gaps ship silently.
 
 ## 1. The Contract
 

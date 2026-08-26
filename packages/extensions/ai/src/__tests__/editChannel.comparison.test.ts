@@ -15,7 +15,7 @@ import { deltaStreamExtension } from "../stream";
  *
  * A wrong edit is the document changing into something the prompt did not ask
  * for — strictly worse than no edit. Off-contract assistant text must not
- * become a document write (`spec-better-ai/01-edit-channel.md` EC1, EC6).
+ * become a document write (`spec/packages/extensions/ai.md` EC1, EC6).
  */
 
 const OFF_CONTRACT_OUTPUT =

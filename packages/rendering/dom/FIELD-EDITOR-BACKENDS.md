@@ -1,6 +1,6 @@
 # Field-editor input backends
 
-HOST4 (`spec-v2/15-host-integration.md`): `EditContext` is newer than the HOST3 browser floor. The field editor detects it and falls back; it does not require it. Browser floors live in the root `README.md` support table.
+HOST4 (`spec/rules/host.md`): `EditContext` is newer than the HOST3 browser floor. The field editor detects it and falls back; it does not require it. Browser floors live in the root `README.md` support table.
 
 Selection of the backend is `_resolveBackendClass` in `src/field-editor/fieldEditorImplRuntime.ts`. The named split is `FIELD_EDITOR_BACKEND_SPLIT` in that file. Detection and fallback are unchanged by this document.
 

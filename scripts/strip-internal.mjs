@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API4 @internal stripping (spec-v2/14-api-and-packaging.md, Wave P step P.4).
+ * API4 @internal stripping (spec/rules/api.md, Wave P step P.4).
  *
  * Published .d.ts must not re-export symbols marked @internal.
  * Declaration emit sets stripInternal in tsconfig.base.json; tsup dts

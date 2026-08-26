@@ -6,7 +6,7 @@
  * - character operations degrade to code points, never to UTF-16 code units
  * - word operations degrade to whitespace runs
  *
- * Offsets are in the logical text domain (`spec-v2/03-selection.md` §2): UTF-16
+ * Offsets are in the logical text domain (`spec/rules/selection.md` §2): UTF-16
  * indices into the block string with the empty-block sentinel already erased.
  * This module does not look for the sentinel.
  */

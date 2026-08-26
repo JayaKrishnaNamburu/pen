@@ -52,7 +52,7 @@
 # Lane bench/coverage (2026-08-23): re-measured C1–C4, O1–O5, P2 with
 # coverage-rules test-name detection (positive control: K1, K4).
 #   C1–C4 — no test name contains the token. IME suite not staffed
-#     (spec-v2/03-selection.md §8; wave-05-selection 5.6). K4 covers
+#     (spec/rules/selection.md §8; wave-05-selection 5.6). K4 covers
 #     composition Escape in keymap.test.ts but is not named C1.
 #   O1 — playground/e2e/specPortLiveTrace.spec.ts names O1 and asserts
 #     the opposite (overlay shown for ordinary typing). Do not claim.
@@ -62,7 +62,7 @@
 #     counts (selectionReader, unfocusedReconcileProjection), not
 #     projector flush after a divergence report with unchanged version.
 #
-# spec-v3 OP / OPB / INT entered the inventory by derivation
+# OP / OPB / INT entered the inventory by derivation
 # (2026-08-24), not by this file. GATE 0.1 reports them; it does
 # not fail. Do not append the unclaimed ones here to dodge a red
 # — that is someone else's claim work.
@@ -111,18 +111,18 @@
 
 # I2/I3 unclaimed 2026-08-23: v3 Wave 3 deleted the mapping algebra those
 # invariants describe, along with changeSummaries.properties.test.ts.
-# spec-v2/V3-BOUNDARY.md already records I2/I3 expansion as skipped for v3.
+# I2/I3 expansion was recorded as skipped when the mapping layer retired.
 
 # EM4 unclaimed 2026-08-24: v3 Wave 6 deleted the stamp-2 remote heal it
 # describes, along with emptyBlocks.em4.test.ts. The rule was Wave 5
 # scaffolding for stamp-2 writers inside this tree and its removal is
-# scheduled in spec-v3/waves/wave-6-surface-release.md. EM1-EM3 and EM5-EM8
+# scheduled with the surface release. EM1-EM3 and EM5-EM8
 # stay in force. Do not re-add a test named EM4 to close this line: there is
 # no rule left for it to fail on.
 
 # I11 unclaimed 2026-08-25: v3 retired I11 → I14. The two-seam confinement
 # those tests named has no subject: the sentinel is gone from storage
-# (spec-v3/04-empty-blocks.md; spec-v2/01-architecture.md I11 RETIRED
+# (spec/rules/empty-blocks.md; spec/rules/architecture.md I11 RETIRED
 # 2026-08-24). I1, I4–I10, and I12–I15 stay in force. Do not re-add a
 # test named I11 to close this line: there is no confinement left for
 # it to fail on.
@@ -133,7 +133,7 @@
 # the accessors and slotAdapter.ts are gone. SM3's enforcement retired by
 # design in the same PR — DL2 requires the no-new-slots gate and allowlist
 # to go with the mechanism, since "a gate that polices a deleted mechanism
-# is scaffolding squared" (spec-v4/04-scaffolding.md). SM2 stays in force:
+# is scaffolding squared" (spec/rules/api.md). SM2 stays in force:
 # the documented accessors still exist and are facet reads now, claimed by
 # packages/extensions/search/src/__tests__/extension.test.ts. Do not re-add
 # tests named SM1 or SM3: there is no adapter and no slot lint left to fail.
@@ -323,8 +323,8 @@ OPB3
 OPB4
 OPB6
 
-# spec-v4 entered the inventory 2026-08-25 (SPEC_ROOTS gained the root;
-# families are derived, not hand-listed, same as spec-v3). Appended:
+# Structure-train families entered the inventory 2026-08-25; families
+# are derived from definition lines, not hand-listed. Appended:
 # CS6 and CS10 — the only v4 IDs a named test can fail today
 # (scheduler.cs6.test.ts pins the single frame authority; the relocated
 # cs10-mapping conformance scenarios are the jsdom-to-conformance move
@@ -333,7 +333,7 @@ OPB6
 # HELD BACK — TR1-TR8, GA1-GA21, RC1-RC7, DL1-DL14, and the other CS
 # rules. These are carried by wave gates, not test names: a deletion's
 # evidence is a grep at a stated population, and the runner
-# (scripts/v3-gates.mjs over spec-v4/waves/*.md) is what fails when one
+# (scripts/v3-gates.mjs over the executing train's waves/*.md) is what fails when one
 # comes back. Listing them here would fail the run for having no
 # claiming test, and renaming a test to contain "DL3" would be the
 # name-is-not-coverage defect this file rejects everywhere else. They
@@ -343,7 +343,7 @@ OPB6
 CS6
 CS10
 
-# spec-better-ai Wave 0 (2026-08-25). Only IDs a named test can fail:
+# Edit channel (2026-08-25). Only IDs a named test can fail:
 # EC1 (agentChat.editChannel), EC2–EC6 (editDocument.ec),
 # EC7–EC8 (workingSetFingerprint.ec7), EC10 and EC14 (editChannel.closingPass).
 # Claimed later on 2026-08-25 as their probes landed: EC9 (editChannel.ec9),

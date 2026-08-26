@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SCALE4 nightly soak (`spec-v2/22-scale-envelope.md`).
+ * SCALE4 nightly soak (`spec/rules/scale.md`).
  *
  * Heap during the session is a printed trend, not a gate. The only hard
  * assertion is post teardown-and-recreate vs the baseline sample.

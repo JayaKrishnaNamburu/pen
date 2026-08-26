@@ -1,5 +1,5 @@
 /**
- * Named commit-pipeline phases from spec-v2/06-commit-pipeline.md.
+ * Named commit-pipeline phases from spec/rules/pipeline.md.
  * Step 2.1 makes the boundaries visible; step 2.2 replaces phase 8's
  * v1 `change` / `documentCommit` emit with `CommitEvent`.
  */

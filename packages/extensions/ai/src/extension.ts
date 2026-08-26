@@ -11,7 +11,7 @@ import {
 	keyBindingPriorityToPrecedence,
 	keymapFacet,
 	ensureInlineCompletionController,
-	getInlineCompletionController as getInlineCompletionControllerFromCore,
+	getInlineCompletionController,
 	getOpOriginType,
 	isCollapsed,
 } from "@input/pen-core";
@@ -696,12 +696,6 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 
 export function getAIController(editor: Editor): AIController | null {
 	return (editor.facet(aiControllerFacet) as AIController | null) ?? null;
-}
-
-export function getInlineCompletionController(
-	editor: Editor,
-): AIInlineCompletionController | null {
-	return getInlineCompletionControllerFromCore(editor);
 }
 
 export function getAIInlineCompletionController(

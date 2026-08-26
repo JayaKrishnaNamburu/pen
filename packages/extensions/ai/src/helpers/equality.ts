@@ -53,7 +53,7 @@ export function areStringArraysEqual(
 	return true;
 }
 
-export function resolveSessionSelectionSnapshots(
+function resolveSessionSelectionSnapshots(
 	editor: Editor,
 	session: AISession,
 ): readonly AISessionSelectionSnapshot[] {
@@ -192,7 +192,7 @@ export function areAIControllerStatesEqual(
 	return areSessionsEqual(previous.sessions, next.sessions);
 }
 
-export function areGenerationsEqual(
+function areGenerationsEqual(
 	previous: AIControllerState["activeGeneration"],
 	next: AIControllerState["activeGeneration"],
 ): boolean {
@@ -344,7 +344,7 @@ export function didInlineHistoryCheckpointChange(
 	);
 }
 
-export function buildInlineHistoryCheckpoint(
+function buildInlineHistoryCheckpoint(
 	editor: Editor,
 	state: AIControllerState,
 ): {
@@ -394,50 +394,6 @@ export function buildInlineHistoryCheckpoint(
 			};
 		}),
 	};
-}
-
-export function countSettledInlineTurns(
-	snapshot: AIInlineHistorySnapshot,
-	sessionId?: string | null,
-): number {
-	if (sessionId) {
-		const session = snapshot.sessions.find(
-			(item) => item.id === sessionId && item.surface === "inline-edit",
-		);
-		if (!session) {
-			return 0;
-		}
-		return session.turns.filter((turn) => turn.status !== "streaming")
-			.length;
-	}
-	return snapshot.sessions
-		.filter((session) => session.surface === "inline-edit")
-		.reduce(
-			(count, session) =>
-				count +
-				session.turns.filter((turn) => turn.status !== "streaming")
-					.length,
-			0,
-		);
-}
-
-export function hasStreamingInlineTurns(
-	snapshot: AIInlineHistorySnapshot,
-	sessionId?: string | null,
-): boolean {
-	if (sessionId) {
-		const session = snapshot.sessions.find(
-			(item) => item.id === sessionId && item.surface === "inline-edit",
-		);
-		return (
-			session?.turns.some((turn) => turn.status === "streaming") ?? false
-		);
-	}
-	return snapshot.sessions
-		.filter((session) => session.surface === "inline-edit")
-		.some((session) =>
-			session.turns.some((turn) => turn.status === "streaming"),
-		);
 }
 
 export function resolveInlineShortcutHistoryState(
@@ -549,7 +505,7 @@ export function shouldReplaceInlineShortcutWaypointRepresentative(
 	return true;
 }
 
-export function areEphemeralSuggestionsEqual(
+function areEphemeralSuggestionsEqual(
 	previous: AIControllerState["ephemeralSuggestion"],
 	next: AIControllerState["ephemeralSuggestion"],
 ): boolean {

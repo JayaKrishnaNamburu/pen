@@ -229,7 +229,7 @@ export class DomScheduler {
 	}
 
 	/**
-	 * Write-phase P1 slot (`spec-v2/07-dom-scheduling.md` flush step 3):
+	 * Write-phase P1 slot (`spec/rules/dom.md` flush step 3):
 	 * after queued writes, before overlay paints. The field editor
 	 * writes same-turn on `selectionChange`; this slot retries a
 	 * parked record on a later flush. Do not schedule projection

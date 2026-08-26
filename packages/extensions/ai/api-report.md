@@ -47,7 +47,6 @@
 - AI_EXECUTION_MODES
 - AI_EXTENSION_NAME
 - AI_FEATURE_CONTENT
-- AI_PLANNER_MODES
 - AI_REQUEST_REFUSED_CODE
 - AI_SESSION_SUGGESTION_ORIGIN
 - AI_STRUCTURED_LANES
@@ -95,7 +94,6 @@
 - AIMutationReceipt
 - AIMutationReceiptEvidence
 - AIMutationReceiptStatus
-- AIPlannerMode
 - AIPromptTarget
 - AIReviewController
 - AISession

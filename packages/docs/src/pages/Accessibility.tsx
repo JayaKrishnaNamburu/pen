@@ -7,7 +7,7 @@ export function AccessibilityPage() {
 				renders. Hosts compose primitives so a product can meet AA
 				without fighting the editing surface, focus model, or live
 				updates. The statement is{" "}
-				<code>spec-v2/13-accessibility.md</code>.
+				<code>spec/rules/accessibility.md</code>.
 			</p>
 
 			<h2>Editing surface</h2>

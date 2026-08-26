@@ -118,7 +118,7 @@ export interface AIInlineHistoryRestoreRequest {
 	targetState?: AIInlineShortcutHistoryState | null;
 }
 
-export type AIInlineShortcutHistoryPhase = "none" | "review" | "resolved";
+type AIInlineShortcutHistoryPhase = "none" | "review" | "resolved";
 
 export interface AIInlineShortcutHistoryState {
 	sessionId: string | null;
@@ -157,7 +157,7 @@ export function sortReviewItemsForRemoval(
 	return [...reviewItems].sort(compareReviewItemRemovalOrder);
 }
 
-export function compareReviewItemRemovalOrder(
+function compareReviewItemRemovalOrder(
 	left: StructuralReviewItem,
 	right: StructuralReviewItem,
 ): number {
@@ -199,7 +199,7 @@ export function supportsStructuredIntent(model: ModelAdapter | undefined): boole
 	return model?.capabilities?.structuredIntent === true;
 }
 
-export type AIStreamEventInput =
+type AIStreamEventInput =
 	| {
 			type: "generation-start";
 			prompt: string;

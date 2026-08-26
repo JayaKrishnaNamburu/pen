@@ -1,5 +1,5 @@
 {
-	"_comment": "HOST4 (spec-v2/15-host-integration.md): above-floor APIs. Each entry names the API, its fallback, the user-visible degradation, and the sites allowed to use it bare. A site is a path string (legacy, still valid) or { path, reason }. New sites must be { path, reason } — a path-only object is the parking-lot shape. Feature-detected uses do not need a site. An entry without fallback or degradation is a lint error. Remove a site in the same PR that adds a feature test. scripts/above-floor-api-allowlist.mjs fails if a site path is missing or the named API no longer appears in that file.",
+	"_comment": "HOST4 (spec/rules/host.md): above-floor APIs. Each entry names the API, its fallback, the user-visible degradation, and the sites allowed to use it bare. A site is a path string (legacy, still valid) or { path, reason }. New sites must be { path, reason } — a path-only object is the parking-lot shape. Feature-detected uses do not need a site. An entry without fallback or degradation is a lint error. Remove a site in the same PR that adds a feature test. scripts/above-floor-api-allowlist.mjs fails if a site path is missing or the named API no longer appears in that file.",
 	"apis": [
 		{
 			"api": "EditContext",

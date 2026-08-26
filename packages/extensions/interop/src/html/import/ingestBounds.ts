@@ -9,7 +9,7 @@ import type { PendingBlock } from "@input/pen-core";
  * arriving by two routes has one limit.
  *
  * Documented here and in the package README alongside
- * `spec-v2/22-scale-envelope.md` SCALE1 (verified document size) so a host
+ * `spec/rules/scale.md` SCALE1 (verified document size) so a host
  * can tell paste/import caps from the published runtime envelope.
  *
  * SEC4: depth 32, 10k nodes. IOP5 adds total text size and image count.

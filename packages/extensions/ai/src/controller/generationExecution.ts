@@ -3,7 +3,7 @@ import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import { generateId, type StreamingTarget } from "@input/pen-types";
 import { getBlockAdapter } from "../runtime/blockAdapters";
 import { routeAIRequest } from "../runtime/router";
-import { buildPlannerPrompt, resolveExecutionMode } from "../runtime/structuredPlanner";
+import { resolveExecutionMode } from "../runtime/generationTarget";
 import type { GenerationState } from "../types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 import {
@@ -123,12 +123,10 @@ export async function executeGeneration(
 				: "";
 		const shouldStreamSuggestedText =
 			route.mutationMode === "streaming-suggestions" &&
-			route.plannerMode !== "structured" &&
 			contentFormat === "text";
 		const shouldReplaceMarkdownTarget =
 			context?.replaceTargetBlock === true ||
-			(route.plannerMode !== "structured" &&
-				contentFormat === "markdown" &&
+			(contentFormat === "markdown" &&
 				target.type === "block" &&
 				(route.targetKind === "table" ||
 					(context?.surface === "bottom-chat" &&
@@ -143,7 +141,6 @@ export async function executeGeneration(
 			shouldStreamSuggestedText && target.type === "block";
 		const canStreamMarkdownBlockSuggestions =
 			route.mutationMode === "streaming-suggestions" &&
-			route.plannerMode !== "structured" &&
 			contentFormat === "markdown" &&
 			target.type === "block" &&
 			route.applyStrategy === "markdown-full-replace" &&
@@ -174,13 +171,7 @@ export async function executeGeneration(
 						workingSet,
 						applyStrategy: route.applyStrategy,
 					})
-				: route.plannerMode === "structured"
-					? buildPlannerPrompt({
-							prompt: executionPrompt,
-							targetKind: route.targetKind,
-							workingSet,
-						})
-					: executionPrompt;
+				: executionPrompt;
 
 		const seedGeneration: GenerationState = {
 			id: generateId(),
@@ -222,7 +213,6 @@ export async function executeGeneration(
 				qualitySignals: {},
 				routeConfidence: workingSet?.routeConfidence,
 				structured: {
-					plannerMode: route.plannerMode,
 					executionMode: resolveExecutionMode(route.mutationMode),
 					targetKind: route.targetKind,
 					validationIssueCount: 0,

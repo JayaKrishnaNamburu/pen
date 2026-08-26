@@ -14,17 +14,9 @@ import { collectSuggestionDecorations } from "./suggestionDecorations";
 import { buildStreamingReviewPreviewDecorations } from "./streamingPreviewDecorations";
 
 export {
-	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
-	AI_REVIEW_ROLE_ATTRIBUTE,
-	AI_REVIEW_STATE_ATTRIBUTE,
-	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
+	buildStreamingReviewPreviewDecorations,
 	resolveAIReviewPresentationState,
-} from "./reviewPresentationState";
-export type {
-	AIReviewPresentationRole,
-	AIReviewPresentationState,
-} from "./reviewPresentationState";
-export { buildStreamingReviewPreviewDecorations } from "./streamingPreviewDecorations";
+};
 
 export function buildAIReviewPresentationDecorations({
 	activeGeneration,

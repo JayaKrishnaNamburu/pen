@@ -2,7 +2,7 @@
 
 Pen guarantees two things when more than one client is on a document: **CRDT convergence** and **origin labeling**. The host owns everything else that looks like a product: auth, persistence, permissions, presence-payload policy, and schema agreement across peers.
 
-This is COL5 (`spec-v2/19-collaboration-contract.md`). The docs site page is the same statement.
+This is COL5 (`spec/rules/collaboration.md`). The docs site page is the same statement.
 
 ## What Pen guarantees
 
@@ -24,15 +24,15 @@ Pen does not provide a transport, a provider, a server, rooms, or presence infra
 
 Peers with different schema registries still **converge on the CRDT** and **diverge on rendering**. A block type one registry knows and the other does not remains in the shared document; the older (or different) client cannot edit it in place and will not render it as the authoring client did.
 
-DUR3 (`spec-v2/18-document-durability.md`) is what keeps that mismatch non-destructive. Unknown blocks keep their type, props, content, and children through load, normalization, re-encode, copy, and JSON export. Both built-in registry factories set `onUnknownBlock` to `"passthrough"`. Apply still refuses to *create* an unknown type — preservation is about existing content, not about inventing writes the schema cannot describe.
+DUR3 (`spec/rules/durability.md`) is what keeps that mismatch non-destructive. Unknown blocks keep their type, props, content, and children through load, normalization, re-encode, copy, and JSON export. Both built-in registry factories set `onUnknownBlock` to `"passthrough"`. Apply still refuses to *create* an unknown type — preservation is about existing content, not about inventing writes the schema cannot describe.
 
 A staged rollout that ships a new block type to some clients first survives because the others keep the bytes.
 
 ## Evidence plan
 
-Do not read this page as a claim that the full Wave C suite is in-tree.
+Do not read this page as a claim that the full collaboration suite is in-tree.
 
-The proof plan is the scenario list in `spec-v2/waves/wave-c-collaboration-contract.md`:
+The scenarios below are the proof plan for the `COL` rules in `spec/rules/collaboration.md`:
 
 | Step | Rule | Planned evidence |
 | ---- | ---- | ---------------- |

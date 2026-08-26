@@ -2,7 +2,7 @@
   "name": "@input/pen-eslint-plugin",
   "version": "0.0.1",
   "private": true,
-  "description": "Pen's custom ESLint rules: the invariants the spec-v2 waves enforce mechanically",
+  "description": "Pen's custom ESLint rules: the invariants enforced mechanically",
   "type": "module",
   "exports": {
     ".": "./src/index.js"

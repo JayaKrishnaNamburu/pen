@@ -172,7 +172,7 @@ export function buildEnvelopeRecord(
 
 	return {
 		ruleId: "SCALE1",
-		spec: "spec-v2/22-scale-envelope.md",
+		spec: "spec/rules/scale.md",
 		gateStatistic: "median",
 		sampleSize: ENVELOPE_SAMPLE_SIZE,
 		machineClass: options.machineClass ?? SCALE1_MACHINE_CLASS,

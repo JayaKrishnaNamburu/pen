@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * SEC8 (`spec-v2/12-security.md`): Pen stays functional under
+ * SEC8 (`spec/rules/security.md`): Pen stays functional under
  * `script-src 'self'; style-src 'self'`. Overlay geometry uses inline
  * `style` attributes, so that is the only surface that degrades without
  * `'unsafe-inline'` on `style-src`.

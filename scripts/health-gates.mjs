@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * H.9 CH1–CH9 blocking wrapper (spec-v2/09-reliability-testing.md).
+ * H.9 CH1–CH9 blocking wrapper (spec/rules/reliability.md).
  *
  * Runs `ch-gates.mjs` (CH1–CH6, plus CH8/CH9 host links) and the F22
  * dead-binding pin. CH3 lives in ch-gates — `skip-hygiene.mjs` is the

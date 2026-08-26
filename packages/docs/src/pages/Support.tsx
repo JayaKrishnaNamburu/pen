@@ -4,7 +4,7 @@ export function SupportPage() {
 			<h1>Browser and Node support</h1>
 			<p>
 				This is the HOST3 runtime floor in{" "}
-				<code>spec-v2/15-host-integration.md</code>. Package manifests
+				<code>spec/rules/host.md</code>. Package manifests
 				declare{" "}
 				<code>engines.node: &quot;&gt;=22&quot;</code>. The same
 				table is in the repository root README. Raising the floor is

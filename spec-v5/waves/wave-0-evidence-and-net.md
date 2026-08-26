@@ -43,3 +43,7 @@ Write `spec-v5/evidence/baseline.md` with dated, command-stamped sections:
 
 - GATE 0.9 [script]: `pnpm lint`
   expect: exit 0 — formatting and lint clean with the new spec tree in place.
+
+## Deletions
+
+None. This wave only adds — the evidence document, the corpus, and the instrument wiring. A wave that measures before it subtracts has nothing to document in `MIGRATION.md`.

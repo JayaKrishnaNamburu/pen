@@ -1,11 +1,11 @@
 # @input/pen-dom — Wave 4.2 command move inventory
 
-Inventory for spec-v2 Wave 4 step 4.2 (built-in catalog). Not a code move. Wave 3/4 gates are not closed. Do not relocate handlers into `core/src/commands/` here (4.2 implementers consume this table).
+Inventory for the built-in catalog inventory (built-in catalog). Not a code move. Wave 3/4 gates are not closed. Do not relocate handlers into `core/src/commands/` here (4.2 implementers consume this table).
 
 Current functions: `src/field-editor/commands.ts` (barrel), `commandsBlock.ts`, `commandsDelete.ts`, `commandsEnter.ts`, `commandsListTab.ts`, `commandsShared.ts`, `keyHandling.ts`, `keyHandlingInlineAtoms.ts`, `keyBindingShortcuts.ts`.
 
 `commandsNavigation.ts` was deleted on 2026-08-21. `commandsListTab.ts` holds what survived it.
-Future names: `spec-v2/05-commands.md` catalog (`caret.ts`, `text.ts`, `structure.ts`, `table.ts`, `history.ts`).
+Future names: `spec/rules/commands.md` catalog (`caret.ts`, `text.ts`, `structure.ts`, `table.ts`, `history.ts`).
 
 ## Current function → future command
 

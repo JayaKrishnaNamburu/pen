@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CH3 skip/todo hygiene (spec-v2/09-reliability-testing.md CH3,
+ * CH3 skip/todo hygiene (spec/rules/reliability.md CH3,
  * Wave H step H.3 / H.9).
  *
  * Greps `.skip` / `.todo` on describe/it/test in packages and playground

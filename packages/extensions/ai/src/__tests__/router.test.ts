@@ -19,7 +19,6 @@ describe("ai request router", () => {
 
 		expect(route.lane).toBe("cursor-context");
 		expect(route.mutationMode).toBe("direct-stream");
-		expect(route.plannerMode).toBe("text");
 		expect(route.applyStrategy).toBe("text-fast-apply");
 		expect(route.targetKind).toBe("block");
 		expect(route.blockClass).toBe("flow");
@@ -46,7 +45,6 @@ describe("ai request router", () => {
 
 		expect(initialRoute.lane).toBe("cursor-context");
 		expect(refinedRoute.lane).toBe("tool-loop");
-		expect(refinedRoute.plannerMode).toBe("text");
 		expect(refinedRoute.applyStrategy).toBe("tool-edit");
 		expect(refinedRoute.targetKind).toBe("table");
 		expect(refinedRoute.contentFormat).toBe("markdown");
@@ -101,7 +99,6 @@ describe("ai request router", () => {
 		});
 
 		expect(route.targetKind).toBe("table");
-		expect(route.plannerMode).toBe("text");
 		expect(route.applyStrategy).toBe("tool-edit");
 		expect(route.contentFormat).toBe("markdown");
 		expect(route.blockClass).toBe("flow");
@@ -124,7 +121,6 @@ describe("ai request router", () => {
 
 		expect(route.lane).toBe("tool-loop");
 		expect(route.targetKind).toBe("table");
-		expect(route.plannerMode).toBe("text");
 		expect(route.mutationMode).toBe("streaming-suggestions");
 		expect(route.applyStrategy).toBe("tool-edit");
 		expect(route.contentFormat).toBe("markdown");
@@ -134,7 +130,7 @@ describe("ai request router", () => {
 		expect(route.shouldStreamDirectly).toBe(false);
 	});
 
-	// spec-better-ai/01-edit-channel.md EC12
+	// spec/packages/extensions/ai.md EC12
 	it("EC12: durable document edits take the tool loop and tool-edit strategy", () => {
 		const table = routeAIRequest({
 			prompt: "Create a table with names",
@@ -188,7 +184,7 @@ describe("ai request router", () => {
 		).toBe("tool-loop");
 	});
 
-	// spec-better-ai/01-edit-channel.md EC1: streaming lanes keep writing text.
+	// spec/packages/extensions/ai.md EC1: streaming lanes keep writing text.
 	it("leaves streaming lanes on text deltas under the edit channel", () => {
 		const route = routeAIRequest({
 			prompt: "Continue this paragraph",

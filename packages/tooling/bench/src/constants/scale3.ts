@@ -1,5 +1,5 @@
 /**
- * SCALE3 (`spec-v2/22-scale-envelope.md`): axes, stack, and committed
+ * SCALE3 (`spec/rules/scale.md`): axes, stack, and committed
  * baselines for the realistic-stack keystroke workload.
  *
  * Machine class that produced the measured medians:

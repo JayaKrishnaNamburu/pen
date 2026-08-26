@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * DOC3 public-symbol TSDoc coverage (spec-v2/17-documentation.md,
+ * DOC3 public-symbol TSDoc coverage (spec/rules/documentation.md,
  * Wave D step D.5).
  *
  * Input is the committed `api-report.md` each published package already
@@ -154,7 +154,7 @@ const SKIP_DIR_NAMES = new Set([
  * `createReducedMotionSignal` (pen-dom). The net is one fewer symbol, not
  * a TSDoc pass.
  *
- * Lowered 1796 → 1775 on 2026-08-25 after spec-v4 waves 3 and 4. Also not a
+ * Lowered 1796 → 1775 on 2026-08-25 after the scaffolding and structure waves. Also not a
  * TSDoc pass: the 21 are public symbols the waves deleted — `SelectionState`'s
  * computed fields (DL5), the content-ops re-export shims (DL13), the v1 slot
  * and event adapters (DL2–DL4), `DocumentCommitEvent`, and pen-dom's

@@ -24,7 +24,7 @@ function isIntlConstructor(node) {
 }
 
 /**
- * LOC3 (`spec-v2/16-localization.md`): every `Intl.*` construction and every
+ * LOC3 (`spec/rules/localization.md`): every `Intl.*` construction and every
  * `localeCompare` in library code takes an explicit locale. Passing `undefined`
  * and inheriting the environment is banned.
  */
@@ -39,9 +39,9 @@ export const noImplicitLocale = {
 		schema: [],
 		messages: {
 			intl:
-				"`Intl.{{name}}` must receive an explicit locale, not the environment default (spec-v2 LOC3).",
+				"`Intl.{{name}}` must receive an explicit locale, not the environment default (LOC3).",
 			localeCompare:
-				"`localeCompare` must receive an explicit locale argument (spec-v2 LOC3).",
+				"`localeCompare` must receive an explicit locale argument (LOC3).",
 		},
 	},
 	create(context) {

@@ -4,7 +4,7 @@ import type { PendingBlock } from "@input/pen-core";
 /**
  * Ingest envelope (IOP5 / SEC4). Same numbers on every ingest path — not
  * per-format values. Documented here and in the package README alongside
- * `spec-v2/22-scale-envelope.md` SCALE1 (verified document size) so a host
+ * `spec/rules/scale.md` SCALE1 (verified document size) so a host
  * can tell paste/import caps from the published runtime envelope.
  *
  * SEC4: depth 32, 10k nodes. IOP5 adds total text size and image count.

@@ -35,7 +35,7 @@ const MULTI_TOOL_PROMPT = [
  * documents up to the annotation bound, so an obedient model paid a full
  * model round trip to fetch ids it had been handed. Refusals answer
  * themselves: a rejected operation comes back with the reason and a fresh
- * outline (`spec-better-ai/01-edit-channel.md` EC5, EC10, EC14).
+ * outline (`spec/packages/extensions/ai.md` EC5, EC10, EC14).
  */
 const EDIT_DOCUMENT_PROMPT = [
 	"When the request offers tools: the block ids edit_document expects come",

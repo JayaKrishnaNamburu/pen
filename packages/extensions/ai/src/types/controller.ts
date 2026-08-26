@@ -23,7 +23,6 @@ import type {
 	AIBlockAdapterId,
 	AIBlockClass,
 	AIExecutionMode,
-	AIPlannerMode,
 	AIQualityMetricId,
 	AITargetKind,
 	AITransportKind,
@@ -404,7 +403,6 @@ export interface GenerationDebugState {
 }
 
 export interface StructuredGenerationDebugState {
-	plannerMode?: AIPlannerMode;
 	executionMode?: AIExecutionMode;
 	targetKind?: AITargetKind;
 	validationIssueCount?: number;

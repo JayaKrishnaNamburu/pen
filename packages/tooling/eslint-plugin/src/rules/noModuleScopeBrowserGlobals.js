@@ -1,5 +1,5 @@
 /**
- * HOST2 (`spec-v2/15-host-integration.md`): published modules must load in a
+ * HOST2 (`spec/rules/host.md`): published modules must load in a
  * plain Node process (RSC, SSR, headless). A module-scope read of a browser
  * global — `const isMac = navigator.platform` — throws there, or worse, binds
  * a value that is wrong for the eventual client. Function bodies, effects, and
@@ -141,7 +141,7 @@ export const noModuleScopeBrowserGlobals = {
 		schema: [],
 		messages: {
 			moduleScope:
-				"Do not read `{{name}}` at module scope. Published modules must import in Node without DOM globals (spec-v2 HOST2). Move the access into a function, effect, or lazy accessor.",
+				"Do not read `{{name}}` at module scope. Published modules must import in Node without DOM globals (HOST2). Move the access into a function, effect, or lazy accessor.",
 		},
 	},
 	create(context) {

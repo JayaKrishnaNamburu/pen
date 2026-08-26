@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * HOST4 (`spec-v2/15-host-integration.md`): web APIs newer than the HOST3
+ * HOST4 (`spec/rules/host.md`): web APIs newer than the HOST3
  * floor are used behind a feature test with a documented degraded path.
  * This rule flags a bare use. Feature tests (`typeof x === "function"`,
  * `"EditContext" in globalThis`, `globalThis.structuredClone?.`) stay quiet.
@@ -554,9 +554,9 @@ export const noAboveFloorApi = {
 		],
 		messages: {
 			bareUse:
-				"Bare `{{api}}` is above the HOST3 floor. Feature-detect it and degrade via the documented fallback, or add an allowlist entry that names the fallback and user-visible degradation (spec-v2 HOST4).",
+				"Bare `{{api}}` is above the HOST3 floor. Feature-detect it and degrade via the documented fallback, or add an allowlist entry that names the fallback and user-visible degradation (HOST4).",
 			incompleteAllowlist:
-				"Above-floor allowlist entry `{{api}}` is missing `{{field}}`. Every HOST4 entry must name api, fallback, and degradation (spec-v2 HOST4).",
+				"Above-floor allowlist entry `{{api}}` is missing `{{field}}`. Every HOST4 entry must name api, fallback, and degradation (HOST4).",
 		},
 	},
 	create(context) {

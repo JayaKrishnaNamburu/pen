@@ -425,7 +425,7 @@ function isIdentifierOrDisplayFold(context, foldCall) {
 }
 
 /**
- * LOC5 (`spec-v2/16-localization.md`): matching paths fold with
+ * LOC5 (`spec/rules/localization.md`): matching paths fold with
  * `foldAndNormalize`, not `toLowerCase()`. Identifier folds (MIME types,
  * attribute names, shortcut patterns, markdown keys, regex-captured tokens)
  * and single-character display casing stay allowed — those are not user-copy
@@ -442,7 +442,7 @@ export const noBareCaseFolding = {
 		schema: [],
 		messages: {
 			bareFold:
-				"`{{name}}()` is locale-unsafe for matching. Use `foldAndNormalize` (spec-v2 LOC5).",
+				"`{{name}}()` is locale-unsafe for matching. Use `foldAndNormalize` (LOC5).",
 		},
 	},
 	create(context) {

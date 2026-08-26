@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * I15 instrument-path integrity (spec-v4/00-concept.md, spec-v4/02-instruments.md GA1).
+ * I15 instrument-path integrity (spec/rules/architecture.md, spec/rules/reliability.md GA1).
  *
  * I15: every path-shaped datum in a check instrument — allowlist entries,
  * lint-target globs, sink lists, coverage claims — must resolve against
@@ -36,7 +36,7 @@
  * field's shape is ambiguous (has `/` but no repo-root prefix and is
  * not a `**` lint glob), it is skipped and listed, not failed.
  *
- * Scope list is closed in spec-v4/02-instruments.md GA1. Regenerate by
+ * Scope list is closed in spec/rules/reliability.md GA1. Regenerate by
  * auditing:
  *   rg --files scripts --glob '*.json' --glob '*.txt'
  *   and path-bearing constants in scripts/*.mjs and eslint.config.mjs

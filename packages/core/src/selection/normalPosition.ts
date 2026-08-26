@@ -1,5 +1,5 @@
 /**
- * N1–N3 normal caret positions (`spec-v2/03-selection.md` §3).
+ * N1–N3 normal caret positions (`spec/rules/selection.md` §3).
  *
  * Pure functions over a fake doc snapshot. Not wired to the
  * manager, commands, or reader.

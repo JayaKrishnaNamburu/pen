@@ -10,7 +10,7 @@ const appSource = existsSync(join(srcRoot, "App.tsx"))
 	: "";
 
 /**
- * DOC2 content contract (spec-v2/17-documentation.md, wave-d D.3).
+ * DOC2 content contract (spec/rules/documentation.md, wave-d D.3).
  *
  * Presence plus a banned phrase is too weak: a heading and one sentence
  * passes. A raw line-count minimum is worse — arbitrary, padded, and
@@ -42,28 +42,28 @@ const requiredPages = [
 	{
 		id: "core-concepts",
 		file: "CoreConcepts.tsx",
-		owner: "spec-v2/01-architecture.md",
+		owner: "spec/rules/architecture.md",
 		headings: ["Document store", "Ops and apply", "Origins"],
 		sample: true,
 	},
 	{
 		id: "selection",
 		file: "Selection.tsx",
-		owner: "spec-v2/03-selection.md",
+		owner: "spec/rules/selection.md",
 		headings: ["Selection kinds", "Host writes"],
 		sample: true,
 	},
 	{
 		id: "extensions",
 		file: "Extensions.tsx",
-		owner: "spec-v2/04-facets.md",
+		owner: "spec/rules/facets.md",
 		headings: ["Facets"],
 		sample: true,
 	},
 	{
 		id: "commands",
 		file: "Commands.tsx",
-		owner: "spec-v2/05-commands.md",
+		owner: "spec/rules/commands.md",
 		headings: [
 			"Command registry",
 			"Dispatch and precedence",
@@ -104,28 +104,28 @@ const requiredPages = [
 	{
 		id: "security",
 		file: "Security.tsx",
-		owner: "spec-v2/12-security.md",
+		owner: "spec/rules/security.md",
 		headings: ["URL policy"],
 		sample: false,
 	},
 	{
 		id: "accessibility",
 		file: "Accessibility.tsx",
-		owner: "spec-v2/13-accessibility.md",
+		owner: "spec/rules/accessibility.md",
 		headings: ["Editing surface"],
 		sample: true,
 	},
 	{
 		id: "support",
 		file: "Support.tsx",
-		owner: "spec-v2/15-host-integration.md",
+		owner: "spec/rules/host.md",
 		headings: ["Browser and Node support"],
 		sample: false,
 	},
 	{
 		id: "localization",
 		file: "Localization.tsx",
-		owner: "spec-v2/16-localization.md",
+		owner: "spec/rules/localization.md",
 		headings: ["Locale and messages", "Default catalog"],
 		sample: true,
 	},

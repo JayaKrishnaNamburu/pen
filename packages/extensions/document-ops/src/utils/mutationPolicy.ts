@@ -5,7 +5,7 @@ import { rejectToolCall } from "./toolRejection";
 /**
  * Non-throwing form: the refusal reason, or `null` when the block is mutable.
  * Tools that return refusals to the model rather than throwing use this
- * (`spec-better-ai/01-edit-channel.md` EC5).
+ * (`spec/packages/extensions/ai.md` EC5).
  */
 export function checkToolCanMutateBlock(
 	editor: Editor,

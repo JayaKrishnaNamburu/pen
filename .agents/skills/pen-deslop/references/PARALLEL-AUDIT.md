@@ -11,7 +11,7 @@ If no sub-agent tool is available, run the same lenses sequentially yourself and
 Give every sub-agent:
 
 - the exact artifact: diff, file list, branch, module, or pasted code
-- the relevant local instructions or paths to read (`AGENTS.md`, matching `spec-v2/` docs, `.cursor/rules`)
+- the relevant local instructions or paths to read (`AGENTS.md`, matching `spec/rules/` docs, `.cursor/rules`)
 - the task: find AI-generated slop with evidence and concrete remedies
 - the output shape: findings only, ordered by severity, with file/line references
 
@@ -23,7 +23,7 @@ Use separate briefs:
 
 1. **Local-fit lens** — compare the artifact to nearby callers, callees, sibling modules, naming, tests, and file structure.
 2. **Complexity lens** — look for fake robustness, unnecessary indirection, over-general helpers, cast-heavy contracts, guard-flag accretion, and branches that can disappear.
-3. **System-contract lens** — check the apply pipeline boundary, extension seams (facets/slots), offset domains, package dependency direction, and whether the change bypasses canonical layers or contradicts a spec-v2 rule ID.
+3. **System-contract lens** — check the apply pipeline boundary, extension seams (facets/slots), offset domains, package dependency direction, and whether the change bypasses canonical layers or contradicts a `spec/rules/` rule ID.
 
 Add a fourth lens only when the artifact needs a domain-specific pass, such as selection/projection behavior, IME/input handling, schema/normalization, or AI streaming flows.
 

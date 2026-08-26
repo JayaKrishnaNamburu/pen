@@ -5,9 +5,9 @@ app, not a published package. It is not on npm, has no public exports, and is
 excluded from changeset versioning.
 
 The site documents shipped surfaces only. Architecture truth lives in `spec/`
-and `spec-v2/`.
+and `spec/rules/`.
 
-The live set is the DOC2 page table in `spec-v2/17-documentation.md`, plus the
+The live set is the DOC2 page table in `spec/rules/documentation.md`, plus the
 HOST5 SSR page. Hash routes: `#/`, `#/getting-started`, `#/core-concepts`,
 `#/selection`, `#/extensions`, `#/commands`, `#/collaboration`, `#/ai`,
 `#/import-export`, `#/security`, `#/accessibility`, `#/support`,

@@ -93,7 +93,7 @@ jobs:
           # Bare path strings are the parking-lot shape and fail.
           - gate: above-floor-api-allowlist
             command: node scripts/above-floor-api-allowlist.mjs
-          # Classifies every spec-v3 `- GATE` line without executing it and
+          # Classifies every `- GATE` line without executing it and
           # fails when a command is structurally unable to fail. This is the
           # only gate that can catch a gate: after the SF1 merge, GATE 2.3
           # and 2.9 still named deleted packages, and `pnpm --filter` on a

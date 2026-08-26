@@ -63,7 +63,7 @@ function calleeName(node) {
 }
 
 /**
- * LOC1 (`spec-v2/16-localization.md`): library-rendered copy comes from the
+ * LOC1 (`spec/rules/localization.md`): library-rendered copy comes from the
  * catalog. A string literal in JSX text, chrome attributes, or announcement
  * calls is a bug the lint catches.
  */
@@ -77,11 +77,11 @@ export const noUserFacingLiterals = {
 		schema: [],
 		messages: {
 			jsxText:
-				"User-facing text must come from the message catalog (spec-v2 LOC1).",
+				"User-facing text must come from the message catalog (LOC1).",
 			attribute:
-				"`{{name}}` copy must come from the message catalog (spec-v2 LOC1).",
+				"`{{name}}` copy must come from the message catalog (LOC1).",
 			announce:
-				"Announcement text must come from the message catalog (spec-v2 LOC1).",
+				"Announcement text must come from the message catalog (LOC1).",
 		},
 	},
 	create(context) {

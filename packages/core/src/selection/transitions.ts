@@ -1,5 +1,5 @@
 /**
- * T1–T6 selection type transitions (`spec-v2/03-selection.md` §7).
+ * T1–T6 selection type transitions (`spec/rules/selection.md` §7).
  *
  * Pure functions over a fake doc + selection snapshot. Not wired to the
  * manager, commands, or reader.

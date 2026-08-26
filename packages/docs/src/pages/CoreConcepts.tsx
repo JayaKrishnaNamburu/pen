@@ -35,7 +35,7 @@ export function CoreConceptsPage() {
 				runtime to React, Vue, or the DOM. Core works without a
 				browser through <code>createHeadlessEditor</code>. The
 				architecture record is{" "}
-				<code>spec-v2/01-architecture.md</code>.
+				<code>spec/rules/architecture.md</code>.
 			</p>
 
 			<h2>Document store</h2>

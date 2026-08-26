@@ -1,5 +1,5 @@
 {
-  "_comment": "API4 (spec-v2/14-api-and-packaging.md): extra public exports keys besides `.`. Each entry needs package, key, and a reason. Remove an entry in the same PR that deletes the export.",
+  "_comment": "API4 (spec/rules/api.md): extra public exports keys besides `.`. Each entry needs package, key, and a reason. Remove an entry in the same PR that deletes the export.",
   "entries": [
     {
       "package": "@input/pen-ai",

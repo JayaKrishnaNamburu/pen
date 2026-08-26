@@ -1,6 +1,6 @@
 # Built-in command catalog (Wave 4.2)
 
-Frozen names from `spec-v2/05-commands.md`. Step 4.2 moved caret (except verticals), text, structure, table, and history handlers into this directory. `installEditorCommandRegistry` wires `createCommandRegistry` + `builtinCommandHandlers` onto `createEditor`.
+Frozen names from `spec/rules/commands.md`. Step 4.2 moved caret (except verticals), text, structure, table, and history handlers into this directory. `installEditorCommandRegistry` wires `createCommandRegistry` + `builtinCommandHandlers` onto `createEditor`.
 
 Field-editor keydown (`handleFieldEditorKeyDown`) and beforeinput (`DIRECT_HANDLERS`, expanded backend) now dispatch those handlers through `getCommandRegistry(editor).dispatch`. Local `apply*` / `moveCaretAcrossBlocks` functions remain as compatibility exports and no-registry fallbacks. `pen.caretUp` / `pen.caretDown` now have handlers: geometry via `setVerticalCaretMeasure` (G5), logical block-edge crossing when no measure is registered. Field-editor ArrowUp/Down can dispatch these; `commandsNavigation.ts` is then a leftover caller, not a missing handler.
 

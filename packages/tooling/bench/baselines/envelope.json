@@ -1,6 +1,6 @@
 {
 	"ruleId": "SCALE1",
-	"spec": "spec-v2/22-scale-envelope.md",
+	"spec": "spec/rules/scale.md",
 	"gateStatistic": "median",
 	"sampleSize": 21,
 	"machineClass": "macos-arm64 (darwin 25, Apple Silicon). Not the CI runner (github-actions-ubuntu-latest).",

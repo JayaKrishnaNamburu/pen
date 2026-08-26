@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * GA12 population check (spec-v4/waves/wave-1-instruments.md GATE 1.15).
+ * GA12 population check.
  *
  * turbo.json carries no `lint` task, and every workspace package under
  * packages/ answers `pnpm --filter … lint`. Stated as a set difference

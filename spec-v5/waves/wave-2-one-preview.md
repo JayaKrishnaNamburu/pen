@@ -18,6 +18,8 @@ Order of PRs (WA11): the migrations land against the existing review surface fir
 
 Selection rewrites in suggestions mode stage through the suggest-mode interceptor and render as review-surface suggestions; the bespoke selection-rewrite decoration stack is deleted. Block generation renders streaming preview blocks in flight and stages on completion; the buffered markdown preview renderer and its plumbing in the generation-execution path are deleted, together with the `markdown-fast-apply` plan helpers this wave strands.
 
+**A fourth surface joined the deletion list on 2026-08-26, already producer-less.** Closing UC3's text-parsed door (`../01-channel.md`, UC3 shipped correction) removed the only reachable producer of the structured-preview state. Its last remaining producer is `onStructuredData` in `controller/generationExecutionLoop.ts`, gated on `useStructuredIntentTransport`, and `__tests__/uc3.planReachability.test.ts` proves that flag can never be true: every registered block adapter carries `transportKind: "flow-text"` and adapter resolution cannot yield anything else. So this wave deletes the surface outright rather than migrating it — `Pen.AI.Progress`'s `data-structured-preview-*` attributes, `primitives/ai/structuredTargetPreview.tsx`, `hooks/useAIStructuredPreview.ts`, `utils/structuredPreview.ts`, the preview-patch and preview-equality helpers, and the `structuredPreview` field on session/generation state. The React test that covered it (`aiPrimitives.25.test.tsx`, 359 lines) is already deleted. Wave-2 rule: no PR in this wave may add a producer to keep this surface alive.
+
 - GATE 2.3 [test]: `pnpm --filter @input/pen-ai test -- src/__tests__/rs2.selectionRewrite.test.ts`
   expect: exit 0 — RS2 claimed for the selection lane: rewrite stages through the interceptor and renders review decorations; the deleted stack's decoration classes appear nowhere in the render.
 - GATE 2.4 [test]: `pnpm --filter @input/pen-ai test -- src/__tests__/rs2.blockGeneration.test.ts`
@@ -47,5 +49,14 @@ Selection rewrites in suggestions mode stage through the suggest-mode intercepto
   expect: exit 0 — RS6: the corpus fidelity assertions hold — what the preview showed is what accept applied, per operation.
 - GATE 2.11 [test]: `pnpm --filter @input/pen-conformance test`
   expect: exit 0 — presentation changes did not disturb the rendering conformance net.
-- GATE 2.12 [test]: `pnpm build && pnpm typecheck && pnpm test`
+- GATE 2.12 [grep]: `rg -n "structuredPreview|structured-preview|useStructuredIntentTransport" packages --type ts`
+  expect: exit 1 — the producer-less structured-preview surface is gone, including the transport flag that gated its last producer. If this population survives the wave, RS1's "only three surfaces" claim is false by inventory.
+- GATE 2.13 [test]: `pnpm build && pnpm typecheck && pnpm test`
   expect: exit 0 — repo-wide green at wave close (standing gate).
+
+## Deletions
+
+- `useAIStructuredPreview.ts`, `structuredTargetPreview.tsx`, and `utils/structuredPreview.ts` — the producer-less structured-preview surface.
+- `data-structured-preview-*` — the progress attributes hosts could read off that surface.
+- the selection-rewrite decoration stack, replaced by review-surface suggestions.
+- the buffered markdown block preview renderer, replaced by streaming preview blocks.

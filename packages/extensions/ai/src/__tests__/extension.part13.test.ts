@@ -7,7 +7,7 @@ import { acceptAllSuggestions, aiExtension, getAIController } from "../index";
 import { defaultSchema } from "@input/pen-schema-default";
 
 describe("aiExtension", () => {
-	it("executes review-safe block convert plans through the existing suggestion path", async () => {
+	it("stages a review-safe block conversion from an edit_document call", async () => {
 		let blockId = "";
 		const editor = createEditor({
 			schema: defaultSchema,
@@ -19,17 +19,25 @@ describe("aiExtension", () => {
 					model: {
 						async *stream() {
 							yield {
-								type: "text-delta" as const,
-								delta: JSON.stringify({
-									kind: "block_convert",
-									blockId,
-									newType: "heading",
-									props: { level: 2 },
-								}),
+								type: "tool-call" as const,
+								toolCallId: "call-1",
+								toolName: "edit_document",
+								input: {
+									operations: [
+										{
+											operation: "set_block_props",
+											blockId,
+											blockType: "heading",
+											props: { level: 2 },
+										},
+									],
+								},
 							};
 							yield { type: "done" as const };
 						},
 					},
+					mutationPreference: "suggestions",
+					allowedMutatingTools: ["edit_document"],
 				}),
 			],
 		});
@@ -40,20 +48,10 @@ describe("aiExtension", () => {
 		);
 
 		const controller = getAIController(editor)!;
-		const generation = await controller.runPrompt(
-			"Convert block to heading",
-			{
-				blockId,
-			},
-		);
+		await controller.runPrompt("Convert block to heading", { blockId });
 		const block = editor.getBlock(blockId)!;
 
-		expect(generation.planState).toBe("validated");
-		expect(generation.plan).toMatchObject({
-			kind: "block_convert",
-			blockId,
-			newType: "heading",
-		});
+		expect(controller.getSuggestions().length).toBeGreaterThan(0);
 		expect(block.type).toBe("paragraph");
 		expect(block.meta("suggestion")).toMatchObject({
 			action: "convert-block",

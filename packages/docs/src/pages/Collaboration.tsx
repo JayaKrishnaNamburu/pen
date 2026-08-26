@@ -139,13 +139,13 @@ function install(session: MultiplayerSession) {
 
 			<h2>Evidence plan</h2>
 			<p>
-				Do not read this page as a claim that the full Wave C suite is
-				in-tree. The proof plan is the scenario list in{" "}
-				<code>spec-v2/waves/wave-c-collaboration-contract.md</code>:
+				Do not read this page as a claim that the full collaboration
+				suite is in-tree. The scenarios below are the proof plan for the{" "}
+				<code>COL</code> rules in <code>spec/rules/collaboration.md</code>:
 			</p>
 			<table>
 				<caption>
-					Wave C scenarios are the evidence plan, not a report of
+					These scenarios are the evidence plan, not a report of
 					in-tree passes.
 				</caption>
 				<thead>
