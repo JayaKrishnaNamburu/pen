@@ -52,31 +52,36 @@ pnpm --filter @input/pen-conformance run test:chromium # browser conformance
 
 ## What CI Runs
 
-A pull request lands on nine workflows. Each one ends in a single
-aggregate check named after the workflow, and that name is what branch
-protection requires — so a new matrix leg or a new gate blocks merges
-the moment it exists, with no repository-settings change.
+A pull request lands on nine workflows. GitHub names every check
+`Workflow / Job`, and each workflow that fans out ends in a `Summary`
+check that depends on all of its jobs. Those `Summary` names are what
+branch protection requires, so a new matrix leg or a new gate blocks
+merges the moment it exists, with no repository-settings change.
 
-| Check          | What it protects                                                                     |
-| -------------- | ------------------------------------------------------------------------------------ |
-| `ci`           | Lint, build, API reports, typecheck, unit and integration tests, playground e2e      |
-| `static-gates` | The gate list in `scripts/gates.json`, plus doc refs and changeset coverage          |
-| `conformance`  | Real-browser selection, IME, geometry, and a11y conformance                          |
-| `examples`     | The React, Vue, and vanilla examples still build and mount against workspace sources |
-| `node-matrix`  | The tree builds and tests on Node 22, Node 26, and macOS                             |
-| `bench`        | CH8 performance budgets and the SCALE1 envelope                                      |
-| `docs`         | The docs site compiles and its samples typecheck                                     |
-| `supply-chain` | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
-| `CodeQL`       | Static security analysis                                                             |
+| Required check              | What it protects                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------ |
+| `CI / Summary`              | Lint, build, API reports, typecheck, unit and integration tests, playground e2e      |
+| `Static analysis / Summary` | The gate list in `scripts/gates.json`, plus changeset coverage                       |
+| `Conformance / Summary`     | Real-browser selection, IME, geometry, and a11y conformance                          |
+| `Examples / Summary`        | The React, Vue, and vanilla examples still build and mount against workspace sources |
+| `Node / Summary`            | The tree builds and tests on Node 22, Node 26, and macOS                             |
+| `Docs / Summary`            | The docs site compiles and its samples typecheck                                     |
+| `Supply chain / Summary`    | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
+| `Performance / Budgets`     | CH8 performance budgets and the SCALE1 envelope                                      |
+| `CodeQL / JavaScript and TypeScript` | Static security analysis                                                    |
 
-Two of these are staged rather than all-or-nothing. In `ci`, the
-Firefox e2e leg reports without blocking; in `conformance`, WebKit and
-Firefox do. Each is held on a named defect recorded in the workflow
-file — read the comment there before assuming a red leg is flake.
+Two of these are staged rather than all-or-nothing. Under `CI`, the
+Firefox browser leg reports without blocking; under `Conformance`,
+WebKit and Firefox do. Each is held on a named defect recorded in the
+workflow file — read the comment there before assuming a red leg is
+flake.
 
 Adding a static gate means adding an entry to `scripts/gates.json`. The
-CI matrix and `pnpm verify` both read that file, so the two cannot drift
-apart.
+`Static analysis / Repo gates` job runs that file through the same
+`scripts/verify.mjs` you run locally, so CI and `pnpm verify` cannot
+drift apart. Every gate runs even after one fails, and the summary at
+the end of the job names each failure next to the command that produced
+it.
 
 ## Repository Shape
 

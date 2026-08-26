@@ -990,9 +990,9 @@ The 23 tracked Playwright artifacts under the conformance `test-results-n2*` dir
 
 ---
 
-## `static-gates.yml`
+## `static-analysis.yml`
 
-`ch-gates` runs as a matrix row in `.github/workflows/static-gates.yml`. The `health-gates.mjs` wrapper is gone. Hosts never imported this file.
+`ch-gates` runs as one entry in `scripts/gates.json`, which the `Repo gates` job of `.github/workflows/static-analysis.yml` executes. The `health-gates.mjs` wrapper is gone. Hosts never imported this file.
 
 ---
 

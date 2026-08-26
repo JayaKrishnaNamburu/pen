@@ -51,7 +51,7 @@ Staffing the empty `input` / `ime` / `bidi` / `geometry` / `overlays` directorie
 
 So a ledger entry can mean either of two things: a path nothing tested, or **a path tested only through an API the keystroke does not use**. The second kind is invisible to a passing test suite by construction, which is why a green registry test was not evidence that the rule shipped.
 
-The rules for any future entry, which are what kept this ledger draining rather than growing. An entry's scenario asserts what the spec requires and carries `knownDefect`, which marks it expected-to-fail. `conformance-chromium` is not `continue-on-error`, and a job that is permanently red is one nobody can act on — that is how a blocking engine sat red for a week unnoticed. When a defect is fixed, Playwright reports the scenario as **unexpectedly passing** and the job goes red until the annotation is deleted. Removing the annotation is the fix's last step.
+The rules for any future entry, which are what kept this ledger draining rather than growing. An entry's scenario asserts what the spec requires and carries `knownDefect`, which marks it expected-to-fail. `Conformance / Chromium` is not `continue-on-error`, and a job that is permanently red is one nobody can act on — that is how a blocking engine sat red for a week unnoticed. When a defect is fixed, Playwright reports the scenario as **unexpectedly passing** and the job goes red until the annotation is deleted. Removing the annotation is the fix's last step.
 
 To check the ledger, match the annotation and not the word:
 
