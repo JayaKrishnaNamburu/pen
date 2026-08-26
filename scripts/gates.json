@@ -71,12 +71,6 @@
     "description": "npm trusted-publishing and provenance preconditions. Zero tags prints UNEXERCISED rather than failing."
   },
   {
-    "id": "migration-guide-check",
-    "command": "node scripts/migration-guide-check.mjs",
-    "needsBuild": true,
-    "description": "MIGRATION.md stays mechanically true: export claims, origin union, yjs peer, named paths, fenced samples."
-  },
-  {
     "id": "doc-refs",
     "command": "pnpm doc-refs",
     "needsBuild": true,

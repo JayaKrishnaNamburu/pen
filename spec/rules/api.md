@@ -21,7 +21,7 @@ For an SDK the API surface and the packaging around it are product surface, so a
 - SF2. The import and export family is one package, `@input/pen-interop`, with per-format subpaths (`./html`, `./markdown`, `./json`, `./xml`), each exporting that format's importer and exporter. `packages/shared/markdown-serialization` stays a shared package for as long as it has a consumer outside those formats; it folds into `@input/pen-interop` only when the merged formats are its sole consumers.
 - SF3. Nothing else merges: multiplayer, transports, search, input rules, shortcuts, undo, history, document-ops, presets, schema, and the tooling packages keep their boundaries, and that list is closed, so extending it amends this rule rather than being decided in passing. The governing test is that a package exists when it has an independent consumer, an independent dependency footprint, or an independent release cadence — not because a feature was developed in a separate folder.
 - SF4. A merged package ships the workspace manifest standard: dual ESM and CJS, an `exports` map covering every subpath including `./package.json` (required on every published package, not only merged ones), a `files` allowlist, `sideEffects: false`, and peer ranges taken from the strictest of the merged manifests. `scripts/sync-package-metadata.mjs` runs as part of the merge, and the Verdaccio full-closure install is the verification that matters — publish the closure to a local registry, `pnpm add` the top-level packages in a clean temporary project, build, and run the mount-and-edit smoke test — because it is the only check that exercises `exports` maps, `files`, and peer ranges the way a host does.
-- SF5. Every retired specifier maps to exactly one replacement (`@input/pen-ai-suggestions` → `@input/pen-ai/suggestions`, `@input/pen-delta-stream` → `@input/pen-ai/stream`, `@input/pen-export-json` → `@input/pen-interop/json`, and so on), and the full table ships in the host migration guide. The workspace rewrite is done; remaining host-side specifiers follow that table.
+- SF5. Retired. The satellite specifiers it governed (`@input/pen-ai-suggestions`, `@input/pen-delta-stream`, `@input/pen-export-json`, and the rest) were folded into `@input/pen-ai/*` and `@input/pen-interop/*` before anything was published, so no consumer ever imported them and there is no host-side rewrite left to sequence. The workspace rewrite is complete. What keeps the retired names from returning is API4 and the published-export allowlist, which enumerate the export keys a package may ship, not a prose mapping table.
 - SF6. `api-report.md` files, the documentation-coverage ratchet, and the `size-limit` baselines are re-recorded in the same change that moves the surface they describe, never spread across follow-ups, because per-lane ratchet edits are how baselines rot. Retired package names are deleted from the workspace rather than kept as aliases; because they were never published, they are not `npm deprecate`d.
 
 ## CS — internal structure
@@ -39,7 +39,7 @@ For an SDK the API surface and the packaging around it are product surface, so a
 
 ## Retired
 
-No member of `API`, `SF`, or `CS` is retired. API1–API10, SF1–SF6, and CS1–CS10 are all live.
+`SF5` is retired: it sequenced a specifier rewrite that finished before first publish, and its table lived in the host migration guide, which is deleted for the same reason — nothing was ever published under the retired names. API1–API10, SF1–SF4, SF6, and CS1–CS10 are live.
 
 ## Dropped
 

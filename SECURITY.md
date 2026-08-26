@@ -27,7 +27,7 @@ against the development line on the default branch.
 
 External content reaches the live DOM through many ingresses. Only
 two of them call `sanitizeHTML` (DOMPurify via `isomorphic-dompurify`,
-owned by `@input/pen-import-html`):
+owned by `@input/pen-interop/html`):
 
 1. paste `text/html` (via `htmlImporter.parse` / `htmlImporter.import`)
 2. the HTML import API (`htmlImporter.import` / `parseHtmlToBlocks`)
@@ -75,7 +75,7 @@ two exporters.
 
 - Library rendering builds DOM through `createElement` /
   `textContent` / attribute setters. Parsing untrusted HTML uses
-  `DOMParser` in `@input/pen-import-html`; that tree enters the
+  `DOMParser` in `@input/pen-interop/html`; that tree enters the
   document as data.
 - `@input/pen-document-ops` validates tool payloads before building
   ops. Invalid payloads emit a diagnostic and are not applied. Tool

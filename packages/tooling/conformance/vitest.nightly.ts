@@ -35,8 +35,8 @@ if (
 	);
 }
 
-// v3 GATE 1.7: AN fuzz at 1M ops. Not a properties file — the pin above
-// would reject it. Empty match is the reserved slot; when the suite
+// v3 GATE 1.7: AN fuzz at its nightly count. Not a properties file — the pin
+// above would reject it. Empty match is the reserved slot; when the suite
 // lands it is included without editing this list.
 const anFuzzGlob = "packages/**/*an-fuzz*.test.ts";
 const anFuzzInclude = posixGlob(anFuzzGlob);
@@ -57,7 +57,8 @@ export default defineConfig({
 		include,
 		// unknownContent: DUR3 unknown-block passthrough (80 cases).
 		// commitEvent: I1 one commit per state change (2000 steps).
-		// an-fuzz: AN1–AN5 / AN14 at 1M when the suite file exists.
+		// an-fuzz: AN1–AN5 / AN14, which sets its own budget from its op
+		// count and so is not governed by this default.
 		testTimeout: 1_800_000,
 	},
 });

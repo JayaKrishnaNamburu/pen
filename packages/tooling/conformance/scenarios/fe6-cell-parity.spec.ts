@@ -276,12 +276,16 @@ scenario(
 			),
 		).toBe(before);
 
+		// The label states the pin and the detail states the measurement, so a
+		// failure reads as the disagreement it is. Composing the label from
+		// `routeExists` alone printed "webkit does not route ... — inputTypes=
+		// ["formatBold"]", which contradicts its own evidence.
 		expect(
 			routeDelivered,
 			formatCheckReport(
-				`FE6: ${browserName} ${routeExists ? "routes" : "does not route"} the bold accelerator into the page as formatBold`,
+				`FE6: ${browserName} is pinned to ${routeExists ? "route" : "not route"} the bold accelerator into the page as formatBold`,
 				routeDelivered === routeExists ? "passed" : "failed",
-				`inputTypes=${JSON.stringify(inputTypes)}`,
+				`${browserName} ${routeDelivered ? "delivered" : "did not deliver"} formatBold; inputTypes=${JSON.stringify(inputTypes)}`,
 			),
 		).toBe(routeExists);
 

@@ -2,11 +2,11 @@
 
 Pen markdown is GitHub-flavored Markdown for blocks that have a standard representation, plus Pen-specific constructs for the rest. This package walks the document and calls each block and mark `serialize.toMarkdown`. It does not grow the dialect.
 
-The generated per-type export table is [`packages/extensions/export-markdown/FIDELITY.md`](../../extensions/export-markdown/FIDELITY.md).
+The generated per-type export table is [`packages/extensions/interop/FIDELITY.md`](../../extensions/interop/FIDELITY.md).
 
 ## Portable GFM — survives a Pen markdown round-trip
 
-These constructs export as ordinary GFM. `@input/pen-import-markdown` reconstructs the same block or mark type.
+These constructs export as ordinary GFM. `@input/pen-interop/markdown` reconstructs the same block or mark type.
 
 | Construct | Markdown | Notes |
 | --- | --- | --- |
@@ -52,7 +52,7 @@ These rules live in this serializer, not in schema `toMarkdown`:
 - Numbered-list `start` is derived from prior siblings at the same indent and passed into the block serializer.
 - The empty-block storage sentinel `\u200B` is stripped at the export boundary (I11).
 
-URL admission (hostile `href` / `src` omitted) is SEC1 in `@input/pen-export-markdown`, not this package.
+URL admission (hostile `href` / `src` omitted) is SEC1 in `@input/pen-interop/markdown`, not this package.
 
 ## Does not survive markdown
 

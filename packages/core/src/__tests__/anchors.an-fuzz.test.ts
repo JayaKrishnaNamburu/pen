@@ -24,6 +24,14 @@ const SEED = SEED_INFO.numeric;
 const OP_COUNT = resolveOpCount();
 const FORCE_FAIL_AT = Number(process.env.PEN_FUZZ_FORCE_FAIL_AT);
 
+// The budget has to track the count, or the two run paths disagree about it:
+// a number chosen for the 200-op smoke kills the nightly soak, and one chosen
+// for the soak stops catching a hang in the smoke. 22ms/op is 3x the 7.3ms/op
+// measured at 40_000, which covers the ubuntu-latest factor and still fails
+// well before nightly.yml's job timeout. The floor keeps the smoke tolerant of
+// a cold worker.
+const TIMEOUT_MS = Math.max(20_000, OP_COUNT * 22);
+
 const noDefaultExtensionsPreset = {
 	resolve() {
 		return { extensions: [] };
@@ -52,12 +60,22 @@ function resolveOpCount(): number {
 	if (Number.isFinite(override) && override > 0) {
 		return Math.floor(override);
 	}
-	// Nightly (PEN_FUZZ_NIGHTLY) is the 1M-op soak via vitest.nightly.ts.
-	// The pull-request `pnpm test` path is a smoke: 200 matches the I1
-	// properties PR count. 10_000 was a soak in a unit job — 11.6s idle,
-	// 200s on ubuntu-latest under turbo, past birpc's 60s RPC window, so
-	// every assertion passed and vitest still exited 1.
-	return NIGHTLY ? 1_000_000 : 200;
+	// This harness is quadratic by construction: snapshotModel walks every
+	// block and reads its logical text once per step, and the document grows
+	// as the fuzz inserts, splits and streams. Measured on an Apple Silicon
+	// laptop: 5_000 ops 2.5s, 10_000 ops 11.2s, 40_000 ops 291s.
+	//
+	// 1_000_000 was never reachable on that curve and had never run to prove
+	// otherwise, because nightly.yml's schedule only fires from the default
+	// branch. 40_000 is the largest count with a measured wall clock; at the
+	// ~2.4x ubuntu-latest factor the benches see it is ~12 minutes, which
+	// fits nightly.yml's 40-minute job alongside the two property suites.
+	//
+	// The PR `pnpm test` path stays a smoke. 10_000 there was a soak in a
+	// unit job: 11.6s idle but ~200s on ubuntu-latest under turbo, past
+	// birpc's 60s RPC window, so every assertion passed and vitest still
+	// exited 1.
+	return NIGHTLY ? 40_000 : 200;
 }
 
 class Rng {
@@ -232,7 +250,7 @@ function yText(
 describe("an-fuzz AN1–AN5 AN14", () => {
 	it(
 		"AN1-AN5: repaired anchors match the v2 cross-block oracle after every generated step",
-		{ timeout: 20_000 },
+		{ timeout: TIMEOUT_MS },
 		async () => {
 			const rng = new Rng(SEED);
 			const editor = createEditor();

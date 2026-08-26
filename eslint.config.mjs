@@ -11,6 +11,13 @@ const selectionTimers = require("./packages/tooling/eslint-plugin/src/rules/no-s
 // invariants are enforced. It is permissive on purpose — a rule that would demand mass
 // edits lands as a warning until the cleanup it implies is done, so the error set stays
 // meaningful and the gate stays green.
+//
+// The warning count is ratcheted: `lint:eslint` passes `--max-warnings 1215`, the count
+// at the time the cap was introduced. Like MAX_UNDOCUMENTED it may only be lowered, and
+// only in the same change that removes the warnings. Without the cap this was the one
+// gate in the repo that could drift upward without limit, which is what let the count
+// reach 1215 in the first place. Promoting a rule below from "warn" to "error" is the
+// intended way down; lowering the cap records the result.
 
 export default tseslint.config(
 	{

@@ -132,8 +132,8 @@ const requiredPages = [
 	{
 		id: "upgrade",
 		file: "Upgrade.tsx",
-		owner: "MIGRATION.md",
-		headings: ["Support", "Landed host-visible breaks"],
+		owner: "spec/rules/documentation.md",
+		headings: ["Versioning", "Support"],
 		sample: false,
 	},
 ];

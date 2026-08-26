@@ -9,7 +9,6 @@ Read this file first. Then load only the `rules/` and `packages/` documents that
 - `charter/` — cross-cutting architectural invariants.
 - `rules/` — normative families with stable rule IDs (`A1`, `S4`, `SEC1`, `API6`, …). Cite those IDs in PR descriptions and test names.
 - `packages/` — one current-state spec per workspace package that has one. Mirrors the package tree, not a milestone.
-- `MIGRATION.md` — host adoption guide (what a host assembling from this repo adopts). Not an agent index; useful so deleted APIs are not revived.
 
 Two workspace packages have no `spec/packages/` file on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. See `charter/package-map.md`.
 

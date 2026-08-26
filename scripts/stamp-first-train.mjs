@@ -4,7 +4,7 @@
  *
  * Unpublished placeholders stay at 0.0.1. `changeset version` treats the
  * staged first-release `minor` bumps as 0.0.1 → 0.1.0. The first published
- * train is 0.3.0 (`spec/MIGRATION.md`, `spec/rules/api.md` API7), so this
+ * train is 0.3.0 (`spec/rules/api.md` API7), so this
  * script rewrites that mechanical 0.1.0 to 0.3.0 once, and only when no
  * train tag exists yet.
  *
