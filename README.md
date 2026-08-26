@@ -5,8 +5,6 @@
   Headless, extension-first rich text<br/>editor engine for AI collaboration
 </h3>
 
-<h5 align="center">Work in progress, not yet ready for use</h5>
-
 <p align="center">
   <a href="https://github.com/input-systems/pen/stargazers"><img src="https://img.shields.io/github/stars/input-systems/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-FF2B6E" alt="license" /></a>
