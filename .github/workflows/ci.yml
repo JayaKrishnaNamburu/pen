@@ -150,6 +150,16 @@ jobs:
 
       - name: Set up Pen toolchain
         uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: e2e-${{ matrix.engine }}
+
+      - name: Build packages
+        # playground/vite.config.ts declares no source aliases, so the dev
+        # server resolves every @input/pen-* import through the package
+        # exports, and those name dist/ only. Without a build Vite answers
+        # "Failed to resolve entry for package" and every spec meets a blank
+        # page, which reads as a product failure rather than a missing step.
+        run: pnpm build
 
       - name: Install Playwright ${{ matrix.engine }}
         run: pnpm exec playwright install --with-deps ${{ matrix.engine }}
