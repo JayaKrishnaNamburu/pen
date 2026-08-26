@@ -227,7 +227,19 @@ function yText(
 describe("an-fuzz AN1–AN5 AN14", () => {
 	it(
 		"AN1-AN5: repaired anchors match the v2 cross-block oracle after every generated step",
-		{ timeout: 120_000 },
+		// 120_000 was timing out on CI in both `Lint, types and tests` and every
+		// Node leg, while the same seed finishes in 11.6s here. The gap is
+		// contention, not the assertion: `pnpm test` runs every package's suite
+		// at once, and under that load the same run measures 42.8s locally — a
+		// 3.7x factor before ubuntu-latest adds the ~2.4x it costs the benches.
+		// 42.8 x 2.4 lands at ~103s, which is why a 120s budget failed for the
+		// machine rather than for the tree, with vitest reporting worker
+		// starvation (`Timeout calling "onTaskUpdate"`) alongside it.
+		//
+		// 300_000 clears the contended estimate by ~3x and still catches a hang:
+		// real work here is under a minute. CH9 measures the half-budget rule on
+		// an idle machine, where 11.6s against 150s leaves an order of magnitude.
+		{ timeout: 300_000 },
 		() => {
 			const rng = new Rng(SEED);
 			const editor = createEditor();
