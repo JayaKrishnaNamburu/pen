@@ -71,7 +71,7 @@ export { useAI } from "./hooks/useAI";
 export {
 	useAIDebugLog,
 	type AIDebugLogEntry,
-	type AIDebugLogFastApplyMetrics,
+	type AIDebugLogCommitMetrics,
 	type AIDebugLogState,
 } from "./hooks/useAIDebugLog";
 export { useAISessions } from "./hooks/useAISessions";
@@ -96,7 +96,7 @@ export type {
 	AIContextualPromptState,
 	AIControllerState,
 	AISession,
-	AISessionFastApplyMetrics,
+	AISessionCommitMetrics,
 	AISessionMetrics,
 	AISessionPrompt,
 	AISessionStatus,
@@ -107,6 +107,4 @@ export type {
 	AIStreamEventType,
 	GenerationState,
 	PersistentSuggestion,
-	StructuralReviewItem,
-	StructuralReviewComparisonRow,
 } from "@input/pen-ai";

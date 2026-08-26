@@ -230,14 +230,13 @@ export function createInlineSession({
 		promptHistory: [],
 		generationIds: [],
 		pendingSuggestionIds,
-		pendingReviewItemIds: [],
 		createdAt: 0,
 		updatedAt: 0,
 		metrics: {
 			streamEventCount: 0,
-			fastApply: {
+			commit: {
 				attemptCount: 0,
-				nativeFastApplyCount: 0,
+				selectionReplacementCount: 0,
 				scopedReplacementCount: 0,
 				plainMarkdownCount: 0,
 				failedCount: 0,

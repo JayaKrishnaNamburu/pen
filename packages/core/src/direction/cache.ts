@@ -23,9 +23,7 @@ export type DirectionCache = {
 	clear(): void;
 };
 
-function directionSetting(
-	props?: Record<string, unknown> | null,
-): string {
+function directionSetting(props?: Record<string, unknown> | null): string {
 	if (props == null) {
 		return "";
 	}
@@ -56,7 +54,11 @@ export function createDirectionCache(): DirectionCache {
 			if (!entry) {
 				return undefined;
 			}
-			const fingerprint = fingerprintDirectionInput(text, props, facetKey);
+			const fingerprint = fingerprintDirectionInput(
+				text,
+				props,
+				facetKey,
+			);
 			if (entry.fingerprint !== fingerprint) {
 				entries.delete(blockId);
 				return undefined;

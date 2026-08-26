@@ -2,7 +2,6 @@ import type { AISession, GenerationState } from "../types";
 
 export type AIReviewPresentationState =
 	| "user-input"
-	| "thinking"
 	| "ai-writing"
 	| "user-reviewing"
 	| "resolved";
@@ -10,12 +9,11 @@ export type AIReviewPresentationState =
 export type AIReviewPresentationRole =
 	| "context"
 	| "insert"
+	| "delete"
 	| "delete-hidden"
 	| "block-insert"
 	| "block-delete"
-	| "block-change"
-	| "active-change"
-	| "generation-zone";
+	| "block-change";
 
 export const AI_REVIEW_ROLE_ATTRIBUTE = "data-pen-ai-review-role";
 export const AI_REVIEW_STATE_ATTRIBUTE = "data-pen-ai-review-state";
@@ -24,13 +22,23 @@ export const FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE =
 export const AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE =
 	"data-pen-ai-review-preview-virtual";
 
+/** Fields the posture resolver actually reads. */
+export type AIReviewPostureSession = {
+	id: string;
+	surface: AISession["surface"];
+	contextualPrompt?: { composer: { isOpen: boolean } };
+};
+
 export function resolveAIReviewPresentationState({
 	activeGeneration,
 	activeSession,
 	hasSuggestions,
 }: {
-	activeGeneration?: GenerationState | null;
-	activeSession: AISession | null;
+	activeGeneration?: {
+		status: GenerationState["status"];
+		sessionId?: string;
+	} | null;
+	activeSession: AIReviewPostureSession | null;
 	hasSuggestions: boolean;
 }): AIReviewPresentationState {
 	if (

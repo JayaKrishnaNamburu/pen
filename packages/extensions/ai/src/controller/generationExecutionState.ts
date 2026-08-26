@@ -1,4 +1,8 @@
-import type { DocumentRange, StreamingTarget, ToolRuntime } from "@input/pen-types";
+import type {
+	DocumentRange,
+	StreamingTarget,
+	ToolRuntime,
+} from "@input/pen-types";
 import type { BlockAdapter } from "../runtime/blockAdapters";
 import type { AIContentFormat } from "../runtime/contracts";
 import type { RequestRouterDecision } from "../runtime/router";
@@ -9,10 +13,8 @@ import type {
 	AIWorkingSetEnvelope,
 	GenerationState,
 } from "../types";
-import type {
-	GenerationExecutionContext,
-	GenerationTarget,
-} from "../helpers";
+import type { GenerationExecutionContext, GenerationTarget } from "../helpers";
+import type { GenerationStreamingSink } from "./streamingSink";
 
 export interface ExecuteGenerationInput {
 	prompt: string;
@@ -62,14 +64,10 @@ export interface GenerationExecutionState {
 	currentText: string;
 	streamingTarget: StreamingTarget | null;
 	blockStreamingStarted: boolean;
-	shouldStreamDirectly: boolean;
 	selectionRange: DocumentRange | null;
 	selectionSourceText: string;
 	shouldReplaceMarkdownTarget: boolean;
-	canStreamSelectionSuggestions: boolean;
-	canStreamBlockSuggestions: boolean;
-	canStreamMarkdownBlockSuggestions: boolean;
-	streamedSuggestionInitialized: boolean;
+	streamingSink: GenerationStreamingSink;
 	streamedSuggestionLength: number;
 	sessionTurnId: string | undefined;
 	existingSession: AISession | null;
@@ -77,6 +75,5 @@ export interface GenerationExecutionState {
 	shouldTrimLeadingBlankBlockText: boolean;
 	generationPrompt: string;
 	seedGeneration: GenerationState;
-	currentStructuredIntent: GenerationState["structuredIntent"];
 	currentMutationReceipt: AIMutationReceipt | null;
 }

@@ -15,7 +15,7 @@ const PACKAGES = join(RENDERING, "..");
 const SLASH_MENU = join(RENDERING, "react/src/hooks/useSlashMenu.ts");
 const CONTENT_EDITABLE = join(
 	DOM_SRC,
-	"field-editor/contenteditableBackendCore.ts",
+	"field-editor/contenteditableBackend.ts",
 );
 const AUTOCOMPLETE_ACCEPT = join(
 	PACKAGES,

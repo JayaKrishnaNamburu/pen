@@ -114,13 +114,12 @@ describe("selection helpers", () => {
 			focus: { blockId: "b", offset: 0 },
 		});
 
-		expect(getSelectionBlockRange(editor.internals.doc, selection)).toEqual([
-			first,
-			"b",
-		]);
-		expect(selectionToRange(editor.internals.doc, selection).blockRange).toEqual(
+		expect(getSelectionBlockRange(editor.internals.doc, selection)).toEqual(
 			[first, "b"],
 		);
+		expect(
+			selectionToRange(editor.internals.doc, selection).blockRange,
+		).toEqual([first, "b"]);
 
 		editor.destroy();
 	});

@@ -54,7 +54,9 @@ function editChannelModel(
 				toolName: "edit_document",
 				input: {
 					operations: buildOperations(
-						annotationsFromRequest(request as { messages: unknown }),
+						annotationsFromRequest(
+							request as { messages: unknown },
+						),
 					),
 				},
 			} as ModelStreamEvent;
@@ -145,7 +147,8 @@ describe("agent chat edits through the edit_document channel", () => {
 				{
 					operation: "replace_blocks",
 					blockIds: [lastParagraph!.id],
-					markdown: "- Revenue grew\n- Costs fell\n- Margins improved\n",
+					markdown:
+						"- Revenue grew\n- Costs fell\n- Margins improved\n",
 				},
 			];
 		});
@@ -161,7 +164,7 @@ describe("agent chat edits through the edit_document channel", () => {
 
 		expect(generation.status).toBe("complete");
 		expect(generation.route).toBe("tool-loop");
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 
 		const blocks = Array.from(editor.blocks());
 		expect(blocks.map((block) => block.type)).toEqual([
@@ -294,7 +297,7 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 			target: "document",
 		});
 
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 		expect(
 			Array.from(editor.blocks()).map((block) => ({
 				id: block.id,
@@ -317,7 +320,7 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 	// markdown normalizer strips the wrapper and leaves nothing to insert — so it
 	// locks the rule in rather than proving the fix. The red-proof is the
 	// markdown case.
-	it("does not honour a well-formed fast-apply payload sent as text", async () => {
+	it("does not honour a well-formed commit payload sent as text", async () => {
 		const editor = createChatEditor(talkingModel("placeholder"));
 		await editor.whenReady();
 		const { lastParagraphId } = seedDocument(editor);
@@ -326,14 +329,14 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 		const applying = createChatEditor(
 			talkingModel(
 				[
-					"<pen-fast-apply>",
+					"<pen-commit>",
 					"<instructions>Make the last paragraph a bullet.</instructions>",
 					"<edit>",
 					"<operation>replace_text</operation>",
 					`<blockId>${lastParagraphId}</blockId>`,
 					"<text>Revenue grew</text>",
 					"</edit>",
-					"</pen-fast-apply>",
+					"</pen-commit>",
 				].join("\n"),
 			),
 		);
@@ -371,7 +374,9 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 		await editor.whenReady();
 		seedDocument(editor);
 
-		await getAIController(editor)!.runPrompt(PROMPT, { target: "document" });
+		await getAIController(editor)!.runPrompt(PROMPT, {
+			target: "document",
+		});
 
 		expect(promptText).toContain("edit_document");
 		expect(promptText).not.toContain("Return only markdown content");

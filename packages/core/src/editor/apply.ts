@@ -65,7 +65,10 @@ export class ApplyPipeline implements ApplyPipelineInternal {
 		| null = null;
 	_resolveBeforeApplyHooks:
 		| (() => ReadonlyArray<
-				(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
+				(
+					ops: DocumentOp[],
+					options: { origin?: OpOrigin },
+				) => DocumentOp[]
 		  >)
 		| null = null;
 	_recordPhase: ((phase: PipelinePhase) => void) | null = null;
@@ -89,7 +92,8 @@ export class ApplyPipeline implements ApplyPipelineInternal {
 	}
 
 	get mutableBlockOrder(): ApplyPipelineMutableStringArray {
-		return this._doc.blockOrder as unknown as ApplyPipelineMutableStringArray;
+		return this._doc
+			.blockOrder as unknown as ApplyPipelineMutableStringArray;
 	}
 
 	get apps(): CRDTMap<CRDTMap<unknown>> {

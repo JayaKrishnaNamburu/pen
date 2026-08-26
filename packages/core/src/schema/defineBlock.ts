@@ -1,9 +1,5 @@
 import type { BlockA11ySpec } from "@input/pen-types";
-import type {
-	BlockSchema,
-	ContentType,
-	PropSchema,
-} from "@input/pen-types";
+import type { BlockSchema, ContentType, PropSchema } from "@input/pen-types";
 import { resolveSchema } from "./prop";
 
 type DefineBlockConfig = Omit<
@@ -15,9 +11,7 @@ type DefineBlockConfig = Omit<
 	aiDescription?: string;
 };
 
-function resolveProps(
-	config: DefineBlockConfig,
-): Record<string, PropSchema> {
+function resolveProps(config: DefineBlockConfig): Record<string, PropSchema> {
 	const raw = config.props ?? config.propSchema ?? {};
 	const resolved: Record<string, PropSchema> = {};
 	for (const [k, v] of Object.entries(raw)) {
@@ -92,7 +86,11 @@ function generateValidator(
 				if (schema.minimum !== undefined && value < schema.minimum) {
 					value = schema.minimum;
 				}
-				if (typeof value === "number" && schema.maximum !== undefined && value > schema.maximum) {
+				if (
+					typeof value === "number" &&
+					schema.maximum !== undefined &&
+					value > schema.maximum
+				) {
 					value = schema.maximum;
 				}
 			}
@@ -109,9 +107,7 @@ function generateValidator(
 	};
 }
 
-export type DefinedBlockSchema<
-	Type extends string = string,
-> = Omit<
+export type DefinedBlockSchema<Type extends string = string> = Omit<
 	BlockSchema<Type, Record<string, PropSchema>, ContentType>,
 	"a11y"
 > & {
@@ -146,14 +142,17 @@ export function defineBlock<Type extends string>(
 		serialize: config.serialize ?? {},
 		normalize: config.normalize,
 		validateProps:
-			Object.keys(props).length > 0 ? generateValidator(props) : undefined,
+			Object.keys(props).length > 0
+				? generateValidator(props)
+				: undefined,
 		fieldEditor: config.fieldEditor,
 		keyBindings: config.keyBindings,
 		placeholder: config.placeholder,
 		display: config.display ?? { title: typeNameToTitle(type) },
 		authoring: config.authoring,
 		isContainer: config.isContainer,
-		aiDescription: config.aiDescription ?? generateAIDescription(type, props),
+		aiDescription:
+			config.aiDescription ?? generateAIDescription(type, props),
 	} as BlockSchema<Type, Record<string, PropSchema>, ContentType>;
 	if (config.a11y) {
 		schema.a11y = freezeA11ySpec(config.a11y);

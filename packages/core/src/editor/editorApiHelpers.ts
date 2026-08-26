@@ -283,7 +283,12 @@ export function* iterateBlocks(
 		seen.add(id);
 		const blockMap = (self._doc.blocks as CRDTBlockMap).get(id);
 		if (!type || blockMap?.get("type") === type) {
-			yield createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
+			yield createBlockHandle(
+				id,
+				self._doc,
+				self._crdtDoc,
+				self._registry,
+			);
 		}
 		const children = blockMap?.get("children") as
 			| CRDTArray<string>
@@ -295,7 +300,9 @@ export function* iterateBlocks(
 	}
 
 	for (let i = 0; i < self._doc.blockOrder.length; i++) {
-		yield* walk((self._doc.blockOrder as CRDTArray<string>).get(i) as string);
+		yield* walk(
+			(self._doc.blockOrder as CRDTArray<string>).get(i) as string,
+		);
 	}
 }
 

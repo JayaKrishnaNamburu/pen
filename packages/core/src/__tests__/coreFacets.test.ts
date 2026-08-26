@@ -65,10 +65,9 @@ describe("core facets 1.3", () => {
 			],
 		});
 		registry.markReady();
-		expect(registry.read(keymapFacet).map((binding) => binding.key)).toEqual([
-			"Mod-Shift-Z",
-			"Mod-Z",
-		]);
+		expect(
+			registry.read(keymapFacet).map((binding) => binding.key),
+		).toEqual(["Mod-Shift-Z", "Mod-Z"]);
 	});
 
 	it("1.3: pen.beforeApply / decorations / clipboard stay ordered lists", () => {
@@ -116,7 +115,10 @@ describe("core facets 1.3", () => {
 		expect(empty.read(ariaReadOnlyFacet)).toBe(false);
 
 		const mixed = createFacetRegistry({
-			providers: [ariaReadOnlyFacet.of(false), ariaReadOnlyFacet.of(true)],
+			providers: [
+				ariaReadOnlyFacet.of(false),
+				ariaReadOnlyFacet.of(true),
+			],
 		});
 		mixed.markReady();
 		expect(mixed.read(ariaReadOnlyFacet)).toBe(true);

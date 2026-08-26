@@ -164,7 +164,11 @@ export class EditorAnchorsImpl implements EditorAnchors {
 		if (typeof adapter.createRelativePosition !== "function") {
 			return null;
 		}
-		const encoded = adapter.createRelativePosition(this._doc, target, assoc);
+		const encoded = adapter.createRelativePosition(
+			this._doc,
+			target,
+			assoc,
+		);
 		if (!encoded) {
 			return null;
 		}
@@ -193,7 +197,8 @@ export class EditorAnchorsImpl implements EditorAnchors {
 				level: "warn",
 				source: "core",
 				message: `anchor target "${target.blockId}" does not exist`,
-				remediation: "Mint against a block or cell that is in the document.",
+				remediation:
+					"Mint against a block or cell that is in the document.",
 				blockId: target.blockId,
 			});
 			return null;
@@ -201,7 +206,10 @@ export class EditorAnchorsImpl implements EditorAnchors {
 		return next;
 	}
 
-	range(range: { anchor: AnchorTarget; focus: AnchorTarget }): AnchorRange | null {
+	range(range: {
+		anchor: AnchorTarget;
+		focus: AnchorTarget;
+	}): AnchorRange | null {
 		const from = this.create(range.anchor, -1);
 		const to = this.create(range.focus, 1);
 		if (!from || !to) {
@@ -221,9 +229,13 @@ export class EditorAnchorsImpl implements EditorAnchors {
 			this._cache.set(anchor, { commitId, target: null });
 			return null;
 		}
-		const target = adapter.resolveRelativePosition(this._doc, anchor.position, {
-			followUndoneDeletions: anchor.provenance === "local",
-		});
+		const target = adapter.resolveRelativePosition(
+			this._doc,
+			anchor.position,
+			{
+				followUndoneDeletions: anchor.provenance === "local",
+			},
+		);
 		this._cache.set(anchor, { commitId, target });
 		if (target) {
 			this._lastTarget.set(anchor, target);
@@ -273,14 +285,18 @@ export class EditorAnchorsImpl implements EditorAnchors {
 				return this._rejectDecode("missing encoded position");
 			}
 			if (parsed.p.length > MAX_BASE64_CHARS) {
-				return this._rejectDecode("encoded position exceeds the 256-byte cap");
+				return this._rejectDecode(
+					"encoded position exceeds the 256-byte cap",
+				);
 			}
 			const position = decodeBase64(parsed.p);
 			if (!position || position.byteLength === 0) {
 				return this._rejectDecode("malformed base64 position");
 			}
 			if (position.byteLength > MAX_POSITION_BYTES) {
-				return this._rejectDecode("encoded position exceeds the 256-byte cap");
+				return this._rejectDecode(
+					"encoded position exceeds the 256-byte cap",
+				);
 			}
 			let cell: Anchor["cell"];
 			if (parsed.c !== undefined) {

@@ -75,7 +75,10 @@ export function getArrayProp<T = unknown>(
 	return isCRDTArray(value) ? (value as CRDTUnknownArray<T>) : null;
 }
 
-export function getMapProp(map: CRDTUnknownMap, key: string): CRDTUnknownMap | null {
+export function getMapProp(
+	map: CRDTUnknownMap,
+	key: string,
+): CRDTUnknownMap | null {
 	const value = map.get(key);
 	return isCRDTMap(value) ? value : null;
 }
@@ -93,26 +96,30 @@ export function getTextProp(
 	key: string,
 ): CRDTTextLike | null {
 	const value = map.get(key);
-	return (
-		typeof value === "object" &&
+	return typeof value === "object" &&
 		value !== null &&
 		typeof (value as { insert?: unknown }).insert === "function" &&
 		typeof (value as { delete?: unknown }).delete === "function" &&
 		typeof (value as { toString?: unknown }).toString === "function"
-	)
 		? (value as CRDTTextLike)
 		: null;
 }
 
-export function getTableContent(blockMap: CRDTUnknownMap): TableContentArray | null {
+export function getTableContent(
+	blockMap: CRDTUnknownMap,
+): TableContentArray | null {
 	return getArrayProp<TableRowMap>(blockMap, "tableContent");
 }
 
-export function getTableColumns(blockMap: CRDTUnknownMap): TableColumnArray | null {
+export function getTableColumns(
+	blockMap: CRDTUnknownMap,
+): TableColumnArray | null {
 	return getArrayProp<TableColumnMap>(blockMap, "tableColumns");
 }
 
-export function getRowCells(rowMap: CRDTUnknownMap): CRDTUnknownArray<TableCellMap> | null {
+export function getRowCells(
+	rowMap: CRDTUnknownMap,
+): CRDTUnknownArray<TableCellMap> | null {
 	return getArrayProp<TableCellMap>(rowMap, "cells");
 }
 
@@ -174,7 +181,9 @@ function findRowIndexById(
 	return -1;
 }
 
-export function crdtMapToPlainRecord(value: unknown): Record<string, unknown> | null {
+export function crdtMapToPlainRecord(
+	value: unknown,
+): Record<string, unknown> | null {
 	if (!value || typeof value !== "object") return null;
 	const entries = (
 		value as { entries?: () => IterableIterator<[string, unknown]> }
@@ -191,8 +200,12 @@ export function crdtMapToPlainRecord(value: unknown): Record<string, unknown> | 
 
 export function crdtValueToPlain(value: unknown): unknown {
 	if (!value || typeof value !== "object") return value;
-	if (typeof (value as { toArray?: () => unknown[] }).toArray === "function") {
-		return (value as { toArray: () => unknown[] }).toArray().map(crdtValueToPlain);
+	if (
+		typeof (value as { toArray?: () => unknown[] }).toArray === "function"
+	) {
+		return (value as { toArray: () => unknown[] })
+			.toArray()
+			.map(crdtValueToPlain);
 	}
 	return crdtMapToPlainRecord(value);
 }

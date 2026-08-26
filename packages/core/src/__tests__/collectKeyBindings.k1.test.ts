@@ -26,17 +26,16 @@ describe("collectKeyBindings K1", () => {
 				defineExtension({
 					name: "facet-declared",
 					facets: [
-						keymapFacet.of(
-							[{ key: "Mod-f", handler }],
-							"default",
-						),
+						keymapFacet.of([{ key: "Mod-f", handler }], "default"),
 					],
 				}),
 			],
 		});
 
 		expect(
-			collectBindings(editor).some((binding) => binding.handler === handler),
+			collectBindings(editor).some(
+				(binding) => binding.handler === handler,
+			),
 		).toBe(true);
 		editor.destroy();
 	});

@@ -22,7 +22,7 @@ export function buildApplySuggestionOps(
 			type: "splice-text",
 			blockId: suggestion.blockId,
 			from: suggestion.from,
-				to: suggestion.from + suggestion.to - suggestion.from,
+			to: suggestion.from + suggestion.to - suggestion.from,
 			insert: suggestion.replacementText,
 		},
 	];

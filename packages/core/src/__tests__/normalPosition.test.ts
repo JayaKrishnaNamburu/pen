@@ -157,11 +157,7 @@ describe("nextNormalPosition", () => {
 				isNormalPosition(atomDoc, { blockId: "embed", offset: 2 }),
 			).toBe(true);
 			expect(
-				nextNormalPosition(
-					atomDoc,
-					{ blockId: "embed", offset: 1 },
-					1,
-				),
+				nextNormalPosition(atomDoc, { blockId: "embed", offset: 1 }, 1),
 			).toEqual({ blockId: "embed", offset: 2 });
 			expect(
 				nextNormalPosition(

@@ -67,16 +67,13 @@ export function createYjsUndoManager(
 		}
 	};
 
-	undoManager.on(
-		"stack-item-added",
-		(event: { type: "undo" | "redo" }) => {
-			trimStack(
-				event.type === "undo"
-					? undoManager.undoStack
-					: undoManager.redoStack,
-			);
-		},
-	);
+	undoManager.on("stack-item-added", (event: { type: "undo" | "redo" }) => {
+		trimStack(
+			event.type === "undo"
+				? undoManager.undoStack
+				: undoManager.redoStack,
+		);
+	});
 
 	let destroyed = false;
 

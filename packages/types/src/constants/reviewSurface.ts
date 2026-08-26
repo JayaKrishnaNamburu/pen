@@ -10,22 +10,18 @@
  * It lives in the contract layer because two packages emit these names —
  * `@input/pen-ai` from review decorations and `@input/pen-dom` when it
  * reconciles a `suggestion` mark — and neither depends on the other.
+ *
+ * One class, one job. The exported sheet styles every name here; hosts theme
+ * through `--pen-ai-review-*` custom properties rather than adding a second
+ * insert/delete taxonomy on the same span.
  */
 export const REVIEW_SURFACE_CLASSES = Object.freeze({
 	/** Inserted text in a proposed edit. */
 	suggestionInsert: "pen-suggestion-insert",
-	/** Deleted text in a proposed edit. */
+	/** Deleted text in a proposed edit, including in-flight originals. */
 	suggestionDelete: "pen-suggestion-delete",
-	/** Marks an insertion that reads as the final text rather than a diff. */
-	suggestionFinalTextChange: "pen-suggestion-final-text-change",
-	/** Insertion, tagged as belonging to an AI review rather than a peer's. */
-	reviewInsert: "pen-ai-review-insert",
-	/** Deletion, tagged as belonging to an AI review rather than a peer's. */
-	reviewDelete: "pen-ai-review-delete",
 	/** Text still arriving, shown before anything is written. */
 	preview: "pen-ai-review-preview",
-	/** The text a still-arriving edit will replace. */
-	previewOriginal: "pen-ai-review-preview-original",
 	/** Selection context kept visible around an edit under review. */
 	context: "pen-ai-review-context",
 	/** The range an edit under review affects. */

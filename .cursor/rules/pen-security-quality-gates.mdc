@@ -12,5 +12,4 @@ alwaysApply: true
   - `pnpm build`
   - `pnpm typecheck`
   - `pnpm test`
-- Fallow (`fallow audit` / `.fallowrc.jsonc`) reports cleanup and changed-file risk. Verify findings before acting: published package entry exports, CI scripts, and spec-fenced copies are often false unused. Do not delete Editor/FieldEditor class methods or documented ingest envelope constants because they look unused.
 - For perf-sensitive paths, avoid regressions and respect benchmark expectations in `@input/pen-bench`.

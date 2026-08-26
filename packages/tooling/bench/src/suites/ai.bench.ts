@@ -225,7 +225,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 			b.end();
 			b.observe("opCount", result.ops.length, 2);
 			b.setMetrics({
-				executionPath: "native-fast-apply",
+				executionPath: "selection-replacement",
 				preservedBlockCount: result.metrics.preservedBlockCount,
 				rewrittenBlockCount: result.metrics.rewrittenBlockCount,
 				unchangedBlockCount: result.metrics.unchangedBlockCount,

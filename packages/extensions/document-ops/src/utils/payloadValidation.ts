@@ -97,7 +97,11 @@ function validateOnePayload(
 	pendingBlockIds: Set<string>,
 	textLengths: Map<string, number>,
 ): ToolPayloadFailure | null {
-	if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+	if (
+		typeof payload !== "object" ||
+		payload === null ||
+		Array.isArray(payload)
+	) {
 		return failure("Tool payload must be a DocumentOp object", payload);
 	}
 
@@ -165,7 +169,10 @@ function unresolvedTargets(
 	}
 
 	if (type === "insert-block") {
-		if (typeof payload.blockId !== "string" || payload.blockId.length === 0) {
+		if (
+			typeof payload.blockId !== "string" ||
+			payload.blockId.length === 0
+		) {
 			return "Unresolved target: insert-block is missing blockId";
 		}
 		return unresolvedPosition(editor, payload.position, pendingBlockIds);
@@ -173,8 +180,12 @@ function unresolvedTargets(
 
 	if (type === "move-block") {
 		return (
-			unresolvedBlock(editor, payload.blockId, pendingBlockIds, "blockId") ??
-			unresolvedPosition(editor, payload.position, pendingBlockIds)
+			unresolvedBlock(
+				editor,
+				payload.blockId,
+				pendingBlockIds,
+				"blockId",
+			) ?? unresolvedPosition(editor, payload.position, pendingBlockIds)
 		);
 	}
 
@@ -215,7 +226,10 @@ function unexposedToolMutation(
 
 function unexposedBlockType(editor: Editor, blockType: string): string | null {
 	const schema = editor.schema.resolve(blockType);
-	if (!schema || !shouldExposeBlockInTooling(editor.documentProfile, schema)) {
+	if (
+		!schema ||
+		!shouldExposeBlockInTooling(editor.documentProfile, schema)
+	) {
 		return `Block type "${blockType}" is not available in ${editor.documentProfile} documents.`;
 	}
 	return null;
@@ -227,7 +241,10 @@ function unexposedExistingBlock(
 	blockType: string,
 ): string | null {
 	const schema = editor.schema.resolve(blockType);
-	if (!schema || !shouldExposeBlockInTooling(editor.documentProfile, schema)) {
+	if (
+		!schema ||
+		!shouldExposeBlockInTooling(editor.documentProfile, schema)
+	) {
 		return `Block "${blockId}" of type "${blockType}" is not editable in ${editor.documentProfile} documents.`;
 	}
 	return null;
@@ -365,7 +382,9 @@ function rememberTextLength(
 			payload.blockId,
 			Math.max(
 				0,
-				current - (payload.to - payload.from) + insertTextLength(payload),
+				current -
+					(payload.to - payload.from) +
+					insertTextLength(payload),
 			),
 		);
 	}
@@ -383,12 +402,27 @@ function unresolvedPosition(
 		return "Unresolved target: invalid position";
 	}
 	if ("before" in position) {
-		return unresolvedBlock(editor, position.before, pendingBlockIds, "position.before");
+		return unresolvedBlock(
+			editor,
+			position.before,
+			pendingBlockIds,
+			"position.before",
+		);
 	}
 	if ("after" in position) {
-		return unresolvedBlock(editor, position.after, pendingBlockIds, "position.after");
+		return unresolvedBlock(
+			editor,
+			position.after,
+			pendingBlockIds,
+			"position.after",
+		);
 	}
-	return unresolvedBlock(editor, position.parent, pendingBlockIds, "position.parent");
+	return unresolvedBlock(
+		editor,
+		position.parent,
+		pendingBlockIds,
+		"position.parent",
+	);
 }
 
 function isObjectPosition(

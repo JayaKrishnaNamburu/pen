@@ -1,8 +1,4 @@
-import {
-	nextWordBoundary,
-	wordRangeAt,
-	type WordRange,
-} from "@input/pen-core";
+import { nextWordBoundary, wordRangeAt, type WordRange } from "@input/pen-core";
 import type { DocumentOp } from "@input/pen-types";
 
 export type ReplacementTextDiffOperation = Extract<

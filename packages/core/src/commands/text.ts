@@ -8,7 +8,11 @@ import {
 	selectAdjacentInlineAtom,
 } from "./textDelete";
 import { handleListIndent, handleSplitBlock } from "./textEnter";
-import { handleInsertLineBreak, handleInsertText, handleToggleMark } from "./textInsert";
+import {
+	handleInsertLineBreak,
+	handleInsertText,
+	handleToggleMark,
+} from "./textInsert";
 import type {
 	ConvertBlockParam,
 	DeleteGranularity,
@@ -33,12 +37,10 @@ export const splitBlock = defineCommand("pen.splitBlock");
 export const indent = defineCommand("pen.indent");
 export const outdent = defineCommand("pen.outdent");
 export const toggleMark = defineCommand<ToggleMarkParam>("pen.toggleMark");
-export const convertBlock = defineCommand<ConvertBlockParam>("pen.convertBlock");
+export const convertBlock =
+	defineCommand<ConvertBlockParam>("pen.convertBlock");
 
-export {
-	deleteAdjacentInlineAtom,
-	selectAdjacentInlineAtom,
-};
+export { deleteAdjacentInlineAtom, selectAdjacentInlineAtom };
 
 export function textCommandHandlers(): FacetProvider[] {
 	return [

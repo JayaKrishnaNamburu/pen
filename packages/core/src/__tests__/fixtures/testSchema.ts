@@ -30,7 +30,10 @@ const paragraph = defineBlock("paragraph", {
 
 const heading = defineBlock("heading", {
 	props: {
-		level: prop.enum([1, 2, 3, 4, 5, 6]).default(1).describe("Heading level"),
+		level: prop
+			.enum([1, 2, 3, 4, 5, 6])
+			.default(1)
+			.describe("Heading level"),
 	},
 	content: "inline",
 	fieldEditor: "richtext",

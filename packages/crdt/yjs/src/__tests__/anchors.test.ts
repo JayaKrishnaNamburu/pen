@@ -15,7 +15,9 @@ function seedParagraph(
 	doc.ydoc.transact(() => {
 		initBlockMap(doc.penDocument.blocks, blockId, "paragraph", "inline");
 		doc.penDocument.blockOrder.push([blockId]);
-		const content = doc.penDocument.blocks.get(blockId)!.get("content") as Y.Text;
+		const content = doc.penDocument.blocks
+			.get(blockId)!
+			.get("content") as Y.Text;
 		if (text.length > 0) {
 			content.insert(0, text);
 		}
@@ -27,9 +29,9 @@ describe("anchors AN1 adapter totality", () => {
 	it("AN1: truncated bytes throw in raw Yjs decode and the adapter catches them to null", () => {
 		const adapter = yjsAdapter();
 		const doc = adapter.createDocument();
-		expect(() => Y.decodeRelativePosition(new Uint8Array([255, 255]))).toThrow(
-			/Unexpected end of array/,
-		);
+		expect(() =>
+			Y.decodeRelativePosition(new Uint8Array([255, 255])),
+		).toThrow(/Unexpected end of array/);
 		expect(
 			adapter.resolveRelativePosition(doc, new Uint8Array([255, 255])),
 		).toBeNull();
@@ -64,9 +66,10 @@ describe("anchors AN1 adapter totality", () => {
 		expect(raw?.index).toBe(5);
 		expect(afterDelete).not.toBeNull();
 		expect(afterDelete?.index).toBe(0);
-		expect((ytext as unknown as { _item?: { deleted?: boolean } })._item?.deleted).toBe(
-			true,
-		);
+		expect(
+			(ytext as unknown as { _item?: { deleted?: boolean } })._item
+				?.deleted,
+		).toBe(true);
 		expect(adapter.resolveRelativePosition(doc, encoded!)).toBeNull();
 	});
 
@@ -104,7 +107,9 @@ describe("anchors AN2 insertion-side stability", () => {
 			{ blockId: "b1", offset: 2 },
 			1,
 		)!;
-		const ytext = doc.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		const ytext = doc.penDocument.blocks
+			.get("b1")!
+			.get("content") as Y.Text;
 		const minted = Y.decodeRelativePosition(after);
 		expect(minted.assoc).toBe(1);
 		doc.ydoc.transact(() => {
@@ -162,18 +167,24 @@ describe("anchors AN7 gc envelope", () => {
 			1,
 		)!;
 		const undo = createYjsUndoManager(doc);
-		const ytext = doc.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		const ytext = doc.penDocument.blocks
+			.get("b1")!
+			.get("content") as Y.Text;
 		doc.ydoc.transact(() => {
 			ytext.delete(6, 5);
 		}, "user");
-		expect(adapter.resolveRelativePosition(doc, encoded, {
-			followUndoneDeletions: true,
-		})).toEqual({ blockId: "b1", offset: 6 });
+		expect(
+			adapter.resolveRelativePosition(doc, encoded, {
+				followUndoneDeletions: true,
+			}),
+		).toEqual({ blockId: "b1", offset: 6 });
 		undo.undo();
 		expect(ytext.toString()).toBe("hello world");
-		expect(adapter.resolveRelativePosition(doc, encoded, {
-			followUndoneDeletions: true,
-		})).toEqual({ blockId: "b1", offset: 6 });
+		expect(
+			adapter.resolveRelativePosition(doc, encoded, {
+				followUndoneDeletions: true,
+			}),
+		).toEqual({ blockId: "b1", offset: 6 });
 	});
 });
 
@@ -189,7 +200,9 @@ describe("anchors AN13 resolver flag", () => {
 		)!;
 		const remote = forkPeerDoc(adapter, local, 2);
 		const undo = createYjsUndoManager(local);
-		const ytext = local.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		const ytext = local.penDocument.blocks
+			.get("b1")!
+			.get("content") as Y.Text;
 		local.ydoc.transact(() => {
 			ytext.delete(6, 5);
 		}, "user");
@@ -204,14 +217,20 @@ describe("anchors AN13 resolver flag", () => {
 		const remoteFollow = adapter.resolveRelativePosition(remote, encoded, {
 			followUndoneDeletions: true,
 		});
-		const remoteNoFollow = adapter.resolveRelativePosition(remote, encoded, {
-			followUndoneDeletions: false,
-		});
+		const remoteNoFollow = adapter.resolveRelativePosition(
+			remote,
+			encoded,
+			{
+				followUndoneDeletions: false,
+			},
+		);
 		expect(localFollow).toEqual({ blockId: "b1", offset: 6 });
 		expect(localNoFollow).toEqual(remoteNoFollow);
 		expect(remoteFollow).toEqual(remoteNoFollow);
 		expect(localFollow).not.toEqual(remoteFollow);
-		expect(adapter.resolveRelativePosition(local, encoded)).toEqual(localFollow);
+		expect(adapter.resolveRelativePosition(local, encoded)).toEqual(
+			localFollow,
+		);
 	});
 });
 
@@ -225,7 +244,9 @@ describe("anchors AN1 deleted characters and AN10 cells", () => {
 			{ blockId: "b1", offset: 5 },
 			1,
 		)!;
-		const ytext = doc.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		const ytext = doc.penDocument.blocks
+			.get("b1")!
+			.get("content") as Y.Text;
 		doc.ydoc.transact(() => {
 			ytext.delete(3, 4);
 		});
@@ -243,9 +264,9 @@ describe("anchors AN1 deleted characters and AN10 cells", () => {
 			initBlockMap(doc.penDocument.blocks, "t1", "table", "table");
 			doc.penDocument.blockOrder.push(["t1"]);
 		});
-		const table = doc.penDocument.blocks.get("t1")!.get(
-			"tableContent",
-		) as Y.Array<Y.Map<unknown>>;
+		const table = doc.penDocument.blocks
+			.get("t1")!
+			.get("tableContent") as Y.Array<Y.Map<unknown>>;
 		const cell = (table.get(1).get("cells") as Y.Array<Y.Map<unknown>>)
 			.get(1)
 			.get("content") as Y.Text;
@@ -278,7 +299,11 @@ describe("anchors AN1 deleted characters and AN10 cells", () => {
 		});
 		expect(doc.penDocument.blocks.has("s1")).toBe(true);
 		expect(
-			adapter.createRelativePosition(doc, { blockId: "s1", offset: 0 }, 1),
+			adapter.createRelativePosition(
+				doc,
+				{ blockId: "s1", offset: 0 },
+				1,
+			),
 		).toBeNull();
 	});
 });

@@ -8,7 +8,6 @@ import { defaultSchema } from "@input/pen-schema-default";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
 import type { ModelAdapter, ModelStreamEvent } from "@input/pen-types";
-import type { AIApplyStrategy } from "../index";
 import { aiExtension, getAIController, runAgenticLoop } from "../index";
 import { deltaStreamExtension } from "../stream";
 
@@ -161,9 +160,11 @@ describe("EC9: a stale read is corrected, not cancelled", () => {
 
 		expect(generation.status).toBe("complete");
 		expect(generation.status).not.toBe("cancelled");
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 		expect(passes).toBeGreaterThanOrEqual(2);
-		expect(refusalPayload).toMatch(/stale-target|view-changed|unknown-block/);
+		expect(refusalPayload).toMatch(
+			/stale-target|view-changed|unknown-block/,
+		);
 		expect(refusalPayload).toContain("outline");
 		expect(editor.getBlock("intro")?.textContent()).toBe(
 			"Corrected rewrite.",
@@ -239,7 +240,7 @@ describe("EC9: a stale read is corrected, not cancelled", () => {
 // stale set the loop then re-validates, so both sides are asserted here at
 // the loop seam, the way AIB2/AIB4 assert theirs.
 async function loopWithStaleWorkingSetAfterFirstPass(options: {
-	applyStrategy?: AIApplyStrategy;
+	editsArriveAsToolCalls?: boolean;
 	refreshWorkingSet?: () => Promise<null>;
 }): Promise<{ passes: number; validations: number }> {
 	const editor = createEditor({
@@ -264,7 +265,11 @@ async function loopWithStaleWorkingSetAfterFirstPass(options: {
 		responses: [
 			{
 				toolCalls: [
-					{ toolCallId: "peek-1", toolName: "peek_document", input: {} },
+					{
+						toolCallId: "peek-1",
+						toolName: "peek_document",
+						input: {},
+					},
 				],
 			},
 			{ text: "done" },
@@ -278,13 +283,17 @@ async function loopWithStaleWorkingSetAfterFirstPass(options: {
 			toolRuntime,
 			prompt: "Peek, then answer",
 			blockId,
-			applyStrategy: options.applyStrategy,
+			editsArriveAsToolCalls: options.editsArriveAsToolCalls,
 			refreshWorkingSet: options.refreshWorkingSet,
 			validateWorkingSet: () => {
 				validations += 1;
 				return validations === 1
 					? { valid: true, canRefresh: false }
-					: { valid: false, canRefresh: false, reason: "view-changed" };
+					: {
+							valid: false,
+							canRefresh: false,
+							reason: "view-changed",
+						};
 			},
 		});
 		return { passes: double.requests.length, validations };
@@ -295,9 +304,10 @@ async function loopWithStaleWorkingSetAfterFirstPass(options: {
 
 describe("EC9: the shared stale branch continues the turn", () => {
 	it("EC9: the edit channel continues the turn instead of throwing", async () => {
-		const { passes, validations } = await loopWithStaleWorkingSetAfterFirstPass(
-			{ applyStrategy: "tool-edit" },
-		);
+		const { passes, validations } =
+			await loopWithStaleWorkingSetAfterFirstPass({
+				editsArriveAsToolCalls: true,
+			});
 
 		// The second pass ran, so the stale check was reached and did not throw.
 		expect(validations).toBeGreaterThanOrEqual(2);
@@ -307,7 +317,7 @@ describe("EC9: the shared stale branch continues the turn", () => {
 	it("EC9: the edit channel refreshes even when the validator says it cannot", async () => {
 		let refreshes = 0;
 		const { passes } = await loopWithStaleWorkingSetAfterFirstPass({
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			refreshWorkingSet: async () => {
 				refreshes += 1;
 				return null;

@@ -31,7 +31,8 @@ export const defaultAICommands: AICommandBinding[] = [
 		description: "pen.ai.command.summarize.description",
 		group: "edit",
 		target: "selection",
-		prompt: (ctx) => `Summarize the following text concisely:\n\n${ctx.selectedText}`,
+		prompt: (ctx) =>
+			`Summarize the following text concisely:\n\n${ctx.selectedText}`,
 		guard: hasSelection,
 	},
 	{

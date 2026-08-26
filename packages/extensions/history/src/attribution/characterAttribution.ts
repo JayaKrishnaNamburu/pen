@@ -27,7 +27,11 @@ export function getCharacterAttribution(
 	}
 
 	return adapter.getAttributionRanges(doc, blockId).map((range) => {
-		const author = resolveHistoryAuthor(editor, range.clientId, resolveAuthor);
+		const author = resolveHistoryAuthor(
+			editor,
+			range.clientId,
+			resolveAuthor,
+		);
 		const displayHint = resolvePresenceDisplayHint(editor, range.clientId);
 		return {
 			blockId,

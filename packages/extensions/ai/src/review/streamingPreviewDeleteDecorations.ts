@@ -7,6 +7,7 @@ import type { AIExtensionConfig } from "../types";
 import {
 	AI_REVIEW_ROLE_ATTRIBUTE,
 	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
+	type AIReviewPresentationRole,
 } from "./reviewPresentationState";
 
 type SuggestionPresentation = NonNullable<
@@ -38,21 +39,14 @@ export function createStreamingDeleteDecoration({
 function buildStreamingDeleteAttributes(
 	suggestionPresentation: SuggestionPresentation,
 ): DecorationAttributes {
-	if (suggestionPresentation === "final-text") {
-		return {
-			class: REVIEW_SURFACE_CLASSES.previewOriginal,
-			[AI_REVIEW_ROLE_ATTRIBUTE]: "delete-hidden",
-			[FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true,
-		};
-	}
-
+	const isFinalText = suggestionPresentation === "final-text";
+	const role: AIReviewPresentationRole = isFinalText
+		? "delete-hidden"
+		: "delete";
 	return {
-		class: [
-			REVIEW_SURFACE_CLASSES.previewOriginal,
-			REVIEW_SURFACE_CLASSES.suggestionDelete,
-			REVIEW_SURFACE_CLASSES.reviewDelete,
-		].join(" "),
-		[AI_REVIEW_ROLE_ATTRIBUTE]: "delete",
+		class: REVIEW_SURFACE_CLASSES.suggestionDelete,
+		[AI_REVIEW_ROLE_ATTRIBUTE]: role,
+		...(isFinalText ? { [FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true } : {}),
 	};
 }
 

@@ -113,7 +113,9 @@ export interface EditorLifecycleContext extends EditorApiContext {
 		session: DocumentSession,
 		event: DocumentScopeReplacementEvent,
 	): void;
-	_resolveDocumentProfile(requestedProfile?: DocumentProfile): DocumentProfile;
+	_resolveDocumentProfile(
+		requestedProfile?: DocumentProfile,
+	): DocumentProfile;
 	_resolveBeforeApplyHooks(): ReadonlyArray<
 		(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
 	>;

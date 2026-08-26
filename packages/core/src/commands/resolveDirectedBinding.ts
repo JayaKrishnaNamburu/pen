@@ -2,12 +2,7 @@ import type { Command, Editor, SelectionState } from "@input/pen-types";
 
 import type { BlockDirection } from "../direction/firstStrong";
 import { resolveBlockDirection } from "../direction/resolve";
-import {
-	caretLeft,
-	caretRight,
-	caretWordLeft,
-	caretWordRight,
-} from "./caret";
+import { caretLeft, caretRight, caretWordLeft, caretWordRight } from "./caret";
 import type { DefaultKeymapBinding } from "./defaultKeymap";
 
 /**

@@ -107,9 +107,7 @@ export function serializeBlockSuggestionMeta(
 	};
 }
 
-function parseBlockSuggestionMeta(
-	meta: unknown,
-): BlockSuggestionMeta | null {
+function parseBlockSuggestionMeta(meta: unknown): BlockSuggestionMeta | null {
 	if (!meta || typeof meta !== "object") return null;
 	const record = meta as Record<string, unknown>;
 	if (

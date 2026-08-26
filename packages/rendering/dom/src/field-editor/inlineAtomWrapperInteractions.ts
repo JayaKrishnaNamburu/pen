@@ -1,4 +1,5 @@
 import type { Editor } from "@input/pen-types";
+import { getRootGeometry } from "../geometry/rootGeometry";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import {
 	createInlineAtomDragPreview,
@@ -52,7 +53,7 @@ interface PointerSession {
 	latestX: number;
 	latestY: number;
 	isDragging: boolean;
-	animationFrameId: number | null;
+	frameScheduled: boolean;
 	preview: InlineAtomDragPreview | null;
 }
 
@@ -138,7 +139,7 @@ export function attachInlineAtomWrapperInteractions(
 			latestX: event.clientX,
 			latestY: event.clientY,
 			isDragging: false,
-			animationFrameId: null,
+			frameScheduled: false,
 			preview: null,
 		});
 		options.element.setPointerCapture?.(event.pointerId);
@@ -327,12 +328,16 @@ function startInlineAtomDrag(session: PointerSession): void {
 }
 
 function schedulePointerMoveFrame(session: PointerSession): void {
-	if (session.animationFrameId != null) {
+	if (session.frameScheduled) {
 		return;
 	}
 
-	session.animationFrameId = requestAnimationFrame(() => {
-		session.animationFrameId = null;
+	// One preview move per frame, on the scheduler's write phase instead of
+	// its own rAF (FE3). Nothing cancels the job — the guard below already
+	// drops it when the session ended before the frame ran.
+	session.frameScheduled = true;
+	void getRootGeometry(session.sourceRoot).scheduler.write(() => {
+		session.frameScheduled = false;
 		if (
 			documentPointerSessions.get(session.sourceRoot.ownerDocument) !==
 				session ||
@@ -358,11 +363,7 @@ function cleanupPointerSession(session: PointerSession | null): void {
 		return;
 	}
 
-	if (session.animationFrameId != null) {
-		cancelAnimationFrame(session.animationFrameId);
-		session.animationFrameId = null;
-	}
-
+	session.frameScheduled = false;
 	session.preview?.destroy();
 	session.preview = null;
 	session.sourceElement.toggleAttribute(DATA_ATTRS.inlineAtomDragging, false);

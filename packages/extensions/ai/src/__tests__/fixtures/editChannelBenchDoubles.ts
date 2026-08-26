@@ -13,8 +13,7 @@ export const BLOCK_ANNOTATION_PATTERN = /<!-- block:(\S+) (\S+) -->/g;
 export const OFF_CONTRACT_OUTPUT =
 	"Sure! I've turned the last paragraph into a bullet list for you:\n\n- Revenue grew\n- Costs fell";
 
-export const OFF_CONTRACT_PROMPT =
-	"Turn the last paragraph into a bullet list";
+export const OFF_CONTRACT_PROMPT = "Turn the last paragraph into a bullet list";
 
 export interface BenchAnnotation {
 	id: string;
@@ -88,7 +87,8 @@ export function buildToolOperations(
 				{
 					operation: "replace_blocks",
 					blockIds: [lastParagraph],
-					markdown: "- Revenue grew\n- Costs fell\n- Margins improved\n",
+					markdown:
+						"- Revenue grew\n- Costs fell\n- Margins improved\n",
 				},
 			];
 		case "p2":

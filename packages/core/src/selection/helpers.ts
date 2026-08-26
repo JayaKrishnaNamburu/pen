@@ -9,10 +9,7 @@ import type {
 } from "@input/pen-types";
 import { DocumentRangeImpl } from "../editor/range";
 
-type ReadonlyTextSelection = Extract<
-	ReadonlySelectionState,
-	{ type: "text" }
->;
+type ReadonlyTextSelection = Extract<ReadonlySelectionState, { type: "text" }>;
 
 /**
  * Live `TextSelection` constructor. Defaults `affinity` / `goalX`.

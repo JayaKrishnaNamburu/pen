@@ -1,5 +1,4 @@
 import { stripBlockAnnotations } from "@input/pen-document-ops";
-import type { AIApplyStrategy } from "./contracts";
 import type { AIWorkingSetEnvelope, AIWorkingSetRetrievedSpan } from "../types";
 
 const FLOW_MARKDOWN_ALLOWED_FEATURES = [
@@ -15,14 +14,14 @@ const FLOW_MARKDOWN_ALLOWED_FEATURES = [
 export interface FlowMarkdownPromptInput {
 	prompt: string;
 	workingSet: AIWorkingSetEnvelope | null;
-	applyStrategy: AIApplyStrategy;
+	editsArriveAsToolCalls: boolean;
 }
 
 export function buildFlowMarkdownRequestPrompt(
 	input: FlowMarkdownPromptInput,
 ): string {
 	const contextSummary = serializeWorkingSetContext(input.workingSet);
-	if (input.applyStrategy === "tool-edit") {
+	if (input.editsArriveAsToolCalls) {
 		return buildFlowMarkdownToolEditPrompt(input.prompt, contextSummary);
 	}
 
@@ -48,7 +47,9 @@ export function normalizeFlowMarkdownOutput(value: string): string {
 	if (!normalized.startsWith("```")) {
 		return normalized;
 	}
-	const fencedMatch = normalized.match(/^```[a-zA-Z0-9_-]*\n([\s\S]*?)\n```$/);
+	const fencedMatch = normalized.match(
+		/^```[a-zA-Z0-9_-]*\n([\s\S]*?)\n```$/,
+	);
 	if (!fencedMatch) {
 		return normalized;
 	}
@@ -58,7 +59,7 @@ export function normalizeFlowMarkdownOutput(value: string): string {
 /**
  * The tool channel's prompt.
  *
- * Without this branch `tool-edit` fell through to the generic instructions
+ * Without this branch the tool channel fell through to the generic instructions
  * below, which tell the model to return markdown content — on this channel that
  * content is never applied (EC1), so the model was being asked for the one thing
  * that cannot become an edit. It complied, and the turn changed nothing. The

@@ -11,7 +11,9 @@ import { processStream } from "../processStream";
 
 interface StreamEditorHarness {
 	editor: Editor;
-	apply: ReturnType<typeof vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>>;
+	apply: ReturnType<
+		typeof vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>
+	>;
 	emit: ReturnType<typeof vi.fn>;
 	streamingTarget: {
 		generationZone: { id: string } | null;
@@ -26,9 +28,10 @@ function createStreamEditor(overrides?: {
 	block?: { id: string; type: string } | null;
 	toolRuntime?: { executeTool: ReturnType<typeof vi.fn> };
 }): StreamEditorHarness {
-	const block = overrides?.block === undefined
-		? { id: "block-1", type: "paragraph" }
-		: overrides.block;
+	const block =
+		overrides?.block === undefined
+			? { id: "block-1", type: "paragraph" }
+			: overrides.block;
 	const streamingTarget = {
 		generationZone: null as { id: string } | null,
 		beginStreaming: vi.fn((zoneId: string) => {
@@ -55,7 +58,8 @@ function createStreamEditor(overrides?: {
 				};
 			},
 		},
-		getBlock: (blockId: string) => (block && blockId === block.id ? block : null),
+		getBlock: (blockId: string) =>
+			block && blockId === block.id ? block : null,
 		apply,
 		facet: (facet: { name: string }) => {
 			if (facet.name === "deltaStream.target") {
@@ -74,7 +78,9 @@ function createStreamEditor(overrides?: {
 	return { editor, apply, emit, streamingTarget };
 }
 
-async function* createStream(parts: PenStreamPart[]): AsyncIterable<PenStreamPart> {
+async function* createStream(
+	parts: PenStreamPart[],
+): AsyncIterable<PenStreamPart> {
 	for (const part of parts) {
 		yield part;
 	}
@@ -172,13 +178,12 @@ describe("@input/pen-ai/stream processStream AIB5", () => {
 	});
 
 	it("AIB5: missing streaming target is diagnosed and the stream is refused", async () => {
-		const { editor, apply, emit } = createStreamEditor({ hasTarget: false });
+		const { editor, apply, emit } = createStreamEditor({
+			hasTarget: false,
+		});
 
 		await expect(
-			processStream(
-				createStream([{ type: "ping" }]),
-				editor,
-			),
+			processStream(createStream([{ type: "ping" }]), editor),
 		).resolves.toBeUndefined();
 
 		expect(apply).not.toHaveBeenCalled();
@@ -343,7 +348,11 @@ describe("@input/pen-ai/stream processStream AIB5", () => {
 			editor,
 			{
 				groupId: "turn-1",
-				allowedMutatingTools: ["create_app", "update_app", "delete_app"],
+				allowedMutatingTools: [
+					"create_app",
+					"update_app",
+					"delete_app",
+				],
 			},
 		);
 
@@ -388,7 +397,7 @@ describe("@input/pen-ai/stream processStream AIB5", () => {
 				{
 					type: "tool-input-delta",
 					toolCallId: "tool-1",
-					inputDelta: "{\"q\":\"",
+					inputDelta: '{"q":"',
 				},
 			]),
 			editor,
@@ -665,7 +674,11 @@ describe("@input/pen-ai/stream processStream AIB5", () => {
 			},
 			{ type: "app-update", appId: "app-1", patch: { n: 1 } },
 			{ type: "app-delete", appId: "app-1" },
-			{ type: "layout-update", blockId: "block-1", layout: { display: "grid" } },
+			{
+				type: "layout-update",
+				blockId: "block-1",
+				layout: { display: "grid" },
+			},
 			{ type: "step-start", stepIndex: 1 },
 			{ type: "step-end", stepIndex: 1 },
 			{

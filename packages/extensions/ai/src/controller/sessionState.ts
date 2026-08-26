@@ -1,6 +1,7 @@
 import {
 	generateId,
 	type Editor,
+	type TextSelection,
 	type UndoHistoryMetadataController,
 } from "@input/pen-types";
 import {
@@ -12,25 +13,28 @@ import type {
 	AICommandExecutionOptions,
 	AIControllerState,
 	AIContextualPromptRect,
+	AIInlineHistoryDirection,
 	AIInlineHistorySnapshot,
 	AISession,
 	AISessionResolution,
 	AISurface,
-	FastApplyDebugState,
+	CommitDebugState,
 	GenerationState,
 	PersistentSuggestion,
 } from "../types";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
-import type { AIInlineHistoryRestoreRequest } from "../helpers";
+import type {
+	AIInlineHistoryRestoreRequest,
+	GenerationExecutionContext,
+} from "../helpers";
 import {
 	AI_UNDO_HISTORY_METADATA_KEY,
-	accumulateSessionFastApplyMetrics,
+	accumulateSessionCommitMetrics,
 	areAIControllerStatesEqual,
 	areSessionsEqual,
 	areStructuredValuesEqual,
 	canReuseBottomChatSessionOperation,
 	closeInlineSessionPrompt,
-	createDefaultSessionFastApplyMetrics,
+	createDefaultSessionCommitMetrics,
 	createInlineHistorySnapshot,
 	resolveAcceptedInlineSelectionTarget,
 	resolveBlockIdForRequestedOperation,
@@ -47,31 +51,76 @@ import {
 	shouldReplacePreviousGeneratedBlocks,
 } from "../helpers";
 
+export interface AIControllerSessionState {
+	_recordInlinePromptSubmissionCheckpoint(
+		sessionId: string,
+		prompt: string,
+	): void;
+	_runSelectionGeneration(
+		prompt: string,
+		selection: TextSelection,
+		commandId?: string,
+		maxSteps?: number,
+		context?: GenerationExecutionContext,
+	): Promise<GenerationState>;
+	_runDocumentGeneration(
+		prompt: string,
+		preferredBlockId?: string | null,
+		commandId?: string,
+		maxSteps?: number,
+		context?: GenerationExecutionContext,
+	): Promise<GenerationState>;
+	_runBlockGeneration(
+		prompt: string,
+		blockId: string,
+		commandId?: string,
+		maxSteps?: number,
+		context?: GenerationExecutionContext,
+	): Promise<GenerationState>;
+	cancelActiveGeneration(): void;
+	_recordInlineHistorySnapshot(
+		previousState: AIControllerState,
+		nextState: AIControllerState,
+	): void;
+	_createInlineTurnUndoBeforeSnapshot(
+		sessionId: string,
+		turnId: string,
+	): AIInlineHistorySnapshot;
+	clearStreamingReviewPreview(sessionId?: string): void;
+	_navigateInlineHistory(
+		direction: AIInlineHistoryDirection,
+		options?: { shortcutOnly?: boolean },
+	): boolean;
+	_canHandleInlineHistoryShortcut(
+		direction: AIInlineHistoryDirection,
+		options?: { shortcutOnly?: boolean },
+	): boolean;
+}
+
 export class AIControllerSessionState {
-	protected readonly _editor: Editor;
+	readonly _editor: Editor;
 
-	protected readonly _listeners = new Set<() => void>();
+	readonly _listeners = new Set<() => void>();
 
-	protected readonly _sessionListeners = new Set<() => void>();
+	readonly _sessionListeners = new Set<() => void>();
 
-	protected _state: AIControllerState;
+	_state: AIControllerState;
 
-	protected _suggestions: PersistentSuggestion[] = [];
+	_suggestions: PersistentSuggestion[] = [];
 
-	protected _documentVersion = 0;
+	_documentVersion = 0;
 
-	protected _undoHistoryMetadata: UndoHistoryMetadataController | null = null;
+	_undoHistoryMetadata: UndoHistoryMetadataController | null = null;
 
-	protected _pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null =
-		null;
+	_pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null = null;
 
-	protected _isRestoringInlineHistory = false;
+	_isRestoringInlineHistory = false;
 
-	protected _unsubscribeInlineCompletion: (() => void) | null = null;
+	_unsubscribeInlineCompletion: (() => void) | null = null;
 
-	protected _unsubscribeHistoryApplied: (() => void) | null = null;
+	_unsubscribeHistoryApplied: (() => void) | null = null;
 
-	protected _unsubscribeUndoHistoryMetadata: (() => void) | null = null;
+	_unsubscribeUndoHistoryMetadata: (() => void) | null = null;
 
 	constructor(editor: Editor, initialState: AIControllerState) {
 		this._editor = editor;
@@ -130,22 +179,19 @@ export class AIControllerSessionState {
 			target,
 			contextualPrompt:
 				input.surface === "inline-edit"
-					? resolveContextualPromptState(
-												this._editor,
-												target)
+					? resolveContextualPromptState(this._editor, target)
 					: undefined,
 			turns: [],
 			activeTurnId: undefined,
 			promptHistory: [],
 			generationIds: [],
 			pendingSuggestionIds: [],
-			pendingReviewItemIds: [],
 			createdAt: now,
 			updatedAt: now,
 			metrics: {
 				streamEventCount: 0,
 				patchCount: 0,
-				fastApply: createDefaultSessionFastApplyMetrics(),
+				commit: createDefaultSessionCommitMetrics(),
 			},
 			anchor: resolveSessionAnchor(this._editor, this._editor.selection),
 		};
@@ -181,12 +227,13 @@ export class AIControllerSessionState {
 		) {
 			this._updateSession(activeSession.id, {
 				target,
-				anchor: resolveSessionAnchor(this._editor, this._editor.selection),
+				anchor: resolveSessionAnchor(
+					this._editor,
+					this._editor.selection,
+				),
 				contextualPrompt: {
 					...(activeSession.contextualPrompt ??
-						resolveContextualPromptState(
-												this._editor,
-												target)),
+						resolveContextualPromptState(this._editor, target)),
 					anchor: resolveContextualPromptAnchor(this._editor, target),
 					composer: {
 						...(activeSession.contextualPrompt?.composer ?? {
@@ -275,7 +322,6 @@ export class AIControllerSessionState {
 		prompt: string,
 		options?: AICommandExecutionOptions,
 	): Promise<GenerationState> {
-		const host = this.asHost();
 		const session = this._state.sessions.find(
 			(item) => item.id === sessionId,
 		);
@@ -284,7 +330,7 @@ export class AIControllerSessionState {
 				new Error(`Unknown AI session "${sessionId}"`),
 			);
 		}
-		host._recordInlinePromptSubmissionCheckpoint(sessionId, prompt);
+		this._recordInlinePromptSubmissionCheckpoint(sessionId, prompt);
 
 		const operation =
 			options?.operation ??
@@ -307,7 +353,7 @@ export class AIControllerSessionState {
 					),
 				);
 			}
-			return host._runSelectionGeneration(
+			return this._runSelectionGeneration(
 				prompt,
 				selection,
 				undefined,
@@ -327,7 +373,7 @@ export class AIControllerSessionState {
 					: undefined;
 			const replacePreviousGeneratedBlocks =
 				shouldReplacePreviousGeneratedBlocks(session, prompt);
-			return host._runDocumentGeneration(
+			return this._runDocumentGeneration(
 				prompt,
 				options?.blockId ??
 					(operation.target.kind === "document"
@@ -359,7 +405,7 @@ export class AIControllerSessionState {
 				),
 			);
 		}
-		return host._runBlockGeneration(
+		return this._runBlockGeneration(
 			prompt,
 			blockId,
 			undefined,
@@ -425,7 +471,6 @@ export class AIControllerSessionState {
 			this._updateSession(sessionId, {
 				status: "complete",
 				pendingSuggestionIds: [],
-				pendingReviewItemIds: [],
 				contextualPrompt: closeInlineSessionPrompt(nextSession),
 			});
 		}
@@ -442,7 +487,7 @@ export class AIControllerSessionState {
 
 	cancelSession(sessionId: string): void {
 		if (this._state.activeGeneration?.sessionId === sessionId) {
-			this.asHost().cancelActiveGeneration();
+			this.cancelActiveGeneration();
 		}
 		const session = this._state.sessions.find(
 			(item) => item.id === sessionId,
@@ -483,10 +528,7 @@ export class AIControllerSessionState {
 			!this._isRestoringInlineHistory &&
 			!this._pendingInlineHistoryRestore
 		) {
-			this.asHost()._recordInlineHistorySnapshot(
-				previousState,
-				nextState,
-			);
+			this._recordInlineHistorySnapshot(previousState, nextState);
 		}
 		this._editor.requestDecorationUpdate();
 		this._emit();
@@ -526,13 +568,9 @@ export class AIControllerSessionState {
 		const pendingSuggestionIds = [
 			...new Set(nextTurns.flatMap((turn) => turn.suggestionIds)),
 		];
-		const pendingReviewItemIds = [
-			...new Set(nextTurns.flatMap((turn) => turn.reviewItemIds)),
-		];
 		this._updateSession(sessionId, {
 			turns: nextTurns,
 			pendingSuggestionIds,
-			pendingReviewItemIds,
 		});
 	}
 
@@ -549,32 +587,16 @@ export class AIControllerSessionState {
 								suggestion.id === sessionSuggestionId,
 						),
 				);
-				const activeGenerationMatchesTurn =
-					this._state.activeGeneration?.sessionId === session.id &&
-					this._state.activeGeneration.turnId === turn.id;
-				const activeGenerationForTurn = activeGenerationMatchesTurn
-					? this._state.activeGeneration
-					: null;
-				const reviewItemIds = activeGenerationForTurn
-					? (activeGenerationForTurn.reviewItems ?? [])
-							.map((item) => item.id)
-							.filter((id) => turn.reviewItemIds.includes(id))
-					: [];
 				return {
 					...turn,
 					suggestionIds,
-					reviewItemIds,
 				};
 			});
 			const pendingSuggestionIds = [
 				...new Set(nextTurns.flatMap((turn) => turn.suggestionIds)),
 			];
-			const pendingReviewItemIds = [
-				...new Set(nextTurns.flatMap((turn) => turn.reviewItemIds)),
-			];
 			const nextStatus =
 				pendingSuggestionIds.length === 0 &&
-				pendingReviewItemIds.length === 0 &&
 				session.status === "streaming"
 					? "complete"
 					: session.status;
@@ -583,7 +605,6 @@ export class AIControllerSessionState {
 				status: nextStatus,
 				turns: nextTurns,
 				pendingSuggestionIds,
-				pendingReviewItemIds,
 			};
 		});
 		if (areSessionsEqual(this._state.sessions, nextSessions)) {
@@ -601,7 +622,6 @@ export class AIControllerSessionState {
 		resolution: AISessionResolution,
 		options?: { finalizeSession?: boolean },
 	): boolean {
-		const host = this.asHost();
 		const session = this._state.sessions.find(
 			(item) => item.id === sessionId,
 		);
@@ -623,7 +643,7 @@ export class AIControllerSessionState {
 		const turnSuggestionResolutionOrigin =
 			turnUndoGroupId != null ? AI_SESSION_SUGGESTION_ORIGIN : undefined;
 		const undoHistoryBeforeSnapshot = this._undoHistoryMetadata
-			? host._createInlineTurnUndoBeforeSnapshot(sessionId, turnId)
+			? this._createInlineTurnUndoBeforeSnapshot(sessionId, turnId)
 			: null;
 		const refreshedInlineSelectionTarget =
 			session.surface === "inline-edit" && resolution === "accept"
@@ -645,30 +665,15 @@ export class AIControllerSessionState {
 							origin: turnSuggestionResolutionOrigin,
 							undoGroupId: turnUndoGroupId,
 						});
-		const resolveReviewItems =
-			resolution === "accept"
-				? (reviewItemIds: readonly string[]) =>
-						host.acceptReviewItems(reviewItemIds)
-				: (reviewItemIds: readonly string[]) =>
-						host.rejectReviewItems(reviewItemIds);
 		let resolved = false;
 		resolved = resolveSuggestionsForTurn(turn.suggestionIds) || resolved;
-		if (
-			this._state.activeGeneration?.sessionId === sessionId &&
-			this._state.activeGeneration.turnId === turnId &&
-			this._state.activeGeneration.planState === "validated" &&
-			turn.reviewItemIds.length > 0
-		) {
-			resolved = resolveReviewItems(turn.reviewItemIds) || resolved;
-		}
 		if (!resolved) {
 			return false;
 		}
-		host.clearStreamingReviewPreview(sessionId);
+		this.clearStreamingReviewPreview(sessionId);
 		this._updateSessionTurn(sessionId, turnId, {
 			status: resolution === "accept" ? "accepted" : "rejected",
 			suggestionIds: [],
-			reviewItemIds: [],
 			anchor: refreshedInlineSelectionTarget
 				? resolveSessionAnchor(
 						this._editor,
@@ -743,10 +748,7 @@ export class AIControllerSessionState {
 		return true;
 	}
 
-	_updateSession(
-		sessionId: string,
-		overrides: Partial<AISession>,
-	): void {
+	_updateSession(sessionId: string, overrides: Partial<AISession>): void {
 		const nextSessions = this._state.sessions.map((session) =>
 			session.id !== sessionId
 				? session
@@ -798,7 +800,8 @@ export class AIControllerSessionState {
 														: (
 																session.contextualPrompt ??
 																resolveContextualPromptState(
-																	this._editor,
+																	this
+																		._editor,
 																	overrides.target ??
 																		session.target,
 																)
@@ -827,9 +830,9 @@ export class AIControllerSessionState {
 		});
 	}
 
-	_recordSessionFastApplyMetrics(
+	_recordSessionCommitMetrics(
 		sessionId: string,
-		fastApply: FastApplyDebugState | undefined,
+		commit: CommitDebugState | undefined,
 	): void {
 		const session = this._state.sessions.find(
 			(item) => item.id === sessionId,
@@ -840,9 +843,9 @@ export class AIControllerSessionState {
 		this._updateSession(sessionId, {
 			metrics: {
 				...session.metrics,
-				fastApply: accumulateSessionFastApplyMetrics(
-					session.metrics.fastApply,
-					fastApply,
+				commit: accumulateSessionCommitMetrics(
+					session.metrics.commit,
+					commit,
 				),
 			},
 		});
@@ -897,9 +900,5 @@ export class AIControllerSessionState {
 			sessions: nextSessions,
 			activeSessionId: nextActiveSessionId,
 		});
-	}
-
-	protected asHost(): AIControllerMethodHost {
-		return this as unknown as AIControllerMethodHost;
 	}
 }

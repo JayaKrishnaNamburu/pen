@@ -39,7 +39,10 @@ class Rng {
 	}
 }
 
-function parseFuzzSeed(raw: string | undefined): { raw: string; numeric: number } {
+function parseFuzzSeed(raw: string | undefined): {
+	raw: string;
+	numeric: number;
+} {
 	const source = raw && raw.length > 0 ? raw : "20260820";
 	const asNumber = Number(source);
 	if (Number.isFinite(asNumber)) {

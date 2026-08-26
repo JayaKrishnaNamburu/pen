@@ -19,7 +19,11 @@ interface EditResult {
 
 let editor: Editor;
 
-async function seed(): Promise<{ headingId: string; bodyIds: string[]; closingId: string }> {
+async function seed(): Promise<{
+	headingId: string;
+	bodyIds: string[];
+	closingId: string;
+}> {
 	editor = createEditor({
 		schema: defaultSchema,
 		extensions: [documentOpsExtension()],
@@ -29,11 +33,39 @@ async function seed(): Promise<{ headingId: string; bodyIds: string[]; closingId
 	const headingId = editor.firstBlock()!.id;
 	editor.apply(
 		[
-			{ type: "set-props", blockId: headingId, props: { type: "heading", level: 1 } },
-			{ type: "splice-text", blockId: headingId, from: 0, to: 0, insert: "Quarterly Report" },
-			{ type: "insert-block", blockId: "intro", blockType: "paragraph", props: {}, position: "last" },
-			{ type: "splice-text", blockId: "intro", from: 0, to: 0, insert: "This report covers Q3." },
-			{ type: "insert-block", blockId: "closing", blockType: "paragraph", props: {}, position: "last" },
+			{
+				type: "set-props",
+				blockId: headingId,
+				props: { type: "heading", level: 1 },
+			},
+			{
+				type: "splice-text",
+				blockId: headingId,
+				from: 0,
+				to: 0,
+				insert: "Quarterly Report",
+			},
+			{
+				type: "insert-block",
+				blockId: "intro",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "splice-text",
+				blockId: "intro",
+				from: 0,
+				to: 0,
+				insert: "This report covers Q3.",
+			},
+			{
+				type: "insert-block",
+				blockId: "closing",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
 			{
 				type: "splice-text",
 				blockId: "closing",
@@ -76,7 +108,8 @@ function marksDescription(from: Editor): string {
 		};
 	};
 	return (
-		schema.properties?.operations?.items?.properties?.marks?.description ?? ""
+		schema.properties?.operations?.items?.properties?.marks?.description ??
+		""
 	);
 }
 
@@ -93,7 +126,11 @@ describe("edit_document (EC)", () => {
 		await expect(
 			edit({
 				operations: [
-					{ operation: "replace_block_text", text: "x", search: "Revenue" },
+					{
+						operation: "replace_block_text",
+						text: "x",
+						search: "Revenue",
+					},
 				],
 			}),
 		).rejects.toThrow(/Unknown field.*search/);
@@ -101,7 +138,11 @@ describe("edit_document (EC)", () => {
 
 		const byId = await edit({
 			operations: [
-				{ operation: "replace_block_text", blockId: "closing", text: "Rewritten." },
+				{
+					operation: "replace_block_text",
+					blockId: "closing",
+					text: "Rewritten.",
+				},
 			],
 		});
 		expect(byId.ok).toBe(true);
@@ -114,7 +155,8 @@ describe("edit_document (EC)", () => {
 				{
 					operation: "replace_blocks",
 					blockIds: ["closing"],
-					markdown: "- Revenue grew\n- Costs fell\n- Margins improved\n",
+					markdown:
+						"- Revenue grew\n- Costs fell\n- Margins improved\n",
 				},
 			],
 		});
@@ -134,7 +176,9 @@ describe("edit_document (EC)", () => {
 		const before = documentText();
 		await expect(
 			edit({
-				operations: [{ operation: "rewrite_everything", blockId: "closing" }],
+				operations: [
+					{ operation: "rewrite_everything", blockId: "closing" },
+				],
 			}),
 		).rejects.toThrow(/must be one of/);
 		expect(documentText()).toBe(before);
@@ -144,7 +188,11 @@ describe("edit_document (EC)", () => {
 		const before = documentText();
 		const result = await edit({
 			operations: [
-				{ operation: "replace_block_text", blockId: "does-not-exist", text: "x" },
+				{
+					operation: "replace_block_text",
+					blockId: "does-not-exist",
+					text: "x",
+				},
 			],
 		});
 
@@ -161,9 +209,21 @@ describe("edit_document (EC)", () => {
 	it("EC5: one bad operation among three leaves the good ones applied and names itself", async () => {
 		const result = await edit({
 			operations: [
-				{ operation: "replace_block_text", blockId: "intro", text: "Intro rewritten." },
-				{ operation: "replace_block_text", blockId: "nope", text: "ignored" },
-				{ operation: "replace_block_text", blockId: "closing", text: "Closing rewritten." },
+				{
+					operation: "replace_block_text",
+					blockId: "intro",
+					text: "Intro rewritten.",
+				},
+				{
+					operation: "replace_block_text",
+					blockId: "nope",
+					text: "ignored",
+				},
+				{
+					operation: "replace_block_text",
+					blockId: "closing",
+					text: "Closing rewritten.",
+				},
 			],
 		});
 
@@ -171,20 +231,34 @@ describe("edit_document (EC)", () => {
 		expect(result.appliedOperations).toHaveLength(2);
 		expect(result.rejected).toHaveLength(1);
 		expect(result.rejected?.[0]?.index).toBe(1);
-		expect(editor.getBlock("intro")?.textContent()).toBe("Intro rewritten.");
-		expect(editor.getBlock("closing")?.textContent()).toBe("Closing rewritten.");
+		expect(editor.getBlock("intro")?.textContent()).toBe(
+			"Intro rewritten.",
+		);
+		expect(editor.getBlock("closing")?.textContent()).toBe(
+			"Closing rewritten.",
+		);
 	});
 
 	it("EC5: a refusal is a returned value, not a thrown exception", async () => {
 		await expect(
-			edit({ operations: [{ operation: "delete_blocks", blockIds: ["ghost"] }] }),
+			edit({
+				operations: [
+					{ operation: "delete_blocks", blockIds: ["ghost"] },
+				],
+			}),
 		).resolves.toMatchObject({ ok: false });
 	});
 
 	it("EC6: an unparseable payload leaves the document byte-identical", async () => {
 		const before = documentText();
 		const empty = await edit({
-			operations: [{ operation: "replace_blocks", blockIds: ["closing"], markdown: "   " }],
+			operations: [
+				{
+					operation: "replace_blocks",
+					blockIds: ["closing"],
+					markdown: "   ",
+				},
+			],
 		});
 		const missing = await edit({
 			operations: [{ operation: "insert_blocks", blockId: "closing" }],
@@ -208,7 +282,11 @@ describe("edit_document (EC)", () => {
 		const headingId = editor.firstBlock()!.id;
 		const result = await edit({
 			operations: [
-				{ operation: "replace_block_text", blockId: headingId, text: "Our Quarter in Review" },
+				{
+					operation: "replace_block_text",
+					blockId: headingId,
+					text: "Our Quarter in Review",
+				},
 				{
 					operation: "replace_block_text",
 					blockId: "closing",
@@ -218,14 +296,17 @@ describe("edit_document (EC)", () => {
 					operation: "insert_blocks",
 					blockId: "closing",
 					placement: "after",
-					markdown: "| Metric | Change |\n| --- | --- |\n| Revenue | +12% |\n",
+					markdown:
+						"| Metric | Change |\n| --- | --- |\n| Revenue | +12% |\n",
 				},
 			],
 		});
 
 		expect(result.ok).toBe(true);
 		expect(result.appliedOperations).toHaveLength(3);
-		expect(editor.getBlock(headingId)?.textContent()).toBe("Our Quarter in Review");
+		expect(editor.getBlock(headingId)?.textContent()).toBe(
+			"Our Quarter in Review",
+		);
 		expect(editor.getBlock("closing")?.textContent()).toContain(
 			"The matrix below breaks this down.",
 		);
@@ -432,7 +513,7 @@ describe("edit_document (EC)", () => {
 					operation: "insert_blocks",
 					blockId: "closing",
 					placement: "after",
-					markdown: "Use `<span style=\"color:purple\">` as a literal.",
+					markdown: 'Use `<span style="color:purple">` as a literal.',
 				},
 			],
 		});
@@ -472,7 +553,11 @@ describe("edit_document (EC)", () => {
 	it("move_block needs a distinct reference block", async () => {
 		const selfMove = await edit({
 			operations: [
-				{ operation: "move_block", blockId: "closing", referenceBlockId: "closing" },
+				{
+					operation: "move_block",
+					blockId: "closing",
+					referenceBlockId: "closing",
+				},
 			],
 		});
 		expect(selfMove.ok).toBe(false);

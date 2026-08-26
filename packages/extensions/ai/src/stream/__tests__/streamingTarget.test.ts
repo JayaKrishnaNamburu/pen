@@ -81,12 +81,8 @@ describe("@input/pen-ai/stream StreamingTargetImpl", () => {
 	});
 
 	it("ST6: awareness streaming flags hang off source:stream commits", () => {
-		const {
-			awareness,
-			awarenessState,
-			commitListeners,
-			target,
-		} = createStreamingHarness();
+		const { awareness, awarenessState, commitListeners, target } =
+			createStreamingHarness();
 
 		target.beginStreaming("zone-1", "block-1");
 		expect(awareness.setLocalState).not.toHaveBeenCalled();

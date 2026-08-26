@@ -56,7 +56,9 @@ describe("load-path repairs (DUR2)", () => {
 		expect(loaded.penDocument.blockOrder.toArray()).toEqual(["b1"]);
 		expect(loaded.penDocument.blocks.has("ghost")).toBe(false);
 		expect(
-			(loaded.penDocument.blocks.get("b1")?.get("content") as Y.Text).toString(),
+			(
+				loaded.penDocument.blocks.get("b1")?.get("content") as Y.Text
+			).toString(),
 		).toBe("keep-me");
 	});
 
@@ -64,15 +66,22 @@ describe("load-path repairs (DUR2)", () => {
 		const sourceAdapter = yjsAdapter();
 		const source = seedParagraph(sourceAdapter, "b1", "visible");
 		source.ydoc.transact(() => {
-			initBlockMap(source.penDocument.blocks, "orphan", "hostWidget", "inline");
-			(source.penDocument.blocks.get("orphan")!.get("props") as Y.Map<unknown>).set(
-				"payload",
-				"kept",
+			initBlockMap(
+				source.penDocument.blocks,
+				"orphan",
+				"hostWidget",
+				"inline",
 			);
-			(source.penDocument.blocks.get("orphan")!.get("content") as Y.Text).insert(
-				0,
-				"orphan-body",
-			);
+			(
+				source.penDocument.blocks
+					.get("orphan")!
+					.get("props") as Y.Map<unknown>
+			).set("payload", "kept");
+			(
+				source.penDocument.blocks
+					.get("orphan")!
+					.get("content") as Y.Text
+			).insert(0, "orphan-body");
 		});
 
 		const diagnostics: CRDTDiagnostic[] = [];
@@ -95,20 +104,31 @@ describe("load-path repairs (DUR2)", () => {
 				}),
 			]),
 		);
-		expect(loaded.penDocument.blockOrder.toArray()).toEqual(["b1", "orphan"]);
+		expect(loaded.penDocument.blockOrder.toArray()).toEqual([
+			"b1",
+			"orphan",
+		]);
 		expect(loaded.penDocument.blocks.get("orphan")?.get("type")).toBe(
 			"hostWidget",
 		);
 		expect(
 			(
-				loaded.penDocument.blocks.get("orphan")?.get("props") as Y.Map<unknown>
+				loaded.penDocument.blocks
+					.get("orphan")
+					?.get("props") as Y.Map<unknown>
 			).get("payload"),
 		).toBe("kept");
 		expect(
-			(loaded.penDocument.blocks.get("orphan")?.get("content") as Y.Text).toString(),
+			(
+				loaded.penDocument.blocks
+					.get("orphan")
+					?.get("content") as Y.Text
+			).toString(),
 		).toBe("orphan-body");
 		expect(
-			(loaded.penDocument.blocks.get("b1")?.get("content") as Y.Text).toString(),
+			(
+				loaded.penDocument.blocks.get("b1")?.get("content") as Y.Text
+			).toString(),
 		).toBe("visible");
 	});
 });

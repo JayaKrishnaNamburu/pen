@@ -131,7 +131,9 @@ describe("observation — CommitEvent v2 fields (OB6)", () => {
 		editor.selectText(firstId, 2, 2);
 		const liveRecord = getEditorSelectionRecord(editor);
 		if (liveRecord === null) {
-			throw new Error("selectText should have produced a selection record");
+			throw new Error(
+				"selectText should have produced a selection record",
+			);
 		}
 		const recordBeforeApply = snapshotRecord(liveRecord);
 

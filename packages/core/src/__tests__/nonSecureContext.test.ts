@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createEditor } from "../index";
 import { defaultSchema } from "./fixtures/testSchema";
 
-const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const UUID_V4 =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -36,7 +37,10 @@ describe("non-secure context (HOST4)", () => {
 	it("HOST4: constructs an editor and applies ops without crypto.randomUUID", () => {
 		enterNonSecureContext();
 
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		editor.apply([
 			{
 				type: "insert-block",
@@ -45,9 +49,13 @@ describe("non-secure context (HOST4)", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "typed on a phone" },
+				insert: "typed on a phone",
+			},
 		]);
 
 		expect(editor.getBlock("b1")?.textContent()).toBe("typed on a phone");
@@ -59,10 +67,15 @@ describe("non-secure context (HOST4)", () => {
 		enterNonSecureContext();
 
 		const editors = Array.from({ length: 50 }, () =>
-			createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset }),
+			createEditor({
+				schema: defaultSchema,
+				preset: noDefaultExtensionsPreset,
+			}),
 		);
 		// the initial paragraph's id comes from the editor, not the caller
-		const generatedIds = editors.flatMap((editor) => editor.documentState.blockOrder);
+		const generatedIds = editors.flatMap(
+			(editor) => editor.documentState.blockOrder,
+		);
 
 		expect(generatedIds.length).toBe(50);
 		expect(new Set(generatedIds).size).toBe(50);
@@ -78,7 +91,10 @@ describe("non-secure context (HOST4)", () => {
 	it("HOST4: also works where Web Crypto is missing entirely", () => {
 		setCrypto(undefined);
 
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		expect(editor.documentState.blockOrder).toHaveLength(1);
 
 		editor.destroy();

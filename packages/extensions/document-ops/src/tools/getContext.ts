@@ -46,17 +46,21 @@ export function getContextTool(editor: Editor): ToolDefinition {
 		handler: async (input: unknown) => {
 			const options = normalizeContextToolOptions(input);
 			const viewMode = options.includeSuggestions ? "raw" : "resolved";
-			const blocks = resolveDocumentBlocks(editor, options.range, viewMode);
+			const blocks = resolveDocumentBlocks(
+				editor,
+				options.range,
+				viewMode,
+			);
 			const cursorContext = buildCursorContext(editor, viewMode);
 			const selectionPayload = options.includeSelection
 				? {
-					selection: cursorContext.selection,
-					selectedText: cursorContext.selectedText,
-					activeBlockId: cursorContext.activeBlockId,
-					activeBlockType: cursorContext.activeBlockType,
-					surroundingBlocks: cursorContext.surroundingBlocks,
-					structuredTarget: cursorContext.structuredTarget,
-				}
+						selection: cursorContext.selection,
+						selectedText: cursorContext.selectedText,
+						activeBlockId: cursorContext.activeBlockId,
+						activeBlockType: cursorContext.activeBlockType,
+						surroundingBlocks: cursorContext.surroundingBlocks,
+						structuredTarget: cursorContext.structuredTarget,
+					}
 				: {};
 
 			if (options.format === "markdown") {
@@ -67,7 +71,11 @@ export function getContextTool(editor: Editor): ToolDefinition {
 					blockIds: blocks.map((block) => block.id),
 					markdown: options.annotateBlocks
 						? formatBlocksAsAnnotatedMarkdown(blocks)
-						: exportDocumentRangeAsMarkdown(editor, options.range, viewMode),
+						: exportDocumentRangeAsMarkdown(
+								editor,
+								options.range,
+								viewMode,
+							),
 					...selectionPayload,
 				};
 			}

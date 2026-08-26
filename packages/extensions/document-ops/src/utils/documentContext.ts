@@ -53,13 +53,15 @@ type BlockSnapshotHandle =
 const SURROUNDING_BLOCK_RADIUS = 2;
 const SUMMARY_PREVIEW_LIMIT = 160;
 
-export function normalizeContextToolOptions(input: unknown): ContextToolOptions {
+export function normalizeContextToolOptions(
+	input: unknown,
+): ContextToolOptions {
 	const options = (input ?? {}) as Record<string, unknown>;
 	return {
 		format:
 			options.format === "json" ||
-				options.format === "markdown" ||
-				options.format === "summary"
+			options.format === "markdown" ||
+			options.format === "summary"
 				? options.format
 				: "summary",
 		includeSelection: options.includeSelection === true,
@@ -79,10 +81,9 @@ export function buildCursorContext(
 	const selection = editor.getSelection();
 	const activeBlockId = resolveActiveBlockId(selection);
 	const boundedBlocks = resolveCursorBlocks(editor, activeBlockId, viewMode);
-	const activeBlock =
-		(activeBlockId
-			? boundedBlocks.find((block) => block.id === activeBlockId) ?? null
-			: boundedBlocks[0] ?? null);
+	const activeBlock = activeBlockId
+		? (boundedBlocks.find((block) => block.id === activeBlockId) ?? null)
+		: (boundedBlocks[0] ?? null);
 	return {
 		selection,
 		activeBlockId: activeBlock?.id ?? activeBlockId,
@@ -90,7 +91,10 @@ export function buildCursorContext(
 		selectedText: resolveSelectedText(editor, selection, viewMode),
 		markdown: formatBlocksAsMarkdown(boundedBlocks),
 		surroundingBlocks: summarizeBlocks(boundedBlocks),
-		structuredTarget: inspectStructuredTarget(editor, activeBlock?.id ?? activeBlockId),
+		structuredTarget: inspectStructuredTarget(
+			editor,
+			activeBlock?.id ?? activeBlockId,
+		),
 	};
 }
 
@@ -112,7 +116,9 @@ export function buildDocumentBlockSnapshots(
 	return resolveDocumentBlocks(editor, null, viewMode);
 }
 
-export function formatBlocksAsMarkdown(blocks: DocumentBlockSnapshot[]): string {
+export function formatBlocksAsMarkdown(
+	blocks: DocumentBlockSnapshot[],
+): string {
 	return blocks
 		.map((block) => block.markdown)
 		.filter((block) => block.length > 0)
@@ -168,7 +174,9 @@ export function exportDocumentRangeAsMarkdown(
 	);
 }
 
-export function summarizeBlocks(blocks: DocumentBlockSnapshot[]): SummaryBlockSnapshot[] {
+export function summarizeBlocks(
+	blocks: DocumentBlockSnapshot[],
+): SummaryBlockSnapshot[] {
 	return blocks.map((block) => ({
 		id: block.id,
 		type: block.type,
@@ -192,7 +200,9 @@ export function resolveSelectionText(
 		let text = "";
 		const startOffset = index === 0 ? range.start.offset : 0;
 		const endOffset =
-			index === blockIds.length - 1 ? range.end.offset : Number.POSITIVE_INFINITY;
+			index === blockIds.length - 1
+				? range.end.offset
+				: Number.POSITIVE_INFINITY;
 
 		for (const delta of block.textDeltas()) {
 			const length = delta.insert.length;
@@ -288,13 +298,21 @@ function resolveCursorBlocks(
 			SURROUNDING_BLOCK_RADIUS + 1,
 		);
 	}
-	if (typeof activeBlock.prev === "undefined" || typeof activeBlock.next === "undefined") {
+	if (
+		typeof activeBlock.prev === "undefined" ||
+		typeof activeBlock.next === "undefined"
+	) {
 		const blocks = resolveDocumentBlocks(editor, null, viewMode);
-		const activeBlockIndex = blocks.findIndex((block) => block.id === activeBlock.id);
+		const activeBlockIndex = blocks.findIndex(
+			(block) => block.id === activeBlock.id,
+		);
 		if (activeBlockIndex < 0) {
 			return blocks.slice(0, SURROUNDING_BLOCK_RADIUS + 1);
 		}
-		const startIndex = Math.max(0, activeBlockIndex - SURROUNDING_BLOCK_RADIUS);
+		const startIndex = Math.max(
+			0,
+			activeBlockIndex - SURROUNDING_BLOCK_RADIUS,
+		);
 		const endIndex = Math.min(
 			blocks.length,
 			activeBlockIndex + SURROUNDING_BLOCK_RADIUS + 1,
@@ -375,7 +393,9 @@ export function resolveDocumentBlockHandles(
 	return blocks.slice(rangeStart, rangeEnd);
 }
 
-export function listDocumentBlockHandles(editor: Editor): BlockSnapshotHandle[] {
+export function listDocumentBlockHandles(
+	editor: Editor,
+): BlockSnapshotHandle[] {
 	const allBlocks = editor.documentState?.allBlocks?.();
 	if (allBlocks) {
 		return Array.from(allBlocks) as BlockSnapshotHandle[];

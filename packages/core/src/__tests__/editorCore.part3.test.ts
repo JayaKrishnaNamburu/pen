@@ -1,8 +1,5 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import {
-	type DocumentSession,
-	type PenStreamPart,
-} from "@input/pen-types";
+import { type DocumentSession, type PenStreamPart } from "@input/pen-types";
 import { defineExtension, getOpOriginType } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
@@ -69,7 +66,6 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-
 describe("@input/pen-core createEditor", () => {
 	it("splits at offset zero by inserting an empty block above", () => {
 		const editor = createEditor();
@@ -104,9 +100,7 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "codeBlock" } },
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "abcd" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "abcd" },
 		]);
 
 		editor.selectTextRange({ blockId, offset: 1 }, { blockId, offset: 3 });
@@ -136,7 +130,10 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: "table-block", props: { type: "paragraph" }},
+				type: "set-props",
+				blockId: "table-block",
+				props: { type: "paragraph" },
+			},
 		]);
 
 		const tableBlock = editor.getBlock("table-block")!;
@@ -173,8 +170,8 @@ describe("@input/pen-core createEditor", () => {
 							type: "splice-text",
 							blockId: "b1",
 							from: 5,
-				to: 5,
-				insert: "!",
+							to: 5,
+							insert: "!",
 						},
 					],
 					{ origin: "extension" },
@@ -244,13 +241,13 @@ describe("@input/pen-core createEditor", () => {
 			origin: { type: "user" },
 		});
 		expect(
-			(commits[0] as { summary: { blockText: { blockId: string }[] } })
-				.summary.blockText.map((text) => text.blockId),
+			(
+				commits[0] as { summary: { blockText: { blockId: string }[] } }
+			).summary.blockText.map((text) => text.blockId),
 		).toContain(blockId);
 		expect(observed).toHaveLength(1);
 		expect(observed[0]).toHaveLength(1);
 
 		editor.destroy();
 	});
-
 });

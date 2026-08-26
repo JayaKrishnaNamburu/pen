@@ -75,7 +75,10 @@ export function retrieveDocumentSpans(
 			}),
 		)
 		.filter((result) => result.score > 0)
-		.sort((left, right) => right.score - left.score || left.index - right.index)
+		.sort(
+			(left, right) =>
+				right.score - left.score || left.index - right.index,
+		)
 		.slice(0, input.maxResults ?? DEFAULT_MAX_RESULTS);
 
 	const spans: RetrievedDocumentSpan[] = [];
@@ -106,11 +109,11 @@ function scoreSnapshot(
 		targetBlockId: string | null;
 	},
 ): {
-		snapshot: DocumentBlockSnapshot;
-		index: number;
-		score: number;
-		rationale: string;
-	} {
+	snapshot: DocumentBlockSnapshot;
+	index: number;
+	score: number;
+	rationale: string;
+} {
 	const searchableText = foldAndNormalize(
 		[
 			snapshot.content,
@@ -183,11 +186,18 @@ function isNeighborSnapshot(
 	if (!blockId) {
 		return false;
 	}
-	return snapshots[index - 1]?.id === blockId || snapshots[index + 1]?.id === blockId;
+	return (
+		snapshots[index - 1]?.id === blockId ||
+		snapshots[index + 1]?.id === blockId
+	);
 }
 
 function tokenizeQuery(query: string): string[] {
-	return [...new Set(query.split(/[^a-z0-9]+/i).filter((token) => token.length > 1))];
+	return [
+		...new Set(
+			query.split(/[^a-z0-9]+/i).filter((token) => token.length > 1),
+		),
+	];
 }
 
 function createRetrievedSpan(
@@ -219,7 +229,12 @@ function createRetrievedSpan(
 	const firstSnapshot = spanSnapshots[0]!;
 	const lastSnapshot = spanSnapshots[spanSnapshots.length - 1]!;
 	const previewSource = spanSnapshots
-		.map((spanSnapshot) => spanSnapshot.content || spanSnapshot.markdown || spanSnapshot.type)
+		.map(
+			(spanSnapshot) =>
+				spanSnapshot.content ||
+				spanSnapshot.markdown ||
+				spanSnapshot.type,
+		)
 		.join("\n");
 
 	return {

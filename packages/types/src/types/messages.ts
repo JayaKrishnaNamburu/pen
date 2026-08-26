@@ -120,24 +120,6 @@ export type MessageParamsByKey = {
 	"pen.ai.command.translate.description": NoMessageParams;
 	"pen.ai.shortcut.undoInline": NoMessageParams;
 	"pen.ai.shortcut.redoInline": NoMessageParams;
-	"pen.ai.review.replaceText": NoMessageParams;
-	"pen.ai.review.insertText": NoMessageParams;
-	"pen.ai.review.appendText": NoMessageParams;
-	"pen.ai.review.updateSelection": NoMessageParams;
-	"pen.ai.review.flowPatch": { operation: string };
-	"pen.ai.review.block": { blockId: string };
-	"pen.ai.review.span": { spanId: string };
-	"pen.ai.review.blocks": NoMessageParams;
-	"pen.ai.review.insertBlock": NoMessageParams;
-	"pen.ai.review.insertBlock.summary": { blockType: string };
-	"pen.ai.review.updateBlock": NoMessageParams;
-	"pen.ai.review.updateBlock.summary": NoMessageParams;
-	"pen.ai.review.propChanges": { count: number };
-	"pen.ai.review.moveBlock": NoMessageParams;
-	"pen.ai.review.moveBlock.summary": NoMessageParams;
-	"pen.ai.review.convertBlock": NoMessageParams;
-	"pen.ai.review.convertBlock.summary": { newType: string };
-	"pen.ai.review.newBlock": NoMessageParams;
 	"pen.ai.suggestion.keep": NoMessageParams;
 	"pen.ai.suggestion.undo": NoMessageParams;
 	"pen.ai.suggestion.heading": NoMessageParams;
@@ -348,27 +330,6 @@ export const DEFAULT_MESSAGE_CATALOG: MessageCatalog = {
 	"pen.ai.command.translate.description": "Translate to another language",
 	"pen.ai.shortcut.undoInline": "Undo AI inline turn",
 	"pen.ai.shortcut.redoInline": "Redo AI inline turn",
-	"pen.ai.review.replaceText": "Replace text",
-	"pen.ai.review.insertText": "Insert text",
-	"pen.ai.review.appendText": "Append text",
-	"pen.ai.review.updateSelection": "Updates the selected text range.",
-	"pen.ai.review.flowPatch": "Flow patch: {operation}",
-	"pen.ai.review.block": 'Block "{blockId}"',
-	"pen.ai.review.span": 'Span "{spanId}"',
-	"pen.ai.review.blocks": "Blocks",
-	"pen.ai.review.insertBlock": "Insert block",
-	"pen.ai.review.insertBlock.summary": "Adds a new {blockType} block.",
-	"pen.ai.review.updateBlock": "Update block",
-	"pen.ai.review.updateBlock.summary": "Updates block properties.",
-	"pen.ai.review.propChanges": {
-		one: "{count} prop change",
-		other: "{count} prop changes",
-	},
-	"pen.ai.review.moveBlock": "Move block",
-	"pen.ai.review.moveBlock.summary": "Moves this block to a new position.",
-	"pen.ai.review.convertBlock": "Convert block",
-	"pen.ai.review.convertBlock.summary": "Converts this block to {newType}.",
-	"pen.ai.review.newBlock": "(new block)",
 	"pen.ai.suggestion.keep": "Keep",
 	"pen.ai.suggestion.undo": "Undo",
 	"pen.ai.suggestion.heading": "Suggestion",

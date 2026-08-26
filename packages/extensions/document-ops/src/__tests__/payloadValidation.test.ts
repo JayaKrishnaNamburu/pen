@@ -16,7 +16,9 @@ function createEditor(blockIds: readonly string[] = []): Editor {
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		getBlock: (blockId: string) =>
 			blockIds.includes(blockId)
-				? ({ id: blockId, type: "paragraph" } as ReturnType<Editor["getBlock"]>)
+				? ({ id: blockId, type: "paragraph" } as ReturnType<
+						Editor["getBlock"]
+					>)
 				: null,
 		internals: {
 			emit: vi.fn(),

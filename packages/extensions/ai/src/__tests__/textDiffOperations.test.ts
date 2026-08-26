@@ -14,8 +14,13 @@ describe("compileReplacementSuggestionOps", () => {
 				replacementText: "Thanks for meeting us",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 11,
-				to: 11 + 7 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 11,
+				to: 11 + 7,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",
@@ -54,8 +59,13 @@ describe("compileReplacementSuggestionOps", () => {
 				replacementText: "Sounds good",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 7,
-				to: 7 + 7 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 7,
+				to: 7 + 7,
+				insert: "",
+			},
 		]);
 	});
 
@@ -68,8 +78,13 @@ describe("compileReplacementSuggestionOps", () => {
 				replacementText: "I can't make it.",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 2,
-				to: 2 + 3 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 2,
+				to: 2 + 3,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",
@@ -170,8 +185,13 @@ describe("compileRangeReplacementSuggestionOps", () => {
 				replacementText: "first paragraph\n\nsecond paragraph",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 10,
-				to: 10 + 4 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 10,
+				to: 10 + 4,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",
@@ -179,8 +199,13 @@ describe("compileRangeReplacementSuggestionOps", () => {
 				to: 14,
 				insert: "paragraph",
 			},
-			{ type: "splice-text", blockId: "body-1", from: 6,
-				to: 6 + 3 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 6,
+				to: 6 + 3,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",
@@ -229,10 +254,20 @@ describe("compileRangeReplacementSuggestionOps", () => {
 				replacementText: "First\nSecond",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 6,
-				to: 6 + 8 , insert: "" },
-			{ type: "splice-text", blockId: "body-3", from: 0,
-				to: 0 + 9 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 6,
+				to: 6 + 8,
+				insert: "",
+			},
+			{
+				type: "splice-text",
+				blockId: "body-3",
+				from: 0,
+				to: 0 + 9,
+				insert: "",
+			},
 			{ type: "delete-block", blockId: "body-2" },
 			{
 				type: "splice-text",
@@ -283,8 +318,13 @@ describe("compileRangeReplacementSuggestionOps", () => {
 				replacementText: "Thanks for meeting us\nI can meet tomorrow",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 11,
-				to: 11 + 7 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 11,
+				to: 11 + 7,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",
@@ -306,8 +346,13 @@ describe("compileRangeReplacementSuggestionOps", () => {
 				replacementText: "that stronger",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 10,
-				to: 10 + 6 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 10,
+				to: 10 + 6,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",
@@ -315,8 +360,13 @@ describe("compileRangeReplacementSuggestionOps", () => {
 				to: 16,
 				insert: "stronger",
 			},
-			{ type: "splice-text", blockId: "body-1", from: 5,
-				to: 5 + 4 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 5,
+				to: 5 + 4,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",

@@ -42,9 +42,9 @@ async function createCountingEditor() {
 		originalApply(ops, applyOptions);
 	}) as typeof editor.apply;
 
-	const streaming = editor.facet(streamingTargetFacet) as
-		| StreamingTarget
-		| null;
+	const streaming = editor.facet(
+		streamingTargetFacet,
+	) as StreamingTarget | null;
 	if (!streaming) {
 		throw new Error("missing streaming target");
 	}

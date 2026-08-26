@@ -43,7 +43,10 @@ function createRecordingEditor(slots: Record<string, unknown> = {}) {
 			return null;
 		},
 		internals: {
-			emit(_event: string, diagnostic: { code: string; message: string }) {
+			emit(
+				_event: string,
+				diagnostic: { code: string; message: string },
+			) {
 				diagnostics.push(diagnostic);
 			},
 		},
@@ -100,13 +103,22 @@ describe("AIB3 tool classification", () => {
 
 	it("AIB3: an explicit declaration wins over the name heuristic in both directions", () => {
 		expect(
-			isMutatingAITool("read_document", definition("read_document", { mutating: true })),
+			isMutatingAITool(
+				"read_document",
+				definition("read_document", { mutating: true }),
+			),
 		).toBe(true);
 		expect(
-			isMutatingAITool("insert_block", definition("insert_block", { mutating: false })),
+			isMutatingAITool(
+				"insert_block",
+				definition("insert_block", { mutating: false }),
+			),
 		).toBe(false);
 		expect(
-			isMutatingAITool("host_rewrite", definition("host_rewrite", { mutating: false })),
+			isMutatingAITool(
+				"host_rewrite",
+				definition("host_rewrite", { mutating: false }),
+			),
 		).toBe(false);
 	});
 
@@ -119,14 +131,22 @@ describe("AIB3 tool classification", () => {
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 		const turn = createAIToolTurn({ allowedMutatingTools: [] });
 
-		expect(isMutatingAITool("read_document", runtime.getTool("read_document"))).toBe(
-			false,
-		);
 		expect(
-			listAITools(runtime, { allowedMutatingTools: [] }).map((tool) => tool.name),
+			isMutatingAITool("read_document", runtime.getTool("read_document")),
+		).toBe(false);
+		expect(
+			listAITools(runtime, { allowedMutatingTools: [] }).map(
+				(tool) => tool.name,
+			),
 		).toEqual(["read_document"]);
 
-		const result = await executeAITool(runtime, "read_document", {}, context, turn);
+		const result = await executeAITool(
+			runtime,
+			"read_document",
+			{},
+			context,
+			turn,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -173,10 +193,18 @@ describe("AIB3 tool classification", () => {
 			destructive: false,
 		});
 		expect(
-			listAITools(runtime, { allowedMutatingTools: [] }).map((tool) => tool.name),
+			listAITools(runtime, { allowedMutatingTools: [] }).map(
+				(tool) => tool.name,
+			),
 		).toEqual(["host_rewrite"]);
 
-		const result = await executeAITool(runtime, "host_rewrite", {}, context, turn);
+		const result = await executeAITool(
+			runtime,
+			"host_rewrite",
+			{},
+			context,
+			turn,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -209,7 +237,13 @@ describe("AIB3 tool classification", () => {
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 		const turn = createAIToolTurn({ allowedMutatingTools: [] });
 
-		const result = await executeAITool(runtime, "host_rewrite", {}, context, turn);
+		const result = await executeAITool(
+			runtime,
+			"host_rewrite",
+			{},
+			context,
+			turn,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -229,7 +263,12 @@ describe("AIB3 tool classification", () => {
 		const { editor, applied, diagnostics } = createRecordingEditor();
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 
-		const result = await executeAITool(runtime, "read_document", {}, context);
+		const result = await executeAITool(
+			runtime,
+			"read_document",
+			{},
+			context,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -256,7 +295,13 @@ describe("AIB3 tool classification", () => {
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 		const turn = createAIToolTurn({ allowedMutatingTools: [] });
 
-		const result = await executeAITool(runtime, "Read_document", {}, context, turn);
+		const result = await executeAITool(
+			runtime,
+			"Read_document",
+			{},
+			context,
+			turn,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -276,7 +321,11 @@ describe("AIB3 tool classification", () => {
 		const { editor, applied } = createRecordingEditor();
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 		const turn = createAIToolTurn({ allowedMutatingTools: [] });
-		const spoofs = ["READ_DOCUMENT", "read_document ", "read_docum\u0435nt"];
+		const spoofs = [
+			"READ_DOCUMENT",
+			"read_document ",
+			"read_docum\u0435nt",
+		];
 		const double = createModelDouble({
 			toolCalls: spoofs.map((toolName, index) => ({
 				toolCallId: `spoof-${index}`,
@@ -291,14 +340,22 @@ describe("AIB3 tool classification", () => {
 				continue;
 			}
 			results.push(
-				await executeAITool(runtime, event.toolName, event.input, context, turn),
+				await executeAITool(
+					runtime,
+					event.toolName,
+					event.input,
+					context,
+					turn,
+				),
 			);
 		}
 
 		expect(results).toHaveLength(spoofs.length);
 		expect(results.every(isAIToolCallDenied)).toBe(true);
 		expect(
-			results.filter(isAIToolCallDenied).every((result) => result.reason === "tool-not-allowed"),
+			results
+				.filter(isAIToolCallDenied)
+				.every((result) => result.reason === "tool-not-allowed"),
 		).toBe(true);
 		expect(applied).toEqual([]);
 		expect(runtime.getTool("READ_DOCUMENT")).toBeNull();
@@ -335,7 +392,12 @@ describe("AIB3 tool classification", () => {
 		);
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 
-		const result = await executeAITool(runtime, "read_document", {}, context);
+		const result = await executeAITool(
+			runtime,
+			"read_document",
+			{},
+			context,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -396,7 +458,12 @@ describe("AIB3 tool classification", () => {
 		);
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 
-		const result = await executeAITool(runtime, "read_document", {}, context);
+		const result = await executeAITool(
+			runtime,
+			"read_document",
+			{},
+			context,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -445,7 +512,12 @@ describe("AIB3 tool classification", () => {
 		);
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 
-		const result = await executeAITool(runtime, "read_document", {}, context);
+		const result = await executeAITool(
+			runtime,
+			"read_document",
+			{},
+			context,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {
@@ -511,7 +583,13 @@ describe("AIB3 tool classification", () => {
 		const context = new AIToolContextImpl(editor, "doc-1", () => {});
 		const turn = createAIToolTurn({ allowedMutatingTools: [] });
 
-		const result = await executeAITool(runtime, "read_document", {}, context, turn);
+		const result = await executeAITool(
+			runtime,
+			"read_document",
+			{},
+			context,
+			turn,
+		);
 
 		expect(isAIToolCallDenied(result)).toBe(true);
 		if (isAIToolCallDenied(result)) {

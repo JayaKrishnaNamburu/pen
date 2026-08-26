@@ -7,9 +7,7 @@ import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../deltaStreamExtension";
 import { processStream } from "../processStream";
 
-function createDefaultEditor(
-	options: Parameters<typeof createEditor>[0] = {},
-) {
+function createDefaultEditor(options: Parameters<typeof createEditor>[0] = {}) {
 	return createEditor({
 		schema: defaultSchema,
 		...options,
@@ -84,8 +82,8 @@ describe("@input/pen-ai/stream processStream generation undo", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "hello",
+					to: 0,
+					insert: "hello",
 				},
 			],
 			{ origin: "user" },
@@ -164,8 +162,8 @@ describe("@input/pen-ai/stream processStream generation undo", () => {
 							type: "splice-text",
 							blockId: firstBlockId,
 							from: 0,
-				to: 0,
-				insert: "user edit",
+							to: 0,
+							insert: "user edit",
 						},
 					],
 					{ origin: "user" },
@@ -236,8 +234,8 @@ describe("@input/pen-ai/stream processStream generation undo", () => {
 							type: "splice-text",
 							blockId,
 							from: 3,
-				to: 3,
-				insert: "user ",
+							to: 3,
+							insert: "user ",
 						},
 					],
 					{ origin: "user" },

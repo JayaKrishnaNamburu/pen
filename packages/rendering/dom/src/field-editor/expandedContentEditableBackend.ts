@@ -95,7 +95,7 @@ export class ExpandedContentEditableBackend {
 
 	deactivate(): void {
 		if (this.element) {
-			// see ContentEditableBackendCore.deactivate: release editability by
+			// see ContentEditableBackend.deactivate: release editability by
 			// removing the attribute so this host never becomes a read-only
 			// island inside a wider editing host.
 			this.element.removeAttribute("contenteditable");

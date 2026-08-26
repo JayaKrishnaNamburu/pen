@@ -251,7 +251,10 @@ function fallbackPoint(
 			: addressed.offset;
 	return {
 		blockId: addressed.blockId,
-		offset: clampOffsetToLength(offset, host.logicalLength(addressed.blockId)),
+		offset: clampOffsetToLength(
+			offset,
+			host.logicalLength(addressed.blockId),
+		),
 	};
 }
 
@@ -265,7 +268,10 @@ function fallbackForRemovedBlock(
 	},
 ): Point | null {
 	for (const change of summary.structural) {
-		if (change.type === "blocks-merged" && change.sourceBlockId === blockId) {
+		if (
+			change.type === "blocks-merged" &&
+			change.sourceBlockId === blockId
+		) {
 			if (!host.blockExists(change.targetBlockId)) {
 				break;
 			}
@@ -279,7 +285,8 @@ function fallbackForRemovedBlock(
 		}
 	}
 	const removed = summary.structural.find(
-		(change) => change.type === "block-removed" && change.blockId === blockId,
+		(change) =>
+			change.type === "block-removed" && change.blockId === blockId,
 	);
 	if (removed && removed.type === "block-removed") {
 		const siblings = liveChildIds(host.doc, removed.parentId);
@@ -329,7 +336,10 @@ function readdressThroughStructural(
 			};
 			continue;
 		}
-		if (change.type === "block-split" && current.blockId === change.blockId) {
+		if (
+			change.type === "block-split" &&
+			current.blockId === change.blockId
+		) {
 			if (current.offset > change.offset) {
 				current = {
 					blockId: change.newBlockId,

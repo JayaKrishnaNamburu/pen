@@ -42,7 +42,10 @@ function hasInlineNode(
 
 describe("SEC6 op payload validation", () => {
 	it("SEC6: valid insert-inline-node writes a fresh embed from validated fields", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 
 		editor.apply([
 			{
@@ -52,15 +55,22 @@ describe("SEC6 op payload validation", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hi" },
+				insert: "Hi",
+			},
 			{
 				type: "splice-text",
 				blockId: "b1",
 				from: 2,
 				to: 2,
-				insert: { nodeType: "mention", props: { id: "user-1", label: "Ada" } },
+				insert: {
+					nodeType: "mention",
+					props: { id: "user-1", label: "Ada" },
+				},
 			},
 		]);
 
@@ -78,7 +88,10 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in insert-inline-node props are dropped with a diagnostic", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -92,9 +105,13 @@ describe("SEC6 op payload validation", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hi" },
+				insert: "Hi",
+			},
 		]);
 
 		for (const key of ["__proto__", "constructor", "prototype"] as const) {
@@ -138,7 +155,10 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in insert-block props are dropped with a diagnostic", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -151,7 +171,11 @@ describe("SEC6 op payload validation", () => {
 				blockType: "paragraph",
 				props: {
 					title: "kept",
-					extra: propsWithOwnKey("constructor", { polluted: true }, {}),
+					extra: propsWithOwnKey(
+						"constructor",
+						{ polluted: true },
+						{},
+					),
 				},
 				position: "last",
 			},
@@ -173,7 +197,10 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in update-block props are dropped with a diagnostic", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -193,7 +220,11 @@ describe("SEC6 op payload validation", () => {
 			{
 				type: "set-props",
 				blockId: "h1",
-				props: propsWithOwnKey("__proto__", { polluted: true }, { level: 2 }),
+				props: propsWithOwnKey(
+					"__proto__",
+					{ polluted: true },
+					{ level: 2 },
+				),
 			},
 		]);
 
@@ -213,7 +244,10 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in format-text marks are dropped with a diagnostic", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -227,9 +261,13 @@ describe("SEC6 op payload validation", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hi" },
+				insert: "Hi",
+			},
 		]);
 
 		editor.apply([
@@ -238,7 +276,11 @@ describe("SEC6 op payload validation", () => {
 				blockId: "b1",
 				from: 0,
 				to: 0 + 2,
-				marks: propsWithOwnKey("__proto__", { polluted: true }, { bold: true }),
+				marks: propsWithOwnKey(
+					"__proto__",
+					{ polluted: true },
+					{ bold: true },
+				),
 			},
 		]);
 
@@ -258,7 +300,10 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: hand-crafted invalid op via editor.apply is dropped with a diagnostic", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);

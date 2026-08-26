@@ -20,7 +20,8 @@ export const HISTORY_EXTENSION_NAME = "history";
  */
 export function historyExtension(config: HistoryConfig): Extension {
 	let activeEditor: Editor | null = null;
-	let runtimeHandle: ReturnType<typeof attachHistoryScopeRuntime> | null = null;
+	let runtimeHandle: ReturnType<typeof attachHistoryScopeRuntime> | null =
+		null;
 
 	return defineExtension({
 		name: HISTORY_EXTENSION_NAME,
@@ -28,7 +29,10 @@ export function historyExtension(config: HistoryConfig): Extension {
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
 			runtimeHandle = attachHistoryScopeRuntime(editor, config);
-			editor.internals.assignSlot(HISTORY_CONTROLLER_SLOT, runtimeHandle.controller);
+			editor.internals.assignSlot(
+				HISTORY_CONTROLLER_SLOT,
+				runtimeHandle.controller,
+			);
 			await runtimeHandle.ready;
 		},
 
@@ -45,10 +49,9 @@ export function historyExtension(config: HistoryConfig): Extension {
  * Read the active history controller, or `null` when the history
  * extension is not installed or its client is not activated yet.
  */
-export function getHistoryController(
-	editor: Editor,
-): HistoryController | null {
+export function getHistoryController(editor: Editor): HistoryController | null {
 	return (
-		(editor.facet(historyControllerFacet) as HistoryController | null) ?? null
+		(editor.facet(historyControllerFacet) as HistoryController | null) ??
+		null
 	);
 }

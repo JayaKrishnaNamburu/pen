@@ -23,7 +23,9 @@ function toPseudoLocaleValue(value: MessageValue): MessageValue {
 	if (!isPluralMessage(value)) {
 		return toPseudoLocaleText(value);
 	}
-	const next: Record<string, string> = { other: toPseudoLocaleText(value.other) };
+	const next: Record<string, string> = {
+		other: toPseudoLocaleText(value.other),
+	};
 	for (const [category, text] of Object.entries(value)) {
 		if (typeof text === "string") {
 			next[category] = toPseudoLocaleText(text);
@@ -44,6 +46,7 @@ export function createPseudoLocaleCatalog(
 
 export function isPseudoLocaleText(text: string): boolean {
 	return (
-		text.startsWith(PSEUDO_LOCALE_OPEN) && text.endsWith(PSEUDO_LOCALE_CLOSE)
+		text.startsWith(PSEUDO_LOCALE_OPEN) &&
+		text.endsWith(PSEUDO_LOCALE_CLOSE)
 	);
 }

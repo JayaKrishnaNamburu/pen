@@ -157,7 +157,9 @@ function createTestSchema(): SchemaRegistry {
 		allApps(): readonly AppSchema[] {
 			return [];
 		},
-		allBlockDisplays(): readonly (BlockSchema & { display: BlockDisplay })[] {
+		allBlockDisplays(): readonly (BlockSchema & {
+			display: BlockDisplay;
+		})[] {
 			return displayed;
 		},
 		onUnknownBlock: () => "passthrough",

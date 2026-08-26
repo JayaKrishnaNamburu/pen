@@ -76,8 +76,8 @@ describe("commit pipeline phases (Wave 2.1)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "x",
+					to: 0,
+					insert: "x",
 				},
 			]);
 		});

@@ -8,10 +8,7 @@ import { defaultSchema } from "@input/pen-schema-default";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
 import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
-import {
-	autocompleteExtension,
-	getAutocompleteController,
-} from "../index";
+import { autocompleteExtension, getAutocompleteController } from "../index";
 
 async function waitForCondition(
 	check: () => boolean,
@@ -56,7 +53,10 @@ describe("AIB4 autocomplete accept undo", () => {
 						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
 					},
 				}),
@@ -65,9 +65,7 @@ describe("AIB4 autocomplete accept undo", () => {
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 5, 5);

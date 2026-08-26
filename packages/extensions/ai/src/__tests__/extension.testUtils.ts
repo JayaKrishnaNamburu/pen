@@ -11,7 +11,9 @@ export function scriptedModel(
 	response: string | ModelDoubleResponse = " world",
 ): ModelDouble {
 	return createModelDouble({
-		responses: [typeof response === "string" ? { text: response } : response],
+		responses: [
+			typeof response === "string" ? { text: response } : response,
+		],
 	});
 }
 

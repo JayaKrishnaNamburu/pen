@@ -1,4 +1,8 @@
-import type { CommitEvent, DocumentOp, StructuredOpOrigin } from "@input/pen-types";
+import type {
+	CommitEvent,
+	DocumentOp,
+	StructuredOpOrigin,
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -24,7 +28,9 @@ function insertAt(blockId: string, offset: number, text: string): DocumentOp {
 
 function structuredOrigin(origin: unknown): StructuredOpOrigin {
 	if (origin == null || typeof origin === "string") {
-		throw new Error(`expected structured origin, got ${JSON.stringify(origin)}`);
+		throw new Error(
+			`expected structured origin, got ${JSON.stringify(origin)}`,
+		);
 	}
 	return origin as StructuredOpOrigin;
 }
@@ -41,7 +47,9 @@ describe("origin.intent dispatch stamp", () => {
 		});
 
 		expect(registry.dispatch(ping, undefined)).toBe(true);
-		const origin = structuredOrigin(registry.recordedApplies[0]?.options?.origin);
+		const origin = structuredOrigin(
+			registry.recordedApplies[0]?.options?.origin,
+		);
 		expect(origin.intent).toBe("test.ping");
 		expect(origin.type).toBe("user");
 	});
@@ -58,7 +66,9 @@ describe("origin.intent dispatch stamp", () => {
 		});
 
 		expect(registry.dispatch(ping, undefined)).toBe(true);
-		const origin = structuredOrigin(registry.recordedApplies[0]?.options?.origin);
+		const origin = structuredOrigin(
+			registry.recordedApplies[0]?.options?.origin,
+		);
 		expect(origin.intent).toBe("test.ping");
 		expect(origin.type).toBe("user");
 	});
@@ -121,7 +131,9 @@ describe("origin.intent dispatch stamp", () => {
 		});
 
 		expect(registry.dispatch(ping, undefined)).toBe(true);
-		const origin = structuredOrigin(registry.recordedApplies[0]?.options?.origin);
+		const origin = structuredOrigin(
+			registry.recordedApplies[0]?.options?.origin,
+		);
 		expect(origin.intent).toBe("test.ping");
 		expect(registry.diagnostics).toEqual([
 			expect.objectContaining({
@@ -146,15 +158,17 @@ describe("origin.intent dispatch stamp", () => {
 			],
 		});
 
-		expect(
-			registry.dispatch(ping, undefined, { origin: hostOrigin }),
-		).toBe(true);
+		expect(registry.dispatch(ping, undefined, { origin: hostOrigin })).toBe(
+			true,
+		);
 		expect(hostOrigin).toEqual({
 			type: "ai",
 			intent: "host.lie",
 			requestId: "r1",
 		});
-		const origin = structuredOrigin(registry.recordedApplies[0]?.options?.origin);
+		const origin = structuredOrigin(
+			registry.recordedApplies[0]?.options?.origin,
+		);
 		expect(origin.intent).toBe("test.ping");
 		expect(origin.type).toBe("ai");
 		expect(origin.requestId).toBe("r1");

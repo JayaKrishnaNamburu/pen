@@ -125,7 +125,9 @@ describe("live registry family migration", () => {
 			expect(editor.getBlock("a")?.textDeltas()).toEqual([
 				{ insert: "hello", attributes: { bold: true } },
 			]);
-			expect(registry.dispatch(toggleMark, { mark: "italic" })).toBe(true);
+			expect(registry.dispatch(toggleMark, { mark: "italic" })).toBe(
+				true,
+			);
 			expect(editor.getBlock("a")?.textDeltas()).toEqual([
 				{ insert: "hello", attributes: { bold: true, italic: true } },
 			]);

@@ -59,9 +59,9 @@ describe("SEC1 url policy", () => {
 		expect(urlPolicy.resolve(png, "link")).toBe(null);
 		expect(urlPolicy.resolve(png, "media")).toBe(null);
 		expect(urlPolicy.resolve(png, "download")).toBe(null);
-		expect(urlPolicy.resolve("data:image/svg+xml,<svg></svg>", "image")).toBe(
-			null,
-		);
+		expect(
+			urlPolicy.resolve("data:image/svg+xml,<svg></svg>", "image"),
+		).toBe(null);
 	});
 
 	it("SEC1: rejects data:text/html", () => {

@@ -176,10 +176,9 @@ describe("document-size diagnostic (DUR6 / V.6)", () => {
 		).toHaveLength(1);
 
 		adapter.transact(loaded, () => {
-			(loaded.penDocument.blocks.get("b1")!.get("content") as Y.Text).insert(
-				0,
-				"!",
-			);
+			(
+				loaded.penDocument.blocks.get("b1")!.get("content") as Y.Text
+			).insert(0, "!");
 		});
 		expect(
 			diagnostics.filter(
@@ -190,10 +189,9 @@ describe("document-size diagnostic (DUR6 / V.6)", () => {
 
 		vi.setSystemTime(10_000 + DOCUMENT_SIZE_REPORT_INTERVAL_MS);
 		adapter.transact(loaded, () => {
-			(loaded.penDocument.blocks.get("b1")!.get("content") as Y.Text).insert(
-				0,
-				"?",
-			);
+			(
+				loaded.penDocument.blocks.get("b1")!.get("content") as Y.Text
+			).insert(0, "?");
 		});
 
 		const sizeDiagnostics = diagnostics.filter(

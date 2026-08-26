@@ -4,36 +4,36 @@ import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
 import { applyValidatedOps } from "../utils/payloadValidation";
 
 export function moveBlockTool(editor: Editor): ToolDefinition {
-  return {
-    name: "move_block",
-    description: "Move a block to a new position.",
-    mutating: true,
-    inputSchema: {
-      type: "object",
-      required: ["blockId", "position"],
-      properties: {
-        blockId: { type: "string" },
-        position: POSITION_SCHEMA,
-      },
-    },
-    handler: async (input: unknown) => {
-      const opts = input as {
-        blockId: string;
-        position: Position;
-      };
-      assertToolCanMutateBlock(editor, opts.blockId);
-      applyValidatedOps(
-        editor,
-        [
-          {
-            type: "move-block",
-            blockId: opts.blockId,
-            position: opts.position,
-          },
-        ],
-        { origin: "ai" },
-      );
-      return { success: true };
-    },
-  };
+	return {
+		name: "move_block",
+		description: "Move a block to a new position.",
+		mutating: true,
+		inputSchema: {
+			type: "object",
+			required: ["blockId", "position"],
+			properties: {
+				blockId: { type: "string" },
+				position: POSITION_SCHEMA,
+			},
+		},
+		handler: async (input: unknown) => {
+			const opts = input as {
+				blockId: string;
+				position: Position;
+			};
+			assertToolCanMutateBlock(editor, opts.blockId);
+			applyValidatedOps(
+				editor,
+				[
+					{
+						type: "move-block",
+						blockId: opts.blockId,
+						position: opts.position,
+					},
+				],
+				{ origin: "ai" },
+			);
+			return { success: true };
+		},
+	};
 }

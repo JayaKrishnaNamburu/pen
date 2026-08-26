@@ -83,7 +83,10 @@ export class HistoryControllerImpl implements HistoryController {
 		label?: string,
 		trigger?: VersionMetadata["trigger"],
 	): Promise<VersionEntry> {
-		const snapshot = await this.snapshotManager.createSnapshot(label, trigger);
+		const snapshot = await this.snapshotManager.createSnapshot(
+			label,
+			trigger,
+		);
 		await this.refreshSnapshots();
 		return snapshot;
 	}
@@ -111,7 +114,11 @@ export class HistoryControllerImpl implements HistoryController {
 	}
 
 	getCharacterAttribution(blockId: string) {
-		return getCharacterAttribution(this.editor, blockId, this.resolveAuthor);
+		return getCharacterAttribution(
+			this.editor,
+			blockId,
+			this.resolveAuthor,
+		);
 	}
 
 	getBlameRanges(blockId: string) {

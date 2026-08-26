@@ -15,7 +15,9 @@ interface MutableMetadataMap {
 }
 
 function readLedger(editor: Editor): string[] {
-	const value = editor.internals.doc.metadata.get(MIGRATION_LEDGER_METADATA_KEY);
+	const value = editor.internals.doc.metadata.get(
+		MIGRATION_LEDGER_METADATA_KEY,
+	);
 	if (!Array.isArray(value)) {
 		return [];
 	}
@@ -23,7 +25,8 @@ function readLedger(editor: Editor): string[] {
 }
 
 function writeLedger(editor: Editor, ids: readonly string[]): void {
-	const metadata = editor.internals.doc.metadata as unknown as MutableMetadataMap;
+	const metadata = editor.internals.doc
+		.metadata as unknown as MutableMetadataMap;
 	metadata.set(MIGRATION_LEDGER_METADATA_KEY, [...ids]);
 }
 

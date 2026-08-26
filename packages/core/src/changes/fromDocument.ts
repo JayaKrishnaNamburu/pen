@@ -85,7 +85,9 @@ function readStringArray(value: unknown): string[] {
 		toArray?: () => unknown[];
 	};
 	if (typeof arr.toArray === "function") {
-		return arr.toArray().filter((id): id is string => typeof id === "string");
+		return arr
+			.toArray()
+			.filter((id): id is string => typeof id === "string");
 	}
 	if (typeof arr.length === "number" && typeof arr.get === "function") {
 		const out: string[] = [];

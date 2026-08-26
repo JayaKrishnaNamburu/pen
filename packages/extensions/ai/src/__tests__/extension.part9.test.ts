@@ -47,9 +47,15 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -98,7 +104,7 @@ describe("aiExtension", () => {
 		);
 
 		expect(generation.route).toBe("tool-loop");
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 		expect(editor.getBlock(blockId)!.textContent()).toBe("Hello");
 		expect(controller.getSuggestions()).toHaveLength(0);
 	});
@@ -145,7 +151,7 @@ describe("aiExtension", () => {
 		);
 
 		expect(generation.route).toBe("tool-loop");
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 		expect(generation.status).toBe("complete");
 		expect(
 			editor.documentState.blockOrder

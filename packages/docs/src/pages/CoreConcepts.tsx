@@ -9,9 +9,7 @@ function diagnosticTableRows() {
 			<td>
 				<code>{row.code}</code>
 			</td>
-			<td>
-				{row.levels.length > 0 ? row.levels.join(", ") : "—"}
-			</td>
+			<td>{row.levels.length > 0 ? row.levels.join(", ") : "—"}</td>
 			<td>
 				{row.sources.map((source) => (
 					<div key={source}>
@@ -29,23 +27,22 @@ export function CoreConceptsPage() {
 		<>
 			<h1>Core concepts</h1>
 			<p>
-				Pen is a headless editor runtime.{" "}
-				<code>@input/pen-core</code> owns document state, selection,
-				normalization, and mutation. Renderer packages bind that
-				runtime to React, Vue, or the DOM. Core works without a
-				browser through <code>createHeadlessEditor</code>. The
-				architecture record is{" "}
+				Pen is a headless editor runtime. <code>@input/pen-core</code>{" "}
+				owns document state, selection, normalization, and mutation.
+				Renderer packages bind that runtime to React, Vue, or the DOM.
+				Core works without a browser through{" "}
+				<code>createHeadlessEditor</code>. The architecture record is{" "}
 				<code>spec/rules/architecture.md</code>.
 			</p>
 
 			<h2>Document store</h2>
 			<p>
 				The document is a Yjs <code>Y.Doc</code> with{" "}
-				<code>blockOrder</code>, <code>blocks</code>, <code>apps</code>
-				, and <code>metadata</code>. Blocks have stable string IDs.
-				Inline content is <code>Y.Text</code> with attributes.
-				Addressing is block-scoped: <code>{"{ blockId, offset }"}</code>
-				. There is no document-wide token index.
+				<code>blockOrder</code>, <code>blocks</code>, <code>apps</code>,
+				and <code>metadata</code>. Blocks have stable string IDs. Inline
+				content is <code>Y.Text</code> with attributes. Addressing is
+				block-scoped: <code>{"{ blockId, offset }"}</code>. There is no
+				document-wide token index.
 			</p>
 
 			<h2>Ops and apply</h2>
@@ -90,15 +87,15 @@ editor.apply(
 				Every apply carries an origin. The type union includes{" "}
 				<code>user</code>, <code>ai</code>, <code>collaborator</code>,{" "}
 				<code>input-rule</code>, <code>history</code>,{" "}
-				<code>import</code>, and others. A string origin or a
-				structured object (<code>{"{ type, groupId, requestId }"}</code>
-				) are both accepted on <code>apply</code>. The{" "}
-				<code>commit</code> event always emits a structured origin
-				(<code>{"{ type }"}</code>); a string passed in is wrapped.{" "}
-				<code>{`origin === "user"`}</code> never matches the event.
-				Undo, suggestions, and diagnostics depend on the label.{" "}
-				<code>"user"</code> means this client&apos;s user. A remote
-				update is not labeled <code>user</code> by default.
+				<code>import</code>, and others. A string origin or a structured
+				object (<code>{"{ type, groupId, requestId }"}</code>) are both
+				accepted on <code>apply</code>. The <code>commit</code> event
+				always emits a structured origin (<code>{"{ type }"}</code>); a
+				string passed in is wrapped. <code>{`origin === "user"`}</code>{" "}
+				never matches the event. Undo, suggestions, and diagnostics
+				depend on the label. <code>"user"</code> means this
+				client&apos;s user. A remote update is not labeled{" "}
+				<code>user</code> by default.
 			</p>
 
 			<h2>Commits</h2>
@@ -117,14 +114,14 @@ editor.apply(
 				Invalid input is dropped with{" "}
 				<code>{`editor.on("diagnostic", handler)`}</code>, not thrown.
 				<code>DiagnosticEvent.code</code> is a string. There is no
-				frozen code union in <code>@input/pen-types</code> — codes
-				are defined at emit sites.
+				frozen code union in <code>@input/pen-types</code> — codes are
+				defined at emit sites.
 			</p>
 			<table>
 				<caption>
 					{DIAGNOSTIC_CODE_ROWS.length} codes from{" "}
-					{DIAGNOSTIC_CODE_SOURCE}. Generated; the docs build
-					fails if this table drifts from those sites.
+					{DIAGNOSTIC_CODE_SOURCE}. Generated; the docs build fails if
+					this table drifts from those sites.
 				</caption>
 				<thead>
 					<tr>
@@ -139,12 +136,12 @@ editor.apply(
 			<h2>Headless vs host</h2>
 			<p>
 				<code>createEditor</code> and <code>createHeadlessEditor</code>{" "}
-				are the constructors. Neither installs a schema or
-				extensions. Without <code>preset: defaultPreset()</code>,{" "}
-				<code>editor.undoManager</code> is an inert stub and Mod-Z
-				does nothing. Headless construction and apply work in
-				Node. Only <code>@input/pen-dom</code> may touch browser
-				globals. React and Vue are bindings over that DOM engine.
+				are the constructors. Neither installs a schema or extensions.
+				Without <code>preset: defaultPreset()</code>,{" "}
+				<code>editor.undoManager</code> is an inert stub and Mod-Z does
+				nothing. Headless construction and apply work in Node. Only{" "}
+				<code>@input/pen-dom</code> may touch browser globals. React and
+				Vue are bindings over that DOM engine.
 			</p>
 			<p>
 				Each published package commits an <code>api-report.md</code>{" "}

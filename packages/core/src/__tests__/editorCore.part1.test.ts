@@ -97,7 +97,6 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-
 describe("@input/pen-core createEditor", () => {
 	it("installs extensions from presets before user extensions", () => {
 		let presetInstalled = false;
@@ -170,7 +169,11 @@ describe("@input/pen-core createEditor", () => {
 	it("creates headless editors around caller-owned documents without default undo behavior", () => {
 		const adapter = yjsAdapter();
 		const document = adapter.createDocument();
-		const editor = createHeadlessEditor({ schema: createDefaultSchema(),  crdt: adapter, document });
+		const editor = createHeadlessEditor({
+			schema: createDefaultSchema(),
+			crdt: adapter,
+			document,
+		});
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -372,7 +375,9 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: firstBlockId, props: { type: "widget", ...{ }},
+				type: "set-props",
+				blockId: firstBlockId,
+				props: { type: "widget", ...{} },
 			},
 		]);
 
@@ -401,5 +406,4 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.destroy();
 	});
-
 });

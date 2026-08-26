@@ -89,7 +89,9 @@ function knownToolType(type: DocumentOp["type"]): boolean {
 
 describe("ops op-boundary OPB3", () => {
 	it("OPB3: DOCUMENT_OP_TYPE_FLAGS is a ten-key Record over DocumentOp type", () => {
-		expect([...DOCUMENT_OP_TYPES].sort()).toEqual([...SPEC_PRIMITIVE_TYPES]);
+		expect([...DOCUMENT_OP_TYPES].sort()).toEqual([
+			...SPEC_PRIMITIVE_TYPES,
+		]);
 		expect(DOCUMENT_OP_TYPES).toHaveLength(10);
 		for (const type of DOCUMENT_OP_TYPES) {
 			expect(isDocumentOpType(type)).toBe(true);
@@ -123,7 +125,11 @@ describe("ops op-boundary OPB3", () => {
 			},
 			{ type: "delete-block", blockId: "paragraph-1" },
 			{ type: "move-block", blockId: "paragraph-1", position: "last" },
-			{ type: "set-props", blockId: "paragraph-1", props: { type: "paragraph" } },
+			{
+				type: "set-props",
+				blockId: "paragraph-1",
+				props: { type: "paragraph" },
+			},
 			{
 				type: "set-meta",
 				blockId: "paragraph-1",

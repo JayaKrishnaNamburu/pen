@@ -5,7 +5,7 @@ import type {
 	AIInlineHistorySnapshot,
 	AISession,
 } from "../types";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 import type { AIInlineHistoryRestoreRequest } from "../helpers";
 import {
 	areInlineShortcutHistoryStatesEqual,
@@ -17,7 +17,7 @@ import {
 
 export const inlineHistoryRestore = {
 	_findInlineHistorySnapshotForResolvedTurn(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		session: AISession,
 		direction: AIInlineHistoryDirection,
 	): AIInlineHistorySnapshot | null {
@@ -68,7 +68,7 @@ export const inlineHistoryRestore = {
 	},
 
 	_resolveInlineHistoryTraversalSnapshot(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		targetSnapshot: AIInlineHistorySnapshot,
 	): AIInlineHistorySnapshot {
 		if (targetSnapshot.kind === "ui-local") {
@@ -112,7 +112,7 @@ export const inlineHistoryRestore = {
 	},
 
 	_resolveShortcutInlineHistoryTraversalSnapshot(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		targetSnapshot: AIInlineHistorySnapshot,
 		fallbackSessionId?: string | null,
 	): AIInlineHistorySnapshot {
@@ -142,7 +142,7 @@ export const inlineHistoryRestore = {
 	},
 
 	_scheduleQueuedInlineHistoryShortcutFlush(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 	): void {
 		if (
 			this._queuedInlineHistoryShortcutFlushScheduled ||
@@ -170,7 +170,7 @@ export const inlineHistoryRestore = {
 	},
 
 	_resolvePendingInlineHistoryRestoreTargetIndex(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		request: AIInlineHistoryRestoreRequest,
 	): number {
 		const exactTargetIndex = this._inlineHistory.findIndex(
@@ -221,7 +221,7 @@ export const inlineHistoryRestore = {
 	},
 
 	_handleHistoryApplied(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		event: HistoryAppliedEvent,
 	): void {
 		if (
@@ -277,7 +277,7 @@ export const inlineHistoryRestore = {
 	},
 
 	_createInlineTurnUndoBeforeSnapshot(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		sessionId: string,
 		turnId: string,
 	): AIInlineHistorySnapshot {

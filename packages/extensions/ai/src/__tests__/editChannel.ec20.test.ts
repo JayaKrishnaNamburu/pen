@@ -272,7 +272,7 @@ async function runBudgetedInsert(
 		toolRuntime: getDocumentToolRuntime(editor)!,
 		prompt: PROMPT,
 		blockId: anchorId,
-		applyStrategy: "tool-edit",
+		editsArriveAsToolCalls: true,
 		editStreaming: "commit",
 		allowedMutatingTools: ["edit_document"],
 		toolBudget: { maxTotalOpsPerTurn },

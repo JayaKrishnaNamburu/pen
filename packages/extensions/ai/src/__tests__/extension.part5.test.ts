@@ -52,8 +52,8 @@ describe("aiExtension", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "Hello world",
+					to: 0,
+					insert: "Hello world",
 				},
 				{
 					type: "insert-block",
@@ -66,8 +66,8 @@ describe("aiExtension", () => {
 					type: "splice-text",
 					blockId: secondBlockId,
 					from: 0,
-				to: 0,
-				insert: "Other block",
+					to: 0,
+					insert: "Other block",
 				},
 			],
 			{ origin: "system" },
@@ -102,8 +102,8 @@ describe("aiExtension", () => {
 					type: "splice-text",
 					blockId: secondBlockId,
 					from: 11,
-				to: 11,
-				insert: "!",
+					to: 11,
+					insert: "!",
 				},
 			],
 			{ origin: "user" },
@@ -144,9 +144,15 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -197,9 +203,15 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -259,9 +271,15 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -318,9 +336,15 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -367,7 +391,7 @@ describe("aiExtension", () => {
 		);
 	});
 
-	it("records selection rewrites in session fast-apply metrics", async () => {
+	it("records selection rewrites in session commit metrics", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [
@@ -389,9 +413,15 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -403,16 +433,16 @@ describe("aiExtension", () => {
 		});
 		await controller.runSessionPrompt(session.id, "Rewrite the selection");
 
-		expect(controller.getActiveSession()?.metrics.fastApply).toEqual({
+		expect(controller.getActiveSession()?.metrics.commit).toEqual({
 			attemptCount: 1,
-			nativeFastApplyCount: 1,
+			selectionReplacementCount: 1,
 			scopedReplacementCount: 0,
 			plainMarkdownCount: 0,
 			failedCount: 0,
 		});
 	});
 
-	it("accumulates fast-apply outcome counters across session turns", () => {
+	it("accumulates commit outcome counters across session turns", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [
@@ -429,26 +459,26 @@ describe("aiExtension", () => {
 		});
 		const controllerAny = controller as any;
 
-		controllerAny._recordSessionFastApplyMetrics(session.id, {
+		controllerAny._recordSessionCommitMetrics(session.id, {
 			attempted: true,
 			succeeded: true,
-			executionPath: "native-fast-apply",
+			executionPath: "selection-replacement",
 		});
-		controllerAny._recordSessionFastApplyMetrics(session.id, {
+		controllerAny._recordSessionCommitMetrics(session.id, {
 			attempted: true,
 			succeeded: true,
 			executionPath: "scoped-replacement",
 		});
-		controllerAny._recordSessionFastApplyMetrics(session.id, {
+		controllerAny._recordSessionCommitMetrics(session.id, {
 			attempted: true,
 			succeeded: false,
 			executionPath: "plain-markdown",
 			fallbackReason: "unparseable-contract",
 		});
 
-		expect(controller.getActiveSession()?.metrics.fastApply).toEqual({
+		expect(controller.getActiveSession()?.metrics.commit).toEqual({
 			attemptCount: 3,
-			nativeFastApplyCount: 1,
+			selectionReplacementCount: 1,
 			scopedReplacementCount: 1,
 			plainMarkdownCount: 1,
 			failedCount: 0,

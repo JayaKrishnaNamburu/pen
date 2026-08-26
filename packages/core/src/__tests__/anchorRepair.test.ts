@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { applyMergeBlocks, applySplitBlock, deriveContentMoves, repairAnchor } from "../index";
+import {
+	applyMergeBlocks,
+	applySplitBlock,
+	deriveContentMoves,
+	repairAnchor,
+} from "../index";
 import { createEditor as createCoreEditor } from "../index";
 import { createDefaultSchema } from "./fixtures/testSchema";
 
@@ -17,7 +22,10 @@ function createEditor() {
 	});
 }
 
-function visible(editor: ReturnType<typeof createEditor>, blockId: string): string {
+function visible(
+	editor: ReturnType<typeof createEditor>,
+	blockId: string,
+): string {
 	return editor.getBlock(blockId)!.textContent();
 }
 
@@ -26,13 +34,23 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: source, from: 0,
+			{
+				type: "splice-text",
+				blockId: source,
+				from: 0,
 				to: 0,
-				insert: "meadow sage" },
+				insert: "meadow sage",
+			},
 		]);
 		const head = editor.anchors.create({ blockId: source, offset: 3 }, 1)!;
-		const splitBefore = editor.anchors.create({ blockId: source, offset: 6 }, -1)!;
-		const splitAfter = editor.anchors.create({ blockId: source, offset: 6 }, 1)!;
+		const splitBefore = editor.anchors.create(
+			{ blockId: source, offset: 6 },
+			-1,
+		)!;
+		const splitAfter = editor.anchors.create(
+			{ blockId: source, offset: 6 },
+			1,
+		)!;
 		const tail = editor.anchors.create({ blockId: source, offset: 9 }, 1)!;
 
 		applySplitBlock(editor, {
@@ -58,7 +76,10 @@ describe("anchorRepair AN14", () => {
 		const repairedSplitAfter = repairAnchor(editor, splitAfter, moves);
 		const repairedTail = repairAnchor(editor, tail, moves);
 
-		expect(editor.anchors.resolve(head)).toEqual({ blockId: source, offset: 3 });
+		expect(editor.anchors.resolve(head)).toEqual({
+			blockId: source,
+			offset: 3,
+		});
 		expect(editor.anchors.resolve(splitBefore)).toEqual({
 			blockId: source,
 			offset: 6,
@@ -92,9 +113,13 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const target = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: target, from: 0,
+			{
+				type: "splice-text",
+				blockId: target,
+				from: 0,
 				to: 0,
-				insert: "meadow" },
+				insert: "meadow",
+			},
 			{
 				type: "insert-block",
 				blockId: "source",
@@ -102,12 +127,22 @@ describe("anchorRepair AN14", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "source", from: 0,
+			{
+				type: "splice-text",
+				blockId: "source",
+				from: 0,
 				to: 0,
-				insert: " sage" },
+				insert: " sage",
+			},
 		]);
-		const onTarget = editor.anchors.create({ blockId: target, offset: 3 }, 1)!;
-		const onSource = editor.anchors.create({ blockId: "source", offset: 1 }, 1)!;
+		const onTarget = editor.anchors.create(
+			{ blockId: target, offset: 3 },
+			1,
+		)!;
+		const onSource = editor.anchors.create(
+			{ blockId: "source", offset: 1 },
+			1,
+		)!;
 
 		applyMergeBlocks(editor, {
 			targetBlockId: target,
@@ -127,7 +162,9 @@ describe("anchorRepair AN14", () => {
 			},
 		]);
 		expect(repairAnchor(editor, onTarget, moves)).toBe(onTarget);
-		expect(editor.anchors.resolve(repairAnchor(editor, onSource, moves))).toEqual({
+		expect(
+			editor.anchors.resolve(repairAnchor(editor, onSource, moves)),
+		).toEqual({
 			blockId: target,
 			offset: 7,
 		});
@@ -138,9 +175,13 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: source, from: 0,
+			{
+				type: "splice-text",
+				blockId: source,
+				from: 0,
 				to: 0,
-				insert: "meadow sage" },
+				insert: "meadow sage",
+			},
 		]);
 		const summary = {
 			commitId: 1,
@@ -184,9 +225,9 @@ describe("anchorRepair AN14", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 1, col: 1 },
-			from: 0,
-			to: 0,
-			insert: "0123456789",
+				from: 0,
+				to: 0,
+				insert: "0123456789",
 			},
 		]);
 		const cellAnchor = editor.anchors.create(
@@ -198,9 +239,9 @@ describe("anchorRepair AN14", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 1, col: 1 },
-			from: 0,
-			to: 0,
-			insert: "xx",
+				from: 0,
+				to: 0,
+				insert: "xx",
 			},
 		]);
 		const moves = deriveContentMoves(editor.lastChangeSummary!, undefined);
@@ -218,9 +259,13 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: source, from: 0,
+			{
+				type: "splice-text",
+				blockId: source,
+				from: 0,
 				to: 0,
-				insert: "meadow sage" },
+				insert: "meadow sage",
+			},
 			{
 				type: "insert-block",
 				blockId: "t1",
@@ -232,9 +277,9 @@ describe("anchorRepair AN14", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 0, col: 0 },
-			from: 0,
-			to: 0,
-			insert: "cell text",
+				from: 0,
+				to: 0,
+				insert: "cell text",
 			},
 		]);
 		const cellAnchor = editor.anchors.create(

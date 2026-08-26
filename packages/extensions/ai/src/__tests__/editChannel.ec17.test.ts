@@ -58,7 +58,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 			toolRuntime,
 			prompt: "Shorten the closing paragraph.",
 			blockId: editor.firstBlock()!.id,
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			workingSet: {
 				documentVersion: 1,
 				viewMode: "resolved",
@@ -66,7 +66,6 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 				context:
 					"<!-- block:closing paragraph -->\nRevenue grew. Costs fell.",
 				trackedBlockIds: ["closing"],
-				blockRevisions: {},
 				selectionSignature: null,
 			},
 		});
@@ -97,14 +96,13 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 			toolRuntime,
 			prompt: "Read the document, then edit.",
 			blockId: editor.firstBlock()!.id,
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			workingSet: {
 				documentVersion: 1,
 				viewMode: "resolved",
 				source: "document-summary",
 				context: "A document with no block annotations.",
 				trackedBlockIds: [],
-				blockRevisions: {},
 				selectionSignature: null,
 			},
 		});
@@ -159,7 +157,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 
 		expect(captured()[0]?.toolChoice).toBeUndefined();
 		expect(generation.status).toBe("complete");
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 		expect(editor.getBlock(headingId)?.textContent()).toBe(before);
 		expect(editor.blockCount()).toBe(1);
 
@@ -184,7 +182,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 			toolRuntime,
 			prompt: "What does the closing paragraph say?",
 			blockId: editor.firstBlock()!.id,
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			editIntent: false,
 			workingSet: {
 				documentVersion: 1,
@@ -193,7 +191,6 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 				context:
 					"<!-- block:closing paragraph -->\nRevenue grew. Costs fell.",
 				trackedBlockIds: ["closing"],
-				blockRevisions: {},
 				selectionSignature: null,
 			},
 		});

@@ -19,9 +19,10 @@ function assertNamedString(
 	name: string,
 ): void {
 	expect(mod[name], `${barrel}.${name}`).toBeTypeOf("string");
-	expect(String(mod[name]).length, `${barrel}.${name} is empty`).toBeGreaterThan(
-		0,
-	);
+	expect(
+		String(mod[name]).length,
+		`${barrel}.${name} is empty`,
+	).toBeGreaterThan(0);
 }
 
 function assertNamedNumber(
@@ -35,7 +36,9 @@ function assertNamedNumber(
 describe("SF1 merged subpath barrels", () => {
 	it("suggestions barrel re-exports the former suggestions satellite root", () => {
 		const exported = Object.keys(suggestions);
-		expect(exported.length, "suggestions barrel is empty").toBeGreaterThan(0);
+		expect(exported.length, "suggestions barrel is empty").toBeGreaterThan(
+			0,
+		);
 		const mod = suggestions as unknown as Record<string, unknown>;
 		assertNamedFunction(mod, "suggestions", "aiSuggestionsExtension");
 		assertNamedFunction(mod, "suggestions", "getAISuggestionsController");
@@ -49,12 +52,18 @@ describe("SF1 merged subpath barrels", () => {
 
 	it("autocomplete barrel re-exports the former autocomplete satellite root", () => {
 		const exported = Object.keys(autocomplete);
-		expect(exported.length, "autocomplete barrel is empty").toBeGreaterThan(0);
+		expect(exported.length, "autocomplete barrel is empty").toBeGreaterThan(
+			0,
+		);
 		const mod = autocomplete as unknown as Record<string, unknown>;
 		assertNamedFunction(mod, "autocomplete", "autocompleteExtension");
 		assertNamedFunction(mod, "autocomplete", "getAutocompleteController");
 		assertNamedFunction(mod, "autocomplete", "createAutocompleteProvider");
-		assertNamedString(mod, "autocomplete", "AI_AUTOCOMPLETE_EXTENSION_NAME");
+		assertNamedString(
+			mod,
+			"autocomplete",
+			"AI_AUTOCOMPLETE_EXTENSION_NAME",
+		);
 		assertNamedString(mod, "autocomplete", "AUTOCOMPLETE_SYSTEM_PROMPT");
 		expect(
 			Array.isArray(autocomplete.builtinAutocompleteProviders),
@@ -82,12 +91,14 @@ describe("SF1 merged subpath barrels", () => {
 		assertNamedFunction(mod, "skills", "listDefaultAISkills");
 		assertNamedFunction(mod, "skills", "renderSkillFiles");
 		const listed = skills.listDefaultAISkills([]);
-		expect(Array.isArray(listed), "skills.listDefaultAISkills([]) is not an array").toBe(
-			true,
-		);
-		expect(listed.length, "skills.listDefaultAISkills([]) is empty").toBeGreaterThan(
-			0,
-		);
+		expect(
+			Array.isArray(listed),
+			"skills.listDefaultAISkills([]) is not an array",
+		).toBe(true);
+		expect(
+			listed.length,
+			"skills.listDefaultAISkills([]) is empty",
+		).toBeGreaterThan(0);
 		expect(listed[0], "skills.listDefaultAISkills()[0]").toEqual(
 			expect.objectContaining({
 				name: expect.any(String),

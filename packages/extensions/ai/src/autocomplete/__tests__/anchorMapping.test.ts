@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	createEditor,
-	getInlineCompletionController,
-} from "@input/pen-core";
+import { createEditor, getInlineCompletionController } from "@input/pen-core";
 import { autocompleteExtension, getAutocompleteController } from "../index";
 import type { AutocompleteControllerImpl } from "../autocompleteControllerCore";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -10,13 +7,14 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("autocomplete anchor mapping", () => {
 	it("maps a visible completion anchor through a concurrent edit", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [autocompleteExtension({ enabled: true, debounceMs: 0 })],
+			schema: defaultSchema,
+			extensions: [
+				autocompleteExtension({ enabled: true, debounceMs: 0 }),
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 			{
 				type: "insert-block",
 				blockId: "keep",
@@ -45,9 +43,7 @@ describe("autocomplete anchor mapping", () => {
 		controller._visibleSuggestionId = "ghost-1";
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "xxx" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "xxx" }],
 			{ origin: { type: "collaborator" } },
 		);
 

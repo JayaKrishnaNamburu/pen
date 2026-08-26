@@ -15,8 +15,18 @@ describe("buildTableChildren", () => {
 				type: "__table_row",
 				props: {},
 				children: [
-					{ id: "0-0", type: "__table_cell", props: {}, content: "A" },
-					{ id: "0-1", type: "__table_cell", props: {}, content: "B" },
+					{
+						id: "0-0",
+						type: "__table_cell",
+						props: {},
+						content: "A",
+					},
+					{
+						id: "0-1",
+						type: "__table_cell",
+						props: {},
+						content: "B",
+					},
 				],
 			},
 			{
@@ -24,8 +34,18 @@ describe("buildTableChildren", () => {
 				type: "__table_row",
 				props: {},
 				children: [
-					{ id: "1-0", type: "__table_cell", props: {}, content: "C" },
-					{ id: "1-1", type: "__table_cell", props: {}, content: "D" },
+					{
+						id: "1-0",
+						type: "__table_cell",
+						props: {},
+						content: "C",
+					},
+					{
+						id: "1-1",
+						type: "__table_cell",
+						props: {},
+						content: "D",
+					},
 				],
 			},
 		]);

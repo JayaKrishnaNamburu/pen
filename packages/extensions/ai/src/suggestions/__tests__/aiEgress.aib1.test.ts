@@ -41,7 +41,8 @@ function countingAdapter(inner: ModelAdapter): ModelAdapter & {
 }
 
 function redactSecret(context: AIRequestContext): AIRequestContext {
-	const redact = (value: string) => value.replace(new RegExp(SECRET, "g"), "[redacted]");
+	const redact = (value: string) =>
+		value.replace(new RegExp(SECRET, "g"), "[redacted]");
 	return {
 		...context,
 		documentExcerpts: context.documentExcerpts.map((excerpt) => ({
@@ -65,7 +66,9 @@ function assertSuggestionsDeclaration(recorded: AIRequestContext): void {
 		expect(["target", "context"]).toContain(excerpt.kind);
 	}
 	expect(
-		recorded.documentExcerpts.some((excerpt) => excerpt.kind === "selection"),
+		recorded.documentExcerpts.some(
+			(excerpt) => excerpt.kind === "selection",
+		),
 	).toBe(false);
 	expect(
 		recorded.documentExcerpts.some(
@@ -85,7 +88,6 @@ function suggestionScope(blockId: string): BuiltSuggestionScope {
 			to: 44,
 			hash: `${blockId}:target`,
 			documentGeneration: 1,
-			blockRevision: 1,
 		},
 		contextBefore: `Intro ${SECRET} context. `,
 		contextAfter: ` Trailing ${SECRET} after.`,

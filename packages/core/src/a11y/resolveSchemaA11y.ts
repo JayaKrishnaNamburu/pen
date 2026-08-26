@@ -73,8 +73,8 @@ function warnMissingSchemaA11y(editor: Editor, type: string): void {
 		level: "warn",
 		source: "a11y",
 		message: `schema type "${type}" is missing an a11y label`,
-		remediation: "Add defineBlock(...).a11y({ label }) or InlineSchema.a11y.",
+		remediation:
+			"Add defineBlock(...).a11y({ label }) or InlineSchema.a11y.",
 		type,
 	});
 }
-

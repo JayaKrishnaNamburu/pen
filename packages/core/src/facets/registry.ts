@@ -242,7 +242,9 @@ function orderComputedFacets(slots: Map<string, FacetSlot>): {
 	}
 
 	if (computedOrder.length !== countComputedSlots(slots)) {
-		const cyclic = [...slots.keys()].filter((name) => (inDegree.get(name) ?? 0) > 0);
+		const cyclic = [...slots.keys()].filter(
+			(name) => (inDegree.get(name) ?? 0) > 0,
+		);
 		throw new Error(`Facet dependency cycle: ${cyclic.join(", ")}`);
 	}
 
@@ -261,7 +263,8 @@ function compareProviders(
 	a: OrderedFacetProvider,
 	b: OrderedFacetProvider,
 ): number {
-	const byPrecedence = PRECEDENCE_RANK[a.precedence] - PRECEDENCE_RANK[b.precedence];
+	const byPrecedence =
+		PRECEDENCE_RANK[a.precedence] - PRECEDENCE_RANK[b.precedence];
 	if (byPrecedence !== 0) return byPrecedence;
 	const byExtension = a.extensionOrder - b.extensionOrder;
 	if (byExtension !== 0) return byExtension;

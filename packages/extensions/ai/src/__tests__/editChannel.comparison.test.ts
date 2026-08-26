@@ -118,7 +118,11 @@ describe("edit channel comparison: wrong-edits on off-contract output", () => {
 			"edit_document",
 			{
 				operations: [
-					{ operation: "replace_blocks", blockIds: ["closing"], markdown: "   " },
+					{
+						operation: "replace_blocks",
+						blockIds: ["closing"],
+						markdown: "   ",
+					},
 				],
 			},
 			{} as never,
@@ -139,7 +143,11 @@ describe("edit channel comparison: wrong-edits on off-contract output", () => {
 			"edit_document",
 			{
 				operations: [
-					{ operation: "replace_block_text", blockId: "guessed-id", text: "x" },
+					{
+						operation: "replace_block_text",
+						blockId: "guessed-id",
+						text: "x",
+					},
 				],
 			},
 			{} as never,

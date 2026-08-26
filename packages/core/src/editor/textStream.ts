@@ -61,7 +61,9 @@ function clampFlushIntervalMs(ms: number): number {
 	return ms;
 }
 
-export function resolveStreamOrigin(origin: OpOrigin | undefined): StructuredOpOrigin {
+export function resolveStreamOrigin(
+	origin: OpOrigin | undefined,
+): StructuredOpOrigin {
 	if (origin === undefined || typeof origin === "string") {
 		return {
 			type: origin ?? "ai",
@@ -237,7 +239,8 @@ export function createTextStreamWriter(
 			const liveHead = committed + pendingHeadDelta;
 			pending.push({ kind: "splice", from, to, text });
 			pendingHeadDelta =
-				mapHeadThroughSplice(liveHead, from, to, text.length) - committed;
+				mapHeadThroughSplice(liveHead, from, to, text.length) -
+				committed;
 			scheduleFlush();
 		},
 

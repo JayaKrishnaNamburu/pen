@@ -31,7 +31,9 @@ function createPlaceholderRange(blockId: string) {
 			return point.blockId === blockId && point.offset === 0;
 		},
 		overlaps(other: { start: Point; end: Point }) {
-			return other.start.blockId === blockId || other.end.blockId === blockId;
+			return (
+				other.start.blockId === blockId || other.end.blockId === blockId
+			);
 		},
 		equals(other: { start: Point; end: Point }) {
 			return (
@@ -70,11 +72,7 @@ export class StreamingTargetImpl implements StreamingTarget {
 		return this._zone;
 	}
 
-	beginStreaming(
-		zoneId: string,
-		blockId: string,
-		origin?: OpOrigin,
-	): void {
+	beginStreaming(zoneId: string, blockId: string, origin?: OpOrigin): void {
 		this._closeWriter();
 
 		this._zone = {

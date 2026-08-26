@@ -41,7 +41,11 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
 		handler: async (input: unknown) => {
 			const options = normalizeContextToolOptions(input);
 			const viewMode = options.includeSuggestions ? "raw" : "resolved";
-			const blocks = resolveDocumentBlocks(editor, options.range, viewMode);
+			const blocks = resolveDocumentBlocks(
+				editor,
+				options.range,
+				viewMode,
+			);
 
 			if (options.format === "summary") {
 				return {
@@ -60,7 +64,11 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
 			if (options.format === "markdown") {
 				return options.annotateBlocks
 					? formatBlocksAsAnnotatedMarkdown(blocks)
-					: exportDocumentRangeAsMarkdown(editor, options.range, viewMode);
+					: exportDocumentRangeAsMarkdown(
+							editor,
+							options.range,
+							viewMode,
+						);
 			}
 
 			return {

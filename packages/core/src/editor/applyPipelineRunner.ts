@@ -11,10 +11,7 @@ import { toStructuredOrigin } from "./commitEvent";
 import { isCRDTMap } from "./crdtShapes";
 import type { ApplyPipelineInternal } from "./applyPipelineContext";
 import { validateOpProps } from "./validateOpProps";
-import {
-	blockExists,
-	opBlockId,
-} from "./applySharedHelpers";
+import { blockExists, opBlockId } from "./applySharedHelpers";
 import {
 	insertBlock,
 	deleteBlock,
@@ -100,7 +97,10 @@ function emitApplyStorm(pipeline: ApplyPipelineInternal): void {
 	});
 }
 
-function recordPhase(pipeline: ApplyPipelineInternal, phase: PipelinePhase): void {
+function recordPhase(
+	pipeline: ApplyPipelineInternal,
+	phase: PipelinePhase,
+): void {
 	pipeline._recordPhase?.(phase);
 }
 
@@ -116,7 +116,9 @@ function isRegisteredBlockType(
 	return false;
 }
 
-function unknownBlockTypesReported(pipeline: ApplyPipelineInternal): Set<string> {
+function unknownBlockTypesReported(
+	pipeline: ApplyPipelineInternal,
+): Set<string> {
 	if (!pipeline._unknownBlockTypesReported) {
 		pipeline._unknownBlockTypesReported = new Set();
 	}
@@ -261,14 +263,20 @@ export function transformOpsThroughHooks(
 			}) => entry.hook,
 		);
 	for (const hook of beforeApplyHooks) {
-		const next = runBeforeApplyHook(pipeline, hook, transformedOps, origin, {
-			code: "PEN_APPLY_005",
-			message: "onBeforeApply hook threw",
-			nonArrayMessage: "onBeforeApply hook returned a non-array",
-			remediation:
-				"Update the onBeforeApply hook to handle incoming ops defensively and " +
-				"always return a valid DocumentOp array.",
-		});
+		const next = runBeforeApplyHook(
+			pipeline,
+			hook,
+			transformedOps,
+			origin,
+			{
+				code: "PEN_APPLY_005",
+				message: "onBeforeApply hook threw",
+				nonArrayMessage: "onBeforeApply hook returned a non-array",
+				remediation:
+					"Update the onBeforeApply hook to handle incoming ops defensively and " +
+					"always return a valid DocumentOp array.",
+			},
+		);
 		if (next) {
 			transformedOps = next;
 		}
@@ -282,7 +290,8 @@ export function transformOpsThroughHooks(
 			{
 				code: "PEN_APPLY_007",
 				message: "final apply boundary hook threw",
-				nonArrayMessage: "final apply boundary hook returned a non-array",
+				nonArrayMessage:
+					"final apply boundary hook returned a non-array",
 				remediation:
 					"Update the final apply boundary hook to handle incoming ops defensively and " +
 					"always return a valid DocumentOp array.",
@@ -320,10 +329,7 @@ function snapshotOps(ops: readonly DocumentOp[]): DocumentOp[] {
 
 function runBeforeApplyHook(
 	pipeline: ApplyPipelineInternal,
-	hook: (
-		ops: DocumentOp[],
-		options: { origin?: OpOrigin },
-	) => DocumentOp[],
+	hook: (ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[],
 	ops: DocumentOp[],
 	origin: OpOrigin,
 	labels: {
@@ -403,7 +409,10 @@ function malformedOpMessage(op: DocumentOp): string | null {
 				return "splice-text requires string or atom insert";
 			}
 			if (op.cell) {
-				if (!isNonNegativeInt(op.cell.row) || !isNonNegativeInt(op.cell.col)) {
+				if (
+					!isNonNegativeInt(op.cell.row) ||
+					!isNonNegativeInt(op.cell.col)
+				) {
 					return "splice-text cell requires non-negative integer row and col";
 				}
 			}
@@ -426,7 +435,10 @@ function malformedOpMessage(op: DocumentOp): string | null {
 				return "format-text requires a marks object";
 			}
 			if (op.cell) {
-				if (!isNonNegativeInt(op.cell.row) || !isNonNegativeInt(op.cell.col)) {
+				if (
+					!isNonNegativeInt(op.cell.row) ||
+					!isNonNegativeInt(op.cell.col)
+				) {
 					return "format-text cell requires non-negative integer row and col";
 				}
 			}
@@ -498,7 +510,8 @@ function emitMalformedOpDiagnostic(
 		code: MALFORMED_OP_CODE,
 		level: "warn",
 		source: "apply",
-		message: malformedOpMessage(op) ?? `apply: dropped malformed ${op.type}`,
+		message:
+			malformedOpMessage(op) ?? `apply: dropped malformed ${op.type}`,
 		remediation:
 			"Pass well-formed DocumentOp fields: string ids, non-negative integer offsets, and string text.",
 		op,
@@ -658,10 +671,7 @@ function emitApplyBoundary(
 	}
 }
 
-function validateOp(
-	pipeline: ApplyPipelineInternal,
-	op: DocumentOp,
-): boolean {
+function validateOp(pipeline: ApplyPipelineInternal, op: DocumentOp): boolean {
 	const rejectedKeys = [...new Set(rejectedOwnPropKeys(op))];
 	if (rejectedKeys.length > 0) {
 		emitPipelineDiagnostic(pipeline, {
@@ -676,71 +686,71 @@ function validateOp(
 		return false;
 	}
 	switch (op.type) {
-	case "insert-block": {
-		if (!isRegisteredBlockType(pipeline._registry, op.blockType)) {
-			emitPipelineDiagnostic(pipeline, {
-				code: "PEN_APPLY_002",
-				level: "warn",
-				source: "apply",
-				message: `Unknown block type: "${op.blockType}"`,
-				op,
-			});
-			return false;
-		}
-		return true;
-	}
-	case "set-props": {
-		if (typeof op.props.type === "string") {
-			if (!isRegisteredBlockType(pipeline._registry, op.props.type)) {
+		case "insert-block": {
+			if (!isRegisteredBlockType(pipeline._registry, op.blockType)) {
 				emitPipelineDiagnostic(pipeline, {
 					code: "PEN_APPLY_002",
 					level: "warn",
 					source: "apply",
-					message: `Unknown block type: "${op.props.type}"`,
+					message: `Unknown block type: "${op.blockType}"`,
 					op,
 				});
 				return false;
 			}
-		}
-		return true;
-	}
-	case "splice-text": {
-		const items = Array.isArray(op.insert) ? op.insert : [op.insert];
-		if (!items.every(isInlineInsert)) {
 			return true;
 		}
-		for (const item of items) {
-			if (typeof item === "string") {
-				continue;
+		case "set-props": {
+			if (typeof op.props.type === "string") {
+				if (!isRegisteredBlockType(pipeline._registry, op.props.type)) {
+					emitPipelineDiagnostic(pipeline, {
+						code: "PEN_APPLY_002",
+						level: "warn",
+						source: "apply",
+						message: `Unknown block type: "${op.props.type}"`,
+						op,
+					});
+					return false;
+				}
 			}
-			const schema = pipeline._registry.resolveInline(item.nodeType);
-			if (!schema || schema.kind !== "node") {
-				emitPipelineDiagnostic(pipeline, {
-					code: "PEN_APPLY_002",
-					level: "warn",
-					source: "apply",
-					message: `Unknown inline node type: "${item.nodeType}"`,
-					op,
-				});
-				return false;
-			}
+			return true;
 		}
-		return true;
+		case "splice-text": {
+			const items = Array.isArray(op.insert) ? op.insert : [op.insert];
+			if (!items.every(isInlineInsert)) {
+				return true;
+			}
+			for (const item of items) {
+				if (typeof item === "string") {
+					continue;
+				}
+				const schema = pipeline._registry.resolveInline(item.nodeType);
+				if (!schema || schema.kind !== "node") {
+					emitPipelineDiagnostic(pipeline, {
+						code: "PEN_APPLY_002",
+						level: "warn",
+						source: "apply",
+						message: `Unknown inline node type: "${item.nodeType}"`,
+						op,
+					});
+					return false;
+				}
+			}
+			return true;
+		}
+		case "format-text":
+		case "delete-block":
+		case "move-block":
+		case "set-meta":
+		case "grid":
+		case "app":
+		case "stream-open":
+			return true;
+		default: {
+			const _exhaustive: never = op;
+			void _exhaustive;
+			return true;
+		}
 	}
-	case "format-text":
-	case "delete-block":
-	case "move-block":
-	case "set-meta":
-	case "grid":
-	case "app":
-	case "stream-open":
-		return true;
-	default: {
-		const _exhaustive: never = op;
-		void _exhaustive;
-		return true;
-	}
-}
 }
 
 function executeSingleOp(

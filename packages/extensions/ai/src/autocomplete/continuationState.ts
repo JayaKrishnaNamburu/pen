@@ -257,7 +257,12 @@ function syncHeldPoint(
 	startOffset: number,
 	requestPrefix: string | undefined,
 ):
-	| { kind: "live"; anchor: Anchor | null; blockId: string; startOffset: number }
+	| {
+			kind: "live";
+			anchor: Anchor | null;
+			blockId: string;
+			startOffset: number;
+	  }
 	| { kind: "dead" } {
 	const anchor =
 		held ?? editor.anchors.create({ blockId, offset: startOffset }, 1);
@@ -277,7 +282,14 @@ function syncHeldPoint(
 				}
 			: { kind: "dead" };
 	}
-	if (!prefixStillMatches(editor, target.blockId, target.offset, requestPrefix)) {
+	if (
+		!prefixStillMatches(
+			editor,
+			target.blockId,
+			target.offset,
+			requestPrefix,
+		)
+	) {
 		return { kind: "dead" };
 	}
 	return {

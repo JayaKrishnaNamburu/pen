@@ -79,7 +79,8 @@ function spliceInserts(change: {
 	blockId: string;
 	splices: readonly TextSplice[];
 }): Array<{ blockId: string; from: number; length: number }> {
-	const inserts: Array<{ blockId: string; from: number; length: number }> = [];
+	const inserts: Array<{ blockId: string; from: number; length: number }> =
+		[];
 	for (const splice of change.splices) {
 		if (splice.insertLength > 0 && splice.to === splice.from) {
 			inserts.push({
@@ -92,9 +93,13 @@ function spliceInserts(change: {
 	return inserts;
 }
 
-function remoteMoves(summary: ChangeSummary, taken: ReadonlySet<string>): ContentMove[] {
+function remoteMoves(
+	summary: ChangeSummary,
+	taken: ReadonlySet<string>,
+): ContentMove[] {
 	const deletes: Array<{ blockId: string; from: number; to: number }> = [];
-	const inserts: Array<{ blockId: string; from: number; length: number }> = [];
+	const inserts: Array<{ blockId: string; from: number; length: number }> =
+		[];
 	for (const change of summary.blockText) {
 		deletes.push(...spliceDeletes(change));
 		inserts.push(...spliceInserts(change));

@@ -2,6 +2,7 @@ import type {
 	CommandResult,
 	DocumentOp,
 	Editor,
+	Point,
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
@@ -14,10 +15,7 @@ import {
 	previousGraphemeBoundary,
 	previousWordBoundary,
 } from "../editor/textSegmentation";
-import {
-	buildMergeBlocksRecipe,
-	spliceDeleteOp,
-} from "../ops/recipes";
+import { buildMergeBlocksRecipe, spliceDeleteOp } from "../ops/recipes";
 import {
 	BACKSPACE_EXIT_TYPES,
 	collapsedAt,
@@ -31,7 +29,6 @@ import {
 	readTextFocus,
 	replaceRangeOps,
 	textSelectionResult,
-	type Point,
 } from "./helpers";
 import { applyConvert } from "./textConvert";
 import type { DeleteGranularity } from "./textParams";
@@ -229,7 +226,9 @@ function applyBackspaceAtBlockStart(
 	blockId: string,
 ): CommandResult | false {
 	if (
-		!isContinuousTextFlowCapability(getEditorFlowCapability(editor, blockId))
+		!isContinuousTextFlowCapability(
+			getEditorFlowCapability(editor, blockId),
+		)
 	) {
 		return false;
 	}
@@ -301,7 +300,9 @@ function mergeForwardAtBlockEnd(
 	blockId: string,
 ): CommandResult | false {
 	if (
-		!isContinuousTextFlowCapability(getEditorFlowCapability(editor, blockId))
+		!isContinuousTextFlowCapability(
+			getEditorFlowCapability(editor, blockId),
+		)
 	) {
 		return false;
 	}

@@ -257,7 +257,7 @@ export {
 	useBlockList,
 	useBlockDragHandle,
 	type AIDebugLogEntry,
-	type AIDebugLogFastApplyMetrics,
+	type AIDebugLogCommitMetrics,
 	type AIDebugLogState,
 	type AttributionState,
 	type PenFocusController,

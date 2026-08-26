@@ -1,7 +1,7 @@
 import { affectedBlockIdsFromSummary } from "@input/pen-core";
 import type { CommitEvent, TextSelection } from "@input/pen-types";
 import { getOpOriginType } from "@input/pen-core";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 import { executeGeneration } from "./generationExecution";
 import { executeLocalOperation } from "./localOperationExecution";
 import { resolveDocumentInsertionAnchor } from "../runtime/documentInsertionAnchor";
@@ -11,17 +11,11 @@ import {
 	type AIMutationPreference,
 } from "../runtime/contracts";
 import type { AIRequestedOperation, GenerationState } from "../types";
-import type {
-	GenerationExecutionContext,
-	GenerationTarget,
-} from "../helpers";
-import {
-	resolveActiveBlockId,
-	resolveBlockInsertionOffset,
-} from "../helpers";
+import type { GenerationExecutionContext, GenerationTarget } from "../helpers";
+import { resolveActiveBlockId, resolveBlockInsertionOffset } from "../helpers";
 
 export const generationRunnerMethods = {
-	cancelActiveGeneration(this: AIControllerMethodHost): void {
+	cancelActiveGeneration(this: AIControllerImpl): void {
 		this._abortController?.abort();
 		this._abortController = null;
 		if (this._state.activeGeneration) {
@@ -50,20 +44,20 @@ export const generationRunnerMethods = {
 		this._inlineCompletion.dismissSuggestion();
 	},
 
-	openCommandMenu(this: AIControllerMethodHost): void {
+	openCommandMenu(this: AIControllerImpl): void {
 		this._setState({ commandMenuOpen: true });
 	},
 
-	closeCommandMenu(this: AIControllerMethodHost): void {
+	closeCommandMenu(this: AIControllerImpl): void {
 		this._setState({ commandMenuOpen: false });
 	},
 
-	setSuggestMode(this: AIControllerMethodHost, enabled: boolean): void {
+	setSuggestMode(this: AIControllerImpl, enabled: boolean): void {
 		this._setState({ suggestMode: enabled });
 	},
 
 	setMutationPreference(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		preference: AIMutationPreference,
 	): void {
 		if (!isAIMutationPreference(preference)) {
@@ -80,7 +74,7 @@ export const generationRunnerMethods = {
 	},
 
 	handleExternalCommit(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		events: readonly CommitEvent[],
 	): void {
 		const active = this._state.activeGeneration;
@@ -108,7 +102,7 @@ export const generationRunnerMethods = {
 	},
 
 	async _runBlockGeneration(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		prompt: string,
 		blockId: string,
 		commandId?: string,
@@ -135,7 +129,7 @@ export const generationRunnerMethods = {
 	},
 
 	async _runDocumentGeneration(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		prompt: string,
 		preferredBlockId?: string | null,
 		commandId?: string,
@@ -183,7 +177,7 @@ export const generationRunnerMethods = {
 	},
 
 	async _runSelectionGeneration(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		prompt: string,
 		selection: TextSelection,
 		commandId?: string,
@@ -200,7 +194,7 @@ export const generationRunnerMethods = {
 	},
 
 	async _executeGeneration(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		prompt: string,
 		target: GenerationTarget,
 		commandId?: string,
@@ -217,7 +211,7 @@ export const generationRunnerMethods = {
 	},
 
 	async _executeLocalOperation(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		input: {
 			prompt: string;
 			target: GenerationTarget;

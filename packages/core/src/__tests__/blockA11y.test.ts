@@ -88,7 +88,10 @@ describe("block a11y (AX4 / X.1)", () => {
 
 		expect(withSpec.a11y).not.toBe(spec);
 		expect("extra" in withSpec.a11y).toBe(false);
-		expect(Object.keys(withSpec.a11y)).toEqual(["label", "roleDescription"]);
+		expect(Object.keys(withSpec.a11y)).toEqual([
+			"label",
+			"roleDescription",
+		]);
 		expect(Object.isFrozen(spec)).toBe(false);
 	});
 
@@ -104,7 +107,10 @@ describe("block a11y (AX4 / X.1)", () => {
 		});
 
 		expect(withEmpty.a11y.roleDescription).toBe("");
-		expect(Object.keys(withEmpty.a11y)).toEqual(["label", "roleDescription"]);
+		expect(Object.keys(withEmpty.a11y)).toEqual([
+			"label",
+			"roleDescription",
+		]);
 		expect(without.a11y.roleDescription).toBeUndefined();
 		expect(Object.keys(without.a11y)).toEqual(["label"]);
 	});

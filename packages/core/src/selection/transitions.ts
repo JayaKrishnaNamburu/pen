@@ -5,14 +5,11 @@
  * manager, commands, or reader.
  */
 
-import type { SelectAllBehavior } from "@input/pen-types";
+import type { Point, SelectAllBehavior } from "@input/pen-types";
 
 export type Affinity = "upstream" | "downstream";
 
-export interface Point {
-	readonly blockId: string;
-	readonly offset: number;
-}
+export type { Point };
 
 export interface TextSelection {
 	readonly type: "text";

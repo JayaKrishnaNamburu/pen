@@ -21,10 +21,7 @@ import {
 	logAutocompleteEvent,
 	previewAutocompleteTextForLog,
 } from "./autocompleteDebug";
-import {
-	buildAutocompleteAIRequest,
-	streamThroughEgress,
-} from "./aiEgress";
+import { buildAutocompleteAIRequest, streamThroughEgress } from "./aiEgress";
 import { AUTOCOMPLETE_REQUEST_MODE } from "./constants";
 import { showSequenceSuggestion } from "./autocompleteControllerContinuation";
 import { buildAutocompleteMessages } from "./promptBuilder";
@@ -420,7 +417,9 @@ export function remapVisibleSuggestion(
 		controller._visibleAnchor,
 		moves,
 	);
-	const target = controller._editor.anchors.resolve(controller._visibleAnchor);
+	const target = controller._editor.anchors.resolve(
+		controller._visibleAnchor,
+	);
 	if (!target) {
 		return (
 			controller._editor.getBlock(controller._visibleAnchor.blockId) !=
@@ -467,7 +466,8 @@ export function getFieldEditor(
 	controller: AutocompleteControllerHost,
 ): FieldEditor | null {
 	return (
-		(controller._editor.facet(fieldEditorHostFacet) as FieldEditor | null) ??
-		null
+		(controller._editor.facet(
+			fieldEditorHostFacet,
+		) as FieldEditor | null) ?? null
 	);
 }

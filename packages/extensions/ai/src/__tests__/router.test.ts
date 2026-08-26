@@ -19,7 +19,7 @@ describe("ai request router", () => {
 
 		expect(route.lane).toBe("cursor-context");
 		expect(route.mutationMode).toBe("direct-stream");
-		expect(route.applyStrategy).toBe("text-fast-apply");
+		expect(route.editsArriveAsToolCalls).toBe(false);
 		expect(route.targetKind).toBe("block");
 		expect(route.blockClass).toBe("flow");
 		expect(route.adapterId).toBe("flow-markdown");
@@ -45,7 +45,7 @@ describe("ai request router", () => {
 
 		expect(initialRoute.lane).toBe("cursor-context");
 		expect(refinedRoute.lane).toBe("tool-loop");
-		expect(refinedRoute.applyStrategy).toBe("tool-edit");
+		expect(refinedRoute.editsArriveAsToolCalls).toBe(true);
 		expect(refinedRoute.targetKind).toBe("table");
 		expect(refinedRoute.contentFormat).toBe("markdown");
 		expect(refinedRoute.adapterId).toBe("flow-markdown");
@@ -65,7 +65,7 @@ describe("ai request router", () => {
 
 		expect(route.lane).toBe("cursor-context");
 		expect(route.mutationMode).toBe("direct-stream");
-		expect(route.applyStrategy).toBe("markdown-full-replace");
+		expect(route.contentFormat).toBe("markdown");
 		expect(route.shouldStreamDirectly).toBe(false);
 	});
 
@@ -83,7 +83,7 @@ describe("ai request router", () => {
 
 		expect(route.lane).toBe("tool-loop");
 		expect(route.mutationMode).toBe("persistent-suggestions");
-		expect(route.applyStrategy).toBe("tool-edit");
+		expect(route.editsArriveAsToolCalls).toBe(true);
 		expect(route.shouldStreamDirectly).toBe(false);
 	});
 
@@ -99,7 +99,7 @@ describe("ai request router", () => {
 		});
 
 		expect(route.targetKind).toBe("table");
-		expect(route.applyStrategy).toBe("tool-edit");
+		expect(route.editsArriveAsToolCalls).toBe(true);
 		expect(route.contentFormat).toBe("markdown");
 		expect(route.blockClass).toBe("flow");
 		expect(route.adapterId).toBe("flow-markdown");
@@ -122,7 +122,7 @@ describe("ai request router", () => {
 		expect(route.lane).toBe("tool-loop");
 		expect(route.targetKind).toBe("table");
 		expect(route.mutationMode).toBe("streaming-suggestions");
-		expect(route.applyStrategy).toBe("tool-edit");
+		expect(route.editsArriveAsToolCalls).toBe(true);
 		expect(route.contentFormat).toBe("markdown");
 		expect(route.blockClass).toBe("flow");
 		expect(route.adapterId).toBe("flow-markdown");
@@ -144,7 +144,7 @@ describe("ai request router", () => {
 		});
 		expect(table.lane).toBe("tool-loop");
 		expect(table.allowToolUse).toBe(true);
-		expect(table.applyStrategy).toBe("tool-edit");
+		expect(table.editsArriveAsToolCalls).toBe(true);
 
 		const improve = routeAIRequest({
 			prompt: "Improve the text and make the last bit a bullet.",
@@ -156,7 +156,7 @@ describe("ai request router", () => {
 			contentFormat: "markdown",
 		});
 		expect(improve.lane).toBe("tool-loop");
-		expect(improve.applyStrategy).toBe("tool-edit");
+		expect(improve.editsArriveAsToolCalls).toBe(true);
 	});
 
 	it("sends durable edits through the tool loop regardless of document size", () => {

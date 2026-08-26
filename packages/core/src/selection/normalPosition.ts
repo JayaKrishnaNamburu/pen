@@ -5,6 +5,7 @@
  * manager, commands, or reader.
  */
 
+import type { Point } from "@input/pen-types";
 import {
 	nextGraphemeBoundary,
 	previousGraphemeBoundary,
@@ -15,10 +16,7 @@ const GRAPHEME_LOCALE = "und";
 
 export type NormalPositionDirection = -1 | 1;
 
-export interface Point {
-	readonly blockId: string;
-	readonly offset: number;
-}
+export type { Point };
 
 export interface BlockBoundary {
 	readonly blockBoundary: string;

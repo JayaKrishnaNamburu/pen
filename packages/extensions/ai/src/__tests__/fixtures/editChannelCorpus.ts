@@ -57,7 +57,10 @@ export interface EditChannelCorpusPrompt {
 	id: EditChannelCorpusPromptId;
 	prompt: string;
 	/** Returns null when the postcondition is met, else why it failed. */
-	postcondition: (editor: Editor, seed: EditChannelCorpusSeed) => string | null;
+	postcondition: (
+		editor: Editor,
+		seed: EditChannelCorpusSeed,
+	) => string | null;
 	/** Prompt 9 is expected to be the weak one; see Do-Not-Miss. */
 	knownWeak?: boolean;
 }
@@ -384,7 +387,10 @@ function postconditionP9(
 			}
 			continue;
 		}
-		if (block.textContent() !== seedText || block.type !== seed.typeById[id]) {
+		if (
+			block.textContent() !== seedText ||
+			block.type !== seed.typeById[id]
+		) {
 			return `unrelated block ${id} changed`;
 		}
 	}
@@ -405,11 +411,16 @@ function postconditionP10(
 	if (closing.type !== "blockquote") {
 		return "closing is not a blockquote";
 	}
-	const headings = listBlocks(editor).filter((block) => block.type === "heading");
+	const headings = listBlocks(editor).filter(
+		(block) => block.type === "heading",
+	);
 	if (headings.length !== 2) {
 		return `expected one new heading (2 total), found ${headings.length}`;
 	}
-	if (closing.prev?.type !== "heading" || closing.prev.id === seed.headingId) {
+	if (
+		closing.prev?.type !== "heading" ||
+		closing.prev.id === seed.headingId
+	) {
 		return "new heading is not before the closing paragraph";
 	}
 	return null;
@@ -434,7 +445,9 @@ function hasColoredSpan(
 			return false;
 		}
 		const record = attributes as Record<string, unknown>;
-		return Object.entries(props).every(([key, value]) => record[key] === value);
+		return Object.entries(props).every(
+			([key, value]) => record[key] === value,
+		);
 	});
 }
 
@@ -468,8 +481,7 @@ export const EDIT_CHANNEL_CORPUS: readonly EditChannelCorpusPrompt[] = [
 	},
 	{
 		id: "p2",
-		prompt:
-			"Edit the title and make it friendlier, then extend the last paragraph with some more text and a table showing the matrix.",
+		prompt: "Edit the title and make it friendlier, then extend the last paragraph with some more text and a table showing the matrix.",
 		postcondition: postconditionP2,
 	},
 	{
@@ -510,14 +522,12 @@ export const EDIT_CHANNEL_CORPUS: readonly EditChannelCorpusPrompt[] = [
 	},
 	{
 		id: "p10",
-		prompt:
-			"Add a heading before the closing paragraph and make the closing paragraph a quote.",
+		prompt: "Add a heading before the closing paragraph and make the closing paragraph a quote.",
 		postcondition: postconditionP10,
 	},
 	{
 		id: "p11",
-		prompt:
-			"Color every occurrence of the product name red in the first body paragraph.",
+		prompt: "Color every occurrence of the product name red in the first body paragraph.",
 		postcondition: postconditionP11,
 	},
 ];

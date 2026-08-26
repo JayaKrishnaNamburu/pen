@@ -22,7 +22,7 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 	};
 	private readonly _listeners = new Set<() => void>();
 
-	constructor(private readonly _editor: Editor) { }
+	constructor(private readonly _editor: Editor) {}
 
 	getState(): InlineCompletionState {
 		return {
@@ -71,13 +71,15 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 		if (suggestion.type === "inline") {
 			const nextOffset = suggestion.offset + suggestion.text.length;
 			this._editor.apply(
-				[{
-					type: "splice-text",
-					blockId: suggestion.blockId,
-					from: suggestion.offset,
-				to: suggestion.offset,
-				insert: suggestion.text,
-				}],
+				[
+					{
+						type: "splice-text",
+						blockId: suggestion.blockId,
+						from: suggestion.offset,
+						to: suggestion.offset,
+						insert: suggestion.text,
+					},
+				],
 				{ origin: "ai", undoGroup: true },
 			);
 			this._editor.selectText(suggestion.blockId, nextOffset, nextOffset);
@@ -99,8 +101,8 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: suggestion.text,
+					to: 0,
+					insert: suggestion.text,
 				},
 			],
 			{ origin: "ai", undoGroup: true },
@@ -174,14 +176,13 @@ export function getInlineCompletionController(
 	editor: Editor,
 ): InlineCompletionController | null {
 	return (
-		(editor.facet(aiInlineCompletionFacet) as InlineCompletionController | null) ??
-		null
+		(editor.facet(
+			aiInlineCompletionFacet,
+		) as InlineCompletionController | null) ?? null
 	);
 }
 
-export function ensureInlineCompletionController(
-	editor: Editor,
-): {
+export function ensureInlineCompletionController(editor: Editor): {
 	controller: InlineCompletionController;
 	isOwner: boolean;
 	release: () => void;
@@ -192,7 +193,10 @@ export function ensureInlineCompletionController(
 		return {
 			controller: existingLease.controller,
 			isOwner: false,
-			release: createInlineCompletionRelease(editor, existingLease.controller),
+			release: createInlineCompletionRelease(
+				editor,
+				existingLease.controller,
+			),
 		};
 	}
 
@@ -252,7 +256,8 @@ function resolveInlineSuggestionAnchor(
 	editor: Editor,
 	suggestion: InlineCompletionSuggestion,
 ): { from: number; to: number; placement: "before" | "after" } | null {
-	const blockTextLength = editor.getBlock(suggestion.blockId)?.textContent().length ?? 0;
+	const blockTextLength =
+		editor.getBlock(suggestion.blockId)?.textContent().length ?? 0;
 	if (blockTextLength <= 0) {
 		return null;
 	}

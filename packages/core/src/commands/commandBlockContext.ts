@@ -98,9 +98,7 @@ export function usesInlineMarks(editor: Editor, blockId: string): boolean {
 	return usesInlineTextSelection(schema) && schema?.fieldEditor !== "code";
 }
 
-export function isListBlock(
-	block: BlockHandle | null,
-): block is BlockHandle {
+export function isListBlock(block: BlockHandle | null): block is BlockHandle {
 	return !!block && LIST_BLOCK_TYPES.has(block.type);
 }
 

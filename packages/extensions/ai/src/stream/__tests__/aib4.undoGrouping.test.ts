@@ -21,9 +21,15 @@ describe("AIB4 streamed apply undo", () => {
 		});
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "seed" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "seed",
+				},
+			],
 			{ origin: "user" },
 		);
 
@@ -73,9 +79,15 @@ describe("AIB4 streamed apply undo", () => {
 		});
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "before" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "before",
+				},
+			],
 			{ origin: "user" },
 		);
 		const before = blockTexts(editor);
@@ -127,9 +139,15 @@ describe("AIB4 streamed apply undo", () => {
 		});
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "before" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "before",
+				},
+			],
 			{ origin: "user" },
 		);
 		const before = blockTexts(editor);

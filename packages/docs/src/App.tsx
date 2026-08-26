@@ -35,7 +35,11 @@ type PageId =
 
 const NAV_ITEMS: { id: PageId; href: string; label: string }[] = [
 	{ id: "home", href: "#/", label: "Home" },
-	{ id: "getting-started", href: "#/getting-started", label: "Getting started" },
+	{
+		id: "getting-started",
+		href: "#/getting-started",
+		label: "Getting started",
+	},
 	{ id: "core-concepts", href: "#/core-concepts", label: "Core concepts" },
 	{ id: "selection", href: "#/selection", label: "Selection" },
 	{ id: "extensions", href: "#/extensions", label: "Extensions" },
@@ -132,7 +136,11 @@ function subscribe(onStoreChange: () => void) {
 }
 
 export function App() {
-	const page = useSyncExternalStore(subscribe, getPageId, (): PageId => "home");
+	const page = useSyncExternalStore(
+		subscribe,
+		getPageId,
+		(): PageId => "home",
+	);
 	const navLinks = NAV_ITEMS.map((item) => (
 		<a
 			key={item.id}

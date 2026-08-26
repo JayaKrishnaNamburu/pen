@@ -14,7 +14,8 @@ import {
 	listAITools,
 } from "../tools";
 // Not from `../tools`: that barrel is the published `@input/pen-ai/tools`
-// surface, and these have no consumer outside the loop.
+// surface, and these stay in-package.
+import { AI_EDIT_DOCUMENT_TOOL_NAME } from "../tools/constants";
 import { type AIToolTurn, isAIToolResultAskingRetry } from "../tools/authority";
 import { advertiseAIToolsForRoute } from "../tools/descriptors";
 import {
@@ -75,13 +76,12 @@ export async function runAgenticLoop(
 		onStreamingEnd,
 		onDebug,
 		onEditPreview,
-		applyStrategy,
+		editsArriveAsToolCalls: isEditChannel = false,
 		editIntent = true,
 		editStreaming,
 	} = options;
 	// One fact, two consequences: EC14's turn exit and EC9's stale policy are
 	// both properties of the edit channel, not two independent switches.
-	const isEditChannel = applyStrategy === "tool-edit";
 	const streamingMode = resolveEditStreaming(editStreaming, model);
 	const previewEnabled = isEditChannel && streamingMode !== "atomic";
 	const commitEnabled = isEditChannel && streamingMode === "commit";
@@ -259,7 +259,10 @@ export async function runAgenticLoop(
 			}
 
 			if (event.type === "tool-input-start") {
-				if (previewEnabled && event.toolName === "edit_document") {
+				if (
+					previewEnabled &&
+					event.toolName === AI_EDIT_DOCUMENT_TOOL_NAME
+				) {
 					editPreview.start(event.toolCallId);
 				}
 				continue;
@@ -420,7 +423,7 @@ export async function runAgenticLoop(
 				}
 				const toolStartedAt = performance.now();
 				const truncatedRefusal =
-					toolCall.toolName === "edit_document" &&
+					toolCall.toolName === AI_EDIT_DOCUMENT_TOOL_NAME &&
 					isTruncatedEditDocumentInput(toolCall.input)
 						? truncatedEditDocumentRefusal()
 						: null;
@@ -429,13 +432,13 @@ export async function runAgenticLoop(
 				// its next pass reasons about the edit it asked for (EC20).
 				const executedInput =
 					truncatedRefusal == null &&
-					toolCall.toolName === "edit_document" &&
+					toolCall.toolName === AI_EDIT_DOCUMENT_TOOL_NAME &&
 					blockCommitter
 						? blockCommitter.reconcile(toolCall.input)
 						: toolCall.input;
 				const staleRefusal =
 					truncatedRefusal == null &&
-					toolCall.toolName === "edit_document"
+					toolCall.toolName === AI_EDIT_DOCUMENT_TOOL_NAME
 						? refuseStaleEditDocumentCall(
 								editor,
 								executedInput,
@@ -716,7 +719,7 @@ function resolveEditChannelToolChoice(
 		return undefined;
 	}
 	if (workingSetHasBlockAnnotations(workingSet)) {
-		return { type: "tool", name: "edit_document" };
+		return { type: "tool", name: AI_EDIT_DOCUMENT_TOOL_NAME };
 	}
 	return { type: "any" };
 }

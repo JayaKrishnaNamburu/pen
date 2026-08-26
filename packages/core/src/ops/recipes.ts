@@ -210,8 +210,7 @@ export function sliceDeltasFrom(
 	const tail: InlineDelta[] = [];
 	let pos = 0;
 	for (const delta of deltas) {
-		const len =
-			typeof delta.insert === "string" ? delta.insert.length : 1;
+		const len = typeof delta.insert === "string" ? delta.insert.length : 1;
 		if (pos + len <= from) {
 			pos += len;
 			continue;

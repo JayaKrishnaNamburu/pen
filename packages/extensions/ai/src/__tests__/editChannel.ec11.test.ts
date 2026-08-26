@@ -185,8 +185,8 @@ describe("EC11: direct vs reviewed is a parameter", () => {
 		expect(JSON.stringify(directRequest!.messages)).toContain(PROMPT);
 		expect(JSON.stringify(suggestionRequest!.messages)).toContain(PROMPT);
 
-		expect(directGeneration.applyStrategy).toBe("tool-edit");
-		expect(suggestionGeneration.applyStrategy).toBe("tool-edit");
+		expect(directGeneration.editsArriveAsToolCalls).toBe(true);
+		expect(suggestionGeneration.editsArriveAsToolCalls).toBe(true);
 		expect(directGeneration.mutationMode).toBe("direct-stream");
 		expect(suggestionGeneration.mutationMode).toBe(
 			"persistent-suggestions",

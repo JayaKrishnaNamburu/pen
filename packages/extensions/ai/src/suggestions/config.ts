@@ -1,11 +1,11 @@
-import type {
-	AISuggestionsExtensionConfig,
-	AISuggestionsMode,
-} from "./types";
+import type { AISuggestionsExtensionConfig, AISuggestionsMode } from "./types";
 
 const PRESET_CONFIG: Record<
 	AISuggestionsMode,
-	Omit<AISuggestionsExtensionConfig, "mode" | "model" | "analyzer" | "enabled" | "blockPolicy">
+	Omit<
+		AISuggestionsExtensionConfig,
+		"mode" | "model" | "analyzer" | "enabled" | "blockPolicy"
+	>
 > = {
 	cheap: {
 		debounceMs: 1600,

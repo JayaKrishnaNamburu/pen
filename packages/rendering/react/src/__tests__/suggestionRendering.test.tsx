@@ -475,8 +475,13 @@ describe("@input/pen-react suggestion rendering", () => {
 			"This should render as a second ghost paragraph.",
 		);
 		expect(
-			previewBlocks[0]?.classList.contains("pen-block-suggestion"),
+			previewBlocks[0]?.classList.contains(
+				"pen-autocomplete-preview-block",
+			),
 		).toBe(true);
+		expect(
+			previewBlocks[0]?.classList.contains("pen-block-suggestion"),
+		).toBe(false);
 
 		await act(async () => {
 			root.unmount();

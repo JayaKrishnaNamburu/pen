@@ -90,9 +90,13 @@ function documentOpFlagKeys(source: string): string[] {
 	}
 	const open = source.indexOf("{", start);
 	const close = source.indexOf("}", open);
+	// Prettier's `quoteProps: "as-needed"` leaves `grid` and `app` unquoted,
+	// so the key may or may not carry quotes.
 	return [
-		...source.slice(open, close).matchAll(/"([^"]+)"\s*:\s*true/g),
-	].map((match) => match[1]!);
+		...source
+			.slice(open, close)
+			.matchAll(/(?:"([^"]+)"|([A-Za-z_$][\w$]*))\s*:\s*true/g),
+	].map((match) => (match[1] ?? match[2])!);
 }
 
 function expectClosedTypeSet(types: readonly string[]): void {
@@ -115,12 +119,16 @@ function visitClosedOpType(type: DocumentOp["type"]): void {
 			return;
 		default: {
 			const _exhaustive: never = type;
-			throw new Error(`unexpected DocumentOp type: ${String(_exhaustive)}`);
+			throw new Error(
+				`unexpected DocumentOp type: ${String(_exhaustive)}`,
+			);
 		}
 	}
 }
 
-function collectLocalTxnOrigins(editor: ReturnType<typeof createHeadlessEditor>) {
+function collectLocalTxnOrigins(
+	editor: ReturnType<typeof createHeadlessEditor>,
+) {
 	const txnOrigins: unknown[] = [];
 	editor.internals.adapter
 		.raw<TestRawDocLike>(editor.internals.crdtDoc)
@@ -399,7 +407,9 @@ describe("ops OP1–OP5", () => {
 
 	it("OP4: validation, profile, suggest-mode, and the tool table key the ten primitives plus intent", () => {
 		const pipeline = readRepoFile("../editor/applyPipelineRunner.ts");
-		expectClosedTypeSet(switchCaseLabels(pipeline, "function malformedOpMessage"));
+		expectClosedTypeSet(
+			switchCaseLabels(pipeline, "function malformedOpMessage"),
+		);
 		expectClosedTypeSet(switchCaseLabels(pipeline, "function validateOp"));
 		expectClosedTypeSet(
 			switchCaseLabels(pipeline, "function executeSingleOp"),
@@ -414,7 +424,9 @@ describe("ops OP1–OP5", () => {
 			"../../../extensions/document-ops/src/constants/payloadValidation.ts",
 		);
 		expectClosedTypeSet(documentOpFlagKeys(toolTable));
-		expect(toolTable).toContain("satisfies Record<DocumentOp[\"type\"], true>");
+		expect(toolTable).toContain(
+			'satisfies Record<DocumentOp["type"], true>',
+		);
 
 		const suggestMode = readRepoFile(
 			"../../../extensions/ai/src/suggestions/suggestMode.ts",

@@ -33,8 +33,8 @@ export function buildSelectionReplacementOps(
 			type: "splice-text",
 			blockId: startId,
 			from: range.start.offset,
-				to: range.start.offset + startText.length - range.start.offset,
-				insert: "",
+			to: range.start.offset + startText.length - range.start.offset,
+			insert: "",
 		});
 	}
 
@@ -43,8 +43,8 @@ export function buildSelectionReplacementOps(
 			type: "splice-text",
 			blockId: endId,
 			from: 0,
-				to: 0 + range.end.offset,
-				insert: "",
+			to: 0 + range.end.offset,
+			insert: "",
 		});
 	}
 
@@ -61,8 +61,8 @@ export function buildSelectionReplacementOps(
 			type: "splice-text",
 			blockId: startId,
 			from: insertionOffset,
-				to: insertionOffset,
-				insert: insertedText,
+			to: insertionOffset,
+			insert: insertedText,
 		});
 		insertionOffset += insertedText.length;
 	}
@@ -72,8 +72,8 @@ export function buildSelectionReplacementOps(
 			type: "splice-text",
 			blockId: startId,
 			from: insertionOffset,
-				to: insertionOffset,
-				insert: delta.insert,
+			to: insertionOffset,
+			insert: delta.insert,
 			marks: delta.attributes,
 		});
 		insertionOffset += delta.insert.length;

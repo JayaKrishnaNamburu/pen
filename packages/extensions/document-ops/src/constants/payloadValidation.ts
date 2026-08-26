@@ -12,8 +12,8 @@ const DOCUMENT_OP_TYPE_FLAGS = {
 	"move-block": true,
 	"set-props": true,
 	"set-meta": true,
-	"grid": true,
-	"app": true,
+	grid: true,
+	app: true,
 	"stream-open": true,
 } as const satisfies Record<DocumentOp["type"], true>;
 

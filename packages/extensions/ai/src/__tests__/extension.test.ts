@@ -86,9 +86,7 @@ describe("aiExtension", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 
@@ -127,7 +125,7 @@ describe("aiExtension", () => {
 		);
 	});
 
-	it("CH4 installs controller methods on the instance, not the prototype", () => {
+	it("CH4 installs controller methods as class prototype methods", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [
@@ -145,7 +143,10 @@ describe("aiExtension", () => {
 				Object.getPrototypeOf(controller),
 				"acceptActiveGeneration",
 			),
-		).toBe(false);
+		).toBe(true);
+		expect(Object.hasOwn(controller!, "acceptActiveGeneration")).toBe(
+			false,
+		);
 	});
 
 	it("CH3 bypasses the suggest-mode hook for system origin", () => {
@@ -161,9 +162,7 @@ describe("aiExtension", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "system" },
 		);
 

@@ -18,7 +18,6 @@ export interface TableCellContentProps {
 	row: number;
 	col: number;
 	placeholder?: string;
-	columnType?: string;
 }
 
 export function TableCellContent(props: TableCellContentProps) {

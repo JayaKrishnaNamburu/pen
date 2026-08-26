@@ -12,7 +12,11 @@ describe("commitEvent helpers (Wave 2.2)", () => {
 	});
 
 	it("toStructuredOrigin returns the same structured object it was given", () => {
-		const origin = { type: "user" as const, groupId: "g1", requestId: "r1" };
+		const origin = {
+			type: "user" as const,
+			groupId: "g1",
+			requestId: "r1",
+		};
 		const frozen = Object.freeze({
 			type: "ai" as const,
 			requestId: "r2",

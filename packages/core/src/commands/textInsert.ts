@@ -30,14 +30,22 @@ export function handleInsertText(
 		return false;
 	}
 	if (replacement.ops.length === 0) {
-		return { selection: collapsedAt(replacement.caret.blockId, replacement.caret.offset) };
+		return {
+			selection: collapsedAt(
+				replacement.caret.blockId,
+				replacement.caret.offset,
+			),
+		};
 	}
 	editor.apply(replacement.ops, {
 		origin: "user",
 		structural: replacement.structural,
 	});
 	return {
-		selection: collapsedAt(replacement.caret.blockId, replacement.caret.offset),
+		selection: collapsedAt(
+			replacement.caret.blockId,
+			replacement.caret.offset,
+		),
 	};
 }
 
@@ -75,7 +83,8 @@ export function handleToggleMark(
 		range.end.offset,
 		param.mark,
 	);
-	const nextValue = param.value === undefined ? (hasMark ? null : true) : param.value;
+	const nextValue =
+		param.value === undefined ? (hasMark ? null : true) : param.value;
 	editor.apply(
 		[
 			{
@@ -136,7 +145,8 @@ function toggleMarkAcrossBlocks(
 			param.mark,
 		),
 	);
-	const nextValue = param.value === undefined ? (hasMark ? null : true) : param.value;
+	const nextValue =
+		param.value === undefined ? (hasMark ? null : true) : param.value;
 	editor.apply(
 		segments.map((segment) => ({
 			type: "format-text" as const,

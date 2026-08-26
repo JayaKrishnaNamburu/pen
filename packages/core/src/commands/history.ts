@@ -27,8 +27,7 @@ function handleHistory(
 		return false;
 	}
 
-	const can =
-		direction === "undo" ? manager.canUndo() : manager.canRedo();
+	const can = direction === "undo" ? manager.canUndo() : manager.canRedo();
 	if (!can) {
 		return false;
 	}

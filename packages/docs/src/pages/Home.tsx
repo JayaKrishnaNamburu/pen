@@ -10,9 +10,9 @@ export function HomePage() {
 			</p>
 			<p>
 				It is licensed under the MIT License. License and distribution
-				are stated in the repository root README. Packages are not
-				on the public registry: there has never been a release
-				train, a git tag, or a <code>CHANGELOG.md</code>.{" "}
+				are stated in the repository root README. Packages are not on
+				the public registry: there has never been a release train, a git
+				tag, or a <code>CHANGELOG.md</code>.{" "}
 				<code>pnpm add @input/pen-*</code> 404s today.
 			</p>
 
@@ -26,14 +26,13 @@ export function HomePage() {
 			</p>
 			<p>
 				Pen ships no required stylesheet — the editor is functional
-				unstyled. Tokens live in the <code>STYLING.md</code> that
-				ships inside <code>@input/pen-react</code>.
+				unstyled. Tokens live in the <code>STYLING.md</code> that ships
+				inside <code>@input/pen-react</code>.
 			</p>
 			<p>
-				<code>@input/pen-react</code> is a client module. In Next.js
-				App Router, import the editor from a Client Component.{" "}
-				<code>@input/pen-core</code> stays importable from server
-				code.
+				<code>@input/pen-react</code> is a client module. In Next.js App
+				Router, import the editor from a Client Component.{" "}
+				<code>@input/pen-core</code> stays importable from server code.
 			</p>
 
 			<h2>Core ideas</h2>
@@ -65,8 +64,8 @@ export function HomePage() {
 					<code>apply</code>, origins, commits
 				</li>
 				<li>
-					<a href="#/selection">Selection</a> — block-scoped
-					selection kinds and host writes
+					<a href="#/selection">Selection</a> — block-scoped selection
+					kinds and host writes
 				</li>
 				<li>
 					<a href="#/extensions">Extensions and facets</a> — how
@@ -93,16 +92,16 @@ export function HomePage() {
 					and embedder boundaries
 				</li>
 				<li>
-					<a href="#/accessibility">Accessibility</a> — surface
-					label, announcements, WCAG 2.2 AA target
+					<a href="#/accessibility">Accessibility</a> — surface label,
+					announcements, WCAG 2.2 AA target
 				</li>
 				<li>
 					<a href="#/support">Browser and Node</a> — HOST3 runtime
 					floor
 				</li>
 				<li>
-					<a href="#/localization">Localization</a> — locale,
-					message catalog, segmentation
+					<a href="#/localization">Localization</a> — locale, message
+					catalog, segmentation
 				</li>
 				<li>
 					<a href="#/upgrade">Upgrade guides</a> — support window and

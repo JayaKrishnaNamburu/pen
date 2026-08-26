@@ -15,15 +15,16 @@ describe("HTML export nested traversal", () => {
 
 		const toggle = editor.getBlock("toggle-1");
 		const callout = editor.getBlock("callout-1");
-		expect(toggle?.children.some((child) => child.id === "toggle-child")).toBe(
-			true,
-		);
-		expect(callout?.children.some((child) => child.id === "callout-child")).toBe(
-			true,
-		);
+		expect(
+			toggle?.children.some((child) => child.id === "toggle-child"),
+		).toBe(true);
+		expect(
+			callout?.children.some((child) => child.id === "callout-child"),
+		).toBe(true);
 		expect(
 			[...editor.documentState.allBlocks()].some(
-				(handle) => handle.id === "toggle-child" && handle.parent !== null,
+				(handle) =>
+					handle.id === "toggle-child" && handle.parent !== null,
 			),
 		).toBe(true);
 

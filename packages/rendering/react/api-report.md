@@ -105,8 +105,8 @@
 - AIContextualPromptSurfaceProps
 - AIContextualPromptTrigger
 - AIContextualPromptTriggerProps
+- AIDebugLogCommitMetrics
 - AIDebugLogEntry
-- AIDebugLogFastApplyMetrics
 - AIDebugLogState
 - AIDiffView
 - AIDiffViewProps
@@ -390,7 +390,7 @@
 - AIContextualPromptState
 - AIControllerState
 - AISession
-- AISessionFastApplyMetrics
+- AISessionCommitMetrics
 - AISessionMetrics
 - AISessionPrompt
 - AISessionStatus
@@ -401,8 +401,6 @@
 - AISurface
 - GenerationState
 - PersistentSuggestion
-- StructuralReviewComparisonRow
-- StructuralReviewItem
 
 ### type
 
@@ -416,8 +414,8 @@
 - AIContextualPromptComposerProps
 - AIContextualPromptSurfaceProps
 - AIContextualPromptTriggerProps
+- AIDebugLogCommitMetrics
 - AIDebugLogEntry
-- AIDebugLogFastApplyMetrics
 - AIDebugLogState
 - AIDiffViewProps
 - AIGenerationZoneProps

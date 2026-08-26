@@ -199,7 +199,9 @@ function applyCorrectEdit(
 		case "p9": {
 			editor.apply(
 				seed.blockIds
-					.filter((id) => seed.textById[id]!.includes(seed.productName))
+					.filter((id) =>
+						seed.textById[id]!.includes(seed.productName),
+					)
 					.map((blockId) => {
 						const text = seed.textById[blockId]!;
 						return {
@@ -292,9 +294,10 @@ describe("edit channel corpus shape", () => {
 				untouched.editor,
 				untouched.seed,
 			);
-			expect(untouchedReason, `${entry.id} passed on an unedited document`).toEqual(
-				expect.any(String),
-			);
+			expect(
+				untouchedReason,
+				`${entry.id} passed on an unedited document`,
+			).toEqual(expect.any(String));
 			expect(untouchedReason!.length).toBeGreaterThan(0);
 			void untouched.editor.destroy();
 

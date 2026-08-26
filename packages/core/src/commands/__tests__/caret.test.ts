@@ -98,7 +98,9 @@ describe("caret commands", () => {
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 5 });
 
 		editor.selectText("a", 2, 2);
-		expect(registry.dispatch(caretBlockStart, { extend: false })).toBe(true);
+		expect(registry.dispatch(caretBlockStart, { extend: false })).toBe(
+			true,
+		);
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 0 });
 		expect(registry.dispatch(caretBlockEnd, { extend: false })).toBe(true);
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 5 });
@@ -120,7 +122,9 @@ describe("caret commands", () => {
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 4 });
 
 		editor.selectText("a", 2, 2);
-		expect(registry.dispatch(caretBlockStart, { extend: false })).toBe(true);
+		expect(registry.dispatch(caretBlockStart, { extend: false })).toBe(
+			true,
+		);
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 0 });
 		editor.destroy();
 	});

@@ -22,7 +22,9 @@ describe("migration origin (DUR4)", () => {
 		const adapter = yjsAdapter();
 		const doc = seedParagraph(adapter);
 		const undo = createYjsUndoManager(doc);
-		const ytext = doc.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		const ytext = doc.penDocument.blocks
+			.get("b1")!
+			.get("content") as Y.Text;
 
 		adapter.transact(
 			doc,
@@ -54,7 +56,9 @@ describe("migration origin (DUR4)", () => {
 		const adapter = yjsAdapter();
 		const doc = seedParagraph(adapter);
 		const undo = createYjsUndoManager(doc);
-		const ytext = doc.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		const ytext = doc.penDocument.blocks
+			.get("b1")!
+			.get("content") as Y.Text;
 
 		doc.ydoc.transact(() => {
 			ytext.insert(0, "schema-bump");

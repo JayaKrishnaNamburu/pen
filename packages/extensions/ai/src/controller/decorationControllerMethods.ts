@@ -8,15 +8,15 @@ import type {
 } from "../types";
 import { areStringArraysEqual } from "../helpers";
 import type {
-	AIControllerMethodHost,
+	AIControllerImpl,
 	StreamingPreviewStatePatch,
-} from "./aiControllerMethodHost";
+} from "./aiController";
 
 export const decorationControllerMethods = {
 	// `extra` lands in the same `_setState` as the preview so a token does
 	// not rebuild decorations twice (generation row + preview row).
 	setStreamingReviewPreview(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		input: AIStreamingReviewPreviewInput,
 		extra?: StreamingPreviewStatePatch,
 	): void {
@@ -31,7 +31,7 @@ export const decorationControllerMethods = {
 	},
 
 	clearStreamingReviewPreview(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		sessionId?: string,
 		extra?: StreamingPreviewStatePatch,
 	): void {
@@ -39,7 +39,7 @@ export const decorationControllerMethods = {
 		applyClearStreamingReviewPreview(this, sessionId, extra);
 	},
 
-	buildDecorations(this: AIControllerMethodHost): Decoration[] {
+	buildDecorations(this: AIControllerImpl): Decoration[] {
 		const decorations = [
 			...buildAIReviewPresentationDecorations({
 				activeGeneration: this._state.activeGeneration,
@@ -55,7 +55,7 @@ export const decorationControllerMethods = {
 	},
 };
 
-function scheduleStreamingPreviewFlush(host: AIControllerMethodHost): void {
+function scheduleStreamingPreviewFlush(host: AIControllerImpl): void {
 	// Node tests have no rAF: apply now so probes that read state between
 	// deltas still see every fragment. The browser batches a TCP burst to
 	// one paint so a chunk of fragments does not run a full reconcile each.
@@ -72,7 +72,7 @@ function scheduleStreamingPreviewFlush(host: AIControllerMethodHost): void {
 	});
 }
 
-function cancelStreamingPreviewFlush(host: AIControllerMethodHost): void {
+function cancelStreamingPreviewFlush(host: AIControllerImpl): void {
 	if (host._streamingPreviewRaf != null) {
 		cancelAnimationFrame(host._streamingPreviewRaf);
 		host._streamingPreviewRaf = null;
@@ -80,7 +80,7 @@ function cancelStreamingPreviewFlush(host: AIControllerMethodHost): void {
 	host._queuedStreamingPreview = null;
 }
 
-function flushQueuedStreamingPreview(host: AIControllerMethodHost): void {
+function flushQueuedStreamingPreview(host: AIControllerImpl): void {
 	const queued = host._queuedStreamingPreview;
 	if (!queued) {
 		return;
@@ -90,7 +90,7 @@ function flushQueuedStreamingPreview(host: AIControllerMethodHost): void {
 }
 
 function applyStreamingReviewPreviews(
-	host: AIControllerMethodHost,
+	host: AIControllerImpl,
 	inputs: readonly AIStreamingReviewPreviewInput[],
 	extra?: StreamingPreviewStatePatch,
 ): void {
@@ -180,7 +180,7 @@ function previewOperation(
 }
 
 function applyClearStreamingReviewPreview(
-	host: AIControllerMethodHost,
+	host: AIControllerImpl,
 	sessionId?: string,
 	extra?: StreamingPreviewStatePatch,
 ): void {

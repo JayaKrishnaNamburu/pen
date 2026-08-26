@@ -25,9 +25,11 @@ describe("facet registry", () => {
 		const registry = createFacetRegistry({
 			providers: [facet.of("core-default")],
 			extensions: [
-				extension("top", [facet.of("top-high", "high"), facet.of("top-default")], [
-					"mid",
-				]),
+				extension(
+					"top",
+					[facet.of("top-high", "high"), facet.of("top-default")],
+					["mid"],
+				),
 				extension("base", [
 					facet.of("base-high-0", "high"),
 					facet.of("base-high-1", "high"),
@@ -36,7 +38,10 @@ describe("facet registry", () => {
 				]),
 				extension(
 					"mid",
-					[facet.of("mid-highest", "highest"), facet.of("mid-low", "low")],
+					[
+						facet.of("mid-highest", "highest"),
+						facet.of("mid-low", "low"),
+					],
 					["base"],
 				),
 			],
@@ -67,7 +72,9 @@ describe("facet registry", () => {
 			createFacetRegistry({
 				providers: [frozen.compute([], () => 1)],
 			}),
-		).toThrow('Computed provider registered for static facet "test.static"');
+		).toThrow(
+			'Computed provider registered for static facet "test.static"',
+		);
 	});
 
 	it("R5: computed facet dependency cycle throws at creation", () => {

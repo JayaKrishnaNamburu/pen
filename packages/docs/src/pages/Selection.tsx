@@ -5,9 +5,9 @@ export function SelectionPage() {
 			<p>
 				Addressing is block-scoped. A point is{" "}
 				<code>{"{ blockId, offset }"}</code> in that block&apos;s text
-				domain. The editor holds one selection at a time. Hosts read
-				and write it through <code>@input/pen-core</code>, not by
-				inferring caret position from the DOM.
+				domain. The editor holds one selection at a time. Hosts read and
+				write it through <code>@input/pen-core</code>, not by inferring
+				caret position from the DOM.
 			</p>
 
 			<h2>Selection kinds</h2>
@@ -73,17 +73,16 @@ if (selection?.type === "text") {
 			<p>
 				<code>@input/pen-dom</code> maps pointer and IME input into
 				logical selection and projects the logical record into the
-				field. The field is a sensor and a display. Overlay carets
-				are presentation; they are not a second source of truth.
+				field. The field is a sensor and a display. Overlay carets are
+				presentation; they are not a second source of truth.
 			</p>
 			<p>
 				A v2 rewrite of the authority, reader, and projector is
-				specified in <code>spec/rules/selection.md</code>. The types
-				and helpers above are what hosts call today. Affinity is
-				specified for v2 and is not a field on today&apos;s{" "}
-				<code>TextSelection</code>. Additive v2 selection types in
-				the types package are not on that package&apos;s public
-				index.
+				specified in <code>spec/rules/selection.md</code>. The types and
+				helpers above are what hosts call today. Affinity is specified
+				for v2 and is not a field on today&apos;s{" "}
+				<code>TextSelection</code>. Additive v2 selection types in the
+				types package are not on that package&apos;s public index.
 			</p>
 		</>
 	);

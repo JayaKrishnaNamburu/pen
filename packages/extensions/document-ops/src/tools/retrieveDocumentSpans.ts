@@ -38,7 +38,9 @@ export function retrieveDocumentSpansTool(editor: Editor): ToolDefinition {
 			};
 			const query = opts.query.trim();
 			if (query.length === 0) {
-				throw new Error("retrieve_document_spans query must be non-empty.");
+				throw new Error(
+					"retrieve_document_spans query must be non-empty.",
+				);
 			}
 			return {
 				query,

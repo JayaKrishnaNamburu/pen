@@ -6,11 +6,11 @@ import {
 	resolveReplacementDeleteBlockIds,
 	shouldReplaceEmptyMarkdownTarget,
 } from "../helpers";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 
-export const fastApplySupportMethods = {
-	_verifyMarkdownFastApplyResult(
-		this: AIControllerMethodHost,
+export const markdownCommitMethods = {
+	_verifyMarkdownCommitResult(
+		this: AIControllerImpl,
 		blockIds: readonly string[],
 		markdown: string,
 	): { valid: boolean; reason?: string } {
@@ -22,7 +22,7 @@ export const fastApplySupportMethods = {
 			format: "markdown",
 			content: markdown,
 			position: startBlockId ? { before: startBlockId } : undefined,
-			surface: "ai-markdown-fast-apply-verify",
+			surface: "ai-markdown-commit-verify",
 		});
 		if (verificationResult.blocks.length === 0) {
 			return {
@@ -34,7 +34,7 @@ export const fastApplySupportMethods = {
 	},
 
 	_buildMarkdownScopedReplacementOps(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		blockIds: readonly string[],
 		text: string,
 	): DocumentOp[] {
@@ -46,7 +46,7 @@ export const fastApplySupportMethods = {
 			format: "markdown",
 			content: text,
 			position: { before: startBlockId },
-			surface: "ai-markdown-fast-apply",
+			surface: "ai-markdown-commit",
 		});
 		return [
 			...ops,
@@ -60,8 +60,8 @@ export const fastApplySupportMethods = {
 		];
 	},
 
-	_summarizeFastApplyFallbackOps(
-		this: AIControllerMethodHost,
+	_summarizeCommitFallbackOps(
+		this: AIControllerImpl,
 		kind: "scoped-replacement" | "plain-markdown",
 		ops: readonly DocumentOp[],
 		targetBlockCount?: number,
@@ -90,25 +90,25 @@ export const fastApplySupportMethods = {
 		};
 	},
 
-	_recordFastApplyDebug(
-		this: AIControllerMethodHost,
+	_recordCommitDebug(
+		this: AIControllerImpl,
 		overrides: Partial<
-			NonNullable<NonNullable<GenerationState["debug"]>["fastApply"]>
+			NonNullable<NonNullable<GenerationState["debug"]>["commit"]>
 		>,
 	): void {
 		const activeGeneration = this._state.activeGeneration;
 		if (!activeGeneration?.debug) {
 			return;
 		}
-		const currentFastApply = activeGeneration.debug.fastApply ?? {
+		const currentCommit = activeGeneration.debug.commit ?? {
 			attempted: false,
 			succeeded: false,
 		};
 		this._resolveActiveGeneration({
 			debug: {
 				...activeGeneration.debug,
-				fastApply: {
-					...currentFastApply,
+				commit: {
+					...currentCommit,
 					...overrides,
 				},
 			},
@@ -116,7 +116,7 @@ export const fastApplySupportMethods = {
 	},
 
 	_applySuggestedMarkdownPlaceholderReplacement(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		blockId: string,
 		text: string,
 		sessionId?: string,
@@ -155,54 +155,5 @@ export const fastApplySupportMethods = {
 		] satisfies DocumentOp[];
 		this._applySuggestedAIOps(replacementOps, sessionId);
 		return replacementOps;
-	},
-
-	_commitStructuredPlan(
-		this: AIControllerMethodHost,
-		ops: DocumentOp[],
-		reviewSafe: boolean,
-		mutationMode: NonNullable<GenerationState["mutationMode"]>,
-		adapterId: NonNullable<GenerationState["adapterId"]>,
-		blockClass: NonNullable<GenerationState["blockClass"]>,
-		transportKind: NonNullable<GenerationState["transportKind"]>,
-	): AIMutationReceipt {
-		if (ops.length === 0) {
-			return buildMutationReceipt({
-				status: "noop",
-				ops,
-				adapterId,
-				blockClass,
-				transportKind,
-			});
-		}
-
-		if (mutationMode === "direct-stream") {
-			this._editor.apply(ops, { origin: "ai", undoGroup: true });
-			return buildMutationReceipt({
-				status: "applied",
-				ops,
-				adapterId,
-				blockClass,
-				transportKind,
-			});
-		}
-
-		if (reviewSafe) {
-			this._applySuggestedAIOps(ops);
-			return buildMutationReceipt({
-				status: "staged_suggestions",
-				ops,
-				adapterId,
-				blockClass,
-				transportKind,
-			});
-		}
-		return buildMutationReceipt({
-			status: "staged_review",
-			ops,
-			adapterId,
-			blockClass,
-			transportKind,
-		});
 	},
 };

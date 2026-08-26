@@ -45,8 +45,14 @@ export function aiSuggestionsExtension(
 
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
-			controller = new AISuggestionsControllerImpl(editor, resolvedConfig);
-			editor.internals.assignSlot(AI_SUGGESTIONS_CONTROLLER_SLOT, controller);
+			controller = new AISuggestionsControllerImpl(
+				editor,
+				resolvedConfig,
+			);
+			editor.internals.assignSlot(
+				AI_SUGGESTIONS_CONTROLLER_SLOT,
+				controller,
+			);
 
 			unsubscribeCommit = editor.on("commit", (event) => {
 				controller?.handleCommit(event);
@@ -56,7 +62,10 @@ export function aiSuggestionsExtension(
 		deactivateClient: async () => {
 			unsubscribeCommit?.();
 			unsubscribeCommit = null;
-			activeEditor?.internals.assignSlot(AI_SUGGESTIONS_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(
+				AI_SUGGESTIONS_CONTROLLER_SLOT,
+				null,
+			);
 			controller?.destroy();
 			controller = null;
 			activeEditor = null;

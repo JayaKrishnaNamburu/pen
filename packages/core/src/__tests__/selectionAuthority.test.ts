@@ -2,7 +2,7 @@ import type {
 	DiagnosticEvent,
 	SelectionRecord,
 	SelectionState,
-	TextSelection
+	TextSelection,
 } from "@input/pen-types";
 import { mapOffsetThroughSplices } from "../changes/mapOffsetThroughSplices";
 import { describe, expect, it } from "vitest";
@@ -12,7 +12,7 @@ import { createChangeSummary } from "../changes/summaryBuilder";
 import {
 	createEditor as createCoreEditor,
 	getEditorSelectionRecord,
-	snapToNormalPosition
+	snapToNormalPosition,
 } from "../index";
 import type { SelectionAuthorityImpl } from "../editor/selection";
 import { getSelectionBlockRange } from "../selection/helpers";
@@ -21,13 +21,13 @@ import { createDefaultSchema } from "./fixtures/testSchema";
 const noDefaultExtensionsPreset = {
 	resolve() {
 		return { extensions: [] };
-	}
+	},
 };
 
 function createEditor() {
 	return createCoreEditor({
 		schema: createDefaultSchema(),
-		preset: noDefaultExtensionsPreset
+		preset: noDefaultExtensionsPreset,
 	});
 }
 
@@ -41,7 +41,9 @@ function runtimeOf(editor: ReturnType<typeof createEditor>): EditorRuntime {
 	return editor as unknown as EditorRuntime;
 }
 
-function authorityOf(editor: ReturnType<typeof createEditor>): SelectionAuthorityImpl {
+function authorityOf(
+	editor: ReturnType<typeof createEditor>,
+): SelectionAuthorityImpl {
 	return runtimeOf(editor)._selection;
 }
 
@@ -52,7 +54,7 @@ function textPayload(
 	return {
 		type: "text",
 		anchor,
-		focus
+		focus,
 	};
 }
 
@@ -61,22 +63,23 @@ describe("SelectionAuthority A1–A6", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
-				to: 0,
-				insert: "ab" },
+			{ type: "splice-text", blockId: id, from: 0, to: 0, insert: "ab" },
 			{
 				type: "splice-text",
 				blockId: id,
 				from: 2,
 				to: 2,
-				insert: { nodeType: "mention", props: { id: "1", label: "Ada" } }
+				insert: {
+					nodeType: "mention",
+					props: { id: "1", label: "Ada" },
+				},
 			},
 		]);
 		editor.selectText(id, 3, 3);
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: id, offset: 3 },
-			focus: { blockId: id, offset: 3 }
+			focus: { blockId: id, offset: 3 },
 		});
 		editor.destroy();
 	});
@@ -91,7 +94,7 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: id, offset: 0 },
-			focus: { blockId: id, offset: 0 }
+			focus: { blockId: id, offset: 0 },
 		});
 		editor.destroy();
 	});
@@ -117,7 +120,9 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).toBe(before);
 		expect(authorityOf(editor).record.version).toBe(version);
 		expect(
-			diagnostics.some((event) => event.code === "selection-invalid-block"),
+			diagnostics.some(
+				(event) => event.code === "selection-invalid-block",
+			),
 		).toBe(true);
 		editor.destroy();
 	});
@@ -126,9 +131,13 @@ describe("SelectionAuthority A1–A6", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(id, 2, 2);
 		const version = authorityOf(editor).record.version;
@@ -140,7 +149,7 @@ describe("SelectionAuthority A1–A6", () => {
 		const current = editor.selection as TextSelection;
 		editor.setSelection({
 			...current,
-			goalX: 144
+			goalX: 144,
 		});
 
 		expect(authorityOf(editor).record.version).toBe(version);
@@ -156,7 +165,7 @@ describe("SelectionAuthority A1–A6", () => {
 		const current = editor.selection as TextSelection;
 		editor.setSelection({
 			...current,
-			affinity: "upstream"
+			affinity: "upstream",
 		});
 		expect(authorityOf(editor).record.version).toBe(version + 1);
 		expect((editor.selection as TextSelection).affinity).toBe("upstream");
@@ -180,9 +189,9 @@ describe("SelectionAuthority A1–A6", () => {
 			state: {
 				type: "text",
 				anchor: { blockId: id, offset: 0 },
-				focus: { blockId: id, offset: 0 }
+				focus: { blockId: id, offset: 0 },
 			},
-			origin: "programmatic"
+			origin: "programmatic",
 		});
 		expect(record.version).toBe(authorityOf(editor).record.version);
 		expect(record.commitId).toBe(authorityOf(editor).record.commitId);
@@ -206,7 +215,9 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).not.toBeNull();
 		expect(authorityOf(editor).record.version).toBe(version);
 		expect(
-			diagnostics.some((event) => event.code === "selection-reserved-origin"),
+			diagnostics.some(
+				(event) => event.code === "selection-reserved-origin",
+			),
 		).toBe(true);
 		editor.destroy();
 	});
@@ -215,9 +226,13 @@ describe("SelectionAuthority A1–A6", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "meadow sage" },
+				insert: "meadow sage",
+			},
 		]);
 		editor.selectText(id, 4, 4);
 		const summary = createChangeSummary({
@@ -226,15 +241,15 @@ describe("SelectionAuthority A1–A6", () => {
 				{
 					blockId: id,
 					splices: [{ from: 0, to: 0, insertLength: 5 }],
-					formatRanges: []
+					formatRanges: [],
 				},
 			],
 			structural: [],
 			index: createBlockIndexSnapshot({
 				roots: [id],
 				lengthById: { [id]: "meadow sage".length },
-				typeById: { [id]: "paragraph" }
-			})
+				typeById: { [id]: "paragraph" },
+			}),
 		});
 		const observedSplices = summary.blockText.find(
 			(change) => change.blockId === id,
@@ -242,17 +257,17 @@ describe("SelectionAuthority A1–A6", () => {
 		const mappedOffset = mapOffsetThroughSplices(observedSplices, 4, 1);
 		const mapped = {
 			anchor: { blockId: id, offset: mappedOffset },
-			focus: { blockId: id, offset: mappedOffset }
+			focus: { blockId: id, offset: mappedOffset },
 		};
 		authorityOf(editor).onCommit(summary);
 		expect(mapped).toEqual({
 			anchor: { blockId: id, offset: 9 },
-			focus: { blockId: id, offset: 9 }
+			focus: { blockId: id, offset: 9 },
 		});
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: id, offset: 9 },
-			focus: { blockId: id, offset: 9 }
+			focus: { blockId: id, offset: 9 },
 		});
 		expect(authorityOf(editor).record.origin).toBe("mapped");
 		editor.destroy();
@@ -267,11 +282,15 @@ describe("SelectionAuthority A1–A6", () => {
 				blockId: "keep",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
-			{ type: "splice-text", blockId: "keep", from: 0,
+			{
+				type: "splice-text",
+				blockId: "keep",
+				from: 0,
 				to: 0,
-				insert: "stay" },
+				insert: "stay",
+			},
 		]);
 		editor.selectText(initial, 0, 0);
 		editor.apply([{ type: "delete-block", blockId: initial }]);
@@ -280,7 +299,7 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: "keep" },
-			focus: { blockId: "keep" }
+			focus: { blockId: "keep" },
 		});
 		expect(authorityOf(editor).record.origin).toBe("mapped");
 		editor.destroy();
@@ -299,8 +318,8 @@ describe("SelectionAuthority A1–A6", () => {
 				index: createBlockIndexSnapshot({
 					roots: [id],
 					lengthById: { [id]: 0 },
-					typeById: { [id]: "paragraph" }
-				})
+					typeById: { [id]: "paragraph" },
+				}),
 			}),
 		);
 		expect(authorityOf(editor).record.version).toBe(version);
@@ -310,9 +329,15 @@ describe("SelectionAuthority A1–A6", () => {
 	it("A5: mapped writes emit selectionChange after commit listeners", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
-		editor.apply([{ type: "splice-text", blockId: id, from: 0,
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "Hello" }]);
+				insert: "Hello",
+			},
+		]);
 		editor.selectText(id, 2, 2);
 		const order: string[] = [];
 		const changes: SelectionRecord[] = [];
@@ -323,14 +348,14 @@ describe("SelectionAuthority A1–A6", () => {
 		editor.on("commit", () => {
 			order.push("commit");
 		});
-		editor.apply([{ type: "splice-text", blockId: id, from: 0,
-				to: 0,
-				insert: "xxx" }]);
+		editor.apply([
+			{ type: "splice-text", blockId: id, from: 0, to: 0, insert: "xxx" },
+		]);
 		expect(order).toEqual(["commit", "selection"]);
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: id, offset: 5 },
-			focus: { blockId: id, offset: 5 }
+			focus: { blockId: id, offset: 5 },
 		});
 		expect(authorityOf(editor).record.origin).toBe("mapped");
 		expect(changes).toHaveLength(1);
@@ -359,7 +384,7 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(changes[0]).toMatchObject({
 			state: null,
 			version: version + 1,
-			origin: "programmatic"
+			origin: "programmatic",
 		});
 		expect(changes[0]).not.toBeNull();
 		editor.destroy();
@@ -374,13 +399,17 @@ describe("SelectionAuthority A1–A6", () => {
 				blockId: "second",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 		]);
 		editor.apply([
-			{ type: "splice-text", blockId: first, from: 0,
+			{
+				type: "splice-text",
+				blockId: first,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(first, 2, 2);
 		editor.selectAll();
@@ -388,13 +417,13 @@ describe("SelectionAuthority A1–A6", () => {
 			type: "text",
 			anchor: { blockId: first, offset: 0 },
 			focus: { blockId: first, offset: 5 },
-			affinity: "downstream"
+			affinity: "downstream",
 		});
 		editor.selectAll();
 		expect(editor.selection).toMatchObject({
 			type: "block",
 			blockIds: [first, "second"],
-			head: "second"
+			head: "second",
 		});
 		editor.destroy();
 	});
@@ -403,13 +432,19 @@ describe("SelectionAuthority A1–A6", () => {
 		const editor = createEditor();
 		const p1 = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: p1, from: 0, to: 0, insert: "Hello" },
+			{
+				type: "splice-text",
+				blockId: p1,
+				from: 0,
+				to: 0,
+				insert: "Hello",
+			},
 			{
 				type: "insert-block",
 				blockId: "d1",
 				blockType: "divider",
 				props: {},
-				position: { after: p1 }
+				position: { after: p1 },
 			},
 		]);
 		editor.selectTextRange(
@@ -419,7 +454,7 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: p1, offset: 2 },
-			focus: { blockId: "d1", offset: 1 }
+			focus: { blockId: "d1", offset: 1 },
 		});
 		editor.destroy();
 	});
@@ -433,16 +468,22 @@ describe("SelectionAuthority A1–A6", () => {
 				blockId: "d1",
 				blockType: "divider",
 				props: {},
-				position: { after: p1 }
+				position: { after: p1 },
 			},
 			{
 				type: "insert-block",
 				blockId: "p2",
 				blockType: "paragraph",
 				props: {},
-				position: { after: "d1" }
+				position: { after: "d1" },
 			},
-			{ type: "splice-text", blockId: "p2", from: 0, to: 0, insert: "World" },
+			{
+				type: "splice-text",
+				blockId: "p2",
+				from: 0,
+				to: 0,
+				insert: "World",
+			},
 		]);
 		editor.selectTextRange(
 			{ blockId: "d1", offset: 0 },
@@ -451,7 +492,7 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: "d1", offset: 0 },
-			focus: { blockId: "p2", offset: 2 }
+			focus: { blockId: "p2", offset: 2 },
 		});
 		editor.destroy();
 	});
@@ -464,7 +505,7 @@ describe("SelectionAuthority A1–A6", () => {
 				blockId: "d1",
 				blockType: "divider",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 		]);
 		editor.selectTextRange(
@@ -474,7 +515,7 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).toMatchObject({
 			type: "block",
 			blockIds: ["d1"],
-			head: "d1"
+			head: "d1",
 		});
 		editor.destroy();
 	});
@@ -487,14 +528,14 @@ describe("SelectionAuthority A1–A6", () => {
 				blockId: "t1",
 				blockType: "table",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 		]);
 		editor.selectText("t1", 0, 0);
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: "t1", offset: 0 },
-			focus: { blockId: "t1", offset: 0 }
+			focus: { blockId: "t1", offset: 0 },
 		});
 		editor.destroy();
 	});
@@ -508,13 +549,13 @@ describe("SelectionAuthority A1–A6", () => {
 				blockId: "b",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 		]);
 		const lying: TextSelection = {
 			type: "text",
 			anchor: { blockId: first, offset: 0 },
-			focus: { blockId: "b", offset: 0 }
+			focus: { blockId: "b", offset: 0 },
 		};
 		expect(getSelectionBlockRange(runtimeOf(editor)._doc, lying)).toEqual([
 			first,
@@ -538,7 +579,7 @@ describe("editor.selectionRecord", () => {
 		expect(after!.state).toMatchObject({
 			type: "text",
 			anchor: { blockId: id, offset: 0 },
-			focus: { blockId: id, offset: 0 }
+			focus: { blockId: id, offset: 0 },
 		});
 		expect(
 			(editor as unknown as { selectionRecord: { version: number } })
@@ -564,14 +605,10 @@ describe("snapToNormalPosition barrel", () => {
 	it("exports the core snap, not a second adapter", () => {
 		const snapshot = {
 			blockOrder: ["p1"],
-			blocks: { p1: { kind: "text" as const, text: "hello" } }
+			blocks: { p1: { kind: "text" as const, text: "hello" } },
 		};
 		expect(
-			snapToNormalPosition(
-				snapshot,
-				{ blockId: "p1", offset: 2 },
-				1,
-			),
+			snapToNormalPosition(snapshot, { blockId: "p1", offset: 2 }, 1),
 		).toEqual({ blockId: "p1", offset: 2 });
 	});
 });

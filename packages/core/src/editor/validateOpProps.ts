@@ -1,4 +1,8 @@
-import type { BlockSchema, DiagnosticEvent, PropSchema } from "@input/pen-types";
+import type {
+	BlockSchema,
+	DiagnosticEvent,
+	PropSchema,
+} from "@input/pen-types";
 
 import { deepEqual } from "../schema/normalize";
 

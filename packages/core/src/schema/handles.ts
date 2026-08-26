@@ -94,7 +94,8 @@ class BlockHandleImpl implements TableBlockHandle {
 
 		if (schema?.propSchema) {
 			for (const [key, propDef] of Object.entries(schema.propSchema)) {
-				const defaultValue = (propDef as Record<string, unknown>).default;
+				const defaultValue = (propDef as Record<string, unknown>)
+					.default;
 				if (defaultValue !== undefined) {
 					props[key] = defaultValue;
 				}

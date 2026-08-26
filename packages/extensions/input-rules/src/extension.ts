@@ -67,7 +67,10 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 				{ priority: 300 },
 			);
 
-			ctx.editor.internals.assignSlot(INPUT_RULES_ENGINE_SLOT_KEY, engine);
+			ctx.editor.internals.assignSlot(
+				INPUT_RULES_ENGINE_SLOT_KEY,
+				engine,
+			);
 		},
 
 		deactivateClient: async () => {
@@ -104,9 +107,14 @@ function appendInputRuleTransforms(
 			continue;
 		}
 
-		const inlineResult = engine.tryMatchInline(editor, op.blockId, op.insert, {
-			offset: op.from,
-		});
+		const inlineResult = engine.tryMatchInline(
+			editor,
+			op.blockId,
+			op.insert,
+			{
+				offset: op.from,
+			},
+		);
 		if (inlineResult) {
 			transformedOps.push(...inlineResult);
 		}

@@ -1,9 +1,7 @@
 import type { CommandResult, Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 
-import {
-	buildSplitBlockRecipe,
-} from "../ops/recipes";
+import { buildSplitBlockRecipe } from "../ops/recipes";
 import {
 	CONTAINER_EXIT_TYPES,
 	collapsedAt,

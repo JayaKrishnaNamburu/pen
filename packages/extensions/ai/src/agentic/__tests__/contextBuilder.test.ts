@@ -19,7 +19,8 @@ function createStructuredEditor(): Editor {
 		documentProfile: "structured",
 		schema: defaultSchema,
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
-		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
+		getBlock: (blockId: string) =>
+			blocks.find((block) => block.id === blockId) ?? null,
 		facet: () => null,
 		undoManager: {
 			stopCapturing: vi.fn(),
@@ -30,7 +31,12 @@ function createStructuredEditor(): Editor {
 describe("buildToolContext", () => {
 	it("reuses the guarded document-ops mutation policy", () => {
 		const editor = createStructuredEditor();
-		const context = buildToolContext(editor, "zone-1", "subdocument-1", null);
+		const context = buildToolContext(
+			editor,
+			"zone-1",
+			"subdocument-1",
+			null,
+		);
 
 		expect(() =>
 			context.updateBlock("subdocument-1", { title: "Forbidden" }),

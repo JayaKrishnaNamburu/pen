@@ -160,7 +160,9 @@ describe("I6 headless keymap catalog", () => {
 			handled[`${binding.key}->${binding.command.name}`] =
 				dispatchBinding(binding);
 		}
-		expect(Object.keys(handled).sort()).toEqual(catalogKeys("macos").sort());
+		expect(Object.keys(handled).sort()).toEqual(
+			catalogKeys("macos").sort(),
+		);
 		expect(Object.values(handled).every(Boolean)).toBe(true);
 	});
 
@@ -188,9 +190,9 @@ describe("I6 headless keymap catalog", () => {
 		}
 
 		const editor = setupFor(down);
-		expect(liveRegistry(editor).dispatch(down.command, down.param as never)).toBe(
-			true,
-		);
+		expect(
+			liveRegistry(editor).dispatch(down.command, down.param as never),
+		).toBe(true);
 		expect(caretOf(editor)).toEqual({ blockId: "b", offset: 0 });
 		expect(editor.getBlock("a")?.textContent()).toBe("aa hello");
 		editor.destroy();
@@ -247,7 +249,10 @@ describe("I6 headless keymap catalog", () => {
 
 		const splitEditor = setupFor(enter);
 		expect(
-			liveRegistry(splitEditor).dispatch(enter.command, enter.param as never),
+			liveRegistry(splitEditor).dispatch(
+				enter.command,
+				enter.param as never,
+			),
 		).toBe(true);
 		expect(splitEditor.getBlock("a")?.textContent()).toBe("he");
 		expect(caretOf(splitEditor).offset).toBe(0);

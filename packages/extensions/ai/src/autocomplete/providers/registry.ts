@@ -4,7 +4,10 @@ import type {
 } from "./types";
 
 export class AutocompleteProviderRegistry {
-	private readonly _providers = new Map<string, AutocompleteContextProvider>();
+	private readonly _providers = new Map<
+		string,
+		AutocompleteContextProvider
+	>();
 
 	constructor(initialProviders: readonly AutocompleteContextProvider[] = []) {
 		for (const provider of initialProviders) {
@@ -25,17 +28,22 @@ export class AutocompleteProviderRegistry {
 		return Array.from(this._providers.values()).sort((left, right) => {
 			const leftPriority = left.priority ?? 0;
 			const rightPriority = right.priority ?? 0;
-			return rightPriority - leftPriority || left.id.localeCompare(right.id, "en");
+			return (
+				rightPriority - leftPriority ||
+				left.id.localeCompare(right.id, "en")
+			);
 		});
 	}
 
 	listProviderDescriptors(): readonly AutocompleteProviderDescriptor[] {
 		return this.listProviders().map((provider) => {
 			const described = provider.describe?.();
-			return described ?? {
-				id: provider.id,
-				description: provider.id,
-			};
+			return (
+				described ?? {
+					id: provider.id,
+					description: provider.id,
+				}
+			);
 		});
 	}
 }

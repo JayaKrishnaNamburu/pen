@@ -14,16 +14,13 @@
 - acceptSuggestion
 - aiExtension
 - applySuggestedAIOperations
-- buildStructuredIntentModelPrompt
 - createSuggestionMark
 - getAIController
 - getAIInlineCompletionController
 - getAIInlineHistoryController
 - getAIReviewController
 - getBlockAdapter
-- getStructuredIntentOutputSchema
 - listBlockAdapters
-- parseStructuredIntentRequestPrompt
 - readAllSuggestions
 - readBlockSuggestionMeta
 - readSuggestionsFromBlock
@@ -32,15 +29,9 @@
 - resolveBlockAdapter
 - resolveBlockAdapterContentFormat
 - runAgenticLoop
-- validateDocumentMutationPlanShape
-
-### guard
-
-- isDocumentMutationPlan
 
 ### value
 
-- AI_APPLY_STRATEGIES
 - AI_BLOCK_ADAPTER_IDS
 - AI_BLOCK_CLASSES
 - AI_EGRESS_INVENTORY_CODE
@@ -49,23 +40,19 @@
 - AI_FEATURE_CONTENT
 - AI_REQUEST_REFUSED_CODE
 - AI_SESSION_SUGGESTION_ORIGIN
-- AI_STRUCTURED_LANES
 - AI_TARGET_KINDS
 - AI_TOOL_RESULT_MAX_CHARS
 - AI_TRANSPORT_KINDS
 - aiEgressExtension
 - aiEgressFacet
 - defaultAICommands
-- DOCUMENT_MUTATION_PLAN_KINDS
 - filterAIRequest
-- PLAN_VALIDATION_SEVERITIES
 - streamThroughEgress
 - SUGGESTION_RESOLUTION_ORIGIN
 
 ### type
 
 - AgenticStep
-- AIApplyStrategy
 - AIAwarenessState
 - AIBlockAdapterId
 - AIBlockClass
@@ -98,7 +85,7 @@
 - AIReviewController
 - AISession
 - AISessionAnchor
-- AISessionFastApplyMetrics
+- AISessionCommitMetrics
 - AISessionMetrics
 - AISessionPrompt
 - AISessionResolution
@@ -110,7 +97,6 @@
 - AIStreamingReviewPreview
 - AIStreamingReviewPreviewInput
 - AIStreamingReviewPreviewTarget
-- AIStructuredLane
 - AISuggestionPresentation
 - AISurface
 - AITargetKind
@@ -119,22 +105,13 @@
 - ApplySuggestedAIOperationsOptions
 - ApplySuggestedAIOperationsResult
 - BlockSuggestionMeta
-- DocumentMutationPlan
-- DocumentMutationPlanKind
+- CommitDebugState
 - EphemeralSuggestion
-- FastApplyDebugState
-- GenerationPlanState
 - GenerationState
 - GenerationTargetKind
 - PersistentBlockSuggestion
 - PersistentSuggestion
 - PersistentTextSuggestion
-- PlanValidationContext
-- PlanValidationIssue
-- PlanValidationResult
-- PlanValidationSeverity
-- StructuralReviewComparisonRow
-- StructuralReviewItem
 - StructuredGenerationDebugState
 
 ## ./suggestions

@@ -1,4 +1,9 @@
-import type { AutocompleteBlockPolicy, AutocompleteControllerSnapshot, AutocompleteControllerState, AutocompletePolicyInvalidationStage } from "./types";
+import type {
+	AutocompleteBlockPolicy,
+	AutocompleteControllerSnapshot,
+	AutocompleteControllerState,
+	AutocompletePolicyInvalidationStage,
+} from "./types";
 import type { AutocompleteProviderDescriptor } from "./providers/types";
 
 export function areBlockPoliciesEqual(

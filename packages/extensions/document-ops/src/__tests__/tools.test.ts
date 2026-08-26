@@ -24,8 +24,8 @@ function createFakeEditor(documentProfile: Editor["documentProfile"]): Editor {
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		facet: () => null,
 		internals: {
-			emit: vi.fn()
-		}
+			emit: vi.fn(),
+		},
 	} as unknown as Editor;
 }
 
@@ -35,7 +35,10 @@ function createMockBlockHandle(input: {
 	props?: Record<string, unknown>;
 	children?: unknown[];
 	textContent: (options?: { resolved?: boolean }) => string;
-	textDeltas: () => Array<{ insert: string; attributes?: Record<string, unknown> }>;
+	textDeltas: () => Array<{
+		insert: string;
+		attributes?: Record<string, unknown>;
+	}>;
 	prev?: unknown;
 	next?: unknown;
 }): {
@@ -44,7 +47,10 @@ function createMockBlockHandle(input: {
 	props: Record<string, unknown>;
 	children: unknown[];
 	textContent: (options?: { resolved?: boolean }) => string;
-	textDeltas: () => Array<{ insert: string; attributes?: Record<string, unknown> }>;
+	textDeltas: () => Array<{
+		insert: string;
+		attributes?: Record<string, unknown>;
+	}>;
 	tableRowCount: () => number;
 	tableColumnCount: () => number;
 	tableCell: () => null;
@@ -66,8 +72,10 @@ function createMockBlockHandle(input: {
 		tableRow: () => null,
 		tableColumns: () => [],
 		as(capability: string) {
-			return capability === "table" && handle.type === "table" ? handle : null;
-		}
+			return capability === "table" && handle.type === "table"
+				? handle
+				: null;
+		},
 	};
 	return handle;
 }
@@ -81,7 +89,7 @@ function createReadDocumentEditor(): Editor {
 			children: [],
 			textContent: (options?: { resolved?: boolean }) =>
 				options?.resolved ? "First accepted" : "First accepted",
-			textDeltas: () => [{ insert: "First accepted" }]
+			textDeltas: () => [{ insert: "First accepted" }],
 		}),
 		createMockBlockHandle({
 			id: "block-2",
@@ -92,8 +100,11 @@ function createReadDocumentEditor(): Editor {
 				options?.resolved ? "Second" : "Second draft",
 			textDeltas: () => [
 				{ insert: "Second" },
-				{ insert: " draft", attributes: { suggestion: { action: "delete" } } },
-			]
+				{
+					insert: " draft",
+					attributes: { suggestion: { action: "delete" } },
+				},
+			],
 		}),
 		createMockBlockHandle({
 			id: "block-3",
@@ -102,7 +113,7 @@ function createReadDocumentEditor(): Editor {
 			children: [],
 			textContent: (options?: { resolved?: boolean }) =>
 				options?.resolved ? "Third" : "Third",
-			textDeltas: () => [{ insert: "Third" }]
+			textDeltas: () => [{ insert: "Third" }],
 		}),
 	] as const;
 	for (const block of blocks) {
@@ -116,13 +127,14 @@ function createReadDocumentEditor(): Editor {
 		facet: () => null,
 		blockCount: () => 3,
 		blocks: () => blocks,
-		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
+		getBlock: (blockId: string) =>
+			blocks.find((block) => block.id === blockId) ?? null,
 		getSelection: () => ({
 			type: "text",
 			anchor: { blockId: "block-2", offset: 0 },
-			focus: { blockId: "block-2", offset: 6 }
+			focus: { blockId: "block-2", offset: 6 },
 		}),
-		getSelectedText: () => "Second"
+		getSelectedText: () => "Second",
 	} as unknown as Editor;
 }
 
@@ -142,8 +154,10 @@ function createStructuredTargetEditor(
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
 			as(capability: string) {
-				return capability === "table" && this.type === "table" ? this : null;
-			}
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
 		},
 		{
 			id: "table-1",
@@ -159,8 +173,10 @@ function createStructuredTargetEditor(
 				{ id: "col-2", title: "Status", type: "text" as const },
 			],
 			as(capability: string) {
-				return capability === "table" && this.type === "table" ? this : null;
-			}
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
 		},
 		{
 			id: "subdocument-1",
@@ -173,8 +189,10 @@ function createStructuredTargetEditor(
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
 			as(capability: string) {
-				return capability === "table" && this.type === "table" ? this : null;
-			}
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
 		},
 	];
 
@@ -184,12 +202,13 @@ function createStructuredTargetEditor(
 		facet: () => null,
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		blocks: () => blocks,
-		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
+		getBlock: (blockId: string) =>
+			blocks.find((block) => block.id === blockId) ?? null,
 		getSelection: () => ({
 			type: "block",
-			blockIds: [activeBlockId]
+			blockIds: [activeBlockId],
 		}),
-		getSelectedText: () => ""
+		getSelectedText: () => "",
 	} as unknown as Editor;
 }
 
@@ -201,7 +220,7 @@ function createNestedDocumentEditor(): Editor {
 			props: { level: 1 },
 			children: [],
 			textContent: () => "Architecture",
-			textDeltas: () => [{ insert: "Architecture" }]
+			textDeltas: () => [{ insert: "Architecture" }],
 		}),
 		createMockBlockHandle({
 			id: "layout-1",
@@ -209,7 +228,7 @@ function createNestedDocumentEditor(): Editor {
 			props: {},
 			children: [],
 			textContent: () => "",
-			textDeltas: () => []
+			textDeltas: () => [],
 		}),
 	];
 	const nestedBlocks = [
@@ -221,7 +240,9 @@ function createNestedDocumentEditor(): Editor {
 			props: {},
 			children: [],
 			textContent: () => "Fast apply preserves stable block identity.",
-			textDeltas: () => [{ insert: "Fast apply preserves stable block identity." }]
+			textDeltas: () => [
+				{ insert: "Fast apply preserves stable block identity." },
+			],
 		}),
 	];
 
@@ -231,16 +252,16 @@ function createNestedDocumentEditor(): Editor {
 		facet: () => null,
 		blocks: () => topLevelBlocks,
 		documentState: {
-			allBlocks: () => nestedBlocks
+			allBlocks: () => nestedBlocks,
 		},
 		getBlock: (blockId: string) =>
 			nestedBlocks.find((block) => block.id === blockId) ?? null,
 		getSelection: () => ({
 			type: "text",
 			anchor: { blockId: "paragraph-1", offset: 0 },
-			focus: { blockId: "paragraph-1", offset: 4 }
+			focus: { blockId: "paragraph-1", offset: 4 },
 		}),
-		getSelectedText: () => "Fast"
+		getSelectedText: () => "Fast",
 	} as unknown as Editor;
 }
 
@@ -249,25 +270,30 @@ describe("@input/pen-document-ops tools", () => {
 		const structuredEditor = createFakeEditor("structured");
 		const flowEditor = createFakeEditor("flow");
 
-		const structuredTypes = (await listBlockTypesTool(structuredEditor).handler(
-			{},
-			{} as never,
-		)) as Array<{ type: string }>;
+		const structuredTypes = (await listBlockTypesTool(
+			structuredEditor,
+		).handler({}, {} as never)) as Array<{ type: string }>;
 		const flowTypes = (await listBlockTypesTool(flowEditor).handler(
 			{},
 			{} as never,
 		)) as Array<{ type: string }>;
 
 		expect(structuredTypes.map((entry) => entry.type)).toContain("table");
-		expect(structuredTypes.map((entry) => entry.type)).not.toContain("subdocument");
+		expect(structuredTypes.map((entry) => entry.type)).not.toContain(
+			"subdocument",
+		);
 		expect(flowTypes.map((entry) => entry.type)).toContain("table");
-		expect(flowTypes.map((entry) => entry.type)).not.toContain("subdocument");
-		expect(structuredTypes.find((entry) => entry.type === "table")).toMatchObject({
+		expect(flowTypes.map((entry) => entry.type)).not.toContain(
+			"subdocument",
+		);
+		expect(
+			structuredTypes.find((entry) => entry.type === "table"),
+		).toMatchObject({
 			type: "table",
 			content: "table",
 			fieldEditor: "table",
 			flowCapability: "flow-delegated",
-			selectionRole: "delegated"
+			selectionRole: "delegated",
 		});
 	});
 
@@ -278,7 +304,7 @@ describe("@input/pen-document-ops tools", () => {
 			insertBlockTool(editor).handler(
 				{
 					position: "last",
-					blockType: "subdocument"
+					blockType: "subdocument",
 				},
 				{} as never,
 			),
@@ -295,11 +321,13 @@ describe("@input/pen-document-ops tools", () => {
 		await expect(
 			writeDocumentTool(editor).handler(
 				{
-					blocks: [{ blockType: "subdocument", content: "Rows" }]
+					blocks: [{ blockType: "subdocument", content: "Rows" }],
 				},
 				{} as never,
 			),
-		).rejects.toThrow('Block type "subdocument" is not available in structured documents.');
+		).rejects.toThrow(
+			'Block type "subdocument" is not available in structured documents.',
+		);
 
 		expect(editor.apply).not.toHaveBeenCalled();
 	});
@@ -313,11 +341,13 @@ describe("@input/pen-document-ops tools", () => {
 					blocks: [
 						{ blockType: "paragraph", content: "Allowed" },
 						{ blockType: "subdocument", content: "Blocked" },
-					]
+					],
 				},
 				{} as never,
 			),
-		).rejects.toThrow('Block type "subdocument" is not available in structured documents.');
+		).rejects.toThrow(
+			'Block type "subdocument" is not available in structured documents.',
+		);
 
 		expect(editor.apply).not.toHaveBeenCalled();
 	});
@@ -325,37 +355,38 @@ describe("@input/pen-document-ops tools", () => {
 	it("writes markdown content as structured blocks", async () => {
 		const editor = createFakeEditor("structured");
 
-		const result = await writeDocumentTool(editor).handler(
+		const result = (await writeDocumentTool(editor).handler(
 			{
 				format: "markdown",
 				content: "# Heading\n\n- Item",
-				position: "last"
+				position: "last",
 			},
 			{} as never,
-		) as {
+		)) as {
 			blockIds: string[];
 		};
 		const appliedOps = vi.mocked(editor.apply).mock.calls[0]?.[0] ?? [];
 
 		expect(result.blockIds).toHaveLength(2);
-		expect(appliedOps.filter((op) => op.type === "insert-block")).toHaveLength(2);
+		expect(
+			appliedOps.filter((op) => op.type === "insert-block"),
+		).toHaveLength(2);
 		expect(appliedOps[0]).toMatchObject({
 			type: "insert-block",
 			blockType: "heading",
-			position: "last"
+			position: "last",
 		});
 		expect(appliedOps[1]).toMatchObject({
 			type: "splice-text",
-			insert: "Heading"
+			insert: "Heading",
 		});
 		expect(appliedOps[2]).toMatchObject({
 			type: "insert-block",
-			blockType: "bulletListItem"
+			blockType: "bulletListItem",
 		});
 		expect(appliedOps[3]).toMatchObject({
 			type: "splice-text",
-			insert: "Item"
+			insert: "Item",
 		});
 	});
-
 });

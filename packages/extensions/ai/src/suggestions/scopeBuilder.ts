@@ -33,7 +33,11 @@ export function buildSuggestionScope(
 		text.length,
 	);
 	const sentenceRange = findSentenceRange(text, anchorOffset);
-	const boundedRange = clampRangeToMaxChars(text, sentenceRange, maxScopeChars);
+	const boundedRange = clampRangeToMaxChars(
+		text,
+		sentenceRange,
+		maxScopeChars,
+	);
 	const targetText = text.slice(boundedRange.from, boundedRange.to);
 	if (!targetText.trim()) {
 		return null;
@@ -51,7 +55,6 @@ export function buildSuggestionScope(
 			to: boundedRange.to,
 			hash: `${block.id}:${normalizeScopeText(targetText)}`,
 			documentGeneration: editor.documentState.generation,
-			blockRevision: editor.getBlockRevision(block.id),
 		},
 		contextBefore: text.slice(
 			Math.max(0, boundedRange.from - contextRadius),

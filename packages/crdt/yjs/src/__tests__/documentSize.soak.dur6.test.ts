@@ -56,8 +56,6 @@ describe("document-size soak (DUR6)", () => {
 		]);
 		expect(trend.every((sample) => sample.blockCount === 1)).toBe(true);
 		expect(trend.every((sample) => sample.gcEnabled === false)).toBe(true);
-		expect(
-			trend.every((sample) => sample.encodedByteSize > 0),
-		).toBe(true);
+		expect(trend.every((sample) => sample.encodedByteSize > 0)).toBe(true);
 	});
 });

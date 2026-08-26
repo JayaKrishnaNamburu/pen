@@ -98,8 +98,7 @@ function readCellContext(editor: Editor): {
 	}
 
 	const table = editor.getBlock(selection.blockId)?.as("table");
-	const rowCount =
-		selection.rowIds?.length ?? table?.tableRowCount() ?? 0;
+	const rowCount = selection.rowIds?.length ?? table?.tableRowCount() ?? 0;
 	const colCount =
 		selection.columnIds?.length ?? table?.tableColumnCount() ?? 0;
 	if (rowCount <= 0 || colCount <= 0) {
@@ -138,7 +137,9 @@ function selectionOutsideTable(
 		const lastRow = Math.max((table?.tableRowCount() ?? 1) - 1, 0);
 		const lastCol = Math.max((table?.tableColumnCount() ?? 1) - 1, 0);
 		const coord =
-			edge === "end" ? { row: lastRow, col: lastCol } : { row: 0, col: 0 };
+			edge === "end"
+				? { row: lastRow, col: lastCol }
+				: { row: 0, col: 0 };
 		return cellSelectionResult(blockId, coord);
 	}
 	if (isEditableTextBlock(editor, blockId)) {

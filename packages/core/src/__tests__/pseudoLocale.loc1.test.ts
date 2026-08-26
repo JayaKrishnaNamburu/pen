@@ -17,8 +17,8 @@ describe("pseudo-locale catalog (LOC1)", () => {
 		expect(catalog["pen.editor.label"]).toBe(
 			`${PSEUDO_LOCALE_OPEN}Editor${PSEUDO_LOCALE_CLOSE}`,
 		);
-		expect(catalog["pen.ai.review.block"]).toBe(
-			`${PSEUDO_LOCALE_OPEN}Block "{blockId}"${PSEUDO_LOCALE_CLOSE}`,
+		expect(catalog["pen.ai.review.blockSuggestion.insert"]).toBe(
+			`${PSEUDO_LOCALE_OPEN}Insert {blockType}${PSEUDO_LOCALE_CLOSE}`,
 		);
 		const blocks = catalog["pen.selection.blocksSelected"];
 		expect(blocks).toMatchObject({
@@ -29,7 +29,8 @@ describe("pseudo-locale catalog (LOC1)", () => {
 
 	it("LOC1: resolved chrome is transformed and longer than English", () => {
 		const editor = createHeadlessEditor({
-			schema: defaultSchema,messages: createPseudoLocaleCatalog(),
+			schema: defaultSchema,
+			messages: createPseudoLocaleCatalog(),
 		});
 		const label = resolveEditorMessage(editor, "pen.editor.label");
 		expect(isPseudoLocaleText(label)).toBe(true);
@@ -38,10 +39,14 @@ describe("pseudo-locale catalog (LOC1)", () => {
 			String(DEFAULT_MESSAGE_CATALOG["pen.editor.label"]).length,
 		);
 		expect(
-			resolveEditorMessage(editor, "pen.ai.review.block", {
-				blockId: "b1",
-			}),
-		).toBe(`${PSEUDO_LOCALE_OPEN}Block "b1"${PSEUDO_LOCALE_CLOSE}`);
+			resolveEditorMessage(
+				editor,
+				"pen.ai.review.blockSuggestion.insert",
+				{
+					blockType: "paragraph",
+				},
+			),
+		).toBe(`${PSEUDO_LOCALE_OPEN}Insert paragraph${PSEUDO_LOCALE_CLOSE}`);
 		editor.destroy();
 	});
 });

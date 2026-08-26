@@ -1,11 +1,7 @@
 import type { CommitEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
-import {
-	deleteBackward,
-	deleteForward,
-	splitBlock,
-} from "../commands";
+import { deleteBackward, deleteForward, splitBlock } from "../commands";
 import { buildMergeBlocksRecipe, buildSplitBlockRecipe } from "../ops/recipes";
 import {
 	caretOf,

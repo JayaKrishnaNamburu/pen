@@ -15,7 +15,9 @@ function cellOf(editor: ReturnType<typeof createCommandEditor>): {
 } {
 	const selection = editor.selection;
 	if (!selection || selection.type !== "cell") {
-		throw new Error(`expected cell selection, got ${selection?.type ?? "null"}`);
+		throw new Error(
+			`expected cell selection, got ${selection?.type ?? "null"}`,
+		);
 	}
 	return {
 		blockId: selection.blockId,
@@ -26,9 +28,7 @@ function cellOf(editor: ReturnType<typeof createCommandEditor>): {
 
 describe("table commands", () => {
 	it("cellNext walks linearly and stays on the last cell", () => {
-		const editor = createCommandEditor([
-			{ id: "t", type: "table" },
-		]);
+		const editor = createCommandEditor([{ id: "t", type: "table" }]);
 		const registry = createCommandHarness(editor);
 		editor.selectCell("t", 0, 0);
 
@@ -47,9 +47,7 @@ describe("table commands", () => {
 	});
 
 	it("cellPrev is the reverse walk and stays on the first cell", () => {
-		const editor = createCommandEditor([
-			{ id: "t", type: "table" },
-		]);
+		const editor = createCommandEditor([{ id: "t", type: "table" }]);
 		const registry = createCommandHarness(editor);
 		editor.selectCell("t", 1, 0);
 
@@ -63,9 +61,7 @@ describe("table commands", () => {
 	});
 
 	it("cellDown moves one row in the same column and clamps on the last row", () => {
-		const editor = createCommandEditor([
-			{ id: "t", type: "table" },
-		]);
+		const editor = createCommandEditor([{ id: "t", type: "table" }]);
 		const registry = createCommandHarness(editor);
 		editor.selectCell("t", 0, 1);
 

@@ -143,7 +143,9 @@ export function getFacetSpec<Input, Output>(
 	return spec as FacetSpec<Input, Output>;
 }
 
-export function getProviderRecord(provider: FacetProvider): FacetProviderRecord {
+export function getProviderRecord(
+	provider: FacetProvider,
+): FacetProviderRecord {
 	const record = facetProcessState().providerRecords.get(provider);
 	if (!record) {
 		throw new Error(unknownCopyMessage("provider", provider.facetName));

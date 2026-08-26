@@ -24,17 +24,17 @@ describe("change summaries — two-cell collision", () => {
 				type: "splice-text",
 				blockId: "two-cell-table",
 				cell: { row: 0, col: 0 },
-			from: 0,
-			to: 0,
-			insert: NORTH,
+				from: 0,
+				to: 0,
+				insert: NORTH,
 			},
 			{
 				type: "splice-text",
 				blockId: "two-cell-table",
 				cell: { row: 1, col: 1 },
-			from: 0,
-			to: 0,
-			insert: SOUTH,
+				from: 0,
+				to: 0,
+				insert: SOUTH,
 			},
 		]);
 

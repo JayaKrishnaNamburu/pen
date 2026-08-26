@@ -3,7 +3,11 @@ import { createEditor } from "@input/pen-core";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
 import { undoExtension } from "@input/pen-undo";
-import type { BlockHandle, ModelAdapter, ModelStreamEvent } from "@input/pen-types";
+import type {
+	BlockHandle,
+	ModelAdapter,
+	ModelStreamEvent,
+} from "@input/pen-types";
 import { aiExtension, getAIController } from "../index";
 import { deltaStreamExtension } from "../stream";
 
@@ -24,15 +28,17 @@ function annotationsFromRequest(request: { messages: unknown }): Annotation[] {
 	}));
 }
 
-function headingFromRequest(request: { messages: unknown }): Annotation | undefined {
+function headingFromRequest(request: {
+	messages: unknown;
+}): Annotation | undefined {
 	return annotationsFromRequest(request).find(
 		(annotation) => annotation.type === "heading",
 	);
 }
 
-function paragraphFromRequest(
-	request: { messages: unknown },
-): Annotation | undefined {
+function paragraphFromRequest(request: {
+	messages: unknown;
+}): Annotation | undefined {
 	return annotationsFromRequest(request).find(
 		(annotation) => annotation.type === "paragraph",
 	);
@@ -47,7 +53,9 @@ function formatTitleModel(): ModelAdapter {
 				yield { type: "done" } as ModelStreamEvent;
 				return;
 			}
-			const heading = headingFromRequest(request as { messages: unknown });
+			const heading = headingFromRequest(
+				request as { messages: unknown },
+			);
 			yield {
 				type: "tool-call",
 				toolCallId: `call-${passes}`,

@@ -1,9 +1,10 @@
-import { applyMergeBlocks, applySplitBlock, createEditor } from "@input/pen-core";
-import { describe, expect, it } from "vitest";
 import {
-	aiSuggestionsExtension,
-	getAISuggestionsController,
-} from "../index";
+	applyMergeBlocks,
+	applySplitBlock,
+	createEditor,
+} from "@input/pen-core";
+import { describe, expect, it } from "vitest";
+import { aiSuggestionsExtension, getAISuggestionsController } from "../index";
 import type { AISuggestion } from "../types";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -66,8 +67,8 @@ describe("suggestion survival under concurrent edits", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Ths sentence works.",
+					to: 0,
+					insert: "Ths sentence works.",
 				},
 			],
 			{ origin: "user" },
@@ -80,10 +81,13 @@ describe("suggestion survival under concurrent edits", () => {
 
 		const random = createRng(2_026_082_0);
 		for (let step = 0; step < 1000; step += 1) {
-			const liveBefore = liveSuggestions(controller.getState().suggestions)[0]!;
+			const liveBefore = liveSuggestions(
+				controller.getState().suggestions,
+			)[0]!;
 			const text =
-				editor.getBlock(liveBefore.blockId)?.textContent({ resolved: true }) ??
-				"";
+				editor
+					.getBlock(liveBefore.blockId)
+					?.textContent({ resolved: true }) ?? "";
 			if (random() < 0.5 && liveBefore.from > 0) {
 				const offset = Math.floor(random() * liveBefore.from);
 				editor.apply(
@@ -122,8 +126,8 @@ describe("suggestion survival under concurrent edits", () => {
 							type: "splice-text",
 							blockId: liveBefore.blockId,
 							from: 0,
-				to: 0,
-				insert: "q",
+							to: 0,
+							insert: "q",
 						},
 					],
 					{ origin: { type: "collaborator" } },
@@ -133,8 +137,9 @@ describe("suggestion survival under concurrent edits", () => {
 			const live = liveSuggestions(controller.getState().suggestions);
 			expect(live).toHaveLength(1);
 			const haystack =
-				editor.getBlock(live[0]!.blockId)?.textContent({ resolved: true }) ??
-				"";
+				editor
+					.getBlock(live[0]!.blockId)
+					?.textContent({ resolved: true }) ?? "";
 			expect(haystack.slice(live[0]!.from, live[0]!.to)).toBe("Ths");
 		}
 
@@ -151,7 +156,9 @@ describe("suggestion survival under concurrent edits", () => {
 			],
 			{ origin: { type: "collaborator" } },
 		);
-		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(0);
+		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(
+			0,
+		);
 
 		editor.apply(
 			[
@@ -159,13 +166,15 @@ describe("suggestion survival under concurrent edits", () => {
 					type: "splice-text",
 					blockId: doomed.blockId,
 					from: 0,
-				to: 0,
-				insert: "more",
+					to: 0,
+					insert: "more",
 				},
 			],
 			{ origin: { type: "collaborator" } },
 		);
-		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(0);
+		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(
+			0,
+		);
 
 		editor.destroy();
 	});
@@ -179,8 +188,8 @@ describe("suggestion survival under concurrent edits", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "aa Ths bb",
+					to: 0,
+					insert: "aa Ths bb",
 				},
 			],
 			{ origin: "user" },
@@ -188,7 +197,9 @@ describe("suggestion survival under concurrent edits", () => {
 		await flushTimers();
 
 		const controller = getAISuggestionsController(editor)!;
-		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(1);
+		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(
+			1,
+		);
 
 		applySplitBlock(editor, {
 			blockId,
@@ -216,9 +227,13 @@ describe("suggestion survival under concurrent edits", () => {
 		const target = editor.firstBlock()!.id;
 		editor.apply(
 			[
-				{ type: "splice-text", blockId: target, from: 0,
-				to: 0,
-				insert: "aa " },
+				{
+					type: "splice-text",
+					blockId: target,
+					from: 0,
+					to: 0,
+					insert: "aa ",
+				},
 				{
 					type: "insert-block",
 					blockId: "source",
@@ -226,9 +241,13 @@ describe("suggestion survival under concurrent edits", () => {
 					props: {},
 					position: "last",
 				},
-				{ type: "splice-text", blockId: "source", from: 0,
-				to: 0,
-				insert: "Ths zz" },
+				{
+					type: "splice-text",
+					blockId: "source",
+					from: 0,
+					to: 0,
+					insert: "Ths zz",
+				},
 			],
 			{ origin: "user" },
 		);
@@ -237,7 +256,9 @@ describe("suggestion survival under concurrent edits", () => {
 		const controller = getAISuggestionsController(editor)!;
 		controller.request({ force: true, blockId: "source" });
 		await flushTimers();
-		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(1);
+		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(
+			1,
+		);
 
 		applyMergeBlocks(editor, {
 			targetBlockId: target,
@@ -249,7 +270,10 @@ describe("suggestion survival under concurrent edits", () => {
 		expect(live).toHaveLength(1);
 		expect(live[0]?.blockId).toBe(target);
 		expect(
-			editor.getBlock(target)?.textContent().slice(live[0]!.from, live[0]!.to),
+			editor
+				.getBlock(target)
+				?.textContent()
+				.slice(live[0]!.from, live[0]!.to),
 		).toBe("Ths");
 
 		editor.destroy();
@@ -292,8 +316,8 @@ describe("suggestion survival under concurrent edits", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: words.join(" "),
+					to: 0,
+					insert: words.join(" "),
 				},
 			],
 			{ origin: "user" },
@@ -309,9 +333,7 @@ describe("suggestion survival under concurrent edits", () => {
 
 		for (let step = 0; step < 100; step += 1) {
 			editor.apply(
-				[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "q" }],
+				[{ type: "splice-text", blockId, from: 0, to: 0, insert: "q" }],
 				{ origin: { type: "collaborator" } },
 			);
 		}
@@ -328,9 +350,13 @@ describe("suggestion survival under concurrent edits", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
 			[
-				{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Ths here" },
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Ths here",
+				},
 				{
 					type: "insert-block",
 					blockId: "keep",
@@ -344,12 +370,16 @@ describe("suggestion survival under concurrent edits", () => {
 		await flushTimers();
 
 		const controller = getAISuggestionsController(editor)!;
-		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(1);
+		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(
+			1,
+		);
 
 		editor.apply([{ type: "delete-block", blockId }], {
 			origin: { type: "collaborator" },
 		});
-		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(0);
+		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(
+			0,
+		);
 
 		editor.destroy();
 	});

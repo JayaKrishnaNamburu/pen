@@ -3,32 +3,32 @@ import { describe, expect, it, vi } from "vitest";
 import { BatchingBuffer } from "../batch";
 
 describe("@input/pen-ai/stream BatchingBuffer", () => {
-  it("flushes accumulated text", () => {
-    const flushed: string[] = [];
-    const buffer = new BatchingBuffer((text) => flushed.push(text), 50);
+	it("flushes accumulated text", () => {
+		const flushed: string[] = [];
+		const buffer = new BatchingBuffer((text) => flushed.push(text), 50);
 
-    buffer.append("hel");
-    buffer.append("lo");
-    buffer.flush();
+		buffer.append("hel");
+		buffer.append("lo");
+		buffer.flush();
 
-    expect(flushed).toEqual(["hello"]);
-    expect(buffer.pending).toBe(false);
-  });
+		expect(flushed).toEqual(["hello"]);
+		expect(buffer.pending).toBe(false);
+	});
 
-  it("clears timers on destroy", () => {
-    vi.useFakeTimers();
+	it("clears timers on destroy", () => {
+		vi.useFakeTimers();
 
-    const flushed: string[] = [];
-    const buffer = new BatchingBuffer((text) => flushed.push(text), 50);
-    buffer.append("hello");
-    expect(buffer.pending).toBe(true);
-    buffer.destroy();
+		const flushed: string[] = [];
+		const buffer = new BatchingBuffer((text) => flushed.push(text), 50);
+		buffer.append("hello");
+		expect(buffer.pending).toBe(true);
+		buffer.destroy();
 
-    buffer.append("world");
-    vi.advanceTimersByTime(100);
+		buffer.append("world");
+		vi.advanceTimersByTime(100);
 
-    expect(flushed).toEqual([]);
-    expect(buffer.pending).toBe(false);
-    vi.useRealTimers();
-  });
+		expect(flushed).toEqual([]);
+		expect(buffer.pending).toBe(false);
+		vi.useRealTimers();
+	});
 });

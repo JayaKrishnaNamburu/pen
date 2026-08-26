@@ -136,8 +136,8 @@ describe("document-ops execution path inventory", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "context-write",
+					to: 0,
+					insert: "context-write",
 				},
 			],
 			{ origin: "ai" },
@@ -210,7 +210,10 @@ describe("document-ops execution path inventory", () => {
 					{
 						format: "blocks",
 						blocks: [
-							{ blockType: "paragraph", content: "Allowed sibling" },
+							{
+								blockType: "paragraph",
+								content: "Allowed sibling",
+							},
 							{ blockType: "subdocument", content: "Blocked" },
 						],
 					},

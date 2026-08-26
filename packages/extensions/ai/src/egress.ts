@@ -128,8 +128,9 @@ export function excerptsFromAgenticStep(input: {
 			workingSet.context &&
 			typeof workingSet.context === "object"
 		) {
-			const selectedText = (workingSet.context as { selectedText?: unknown })
-				.selectedText;
+			const selectedText = (
+				workingSet.context as { selectedText?: unknown }
+			).selectedText;
 			if (typeof selectedText === "string" && selectedText.length > 0) {
 				excerpts.push({
 					blockId: workingSet.trackedBlockIds[0] ?? input.blockId,
@@ -200,4 +201,3 @@ export function excerptKindsOf(
 ): readonly AIDocumentExcerptKind[] {
 	return AI_FEATURE_CONTENT[feature].excerptKinds;
 }
-

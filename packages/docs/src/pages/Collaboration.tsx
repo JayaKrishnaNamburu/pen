@@ -95,10 +95,10 @@ function install(session: MultiplayerSession) {
 				<li data-col5="readonly-is-ui">
 					<strong>Permissions.</strong> Pen does not enforce per-user
 					or per-block permissions. <code>pen.ariaReadOnly</code> sets{" "}
-					<code>aria-readonly</code> only. Local typing stops when
-					the host passes the <code>readonly</code> prop. Neither
-					is a security boundary: both stop nothing arriving over
-					the wire, and neither stops <code>editor.apply</code>.
+					<code>aria-readonly</code> only. Local typing stops when the
+					host passes the <code>readonly</code> prop. Neither is a
+					security boundary: both stop nothing arriving over the wire,
+					and neither stops <code>editor.apply</code>.
 				</li>
 				<li>
 					<strong>Presence-payload policy.</strong> Awareness contents
@@ -141,7 +141,8 @@ function install(session: MultiplayerSession) {
 			<p>
 				Do not read this page as a claim that the full collaboration
 				suite is in-tree. The scenarios below are the proof plan for the{" "}
-				<code>COL</code> rules in <code>spec/rules/collaboration.md</code>:
+				<code>COL</code> rules in{" "}
+				<code>spec/rules/collaboration.md</code>:
 			</p>
 			<table>
 				<caption>

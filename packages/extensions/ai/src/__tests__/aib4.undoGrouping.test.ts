@@ -38,9 +38,7 @@ describe("AIB4 undo grouping", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "system" },
 		);
 
@@ -67,9 +65,15 @@ describe("AIB4 undo grouping", () => {
 
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "seed" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "seed",
+				},
+			],
 			{ origin: "user" },
 		);
 
@@ -151,8 +155,8 @@ describe("AIB4 undo grouping", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "Hello",
+					to: 0,
+					insert: "Hello",
 				},
 			],
 			{ origin: "user" },
@@ -194,9 +198,13 @@ describe("AIB4 undo grouping", () => {
 		const blockId = editor.firstBlock()!.id;
 		applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello",
+				},
 			],
 			suggestionIds: ["suggestion-insert"],
 		});

@@ -30,7 +30,10 @@ import { buildSuggestionGroups } from "./grouping";
 import { materializeSuggestionsFromCandidates } from "./matcher";
 import { analyzeSuggestionScope } from "./analyzer";
 import { AISuggestionScheduler, type ReadyDirtyBlock } from "./scheduler";
-import { buildSuggestionScope, type BuiltSuggestionScope } from "./scopeBuilder";
+import {
+	buildSuggestionScope,
+	type BuiltSuggestionScope,
+} from "./scopeBuilder";
 import {
 	compareCandidatesForDisplay,
 	rangesOverlap,
@@ -95,7 +98,11 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 					return;
 				}
 				this.setState({
-					status: scheduled ? "scheduled" : this.isRequesting() ? "requesting" : "idle",
+					status: scheduled
+						? "scheduled"
+						: this.isRequesting()
+							? "requesting"
+							: "idle",
 				});
 			},
 		});
@@ -122,7 +129,10 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 
 	updateRuntimeSettings(
 		patch: Partial<
-			Omit<AISuggestionsExtensionConfig, "model" | "analyzer" | "blockPolicy">
+			Omit<
+				AISuggestionsExtensionConfig,
+				"model" | "analyzer" | "blockPolicy"
+			>
 		>,
 	): AISuggestionsExtensionConfig {
 		Object.assign(this.config, patch);
@@ -173,8 +183,9 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		const activeGroupId =
 			id == null
 				? null
-				: this.state.groups.find((group) => group.suggestionIds.includes(id))?.id ??
-					null;
+				: (this.state.groups.find((group) =>
+						group.suggestionIds.includes(id),
+					)?.id ?? null);
 
 		this.setState({
 			activeSuggestionId: id,
@@ -190,7 +201,8 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		const firstSuggestionId =
 			id == null
 				? null
-				: this.state.groups.find((group) => group.id === id)?.suggestionIds[0] ?? null;
+				: (this.state.groups.find((group) => group.id === id)
+						?.suggestionIds[0] ?? null);
 
 		this.setState({
 			activeSuggestionGroupId: id,
@@ -212,13 +224,19 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		if (!ready) {
 			if (!this.isRequesting()) {
 				this.setState({
-					status: this.scheduler.hasDirtyBlocks() ? "scheduled" : "idle",
+					status: this.scheduler.hasDirtyBlocks()
+						? "scheduled"
+						: "idle",
 				});
 			}
 			return false;
 		}
 
-		const builtScope = buildSuggestionScope(this.editor, ready.state, this.config);
+		const builtScope = buildSuggestionScope(
+			this.editor,
+			ready.state,
+			this.config,
+		);
 		if (!builtScope) {
 			this.setState({
 				status: this.scheduler.hasDirtyBlocks() ? "scheduled" : "idle",
@@ -243,15 +261,22 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 				candidates: cachedCandidates,
 			});
 
-			this.replaceSuggestionsForBlock(builtScope.scope.blockId, suggestions, {
-				status: this.scheduler.hasDirtyBlocks() ? "scheduled" : "idle",
-				activeSuggestionId: suggestions[0]?.id ?? null,
-				metrics: {
-					cacheHitCount: this.state.metrics.cacheHitCount + 1,
-					suggestionShownCount:
-						this.state.metrics.suggestionShownCount + suggestions.length,
+			this.replaceSuggestionsForBlock(
+				builtScope.scope.blockId,
+				suggestions,
+				{
+					status: this.scheduler.hasDirtyBlocks()
+						? "scheduled"
+						: "idle",
+					activeSuggestionId: suggestions[0]?.id ?? null,
+					metrics: {
+						cacheHitCount: this.state.metrics.cacheHitCount + 1,
+						suggestionShownCount:
+							this.state.metrics.suggestionShownCount +
+							suggestions.length,
+					},
 				},
-			});
+			);
 			return true;
 		}
 
@@ -268,7 +293,11 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 			},
 		});
 
-		void this.runAnalysis(requestId, builtScope, this.abortController.signal);
+		void this.runAnalysis(
+			requestId,
+			builtScope,
+			this.abortController.signal,
+		);
 		return true;
 	}
 
@@ -293,7 +322,12 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		const nextSuggestions = this.state.suggestions.filter(
 			(item) =>
 				item.blockId !== suggestion.blockId ||
-				!rangesOverlap(item.from, item.to, suggestion.from, suggestion.to),
+				!rangesOverlap(
+					item.from,
+					item.to,
+					suggestion.from,
+					suggestion.to,
+				),
 		);
 
 		this.replaceAllSuggestions(nextSuggestions, {
@@ -314,8 +348,11 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		}
 
 		const suggestions = group.suggestionIds
-			.map((suggestionId) =>
-				this.state.suggestions.find((item) => item.id === suggestionId) ?? null,
+			.map(
+				(suggestionId) =>
+					this.state.suggestions.find(
+						(item) => item.id === suggestionId,
+					) ?? null,
 			)
 			.filter(Boolean)
 			.sort((left, right) => (right?.from ?? 0) - (left?.from ?? 0));
@@ -331,7 +368,9 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 	}
 
 	dismissSuggestion(id: string): boolean {
-		const suggestion = this.state.suggestions.find((item) => item.id === id);
+		const suggestion = this.state.suggestions.find(
+			(item) => item.id === id,
+		);
 		if (!suggestion) {
 			return false;
 		}
@@ -387,13 +426,16 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		}
 
 		this.replaceAllSuggestions(
-			this.state.suggestions.filter((suggestion) => suggestion.blockId !== blockId),
+			this.state.suggestions.filter(
+				(suggestion) => suggestion.blockId !== blockId,
+			),
 			{
 				activeSuggestionId: null,
 				activeSuggestionGroupId: null,
 				metrics: {
 					suggestionDismissedCount:
-						this.state.metrics.suggestionDismissedCount + removedCount,
+						this.state.metrics.suggestionDismissedCount +
+						removedCount,
 				},
 			},
 		);
@@ -416,7 +458,10 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 				: null,
 			activeSuggestionGroupId: nextSuggestions.some((suggestion) =>
 				this.state.groups
-					.find((group) => group.id === this.state.activeSuggestionGroupId)
+					.find(
+						(group) =>
+							group.id === this.state.activeSuggestionGroupId,
+					)
 					?.suggestionIds.includes(suggestion.id),
 			)
 				? this.state.activeSuggestionGroupId
@@ -493,25 +538,36 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 				candidates: filteredCandidates,
 			});
 
-			this.replaceSuggestionsForBlock(builtScope.scope.blockId, suggestions, {
-				status: this.scheduler.hasDirtyBlocks() ? "scheduled" : "idle",
-				activeRequestId: null,
-				activeSuggestionId: suggestions[0]?.id ?? null,
-				activeSuggestionGroupId: null,
-				metrics: {
-					successCount: this.state.metrics.successCount + 1,
-					suggestionShownCount:
-						this.state.metrics.suggestionShownCount + suggestions.length,
-					promptTokens:
-						this.state.metrics.promptTokens + result.usage.promptTokens,
-					completionTokens:
-						this.state.metrics.completionTokens + result.usage.completionTokens,
+			this.replaceSuggestionsForBlock(
+				builtScope.scope.blockId,
+				suggestions,
+				{
+					status: this.scheduler.hasDirtyBlocks()
+						? "scheduled"
+						: "idle",
+					activeRequestId: null,
+					activeSuggestionId: suggestions[0]?.id ?? null,
+					activeSuggestionGroupId: null,
+					metrics: {
+						successCount: this.state.metrics.successCount + 1,
+						suggestionShownCount:
+							this.state.metrics.suggestionShownCount +
+							suggestions.length,
+						promptTokens:
+							this.state.metrics.promptTokens +
+							result.usage.promptTokens,
+						completionTokens:
+							this.state.metrics.completionTokens +
+							result.usage.completionTokens,
+					},
 				},
-			});
+			);
 		} catch (error) {
 			if (!signal.aborted) {
 				this.setState({
-					status: this.scheduler.hasDirtyBlocks() ? "scheduled" : "idle",
+					status: this.scheduler.hasDirtyBlocks()
+						? "scheduled"
+						: "idle",
 					activeRequestId: null,
 					metrics: {
 						...this.state.metrics,
@@ -526,7 +582,8 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		scopeHash: string,
 		candidates: readonly AISuggestionCandidate[],
 	): readonly AISuggestionCandidate[] {
-		const minConfidence = this.config.minConfidence ?? DEFAULT_MIN_CONFIDENCE;
+		const minConfidence =
+			this.config.minConfidence ?? DEFAULT_MIN_CONFIDENCE;
 		const dismissMemoryMs =
 			this.config.dismissMemoryMs ?? DEFAULT_DISMISS_MEMORY_MS;
 
@@ -561,15 +618,20 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		nextCandidates.sort(compareCandidatesForDisplay);
 
 		const maxSuggestionsPerScope =
-			this.config.maxSuggestionsPerScope ?? DEFAULT_MAX_SUGGESTIONS_PER_SCOPE;
-		const limitedCandidates = nextCandidates.slice(0, maxSuggestionsPerScope);
+			this.config.maxSuggestionsPerScope ??
+			DEFAULT_MAX_SUGGESTIONS_PER_SCOPE;
+		const limitedCandidates = nextCandidates.slice(
+			0,
+			maxSuggestionsPerScope,
+		);
 
 		if (dismissedRepeatDropCount > 0) {
 			this.setState({
 				metrics: {
 					...this.state.metrics,
 					dismissedRepeatDropCount:
-						this.state.metrics.dismissedRepeatDropCount + dismissedRepeatDropCount,
+						this.state.metrics.dismissedRepeatDropCount +
+						dismissedRepeatDropCount,
 				},
 			});
 		}
@@ -742,7 +804,9 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 	): void {
 		this.replaceAllSuggestions(
 			[
-				...this.state.suggestions.filter((suggestion) => suggestion.blockId !== blockId),
+				...this.state.suggestions.filter(
+					(suggestion) => suggestion.blockId !== blockId,
+				),
 				...nextSuggestions,
 			],
 			patch,
@@ -753,7 +817,9 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		nextSuggestions: readonly AISuggestion[],
 		patch?: StatePatch,
 	): void {
-		const kept = new Set(nextSuggestions.map((suggestion) => suggestion.id));
+		const kept = new Set(
+			nextSuggestions.map((suggestion) => suggestion.id),
+		);
 		for (const id of this.ranges.keys()) {
 			if (!kept.has(id)) {
 				this.ranges.delete(id);
@@ -783,18 +849,20 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 			Object.prototype.hasOwnProperty.call(patch, "activeSuggestionId");
 		const hasActiveGroupPatch =
 			patch != null &&
-			Object.prototype.hasOwnProperty.call(patch, "activeSuggestionGroupId");
+			Object.prototype.hasOwnProperty.call(
+				patch,
+				"activeSuggestionGroupId",
+			);
 		const nextActiveSuggestionId = hasActiveSuggestionPatch
 			? (patch?.activeSuggestionId ?? null)
 			: this.state.activeSuggestionId;
-		const activeGroupId =
-			hasActiveGroupPatch
-				? (patch?.activeSuggestionGroupId ?? null)
-				: groups.find((group) =>
-						nextActiveSuggestionId != null
-							? group.suggestionIds.includes(nextActiveSuggestionId)
-							: false,
-					)?.id ?? null;
+		const activeGroupId = hasActiveGroupPatch
+			? (patch?.activeSuggestionGroupId ?? null)
+			: (groups.find((group) =>
+					nextActiveSuggestionId != null
+						? group.suggestionIds.includes(nextActiveSuggestionId)
+						: false,
+				)?.id ?? null);
 
 		this.setState({
 			...patch,
@@ -821,7 +889,8 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		this.emit(
 			previousState.suggestions !== nextState.suggestions ||
 				previousState.groups !== nextState.groups ||
-				previousState.activeSuggestionId !== nextState.activeSuggestionId,
+				previousState.activeSuggestionId !==
+					nextState.activeSuggestionId,
 		);
 	}
 
@@ -847,7 +916,9 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		}
 
 		for (const [fingerprint, dismissedAt] of this.dismissedFingerprints) {
-			if (!isDismissFingerprintActive(dismissedAt, dismissMemoryMs, now)) {
+			if (
+				!isDismissFingerprintActive(dismissedAt, dismissMemoryMs, now)
+			) {
 				this.dismissedFingerprints.delete(fingerprint);
 			}
 		}
@@ -855,22 +926,33 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 
 	private isEditorReadyForSuggestions(): boolean {
 		const fieldEditor =
-			(this.editor.facet(fieldEditorHostFacet) as FieldEditor | null) ?? null;
+			(this.editor.facet(fieldEditorHostFacet) as FieldEditor | null) ??
+			null;
 		if (!fieldEditor) {
 			return true;
 		}
-		return fieldEditor.isFocused && fieldEditor.isEditing && !fieldEditor.isComposing;
+		return (
+			fieldEditor.isFocused &&
+			fieldEditor.isEditing &&
+			!fieldEditor.isComposing
+		);
 	}
 
 	private isRequesting(): boolean {
-		return this.state.activeRequestId != null && this.state.status === "requesting";
+		return (
+			this.state.activeRequestId != null &&
+			this.state.status === "requesting"
+		);
 	}
 
 	private resolveForcedDirtyBlock(
 		blockId: string | null | undefined,
 	): ReadyDirtyBlock | null {
 		const targetBlockId =
-			blockId ?? resolveSelectedBlockId(this.editor) ?? this.editor.firstBlock()?.id ?? null;
+			blockId ??
+			resolveSelectedBlockId(this.editor) ??
+			this.editor.firstBlock()?.id ??
+			null;
 		if (!targetBlockId) {
 			return null;
 		}
@@ -889,8 +971,11 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 				lastChangedAt: Date.now(),
 				changeCount: 1,
 				changedCharsEstimate: Math.max(1, text.trim().length),
-				lastRevision: this.editor.getBlockRevision(targetBlockId),
-				lastChangedOffset: resolvePreferredOffset(this.editor, targetBlockId, text.length),
+				lastChangedOffset: resolvePreferredOffset(
+					this.editor,
+					targetBlockId,
+					text.length,
+				),
 			},
 		};
 	}

@@ -7,10 +7,7 @@ import {
 import { defaultSchema } from "@input/pen-schema-default";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
-import {
-	AI_TOOL_MAX_CALLS_PER_TURN,
-	isAIToolCallDenied,
-} from "../tools";
+import { AI_TOOL_MAX_CALLS_PER_TURN, isAIToolCallDenied } from "../tools";
 import { runAgenticLoop } from "../index";
 
 async function awaitExtensionLifecycle(
@@ -37,9 +34,15 @@ describe("AIB3 hostile agentic turn", () => {
 
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "seed" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "seed",
+				},
+			],
 			{ origin: "user" },
 		);
 

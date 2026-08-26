@@ -22,12 +22,14 @@ export interface StructureBlockParam {
 	readonly blockId?: string;
 }
 
-export const moveBlockUp = defineCommand<StructureBlockParam>("pen.moveBlockUp");
+export const moveBlockUp =
+	defineCommand<StructureBlockParam>("pen.moveBlockUp");
 export const moveBlockDown =
 	defineCommand<StructureBlockParam>("pen.moveBlockDown");
 export const duplicateBlock =
 	defineCommand<StructureBlockParam>("pen.duplicateBlock");
-export const deleteBlock = defineCommand<StructureBlockParam>("pen.deleteBlock");
+export const deleteBlock =
+	defineCommand<StructureBlockParam>("pen.deleteBlock");
 
 export function structureCommandHandlers(): FacetProvider[] {
 	return [
@@ -242,16 +244,14 @@ function selectionAfterDelete(
 	}
 	if (isEditableTextBlock(editor, fallbackId)) {
 		const fallback = editor.getBlock(fallbackId);
-		const offset = previousId === fallbackId ? (fallback?.length() ?? 0) : 0;
+		const offset =
+			previousId === fallbackId ? (fallback?.length() ?? 0) : 0;
 		return { selection: collapsedAt(fallbackId, offset) };
 	}
 	return { selection: blockSelectionResult([fallbackId]) };
 }
 
-function cloneInlineOps(
-	block: BlockHandle,
-	newBlockId: string,
-): DocumentOp[] {
+function cloneInlineOps(block: BlockHandle, newBlockId: string): DocumentOp[] {
 	const ops: DocumentOp[] = [];
 	let offset = 0;
 	for (const delta of block.inlineDeltas()) {

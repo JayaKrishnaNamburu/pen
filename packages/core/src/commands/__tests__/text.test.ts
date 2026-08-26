@@ -202,7 +202,9 @@ describe("text commands", () => {
 			{ insert: "hello", attributes: { bold: true } },
 		]);
 		expect(registry.dispatch(toggleMark, { mark: "bold" })).toBe(true);
-		expect(editor.getBlock("a")?.textDeltas()).toEqual([{ insert: "hello" }]);
+		expect(editor.getBlock("a")?.textDeltas()).toEqual([
+			{ insert: "hello" },
+		]);
 		editor.destroy();
 	});
 

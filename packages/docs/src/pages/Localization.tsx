@@ -58,20 +58,19 @@ export function LocalizationPage() {
 			<h1>Localization</h1>
 			<p>
 				Pen is translatable. It does not load translation files,
-				negotiate locales, or depend on an i18n framework. Docs stay
-				in English. Hosts pass a catalog. The product rule is{" "}
+				negotiate locales, or depend on an i18n framework. Docs stay in
+				English. Hosts pass a catalog. The product rule is{" "}
 				<code>spec/rules/localization.md</code>.
 			</p>
 
 			<h2>Locale and messages</h2>
 			<p>
-				<code>createEditor</code> accepts <code>locale</code> (a BCP
-				47 tag) and <code>messages</code> (
+				<code>createEditor</code> accepts <code>locale</code> (a BCP 47
+				tag) and <code>messages</code> (
 				<code>Partial&lt;MessageCatalog&gt;</code>). Those feed{" "}
 				<code>pen.locale</code> and <code>pen.messages</code>. The
-				English default catalog is{" "}
-				<code>DEFAULT_MESSAGE_CATALOG</code> on{" "}
-				<code>@input/pen-types</code>.
+				English default catalog is <code>DEFAULT_MESSAGE_CATALOG</code>{" "}
+				on <code>@input/pen-types</code>.
 			</p>
 			<pre>
 				<code>{`import { createEditor } from "@input/pen-core";
@@ -97,34 +96,33 @@ const editor = createEditor({
 			</p>
 			<p>
 				Resolution is <code>resolveEditorMessage</code> in{" "}
-				<code>@input/pen-core</code>: a key and typed parameters in,
-				a string out. Counted strings use CLDR plural categories
-				through <code>Intl.PluralRules</code> and the editor locale.
+				<code>@input/pen-core</code>: a key and typed parameters in, a
+				string out. Counted strings use CLDR plural categories through{" "}
+				<code>Intl.PluralRules</code> and the editor locale.
 			</p>
 
 			<h2>Default catalog</h2>
 			<p>
 				The table below is generated from{" "}
 				<code>DEFAULT_MESSAGE_CATALOG</code> in{" "}
-				<code>{MESSAGE_CATALOG_SOURCE}</code>. Hosts override by key.
-				A check in the docs build fails when this page no longer
-				matches that catalog.
+				<code>{MESSAGE_CATALOG_SOURCE}</code>. Hosts override by key. A
+				check in the docs build fails when this page no longer matches
+				that catalog.
 			</p>
 			<p>
-				<code>createPseudoLocaleCatalog</code> is a test helper. It
-				is not a shipping locale.
+				<code>createPseudoLocaleCatalog</code> is a test helper. It is
+				not a shipping locale.
 			</p>
 			{catalogSections}
 
 			<h2>Segmentation</h2>
 			<p>
 				Grapheme and word boundaries go through helpers on{" "}
-				<code>@input/pen-core</code>:{" "}
-				<code>nextGraphemeBoundary</code>,{" "}
+				<code>@input/pen-core</code>: <code>nextGraphemeBoundary</code>,{" "}
 				<code>nextWordBoundary</code>, and siblings. Those use{" "}
 				<code>Intl.Segmenter</code> when present. Firefox below 125
-				falls back: word operations use whitespace boundaries;
-				character operations use code points, never code units.
+				falls back: word operations use whitespace boundaries; character
+				operations use code points, never code units.
 			</p>
 		</>
 	);

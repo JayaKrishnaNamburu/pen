@@ -60,8 +60,13 @@ describe("compileReplacementSuggestionOps (LOC4)", () => {
 				locale: "ja",
 			}),
 		).toEqual([
-			{ type: "splice-text", blockId: "body-1", from: 3,
-				to: 3 + 2 , insert: "" },
+			{
+				type: "splice-text",
+				blockId: "body-1",
+				from: 3,
+				to: 3 + 2,
+				insert: "",
+			},
 			{
 				type: "splice-text",
 				blockId: "body-1",

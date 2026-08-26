@@ -5,10 +5,10 @@ export function SSRPage() {
 			<p>
 				SSR is <strong>shell-only</strong>: the server renders the
 				editor container and no document content. This is HOST5 in{" "}
-				<code>spec/rules/host.md</code>. It is a decision,
-				not a gap. Faithful SSR of a CRDT document would require that
-				document on the server. Pen does not own that transport and does
-				not run a server CRDT.
+				<code>spec/rules/host.md</code>. It is a decision, not a gap.
+				Faithful SSR of a CRDT document would require that document on
+				the server. Pen does not own that transport and does not run a
+				server CRDT.
 			</p>
 			<p>
 				Package-local copy:{" "}

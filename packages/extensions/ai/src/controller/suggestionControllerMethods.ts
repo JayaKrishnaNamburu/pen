@@ -1,7 +1,7 @@
 import { announceEditorA11y } from "@input/pen-core";
 import type { CommitEvent } from "@input/pen-types";
 import type { AIInlineCompletionController } from "../types";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -15,7 +15,7 @@ import { areSuggestionsEqual } from "../helpers";
 
 export const suggestionControllerMethods = {
 	showEphemeralSuggestion(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		suggestion: Parameters<
 			AIInlineCompletionController["showSuggestion"]
 		>[0],
@@ -24,20 +24,20 @@ export const suggestionControllerMethods = {
 		announceEditorA11y(this._editor, "suggestionAppeared");
 	},
 
-	dismissEphemeralSuggestion(this: AIControllerMethodHost): void {
+	dismissEphemeralSuggestion(this: AIControllerImpl): void {
 		this._inlineCompletion.dismissSuggestion();
 	},
 
-	acceptEphemeralSuggestion(this: AIControllerMethodHost): void {
+	acceptEphemeralSuggestion(this: AIControllerImpl): void {
 		this._inlineCompletion.acceptSuggestion();
 	},
 
-	getSuggestions(this: AIControllerMethodHost) {
+	getSuggestions(this: AIControllerImpl) {
 		return this._suggestions;
 	},
 
 	handleDocumentChange(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		events: readonly CommitEvent[],
 	): void {
 		if (events.length > 0) {
@@ -55,7 +55,7 @@ export const suggestionControllerMethods = {
 		}
 	},
 
-	_syncSuggestionResolutionState(this: AIControllerMethodHost): void {
+	_syncSuggestionResolutionState(this: AIControllerImpl): void {
 		const suggestionsChanged = this._syncSuggestionsFromDocument();
 		const sessionsChanged = this._syncSessionsFromDocument();
 		if (!suggestionsChanged && !sessionsChanged) {
@@ -65,7 +65,7 @@ export const suggestionControllerMethods = {
 		this._emit();
 	},
 
-	acceptSuggestion(this: AIControllerMethodHost, id: string): boolean {
+	acceptSuggestion(this: AIControllerImpl, id: string): boolean {
 		const accepted = acceptSuggestion(this._editor, id);
 		if (accepted) {
 			this._syncSuggestionResolutionState();
@@ -73,7 +73,7 @@ export const suggestionControllerMethods = {
 		return accepted;
 	},
 
-	rejectSuggestion(this: AIControllerMethodHost, id: string): boolean {
+	rejectSuggestion(this: AIControllerImpl, id: string): boolean {
 		const rejected = rejectSuggestion(this._editor, id);
 		if (rejected) {
 			this._syncSuggestionResolutionState();
@@ -82,7 +82,7 @@ export const suggestionControllerMethods = {
 	},
 
 	_rejectPreviewSuggestions(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		suggestionIds: readonly string[],
 	): void {
 		if (suggestionIds.length === 0) {
@@ -97,17 +97,17 @@ export const suggestionControllerMethods = {
 		}
 	},
 
-	acceptAllSuggestions(this: AIControllerMethodHost): void {
+	acceptAllSuggestions(this: AIControllerImpl): void {
 		acceptAllSuggestions(this._editor);
 		this._syncSuggestionResolutionState();
 	},
 
-	rejectAllSuggestions(this: AIControllerMethodHost): void {
+	rejectAllSuggestions(this: AIControllerImpl): void {
 		rejectAllSuggestions(this._editor);
 		this._syncSuggestionResolutionState();
 	},
 
-	_syncSuggestionsFromDocument(this: AIControllerMethodHost): boolean {
+	_syncSuggestionsFromDocument(this: AIControllerImpl): boolean {
 		const previousCount = this._suggestions.length;
 		const nextSuggestions = readAllSuggestions(this._editor);
 		if (areSuggestionsEqual(this._suggestions, nextSuggestions)) {

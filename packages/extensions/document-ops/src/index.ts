@@ -1,6 +1,4 @@
-export {
-	documentOpsExtension,
-} from "./documentOpsExtension";
+export { documentOpsExtension } from "./documentOpsExtension";
 export type { DocumentOpsOptions } from "./documentOpsExtension";
 
 // Low-level entrypoints for the default document tool runtime.
@@ -26,9 +24,7 @@ export {
 	stripBlockAnnotations,
 	summarizeBlocks,
 } from "./utils/documentContext";
-export {
-	retrieveDocumentSpans,
-} from "./utils/retrieveDocumentSpans";
+export { retrieveDocumentSpans } from "./utils/retrieveDocumentSpans";
 export { assertToolCanMutateBlock } from "./utils/mutationPolicy";
 export {
 	DOCUMENT_OP_TYPES,
@@ -51,9 +47,7 @@ export {
 	listAvailableToolBlockTypes,
 	listValidOperationsForTarget,
 } from "./utils/structuredTargets";
-export type {
-	DocumentBlockSnapshot,
-} from "./utils/documentContext";
+export type { DocumentBlockSnapshot } from "./utils/documentContext";
 export type {
 	RetrievedDocumentSpan,
 	RetrieveDocumentSpansInput,

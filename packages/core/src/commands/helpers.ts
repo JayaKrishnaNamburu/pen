@@ -27,7 +27,6 @@ export {
 	readTextAnchor,
 	readTextFocus,
 	textSelectionResult,
-	type Point,
 } from "./commandSelection";
 export {
 	buildNormalPositionSnapshot,

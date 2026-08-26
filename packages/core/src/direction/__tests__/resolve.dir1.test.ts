@@ -54,9 +54,9 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 			rtl,
 			ltr,
 		]);
-		expect(getFacetSpec(defaultDirectionFacet).combine(["rtl", "ltr"])).toBe(
-			"rtl",
-		);
+		expect(
+			getFacetSpec(defaultDirectionFacet).combine(["rtl", "ltr"]),
+		).toBe("rtl");
 		expect(getFacetSpec(defaultDirectionFacet).combine([])).toBe("ltr");
 	});
 
@@ -152,9 +152,9 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 		expect(resolveBlockDirection(editor, editor.getBlock(digitsId)!)).toBe(
 			"rtl",
 		);
-		expect(resolveBlockDirection(editor, editor.getBlock(neutralsId)!)).toBe(
-			"rtl",
-		);
+		expect(
+			resolveBlockDirection(editor, editor.getBlock(neutralsId)!),
+		).toBe("rtl");
 		editor.destroy();
 	});
 
@@ -213,9 +213,11 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 				insert: "Hello",
 			},
 		]);
-		expect(editor.lastChangeSummary?.blockText.some((change) => change.blockId === blockId)).toBe(
-			true,
-		);
+		expect(
+			editor.lastChangeSummary?.blockText.some(
+				(change) => change.blockId === blockId,
+			),
+		).toBe(true);
 		expect(resolveBlockDirection(editor, editor.getBlock(blockId)!)).toBe(
 			"ltr",
 		);
@@ -230,7 +232,8 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 		expect(
 			editor.lastChangeSummary?.structural.some(
 				(change) =>
-					change.type === "block-props-changed" && change.blockId === blockId,
+					change.type === "block-props-changed" &&
+					change.blockId === blockId,
 			),
 		).toBe(true);
 		expect(resolveBlockDirection(editor, editor.getBlock(blockId)!)).toBe(
@@ -246,7 +249,9 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 					name: "dir-default",
 					facets: [
 						defaultDirectionFacet.compute(["document"], (ed) =>
-							ed.firstBlock()?.textContent().includes("!") ? "rtl" : "ltr",
+							ed.firstBlock()?.textContent().includes("!")
+								? "rtl"
+								: "ltr",
 						),
 					],
 				}),
@@ -328,13 +333,15 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 		expect(resolveBlockDirection(editor, editor.getBlock(missingId)!)).toBe(
 			"ltr",
 		);
-		expect(resolveBlockDirection(editor, editor.getBlock("auto")!)).toBe("ltr");
+		expect(resolveBlockDirection(editor, editor.getBlock("auto")!)).toBe(
+			"ltr",
+		);
 		expect(resolveBlockDirection(editor, editor.getBlock("quoted")!)).toBe(
 			"rtl",
 		);
-		expect(resolveBlockDirection(editor, editor.getBlock("explicit")!)).toBe(
-			"rtl",
-		);
+		expect(
+			resolveBlockDirection(editor, editor.getBlock("explicit")!),
+		).toBe("rtl");
 		editor.destroy();
 	});
 

@@ -246,7 +246,10 @@ export function createCommandRegistry(
 			(entry) => entry.commandName === command.name,
 		);
 		for (const entry of matches) {
-			if (interpretCommandResult(entry.handler(probeEditor, param)).kind !== "miss") {
+			if (
+				interpretCommandResult(entry.handler(probeEditor, param))
+					.kind !== "miss"
+			) {
 				return true;
 			}
 		}
@@ -280,7 +283,8 @@ function resolveHandlers(
 	}
 	resolved.sort((left, right) => {
 		const rankDelta =
-			PRECEDENCE_RANK[left.precedence] - PRECEDENCE_RANK[right.precedence];
+			PRECEDENCE_RANK[left.precedence] -
+			PRECEDENCE_RANK[right.precedence];
 		if (rankDelta !== 0) {
 			return rankDelta;
 		}
@@ -308,7 +312,8 @@ function stampDispatchOrigin(
 			code: "command-intent-overwrite",
 			level: "warn",
 			source: "commands",
-			message: "handler or host origin.intent was ignored; dispatch stamps the command name",
+			message:
+				"handler or host origin.intent was ignored; dispatch stamps the command name",
 			command: commandName,
 			attempted: structured.intent,
 		});
@@ -322,7 +327,9 @@ function stampDispatchOrigin(
 	};
 }
 
-function interpretCommandResult(result: CommandResult | false): InterpretedResult {
+function interpretCommandResult(
+	result: CommandResult | false,
+): InterpretedResult {
 	if (result === false) {
 		return { kind: "miss" };
 	}

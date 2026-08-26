@@ -1,4 +1,7 @@
-import { recordDocumentLoadMigration, refreshFormatStamp } from "@input/pen-crdt-yjs";
+import {
+	recordDocumentLoadMigration,
+	refreshFormatStamp,
+} from "@input/pen-crdt-yjs";
 import type { DocumentOp, Editor } from "@input/pen-types";
 
 import {

@@ -16,7 +16,9 @@ describe("buildAutocompleteMessages", () => {
 				previousBlockText: "Earlier accepted reply text.",
 				nextBlockText: "Original quoted message text.",
 			},
-			registry: new AutocompleteProviderRegistry(builtinAutocompleteProviders),
+			registry: new AutocompleteProviderRegistry(
+				builtinAutocompleteProviders,
+			),
 			maxProviderChars: 500,
 			maxProviderTimeMs: 10,
 		});

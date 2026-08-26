@@ -11,16 +11,21 @@ import {
 /**
  * RS4: one styling contract, exported once.
  *
- * The vocabulary is only a single source of truth if the producers read it
- * instead of retyping the strings, and the sheet is only a contract if its
- * selectors and the emitted classes are the same set. Both are checked against
- * the source, because a hardcoded class name is invisible at runtime — it
- * renders identically right up until someone renames the constant
- * (`spec-v5/02-review-surface.md` RS4).
+ * Producers must import the vocabulary instead of retyping the strings.
+ * Sheet selectors and theme properties must interpolate it instead of
+ * restating it. Every REVIEW_SURFACE_CLASSES name must have a rule in
+ * the sheet (`spec-v5/02-review-surface.md` RS4).
  */
 
 const AI_SRC = join(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_PACKAGES = join(AI_SRC, "..", "..", "..");
+
+const PRODUCER_ROOTS = [
+	join(REPO_PACKAGES, "extensions", "ai", "src"),
+	join(REPO_PACKAGES, "rendering", "dom", "src"),
+	join(REPO_PACKAGES, "rendering", "react", "src"),
+	join(REPO_PACKAGES, "rendering", "vue", "src"),
+];
 
 const VOCABULARY = [
 	...Object.values(REVIEW_SURFACE_CLASSES),
@@ -29,7 +34,8 @@ const VOCABULARY = [
 
 /**
  * Matches a review class name written as a string literal. The vocabulary
- * module and the stylesheet are where these names are allowed to appear.
+ * module (in `@input/pen-types`, not walked here) and the stylesheet
+ * interpolations are where these names are allowed to appear.
  */
 const LITERAL_REVIEW_CLASS =
 	/["'`](?:pen-suggestion-|pen-ai-review-|pen-block-suggestion|pen-ai-affected-range)[a-z-]*/g;
@@ -45,12 +51,12 @@ describe("RS4: review class names resolve from one vocabulary", () => {
 
 	it("RS4: no producer hardcodes a review class name", () => {
 		const offenders: string[] = [];
-		for (const file of sourceFiles(AI_SRC)) {
+		for (const file of sourceFiles(PRODUCER_ROOTS)) {
 			const contents = readFileSync(file, "utf8");
 			const matches = contents.match(LITERAL_REVIEW_CLASS);
 			if (matches) {
 				offenders.push(
-					`${relative(AI_SRC, file)}: ${[...new Set(matches)].join(", ")}`,
+					`${relative(REPO_PACKAGES, file)}: ${[...new Set(matches)].join(", ")}`,
 				);
 			}
 		}
@@ -60,7 +66,7 @@ describe("RS4: review class names resolve from one vocabulary", () => {
 		).toEqual([]);
 	});
 
-	it("RS4: the exported sheet styles only names the vocabulary declares", () => {
+	it("RS4: the exported sheet interpolates the vocabulary and the theme seam", () => {
 		const sheet = readFileSync(
 			join(
 				REPO_PACKAGES,
@@ -73,51 +79,74 @@ describe("RS4: review class names resolve from one vocabulary", () => {
 			"utf8",
 		);
 
-		// Selectors are interpolated from the constants, so the sheet must not
-		// contain a bare `.pen-…` selector — that would be a name drifting free
-		// of the vocabulary.
 		const literalSelectors = sheet.match(/^\.\s*pen-[a-z-]+/gm) ?? [];
 		expect(
 			literalSelectors,
 			"sheet selectors must interpolate the vocabulary, not restate it",
 		).toEqual([]);
 
-		// Every custom property the sheet reads is one hosts are told about.
-		const referenced = [
+		const bareProperties =
+			sheet.match(/var\(--pen-ai-review-[a-z-]+/g) ?? [];
+		expect(
+			bareProperties,
+			"sheet custom properties must interpolate REVIEW_SURFACE_CUSTOM_PROPERTIES, not restate them",
+		).toEqual([]);
+
+		const interpolatedClassKeys = [
 			...new Set(
-				[...sheet.matchAll(/var\((--pen-ai-review-[a-z-]+)/g)].map(
+				[...sheet.matchAll(/REVIEW_SURFACE_CLASSES\.(\w+)/g)].map(
 					(match) => match[1]!,
 				),
 			),
 		].sort();
-		const declared = new Set<string>(
-			Object.values(REVIEW_SURFACE_CUSTOM_PROPERTIES),
+		expect(interpolatedClassKeys).toEqual(
+			Object.keys(REVIEW_SURFACE_CLASSES).sort(),
 		);
-		expect(referenced.length).toBeGreaterThan(0);
-		for (const property of referenced) {
-			expect(
-				declared.has(property),
-				`sheet themes on "${property}", which the custom-property contract does not declare`,
-			).toBe(true);
-		}
+
+		const referencedKeys = [
+			...new Set(
+				[
+					...sheet.matchAll(
+						/REVIEW_SURFACE_CUSTOM_PROPERTIES\.(\w+)/g,
+					),
+				].map((match) => match[1]!),
+			),
+		].sort();
+		const declaredKeys = Object.keys(
+			REVIEW_SURFACE_CUSTOM_PROPERTIES,
+		).sort();
+		expect(referencedKeys).toEqual(declaredKeys);
 	});
 });
 
-function sourceFiles(root: string): string[] {
+function sourceFiles(roots: readonly string[]): string[] {
 	const found: string[] = [];
 	const walk = (directory: string) => {
 		for (const entry of readdirSync(directory)) {
 			const path = join(directory, entry);
 			if (statSync(path).isDirectory()) {
-				if (entry === "__tests__") continue;
+				if (
+					entry === "__tests__" ||
+					entry === "dist" ||
+					entry === "node_modules"
+				) {
+					continue;
+				}
 				walk(path);
 				continue;
 			}
-			if (path.endsWith(".ts") && !path.endsWith(".test.ts")) {
+			if (entry === "reviewStylesheet.ts") continue;
+			if (
+				(path.endsWith(".ts") || path.endsWith(".tsx")) &&
+				!path.endsWith(".test.ts") &&
+				!path.endsWith(".test.tsx")
+			) {
 				found.push(path);
 			}
 		}
 	};
-	walk(root);
+	for (const root of roots) {
+		walk(root);
+	}
 	return found;
 }

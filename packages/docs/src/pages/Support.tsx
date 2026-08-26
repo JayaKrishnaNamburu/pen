@@ -4,17 +4,16 @@ export function SupportPage() {
 			<h1>Browser and Node support</h1>
 			<p>
 				This is the HOST3 runtime floor in{" "}
-				<code>spec/rules/host.md</code>. Package manifests
-				declare{" "}
-				<code>engines.node: &quot;&gt;=22&quot;</code>. The same
-				table is in the repository root README. Raising the floor is
-				a minor-version change. Lowering it is never silent.
+				<code>spec/rules/host.md</code>. Package manifests declare{" "}
+				<code>engines.node: &quot;&gt;=22&quot;</code>. The same table
+				is in the repository root README. Raising the floor is a
+				minor-version change. Lowering it is never silent.
 			</p>
 			<table>
 				<caption>
 					Input backend is the field-editor path for that browser.
-					Expanded field-editor mode and table-cell editing always
-					use contenteditable, even when EditContext exists.
+					Expanded field-editor mode and table-cell editing always use
+					contenteditable, even when EditContext exists.
 				</caption>
 				<thead>
 					<tr>
@@ -58,14 +57,14 @@ export function SupportPage() {
 				<code>color-mix()</code>, <code>crypto.randomUUID</code>,{" "}
 				<code>Intl.Segmenter</code> — are feature-detected with a
 				defined fallback. A missing UUID API degrades ID quality, not
-				the ability to construct an editor. Non-secure origins (
-				plain <code>http://</code> on a LAN IP) construct an editor.
+				the ability to construct an editor. Non-secure origins ( plain{" "}
+				<code>http://</code> on a LAN IP) construct an editor.
 			</p>
 			<p>
 				<code>@input/pen-react</code> peers are React 18 or 19.{" "}
-				<code>@input/pen-vue</code> peers Vue <code>^3.4.0</code>.
-				There is no polyfill bundle. Hosts that must run below the
-				floor bring their own polyfills.
+				<code>@input/pen-vue</code> peers Vue <code>^3.4.0</code>. There
+				is no polyfill bundle. Hosts that must run below the floor bring
+				their own polyfills.
 			</p>
 			<p>
 				SSR is shell-only. See <a href="#/ssr">Server rendering</a>.

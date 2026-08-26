@@ -84,7 +84,9 @@ class YjsProviderSession implements MultiplayerSession {
 
 		if (status === "connected") {
 			this.setState(
-				this.supportsSyncEvents && !this.isSynced ? "syncing" : "connected",
+				this.supportsSyncEvents && !this.isSynced
+					? "syncing"
+					: "connected",
 			);
 			return;
 		}

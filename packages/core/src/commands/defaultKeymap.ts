@@ -168,7 +168,11 @@ export function serializeDefaultKeymap(
 		};
 		if (binding.param !== undefined) {
 			return binding.context
-				? { ...serialized, param: binding.param, context: binding.context }
+				? {
+						...serialized,
+						param: binding.param,
+						context: binding.context,
+					}
 				: { ...serialized, param: binding.param };
 		}
 		if (binding.context) {

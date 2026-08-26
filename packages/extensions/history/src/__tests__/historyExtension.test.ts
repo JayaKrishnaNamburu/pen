@@ -271,17 +271,21 @@ describe("historyExtension", () => {
 		const controller = getHistoryController(editor)!;
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "hello" }],
 			{ origin: "user" },
 		);
 		const original = await controller.createSnapshot("Original", "manual");
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 5,
-				to: 5,
-				insert: " world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 5,
+					to: 5,
+					insert: " world",
+				},
+			],
 			{ origin: "user" },
 		);
 		expect(
@@ -403,7 +407,15 @@ function setBlockText(
 	const length = block.length();
 	editor.apply(
 		length > 0
-			? [{ type: "splice-text", blockId, from: 0, to: 0 + length, insert: text }]
+			? [
+					{
+						type: "splice-text",
+						blockId,
+						from: 0,
+						to: 0 + length,
+						insert: text,
+					},
+				]
 			: [{ type: "splice-text", blockId, from: 0, to: 0, insert: text }],
 		{ origin: "user" },
 	);

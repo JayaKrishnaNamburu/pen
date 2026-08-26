@@ -18,7 +18,9 @@ import type { PipelinePhase } from "./pipelinePhases";
 import type { SelectionAuthorityImpl } from "./selection";
 import type { TableGridExecutor } from "./tableGridExecutor";
 
-export type ApplyPipelineMutableMap = CRDTUnknownMap & { delete(key: string): void };
+export type ApplyPipelineMutableMap = CRDTUnknownMap & {
+	delete(key: string): void;
+};
 export type ApplyPipelineMutableBlockStore = ApplyPipelineMutableMap & {
 	get(key: string): CRDTUnknownMap | undefined;
 };
@@ -44,8 +46,7 @@ export interface ApplyPipelineDocumentContext {
 }
 
 /** Orchestration state: queue, hooks, validation dispatch, transaction shell. */
-export interface ApplyPipelineOrchestrationContext
-	extends ApplyPipelineDocumentContext {
+export interface ApplyPipelineOrchestrationContext extends ApplyPipelineDocumentContext {
 	_applying: boolean;
 	_applyTurnCount: number;
 	_applyStormEmitted: boolean;
@@ -64,7 +65,10 @@ export interface ApplyPipelineOrchestrationContext
 	_captureSelectionBefore: (() => void) | null;
 	_resolveBeforeApplyHooks:
 		| (() => ReadonlyArray<
-				(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
+				(
+					ops: DocumentOp[],
+					options: { origin?: OpOrigin },
+				) => DocumentOp[]
 		  >)
 		| null;
 	readonly _beforeApplyHooks: Array<{

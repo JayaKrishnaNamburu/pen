@@ -180,7 +180,9 @@ function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
 		if ((ytype as unknown) === (blockOrder as unknown)) {
 			const event = eventForType(txn, ytype);
 			if (event) {
-				blockOrderDelta = snapshotArrayDelta(event.delta as YArrayDeltaOp[]);
+				blockOrderDelta = snapshotArrayDelta(
+					event.delta as YArrayDeltaOp[],
+				);
 			}
 			continue;
 		}
@@ -210,7 +212,9 @@ function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
 			const blockId = resolveSharedKey(ytype, blocks);
 			const event = eventForType(txn, ytype);
 			if (blockId && event) {
-				const snapshot = snapshotTextDelta(event.delta as YTextDeltaOp[]);
+				const snapshot = snapshotTextDelta(
+					event.delta as YTextDeltaOp[],
+				);
 				const existing = textDeltas.get(blockId);
 				if (existing) {
 					existing.push(snapshot);

@@ -49,7 +49,13 @@ describe("resolveSelectionPreviewTarget", () => {
 				to: 0,
 				insert: "Hello",
 			},
-			{ type: "splice-text", blockId: "b2", from: 0, to: 0, insert: "World" },
+			{
+				type: "splice-text",
+				blockId: "b2",
+				from: 0,
+				to: 0,
+				insert: "World",
+			},
 		]);
 
 		expect(

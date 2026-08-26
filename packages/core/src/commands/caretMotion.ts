@@ -1,6 +1,7 @@
 import type {
 	CommandResult,
 	Editor,
+	Point,
 	SelectionState,
 } from "@input/pen-types";
 
@@ -33,7 +34,6 @@ import {
 	readTextFocus,
 	textSelectionResult,
 	toTransitionSelection,
-	type Point,
 } from "./helpers";
 import {
 	getCellCaretFocus,
@@ -60,14 +60,12 @@ export function setLineEdgeMeasure(
 	editor: Editor,
 	measure: LineEdgeMeasure | null,
 ): void {
-	(
-		editor as unknown as Record<symbol, LineEdgeMeasure | null>
-	)[LINE_EDGE_SEAM] = measure;
+	(editor as unknown as Record<symbol, LineEdgeMeasure | null>)[
+		LINE_EDGE_SEAM
+	] = measure;
 }
 
-function getLineEdgeMeasure(
-	editor: Editor,
-): LineEdgeMeasure | undefined {
+function getLineEdgeMeasure(editor: Editor): LineEdgeMeasure | undefined {
 	return (
 		(editor as unknown as Record<symbol, LineEdgeMeasure | undefined>)[
 			LINE_EDGE_SEAM
@@ -349,7 +347,11 @@ function stepInlineAtom(
 		const start = Math.min(selection.anchor.offset, selection.focus.offset);
 		const end = Math.max(selection.anchor.offset, selection.focus.offset);
 		const selectedAtom = getAtomRangeAtOffset(block, start);
-		if (selectedAtom && selectedAtom.start === start && selectedAtom.end === end) {
+		if (
+			selectedAtom &&
+			selectedAtom.start === start &&
+			selectedAtom.end === end
+		) {
 			const offset = direction === 1 ? end : start;
 			return {
 				selection: extendSelection(editor, param.extend, {
@@ -377,10 +379,15 @@ function stepInlineAtom(
 	}
 	return {
 		selection: textSelectionResult(
-			param.extend ? (readTextAnchor(editor) ?? { blockId: focus.blockId, offset: atom.start }) : {
-				blockId: focus.blockId,
-				offset: atom.start,
-			},
+			param.extend
+				? (readTextAnchor(editor) ?? {
+						blockId: focus.blockId,
+						offset: atom.start,
+					})
+				: {
+						blockId: focus.blockId,
+						offset: atom.start,
+					},
 			{ blockId: focus.blockId, offset: atom.end },
 		),
 	};

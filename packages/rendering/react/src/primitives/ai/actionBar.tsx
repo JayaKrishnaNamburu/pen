@@ -24,8 +24,7 @@ export interface AIAcceptButtonProps extends AsChildProps {
 export function AIAcceptButton(props: AIAcceptButtonProps) {
 	const { controller, state } = useAIContext();
 	const suggestionIds = state.activeGeneration?.suggestionIds ?? [];
-	const hasPendingPlan = state.activeGeneration?.planState === "validated";
-	const canAccept = suggestionIds.length > 0 || hasPendingPlan;
+	const canAccept = suggestionIds.length > 0;
 	function handleAcceptClick() {
 		const accepted = controller?.acceptActiveGeneration() ?? false;
 		if (accepted) {

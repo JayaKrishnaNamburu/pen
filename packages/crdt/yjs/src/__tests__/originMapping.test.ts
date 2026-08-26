@@ -93,9 +93,17 @@ describe("COL1 origin mapping", () => {
 		seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 		expect(
-			(peerB.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerB.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		).toBe(
-			(peerA.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerA.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		);
 
 		const events: CRDTEvent[] = [];
@@ -114,7 +122,11 @@ describe("COL1 origin mapping", () => {
 		);
 
 		expect(
-			(peerA.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerA.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		).toBe("from B");
 		expect(remoteText.toString()).toBe("from B");
 		expect(events).toHaveLength(1);
@@ -127,9 +139,17 @@ describe("COL1 origin mapping", () => {
 		seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 		expect(
-			(peerB.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerB.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		).toBe(
-			(peerA.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerA.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		);
 
 		const events: CRDTEvent[] = [];
@@ -148,7 +168,11 @@ describe("COL1 origin mapping", () => {
 		);
 
 		expect(
-			(peerA.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerA.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		).toBe("from B");
 		expect(remoteText.toString()).toBe("from B");
 		expect(events).toHaveLength(1);
@@ -162,9 +186,17 @@ describe("COL1 origin mapping", () => {
 		seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 		expect(
-			(peerB.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerB.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		).toBe(
-			(peerA.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerA.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		);
 
 		const events: CRDTEvent[] = [];
@@ -185,7 +217,11 @@ describe("COL1 origin mapping", () => {
 		);
 
 		expect(
-			(peerA.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerA.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		).toBe("tagged");
 		expect(remoteText.toString()).toBe("tagged");
 		expect(events).toHaveLength(1);
@@ -265,7 +301,11 @@ describe("COL1 origin mapping", () => {
 		const localText = seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 		expect(
-			(peerB.penDocument.blocks.get("block-1")!.get("content") as Y.Text).toString(),
+			(
+				peerB.penDocument.blocks
+					.get("block-1")!
+					.get("content") as Y.Text
+			).toString(),
 		).toBe(localText.toString());
 
 		const undo = createYjsUndoManager(peerA);

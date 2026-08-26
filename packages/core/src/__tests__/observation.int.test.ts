@@ -55,7 +55,9 @@ function forkPeer(source: Editor): Editor {
 	return createHeadlessEditor({
 		schema: source.schema,
 		crdt: adapter,
-		document: adapter.loadDocument(adapter.encodeState(source.internals.crdtDoc)),
+		document: adapter.loadDocument(
+			adapter.encodeState(source.internals.crdtDoc),
+		),
 	});
 }
 
@@ -66,7 +68,10 @@ function syncFromTo(from: Editor, to: Editor): void {
 	if (!isYjsCRDTDocument(fromDoc) || !isYjsCRDTDocument(toDoc)) {
 		throw new Error("expected yjs documents");
 	}
-	const update = adapter.encodeUpdate(fromDoc, Y.encodeStateVector(toDoc.ydoc));
+	const update = adapter.encodeUpdate(
+		fromDoc,
+		Y.encodeStateVector(toDoc.ydoc),
+	);
 	if (update.byteLength === 0) {
 		throw new Error("sync produced an empty update — peers never diverged");
 	}
@@ -144,7 +149,9 @@ describe("observation — command intent (INT)", () => {
 		});
 		backward.selectText("b", 0, 0);
 		expect(
-			backwardRegistry.dispatch(deleteBackward, { granularity: "grapheme" }),
+			backwardRegistry.dispatch(deleteBackward, {
+				granularity: "grapheme",
+			}),
 		).toBe(true);
 		expect(backward.getBlock("a")?.textContent()).toBe("Hithere");
 		expect(backwardCommits).toHaveLength(1);
@@ -170,7 +177,9 @@ describe("observation — command intent (INT)", () => {
 		});
 		forward.selectText("a", 2, 2);
 		expect(
-			forwardRegistry.dispatch(deleteForward, { granularity: "grapheme" }),
+			forwardRegistry.dispatch(deleteForward, {
+				granularity: "grapheme",
+			}),
 		).toBe(true);
 		expect(forward.getBlock("a")?.textContent()).toBe("Hithere");
 		expect(forwardCommits).toHaveLength(1);
@@ -423,7 +432,8 @@ describe("observation — command intent (INT)", () => {
 		expect(localEvent.summary.structural.some(isTypeConversion)).toBe(true);
 		expect(
 			localEvent.summary.structural.some(
-				(change) => (change as { type: string }).type === "block-converted",
+				(change) =>
+					(change as { type: string }).type === "block-converted",
 			),
 		).toBe(false);
 		const localProps = localEvent.summary.structural.find(
@@ -444,10 +454,13 @@ describe("observation — command intent (INT)", () => {
 		expect(remoteEvent).toBeDefined();
 		expectNoSynthesizedIntent(remoteEvent!);
 		expect(remoteEvent!.origin.intent).not.toBe("pen.convertBlock");
-		expect(remoteEvent!.summary.structural.some(isTypeConversion)).toBe(true);
+		expect(remoteEvent!.summary.structural.some(isTypeConversion)).toBe(
+			true,
+		);
 		expect(
 			remoteEvent!.summary.structural.some(
-				(change) => (change as { type: string }).type === "block-converted",
+				(change) =>
+					(change as { type: string }).type === "block-converted",
 			),
 		).toBe(false);
 

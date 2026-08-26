@@ -28,8 +28,12 @@ export function emptyBlockIndexSnapshot(): BlockIndexSnapshot {
 
 export function createBlockIndexSnapshot(input: {
 	readonly roots: readonly string[];
-	readonly lengthById?: ReadonlyMap<string, number> | Readonly<Record<string, number>>;
-	readonly typeById?: ReadonlyMap<string, string> | Readonly<Record<string, string>>;
+	readonly lengthById?:
+		| ReadonlyMap<string, number>
+		| Readonly<Record<string, number>>;
+	readonly typeById?:
+		| ReadonlyMap<string, string>
+		| Readonly<Record<string, string>>;
 	readonly childrenByParentId?: ReadonlyMap<string | null, readonly string[]>;
 }): BlockIndexSnapshot {
 	const lengthById = toNumberMap(input.lengthById);
@@ -90,7 +94,10 @@ function applySummaryToSnapshot(
 
 	for (const text of summary.blockText) {
 		const previous = lengthById.get(text.blockId) ?? 0;
-		lengthById.set(text.blockId, lengthAfterSplices(previous, text.splices));
+		lengthById.set(
+			text.blockId,
+			lengthAfterSplices(previous, text.splices),
+		);
 	}
 
 	const roots = [...(childrenByParentId.get(null) ?? [])];
@@ -141,8 +148,14 @@ function applyStructural(
 ): void {
 	switch (change.type) {
 		case "block-inserted": {
-			insertChild(childrenByParentId, change.parentId, change.index, change.blockId);
-			if (!lengthById.has(change.blockId)) lengthById.set(change.blockId, 0);
+			insertChild(
+				childrenByParentId,
+				change.parentId,
+				change.index,
+				change.blockId,
+			);
+			if (!lengthById.has(change.blockId))
+				lengthById.set(change.blockId, 0);
 			break;
 		}
 		case "block-removed": {
@@ -153,17 +166,32 @@ function applyStructural(
 			break;
 		}
 		case "block-moved": {
-			removeChild(childrenByParentId, change.fromParentId, change.blockId);
-			insertChild(childrenByParentId, change.toParentId, change.toIndex, change.blockId);
+			removeChild(
+				childrenByParentId,
+				change.fromParentId,
+				change.blockId,
+			);
+			insertChild(
+				childrenByParentId,
+				change.toParentId,
+				change.toIndex,
+				change.blockId,
+			);
 			break;
 		}
 		case "block-split": {
 			insertAfter(childrenByParentId, change.blockId, change.newBlockId);
 			const original = lengthById.get(change.blockId) ?? 0;
 			lengthById.set(change.blockId, Math.max(0, change.offset));
-			lengthById.set(change.newBlockId, Math.max(0, original - change.offset));
+			lengthById.set(
+				change.newBlockId,
+				Math.max(0, original - change.offset),
+			);
 			if (!typeById.has(change.newBlockId)) {
-				typeById.set(change.newBlockId, typeById.get(change.blockId) ?? "");
+				typeById.set(
+					change.newBlockId,
+					typeById.get(change.blockId) ?? "",
+				);
 			}
 			break;
 		}
@@ -278,7 +306,10 @@ function cloneChildren(
 }
 
 function toNumberMap(
-	value: ReadonlyMap<string, number> | Readonly<Record<string, number>> | undefined,
+	value:
+		| ReadonlyMap<string, number>
+		| Readonly<Record<string, number>>
+		| undefined,
 ): Map<string, number> {
 	if (!value) return new Map();
 	if (value instanceof Map) return new Map(value);
@@ -286,7 +317,10 @@ function toNumberMap(
 }
 
 function toStringMap(
-	value: ReadonlyMap<string, string> | Readonly<Record<string, string>> | undefined,
+	value:
+		| ReadonlyMap<string, string>
+		| Readonly<Record<string, string>>
+		| undefined,
 ): Map<string, string> {
 	if (!value) return new Map();
 	if (value instanceof Map) return new Map(value);

@@ -16,7 +16,10 @@ function serializeDelta(delta: RawCommitDelta) {
 		blockOrderDelta: delta.blockOrderDelta,
 		childArrayDeltas: Object.fromEntries(delta.childArrayDeltas),
 		blockMapChanges: Object.fromEntries(
-			[...delta.blockMapChanges].map(([id, keys]) => [id, [...keys].sort()]),
+			[...delta.blockMapChanges].map(([id, keys]) => [
+				id,
+				[...keys].sort(),
+			]),
 		),
 		appChanges: [...delta.appChanges].sort(),
 		metadataChanges: [...delta.metadataChanges].sort(),
@@ -29,7 +32,9 @@ function seedDocument(doc: YjsCRDTDocument): void {
 		initBlockMap(doc.penDocument.blocks, "b2", "paragraph", "inline");
 		initBlockMap(doc.penDocument.blocks, "parent", "column", "nested");
 		doc.penDocument.blockOrder.push(["b1", "b2", "parent"]);
-		const content = doc.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		const content = doc.penDocument.blocks
+			.get("b1")!
+			.get("content") as Y.Text;
 		content.insert(0, "hello");
 	});
 }
@@ -54,7 +59,12 @@ describe("summarySource", () => {
 				(b1.get("content") as Y.Text).insert(5, " world");
 				(b1.get("props") as Y.Map<unknown>).set("align", "left");
 
-				initBlockMap(local.penDocument.blocks, "b3", "paragraph", "inline");
+				initBlockMap(
+					local.penDocument.blocks,
+					"b3",
+					"paragraph",
+					"inline",
+				);
 				local.penDocument.blockOrder.delete(1, 1);
 				local.penDocument.blockOrder.insert(0, ["b2"]);
 				local.penDocument.blockOrder.push(["b3"]);
@@ -78,11 +88,15 @@ describe("summarySource", () => {
 		expect(delta.textDeltas.get("b1")).toEqual([
 			[{ retain: 5 }, { insert: " world" }],
 		]);
-		expect(delta.blockOrderDelta.some((op) => op.insert?.includes("b3"))).toBe(
+		expect(
+			delta.blockOrderDelta.some((op) => op.insert?.includes("b3")),
+		).toBe(true);
+		expect(delta.blockOrderDelta.some((op) => (op.delete ?? 0) > 0)).toBe(
 			true,
 		);
-		expect(delta.blockOrderDelta.some((op) => (op.delete ?? 0) > 0)).toBe(true);
-		expect(delta.childArrayDeltas.get("parent")).toEqual([{ insert: ["b3"] }]);
+		expect(delta.childArrayDeltas.get("parent")).toEqual([
+			{ insert: ["b3"] },
+		]);
 		expect(delta.blockMapChanges.has("b3")).toBe(true);
 		expect(delta.blockMapChanges.get("b1")?.has("align")).toBe(true);
 		expect(delta.appChanges.has("app-1")).toBe(true);
@@ -115,7 +129,12 @@ describe("summarySource", () => {
 				(b1.get("content") as Y.Text).insert(5, " world");
 				(b1.get("props") as Y.Map<unknown>).set("align", "left");
 
-				initBlockMap(local.penDocument.blocks, "b3", "paragraph", "inline");
+				initBlockMap(
+					local.penDocument.blocks,
+					"b3",
+					"paragraph",
+					"inline",
+				);
 				local.penDocument.blockOrder.delete(1, 1);
 				local.penDocument.blockOrder.insert(0, ["b2"]);
 				local.penDocument.blockOrder.push(["b3"]);
@@ -141,7 +160,9 @@ describe("summarySource", () => {
 
 		expect(localDeltas).toHaveLength(1);
 		expect(remoteDeltas).toHaveLength(1);
-		expect(serializeDelta(localDeltas[0])).toEqual(serializeDelta(remoteDeltas[0]));
+		expect(serializeDelta(localDeltas[0])).toEqual(
+			serializeDelta(remoteDeltas[0]),
+		);
 		expect(localDeltas[0].originTag).toBe(localOrigin);
 		expect(remoteDeltas[0].originTag).not.toEqual(localDeltas[0].originTag);
 	});

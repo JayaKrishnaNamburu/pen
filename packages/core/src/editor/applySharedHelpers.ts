@@ -30,7 +30,8 @@ export function getMutableBlockMap(
 	blockId: string,
 ): MutableMap | null {
 	return (
-		(pipeline.blocks.get(blockId) as unknown as MutableMap | undefined) ?? null
+		(pipeline.blocks.get(blockId) as unknown as MutableMap | undefined) ??
+		null
 	);
 }
 
@@ -38,7 +39,9 @@ export function getMutableAppMap(
 	pipeline: Pick<ApplyPipelineDocumentAccess, "apps">,
 	appId: string,
 ): MutableMap | null {
-	return (pipeline.apps.get(appId) as unknown as MutableMap | undefined) ?? null;
+	return (
+		(pipeline.apps.get(appId) as unknown as MutableMap | undefined) ?? null
+	);
 }
 
 export function getOrCreateMapProp(
@@ -155,7 +158,9 @@ export function resolvePosition(
 	if (typeof position === "object" && "parent" in position) {
 		const parentMap = pipeline.blocks.get(position.parent);
 		if (!parentMap) return blockOrder.length;
-		const children = parentMap.get("children") as CRDTArray<string> | undefined;
+		const children = parentMap.get("children") as
+			| CRDTArray<string>
+			| undefined;
 		if (!children) return 0;
 		return Math.min(position.index, children.length);
 	}

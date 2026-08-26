@@ -3,23 +3,21 @@ export function AccessibilityPage() {
 		<>
 			<h1>Accessibility</h1>
 			<p>
-				The library target is WCAG 2.2 AA for what Pen itself
-				renders. Hosts compose primitives so a product can meet AA
-				without fighting the editing surface, focus model, or live
-				updates. The statement is{" "}
-				<code>spec/rules/accessibility.md</code>.
+				The library target is WCAG 2.2 AA for what Pen itself renders.
+				Hosts compose primitives so a product can meet AA without
+				fighting the editing surface, focus model, or live updates. The
+				statement is <code>spec/rules/accessibility.md</code>.
 			</p>
 
 			<h2>Editing surface</h2>
 			<p>
 				Provide a label at construction. A string becomes{" "}
-				<code>aria-label</code>. <code>{"{ labelledBy }"}</code>{" "}
-				becomes <code>aria-labelledby</code>. A missing label
-				diagnoses <code>a11y-missing-label</code> once, then falls
-				back to <code>pen.editor.label</code>. The diagnostic fires
-				only if a listener is already attached when the surface
-				first resolves the label. Attach later and the warning is
-				consumed silently.
+				<code>aria-label</code>. <code>{"{ labelledBy }"}</code> becomes{" "}
+				<code>aria-labelledby</code>. A missing label diagnoses{" "}
+				<code>a11y-missing-label</code> once, then falls back to{" "}
+				<code>pen.editor.label</code>. The diagnostic fires only if a
+				listener is already attached when the surface first resolves the
+				label. Attach later and the warning is consumed silently.
 			</p>
 			<pre>
 				<code>{`import { createEditor } from "@input/pen-core";
@@ -31,19 +29,18 @@ const editor = createEditor({
 });`}</code>
 			</pre>
 			<p>
-				React <code>EditorRoot</code>, Vue <code>PenEditor</code>,
-				and <code>mountEditor</code> set{" "}
+				React <code>EditorRoot</code>, Vue <code>PenEditor</code>, and{" "}
+				<code>mountEditor</code> set{" "}
 				<code>role=&quot;textbox&quot;</code>,{" "}
 				<code>aria-multiline=&quot;true&quot;</code>, the resolved
 				label, and <code>aria-readonly</code> from the{" "}
 				<code>readonly</code> prop or <code>pen.ariaReadOnly</code>. The
 				facet sets the attribute. The prop is what declines local
-				typing. A host that sets only the facet announces
-				read-only and still accepts keystrokes. Pointer
-				activation is the same path: an empty-block click
-				activates; a click on tall host chrome below the last
-				block activates that block; the gap between blocks stays
-				inactive.
+				typing. A host that sets only the facet announces read-only and
+				still accepts keystrokes. Pointer activation is the same path:
+				an empty-block click activates; a click on tall host chrome
+				below the last block activates that block; the gap between
+				blocks stays inactive.
 			</p>
 
 			<h2>What the library owns</h2>
@@ -55,21 +52,19 @@ const editor = createEditor({
 				</li>
 				<li>
 					One live region per editor root announces catalog strings
-					from <code>pen.messages</code> (
-					<code>pen.a11y.*</code> keys). Hosts do not mount a
-					second region for those events.
+					from <code>pen.messages</code> (<code>pen.a11y.*</code>{" "}
+					keys). Hosts do not mount a second region for those events.
 				</li>
 				<li>
 					Library styles do not remove focus indication. Overlay
-					carets and selection rectangles are{" "}
-					<code>aria-hidden</code> presentation.
+					carets and selection rectangles are <code>aria-hidden</code>{" "}
+					presentation.
 				</li>
 				<li>
 					A motion helper in <code>@input/pen-dom</code> reads{" "}
 					<code>prefers-reduced-motion: reduce</code>. It is not on
-					the package index. Overlay and paint do not apply that
-					flag yet. Missing <code>matchMedia</code> leaves
-					animations on.
+					the package index. Overlay and paint do not apply that flag
+					yet. Missing <code>matchMedia</code> leaves animations on.
 				</li>
 			</ul>
 			<p>
@@ -78,13 +73,13 @@ const editor = createEditor({
 				library link-editor primitive; hosts own that popover.
 			</p>
 			<p>
-				Conformance runs axe-core WCAG 2.2 AA on Chromium against
-				the editor root after every scenario unless the scenario
-				opts out. VoiceOver and NVDA checklist rows are a
-				release-cut obligation, not a per-PR gate. The committed
-				matrix at <code>packages/rendering/dom/src/a11y/MANUAL.md</code>{" "}
-				is a stub: no AT session has been recorded. The library does
-				not ship a high-contrast theme.
+				Conformance runs axe-core WCAG 2.2 AA on Chromium against the
+				editor root after every scenario unless the scenario opts out.
+				VoiceOver and NVDA checklist rows are a release-cut obligation,
+				not a per-PR gate. The committed matrix at{" "}
+				<code>packages/rendering/dom/src/a11y/MANUAL.md</code> is a
+				stub: no AT session has been recorded. The library does not ship
+				a high-contrast theme.
 			</p>
 		</>
 	);

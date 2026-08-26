@@ -10,7 +10,7 @@ export { useAISuggestionsMetrics } from "./useAISuggestionsMetrics";
 export {
 	useAIDebugLog,
 	type AIDebugLogEntry,
-	type AIDebugLogFastApplyMetrics,
+	type AIDebugLogCommitMetrics,
 	type AIDebugLogState,
 } from "./useAIDebugLog";
 export { useAISessions } from "./useAISessions";

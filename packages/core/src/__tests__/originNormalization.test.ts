@@ -25,7 +25,9 @@ type TestYTextLike = {
 type TestRawDocLike = {
 	transact(fn: () => void, origin?: unknown): void;
 	getMap(name: "blocks"): {
-		get(blockId: string): { get(key: "content"): TestYTextLike } | undefined;
+		get(
+			blockId: string,
+		): { get(key: "content"): TestYTextLike } | undefined;
 	};
 };
 

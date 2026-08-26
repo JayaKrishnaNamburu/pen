@@ -28,7 +28,11 @@ export function createAutocompleteStructuredCandidate(
 		continuationDepth?: number;
 	},
 ): AutocompleteStructuredCandidate {
-	const structuredSuggestion = parseStructuredSuggestion(editor, text, options);
+	const structuredSuggestion = parseStructuredSuggestion(
+		editor,
+		text,
+		options,
+	);
 	if (!structuredSuggestion) {
 		return {
 			rawText: text,
@@ -61,13 +65,15 @@ export function materializeStructuredCandidateAcceptance(options: {
 	const { blockId, candidate, offset } = options;
 	if (candidate.appendedBlocks.length === 0) {
 		return {
-			ops: [{
-				type: "splice-text",
-				blockId,
-				from: offset,
-				to: offset,
-				insert: candidate.inlineText,
-			}],
+			ops: [
+				{
+					type: "splice-text",
+					blockId,
+					from: offset,
+					to: offset,
+					insert: candidate.inlineText,
+				},
+			],
 			selection: {
 				blockId,
 				offset: offset + candidate.inlineText.length,
@@ -115,7 +121,8 @@ function parseStructuredSuggestion(
 		normalizedText.includes("\n") &&
 		!containsStructuredBlockContinuation(normalizedText)
 	) {
-		const proseStructuredSuggestion = parseProseLineStructuredSuggestion(normalizedText);
+		const proseStructuredSuggestion =
+			parseProseLineStructuredSuggestion(normalizedText);
 		if (proseStructuredSuggestion) {
 			return proseStructuredSuggestion;
 		}
@@ -142,17 +149,23 @@ function parseStructuredSuggestion(
 		} else if (/^\n{2,}/.test(tail)) {
 			return {
 				inlineText,
-				blocks: [{
-					type: "paragraph",
-					props: {},
-					content: "",
-				}],
+				blocks: [
+					{
+						type: "paragraph",
+						props: {},
+						content: "",
+					},
+				],
 			};
 		}
 	}
 
-	if (isProseBlockType(options?.activeBlockType) && normalizedText.includes("\n")) {
-		const proseStructuredSuggestion = parseProseLineStructuredSuggestion(normalizedText);
+	if (
+		isProseBlockType(options?.activeBlockType) &&
+		normalizedText.includes("\n")
+	) {
+		const proseStructuredSuggestion =
+			parseProseLineStructuredSuggestion(normalizedText);
 		if (proseStructuredSuggestion) {
 			return proseStructuredSuggestion;
 		}
@@ -160,7 +173,10 @@ function parseStructuredSuggestion(
 
 	if (isProseBlockType(options?.activeBlockType)) {
 		const implicitMultiParagraphSuggestion =
-			parseImplicitMultiParagraphSuggestion(normalizedText, options?.continuationDepth ?? 0);
+			parseImplicitMultiParagraphSuggestion(
+				normalizedText,
+				options?.continuationDepth ?? 0,
+			);
 		if (implicitMultiParagraphSuggestion) {
 			return implicitMultiParagraphSuggestion;
 		}
@@ -183,9 +199,8 @@ function containsStructuredBlockContinuation(text: string): boolean {
 
 function findStructuredSuggestionBoundary(text: string): number {
 	const blankLineMatch = /\n{2,}/.exec(text);
-	const markdownLineMatch = /\n(?=(?:#{1,6}\s|>\s|[-*+]\s|\d+[.)]\s|\[[ xX]\]\s|```))/.exec(
-		text,
-	);
+	const markdownLineMatch =
+		/\n(?=(?:#{1,6}\s|>\s|[-*+]\s|\d+[.)]\s|\[[ xX]\]\s|```))/.exec(text);
 	const blankLineIndex = blankLineMatch?.index ?? -1;
 	const markdownLineIndex = markdownLineMatch?.index ?? -1;
 	if (blankLineIndex === -1) {
@@ -265,7 +280,9 @@ function parseProseLineStructuredSuggestion(text: string): {
 // trailing newline runs are handled separately, where an empty block is deliberate — that is the
 // block the caret lands in after acceptance.
 function splitProseParagraphs(text: string): string[] {
-	return splitPlainTextLineBlocks(text).filter((paragraph) => paragraph.length > 0);
+	return splitPlainTextLineBlocks(text).filter(
+		(paragraph) => paragraph.length > 0,
+	);
 }
 
 function splitAutocompleteProseBlocks(text: string): {
@@ -275,9 +292,13 @@ function splitAutocompleteProseBlocks(text: string): {
 	const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 	const leadingNewlineMatch = /^\n+/.exec(normalizedText);
 	if (leadingNewlineMatch) {
-		const tailBlocks = splitProseParagraphs(normalizedText.slice(leadingNewlineMatch[0].length));
+		const tailBlocks = splitProseParagraphs(
+			normalizedText.slice(leadingNewlineMatch[0].length),
+		);
 		const leadingEmptyBlocks = createEmptyBlocks(
-			tailBlocks.length > 0 ? leadingNewlineMatch[0].length - 1 : leadingNewlineMatch[0].length,
+			tailBlocks.length > 0
+				? leadingNewlineMatch[0].length - 1
+				: leadingNewlineMatch[0].length,
 		);
 		const blocks = [...leadingEmptyBlocks, ...tailBlocks];
 		return blocks.length > 0 ? { inlineText: "", blocks } : null;
@@ -291,7 +312,10 @@ function splitAutocompleteProseBlocks(text: string): {
 
 	const [inlineParagraph, ...tailParagraphs] = paragraphs;
 	return {
-		inlineText: resolveAutocompleteInlineParagraphText(normalizedText, inlineParagraph ?? ""),
+		inlineText: resolveAutocompleteInlineParagraphText(
+			normalizedText,
+			inlineParagraph ?? "",
+		),
 		blocks: [...tailParagraphs, ...trailingEmptyBlocks],
 	};
 }
@@ -305,7 +329,10 @@ function createEmptyBlocks(count: number): string[] {
 	return Array.from({ length: Math.max(0, count) }, () => "");
 }
 
-function resolveAutocompleteInlineParagraphText(text: string, fallback: string): string {
+function resolveAutocompleteInlineParagraphText(
+	text: string,
+	fallback: string,
+): string {
 	const firstNonEmptyLine = text
 		.replace(/\r\n/g, "\n")
 		.replace(/\r/g, "\n")
@@ -344,16 +371,26 @@ function parseImplicitMultiParagraphSuggestion(
 	if (sentenceRanges.length < 2) {
 		return null;
 	}
-	const splitIndex = findImplicitParagraphSplitIndex(text, sentenceRanges, thresholds);
+	const splitIndex = findImplicitParagraphSplitIndex(
+		text,
+		sentenceRanges,
+		thresholds,
+	);
 	if (splitIndex < 0) {
 		return null;
 	}
 	const inlineText = text.slice(0, splitIndex).replace(/\s+$/, "");
 	const remainingText = text.slice(splitIndex).trim();
-	if (inlineText.length === 0 || remainingText.length < thresholds.minRemainderChars) {
+	if (
+		inlineText.length === 0 ||
+		remainingText.length < thresholds.minRemainderChars
+	) {
 		return null;
 	}
-	const paragraphContents = buildImplicitParagraphContents(remainingText, thresholds);
+	const paragraphContents = buildImplicitParagraphContents(
+		remainingText,
+		thresholds,
+	);
 	if (paragraphContents.length === 0) {
 		return null;
 	}
@@ -367,7 +404,9 @@ function parseImplicitMultiParagraphSuggestion(
 	};
 }
 
-function splitIntoSentenceRanges(text: string): Array<{ start: number; end: number }> {
+function splitIntoSentenceRanges(
+	text: string,
+): Array<{ start: number; end: number }> {
 	const ranges: Array<{ start: number; end: number }> = [];
 	const boundaryPattern = /[.!?]["')\]]*\s+(?=(?:["'([{]*[A-Z]))/g;
 	let start = 0;
@@ -380,7 +419,9 @@ function splitIntoSentenceRanges(text: string): Array<{ start: number; end: numb
 	if (start < text.length) {
 		ranges.push({ start, end: text.length });
 	}
-	return ranges.filter((range) => text.slice(range.start, range.end).trim().length > 0);
+	return ranges.filter(
+		(range) => text.slice(range.start, range.end).trim().length > 0,
+	);
 }
 
 function findImplicitParagraphSplitIndex(
@@ -404,7 +445,10 @@ function findImplicitParagraphSplitIndex(
 	}
 	for (const range of sentenceRanges) {
 		const candidateIndex = range.end;
-		if (text.slice(candidateIndex).trim().length >= thresholds.minRemainderChars) {
+		if (
+			text.slice(candidateIndex).trim().length >=
+			thresholds.minRemainderChars
+		) {
 			return candidateIndex;
 		}
 	}

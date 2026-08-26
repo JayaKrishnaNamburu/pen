@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { undoExtension } from "@input/pen-undo";
-import {
-	aiSuggestionsExtension,
-	getAISuggestionsController,
-} from "../index";
+import { aiSuggestionsExtension, getAISuggestionsController } from "../index";
 
 async function flushTimers(): Promise<void> {
 	await Promise.resolve();
@@ -54,8 +51,8 @@ describe("AIB4 suggestion accept undo", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Ths sentece works.",
+					to: 0,
+					insert: "Ths sentece works.",
 				},
 			],
 			{ origin: "user" },
@@ -76,7 +73,9 @@ describe("AIB4 suggestion accept undo", () => {
 			"Ths sentece works.",
 		);
 		expect(editor.undoManager.undo()).toBe(true);
-		expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe("");
+		expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+			"",
+		);
 
 		editor.destroy();
 	});

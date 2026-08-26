@@ -1,8 +1,5 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import {
-	type DocumentSession,
-	type PenStreamPart,
-} from "@input/pen-types";
+import { type DocumentSession, type PenStreamPart } from "@input/pen-types";
 import { defineExtension, getOpOriginType } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
@@ -77,7 +74,6 @@ type TestTableRowLike = {
 type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
-
 
 describe("@input/pen-core createEditor", () => {
 	it("discovers subdocument scopes and lets nested editors edit them", () => {
@@ -356,9 +352,7 @@ describe("@input/pen-core createEditor", () => {
 		const { controller } = ensureInlineCompletionController(editor);
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 		controller.showSuggestion({
@@ -420,5 +414,4 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.destroy();
 	});
-
 });

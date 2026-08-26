@@ -1,13 +1,6 @@
-import {
-	describe,
-	expect,
-	it } from "vitest";
-import {
-	createEditor,
-	getInlineCompletionController,
-	} from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY,
-} from "@input/pen-types";
+import { describe, expect, it } from "vitest";
+import { createEditor, getInlineCompletionController } from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -42,13 +35,17 @@ describe("@input/pen-ai/autocomplete", () => {
 			activeCellCoord: null,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 50,
 					model: {
 						async *stream() {
 							modelCalled = true;
-							yield { type: "text-delta" as const, delta: " value" };
+							yield {
+								type: "text-delta" as const,
+								delta: " value",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -57,10 +54,16 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
 					},
 				}),
@@ -103,16 +106,24 @@ describe("@input/pen-ai/autocomplete", () => {
 		expect(controller?.getState().diagnostics.lastBlockedReason).toBe(
 			"code-block-disabled",
 		);
-		expect(controller?.getState().diagnostics.lastPolicyInvalidationStage).toBe(
-			"scheduled",
-		);
-		expect(controller?.getState().metrics.policyInvalidationScheduledCount).toBe(1);
-		expect(controller?.getState().metrics.policyInvalidationRequestingCount).toBe(0);
-		expect(controller?.getState().metrics.policyInvalidationShowingCount).toBe(0);
+		expect(
+			controller?.getState().diagnostics.lastPolicyInvalidationStage,
+		).toBe("scheduled");
+		expect(
+			controller?.getState().metrics.policyInvalidationScheduledCount,
+		).toBe(1);
+		expect(
+			controller?.getState().metrics.policyInvalidationRequestingCount,
+		).toBe(0);
+		expect(
+			controller?.getState().metrics.policyInvalidationShowingCount,
+		).toBe(0);
 
 		controller?.updateBlockPolicy({ allowInCodeBlocks: true });
 		expect(controller?.request({ explicit: true })).toBe(true);
-		expect(controller?.getState().diagnostics.lastPolicyInvalidationStage).toBeNull();
+		expect(
+			controller?.getState().diagnostics.lastPolicyInvalidationStage,
+		).toBeNull();
 
 		editor.destroy();
 	});
@@ -128,14 +139,20 @@ describe("@input/pen-ai/autocomplete", () => {
 			activeCellCoord: null,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
 						async *stream() {
 							streamStarted = true;
-							await new Promise((resolve) => setTimeout(resolve, 20));
-							yield { type: "text-delta" as const, delta: " value" };
+							await new Promise((resolve) =>
+								setTimeout(resolve, 20),
+							);
+							yield {
+								type: "text-delta" as const,
+								delta: " value",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -144,10 +161,16 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
 					},
 				}),
@@ -191,12 +214,18 @@ describe("@input/pen-ai/autocomplete", () => {
 		expect(controller?.getState().diagnostics.lastBlockedReason).toBe(
 			"code-block-disabled",
 		);
-		expect(controller?.getState().diagnostics.lastPolicyInvalidationStage).toBe(
-			"requesting",
-		);
-		expect(controller?.getState().metrics.policyInvalidationScheduledCount).toBe(0);
-		expect(controller?.getState().metrics.policyInvalidationRequestingCount).toBe(1);
-		expect(controller?.getState().metrics.policyInvalidationShowingCount).toBe(0);
+		expect(
+			controller?.getState().diagnostics.lastPolicyInvalidationStage,
+		).toBe("requesting");
+		expect(
+			controller?.getState().metrics.policyInvalidationScheduledCount,
+		).toBe(0);
+		expect(
+			controller?.getState().metrics.policyInvalidationRequestingCount,
+		).toBe(1);
+		expect(
+			controller?.getState().metrics.policyInvalidationShowingCount,
+		).toBe(0);
 
 		editor.destroy();
 	});
@@ -211,12 +240,16 @@ describe("@input/pen-ai/autocomplete", () => {
 			activeCellCoord: null,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: " value" };
+							yield {
+								type: "text-delta" as const,
+								delta: " value",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -225,10 +258,16 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
 					},
 				}),
@@ -269,12 +308,18 @@ describe("@input/pen-ai/autocomplete", () => {
 		expect(controller?.getState().diagnostics.lastDismissReason).toBe(
 			"policy-change",
 		);
-		expect(controller?.getState().diagnostics.lastPolicyInvalidationStage).toBe(
-			"showing",
-		);
-		expect(controller?.getState().metrics.policyInvalidationScheduledCount).toBe(0);
-		expect(controller?.getState().metrics.policyInvalidationRequestingCount).toBe(0);
-		expect(controller?.getState().metrics.policyInvalidationShowingCount).toBe(1);
+		expect(
+			controller?.getState().diagnostics.lastPolicyInvalidationStage,
+		).toBe("showing");
+		expect(
+			controller?.getState().metrics.policyInvalidationScheduledCount,
+		).toBe(0);
+		expect(
+			controller?.getState().metrics.policyInvalidationRequestingCount,
+		).toBe(0);
+		expect(
+			controller?.getState().metrics.policyInvalidationShowingCount,
+		).toBe(1);
 
 		const controllerImpl = controller as unknown as {
 			_state: {
@@ -327,7 +372,9 @@ describe("@input/pen-ai/autocomplete", () => {
 			visibleSuggestionId: "manual-policy-recheck",
 		});
 		expect(controller?.acceptVisibleSuggestion()).toBe(false);
-		expect(controller?.getState().metrics.policyInvalidationShowingCount).toBe(2);
+		expect(
+			controller?.getState().metrics.policyInvalidationShowingCount,
+		).toBe(2);
 		expect(controller?.getState().diagnostics.lastDismissReason).toBe(
 			"policy-change",
 		);
@@ -346,7 +393,8 @@ describe("@input/pen-ai/autocomplete", () => {
 			activeCellCoord: { blockId: "table-1", row: 0, col: 0 },
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					blockPolicy: {
@@ -355,7 +403,10 @@ describe("@input/pen-ai/autocomplete", () => {
 					model: {
 						async *stream() {
 							modelCalled = true;
-							yield { type: "text-delta" as const, delta: " cell" };
+							yield {
+								type: "text-delta" as const,
+								delta: " cell",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -364,10 +415,16 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
 					},
 				}),
@@ -395,5 +452,4 @@ describe("@input/pen-ai/autocomplete", () => {
 
 		editor.destroy();
 	});
-
 });

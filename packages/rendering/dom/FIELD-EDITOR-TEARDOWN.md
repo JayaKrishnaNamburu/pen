@@ -17,7 +17,7 @@ Those hosts also clear the field-editor slots and their own `focusin` / `focusou
 
 ## `destroy()` sequence today
 
-`FieldEditorImplRuntime.destroy()`:
+`FieldEditorImpl.destroy()`:
 
 1. Unsubscribe editor `onSelectionChange` and `onHistoryApplied`.
 2. `SessionReconciler.destroy()`.
@@ -70,7 +70,7 @@ Released by the matching `deactivate()`, which `destroy()` reaches through `_dea
 
 ContentEditable (`contenteditableBackendCore.ts`): `beforeinput`, `compositionstart`, `compositionend`, `keydown`, `copy`, `cut`, `dragstart`, `drop`, `pointerdown`, document `selectionchange`. `contentEditable` set back to `"false"`.
 
-EditContext (`editContextBackendCore.ts`): element `keydown`, `copy`, `cut`, `paste`, `dragstart`, `drop`, `pointerdown`, document `selectionchange`; EditContext `textupdate`, `textformatupdate`, `characterboundsupdate`. `element.editContext` nulled. The `EditContext` object is dropped; it has no separate destroy API.
+EditContext (`editContextBackend.ts`): element `keydown`, `copy`, `cut`, `paste`, `dragstart`, `drop`, `pointerdown`, document `selectionchange`; EditContext `textupdate`, `textformatupdate`, `characterboundsupdate`. `element.editContext` nulled. The `EditContext` object is dropped; it has no separate destroy API.
 
 Expanded (`expandedContentEditableBackend.ts`): `beforeinput`, `keydown`, `copy`, `cut`, `dragstart`, `drop`, document `selectionchange`. `contentEditable` `"false"`, `tabindex` removed.
 

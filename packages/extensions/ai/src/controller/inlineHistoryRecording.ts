@@ -4,7 +4,7 @@ import type {
 	AIInlineHistorySnapshot,
 	AISession,
 } from "../types";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 import { canRegisterExternalInlineTurn } from "../runtime/externalInlineTurnRegistry";
 import {
 	AI_UNDO_HISTORY_METADATA_KEY,
@@ -15,7 +15,7 @@ import {
 
 export const inlineHistoryRecording = {
 	registerExternalInlineTurnResult(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		input: {
 			sessionId: string;
 			turnId: string;
@@ -56,7 +56,10 @@ export const inlineHistoryRecording = {
 		const currentSnapshot = nextHistory[nextHistory.length - 1] ?? null;
 		const currentSnapshotIsFull =
 			currentSnapshot &&
-			areInlineHistorySnapshotsEqual(currentSnapshot, fullCurrentSnapshot);
+			areInlineHistorySnapshotsEqual(
+				currentSnapshot,
+				fullCurrentSnapshot,
+			);
 		const retainedCurrentSnapshot = currentSnapshotIsFull
 			? currentSnapshot
 			: null;
@@ -130,7 +133,7 @@ export const inlineHistoryRecording = {
 	},
 
 	_createExternalInlineTurnHistorySessions(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		sessionId: string,
 		turnId: string,
 		includeTurn: boolean,
@@ -167,9 +170,6 @@ export const inlineHistoryRecording = {
 			const nextPendingSuggestionIds = [
 				...new Set(nextTurns.flatMap((item) => item.suggestionIds)),
 			];
-			const nextPendingReviewItemIds = [
-				...new Set(nextTurns.flatMap((item) => item.reviewItemIds)),
-			];
 			const previousTurn = nextTurns[nextTurns.length - 1] ?? null;
 			return {
 				...session,
@@ -177,7 +177,6 @@ export const inlineHistoryRecording = {
 				turns: nextTurns,
 				activeTurnId: previousTurn?.id,
 				pendingSuggestionIds: nextPendingSuggestionIds,
-				pendingReviewItemIds: nextPendingReviewItemIds,
 				contextualPrompt: session.contextualPrompt
 					? {
 							...session.contextualPrompt,
@@ -194,7 +193,7 @@ export const inlineHistoryRecording = {
 	},
 
 	_recordInlineHistorySnapshot(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		previousState: AIControllerState,
 		nextState: AIControllerState,
 	): void {
@@ -271,7 +270,7 @@ export const inlineHistoryRecording = {
 	},
 
 	_recordInlinePromptSubmissionCheckpoint(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		sessionId: string,
 		prompt: string,
 	): void {

@@ -22,7 +22,10 @@ describe("pen.a11yLabel facet (AX1)", () => {
 	});
 
 	it("AX1: createEditor a11yLabel becomes the facet value", () => {
-		const editor = createHeadlessEditor({ schema: defaultSchema,  a11yLabel: "Compose email" });
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			a11yLabel: "Compose email",
+		});
 		expect(editor.facet(a11yLabelFacet)).toBe("Compose email");
 		expect(resolveEditorA11yLabel(editor)).toEqual({
 			"aria-label": "Compose email",
@@ -32,7 +35,8 @@ describe("pen.a11yLabel facet (AX1)", () => {
 
 	it("AX1: host a11yLabel beats an extension at the same precedence", () => {
 		const editor = createHeadlessEditor({
-			schema: defaultSchema,a11yLabel: "Host label",
+			schema: defaultSchema,
+			a11yLabel: "Host label",
 			extensions: [
 				defineExtension({
 					name: "a11y-ext",
@@ -46,7 +50,8 @@ describe("pen.a11yLabel facet (AX1)", () => {
 
 	it("AX1: labelledBy maps to aria-labelledby", () => {
 		const editor = createHeadlessEditor({
-			schema: defaultSchema,a11yLabel: { labelledBy: "page-title" },
+			schema: defaultSchema,
+			a11yLabel: { labelledBy: "page-title" },
 		});
 		expect(resolveEditorA11yLabel(editor)).toEqual({
 			"aria-labelledby": "page-title",

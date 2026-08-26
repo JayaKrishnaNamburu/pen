@@ -1,10 +1,6 @@
 import type { CommandResult, Editor } from "@input/pen-types";
 
-import {
-	collapsedAt,
-	convertBlockOps,
-	emitCommandDiagnostic,
-} from "./helpers";
+import { collapsedAt, convertBlockOps, emitCommandDiagnostic } from "./helpers";
 import type { ConvertBlockParam } from "./textParams";
 
 export function applyConvert(
@@ -15,7 +11,9 @@ export function applyConvert(
 		return false;
 	}
 	if (
-		!editor.schema.allBlocks().some((schema) => schema.type === param.newType)
+		!editor.schema
+			.allBlocks()
+			.some((schema) => schema.type === param.newType)
 	) {
 		emitCommandDiagnostic(editor, {
 			code: "invalid-block-type",

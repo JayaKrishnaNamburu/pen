@@ -44,9 +44,15 @@ describe("AIB2 suggestions send bounds", () => {
 		expect(oversized.length).toBeGreaterThan(DEFAULT_MAX_SCOPE_CHARS);
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: oversized }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: oversized,
+				},
+			],
 			{ origin: "user" },
 		);
 

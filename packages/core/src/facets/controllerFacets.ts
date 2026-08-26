@@ -24,9 +24,8 @@ export const aiInlineCompletionFacet = singleController<unknown>(
 	"ai.inlineCompletion",
 );
 export const aiControllerFacet = singleController<unknown>("ai.controller");
-export const aiInlineHistoryFacet = singleController<unknown>(
-	"ai.inlineHistory",
-);
+export const aiInlineHistoryFacet =
+	singleController<unknown>("ai.inlineHistory");
 export const aiReviewControllerFacet = singleController<unknown>(
 	"ai.reviewController",
 );
@@ -36,22 +35,18 @@ export const aiAutocompleteControllerFacet = singleController<unknown>(
 export const aiSuggestionsControllerFacet = singleController<unknown>(
 	"ai.suggestionsController",
 );
-export const searchControllerFacet = singleController<unknown>(
-	"search.controller",
-);
+export const searchControllerFacet =
+	singleController<unknown>("search.controller");
 export const multiplayerControllerFacet = singleController<unknown>(
 	"multiplayer.controller",
 );
-export const historyControllerFacet = singleController<unknown>(
-	"history.controller",
-);
-export const assetProviderFacet = singleController<unknown>(
-	"pen.assetProvider",
-);
+export const historyControllerFacet =
+	singleController<unknown>("history.controller");
+export const assetProviderFacet =
+	singleController<unknown>("pen.assetProvider");
 export const documentOpsToolRuntimeFacet = singleController<unknown>(
 	"documentOps.toolRuntime",
 );
 export const announcerFacet = singleController<unknown>("pen.announcer");
-export const streamingTargetFacet = singleController<unknown>(
-	"deltaStream.target",
-);
+export const streamingTargetFacet =
+	singleController<unknown>("deltaStream.target");

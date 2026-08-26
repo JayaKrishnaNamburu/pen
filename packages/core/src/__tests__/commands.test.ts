@@ -17,16 +17,16 @@ const insertHello: DocumentOp = {
 	type: "splice-text",
 	blockId: "b1",
 	from: 0,
-				to: 0,
-				insert: "hello",
+	to: 0,
+	insert: "hello",
 };
 
 const insertWorld: DocumentOp = {
 	type: "splice-text",
 	blockId: "b1",
 	from: 5,
-				to: 5,
-				insert: " world",
+	to: 5,
+	insert: " world",
 };
 
 const blockSelection = (blockId: string): SelectionState => ({
@@ -77,26 +77,46 @@ describe("command registry", () => {
 
 		const registry = createCommandRegistry({
 			providers: [
-				commandHandler(ping, () => {
-					seen.push("default");
-					return true;
-				}, "default"),
-				commandHandler(other, () => {
-					seen.push("other");
-					return true;
-				}, "highest"),
-				commandHandler(ping, () => {
-					seen.push("high-miss");
-					return false;
-				}, "high"),
-				commandHandler(ping, () => {
-					seen.push("highest");
-					return false;
-				}, "highest"),
-				commandHandler(ping, () => {
-					seen.push("low");
-					return true;
-				}, "low"),
+				commandHandler(
+					ping,
+					() => {
+						seen.push("default");
+						return true;
+					},
+					"default",
+				),
+				commandHandler(
+					other,
+					() => {
+						seen.push("other");
+						return true;
+					},
+					"highest",
+				),
+				commandHandler(
+					ping,
+					() => {
+						seen.push("high-miss");
+						return false;
+					},
+					"high",
+				),
+				commandHandler(
+					ping,
+					() => {
+						seen.push("highest");
+						return false;
+					},
+					"highest",
+				),
+				commandHandler(
+					ping,
+					() => {
+						seen.push("low");
+						return true;
+					},
+					"low",
+				),
 			],
 		});
 
@@ -108,9 +128,7 @@ describe("command registry", () => {
 		const ping = defineCommand("test.ping");
 		const other = defineCommand("test.other");
 		const registry = createCommandRegistry({
-			providers: [
-				commandHandler(other, () => true),
-			],
+			providers: [commandHandler(other, () => true)],
 		});
 
 		expect(registry.dispatch(ping, undefined)).toBe(false);
@@ -121,9 +139,7 @@ describe("command registry", () => {
 		const fixture = createEditorFixture();
 		const registry = createCommandRegistry({
 			editor: fixture.editor,
-			providers: [
-				commandHandler(insert, () => ({ ops: [insertHello] })),
-			],
+			providers: [commandHandler(insert, () => ({ ops: [insertHello] }))],
 		});
 
 		expect(registry.dispatch(insert, undefined)).toBe(true);

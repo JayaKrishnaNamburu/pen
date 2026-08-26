@@ -84,7 +84,8 @@ export function openEditorTextStream(
 	let lengthAtHead = editor.getBlock(writeHead.blockId)?.length() ?? 0;
 
 	function rememberLength(): void {
-		lengthAtHead = editor.getBlock(writeHead.blockId)?.length() ?? lengthAtHead;
+		lengthAtHead =
+			editor.getBlock(writeHead.blockId)?.length() ?? lengthAtHead;
 	}
 
 	function summaryTouchesHead(summary: CommitEvent["summary"]): boolean {
@@ -95,7 +96,8 @@ export function openEditorTextStream(
 		if (
 			summary.blockText.some(
 				(change) =>
-					change.blockId === writeHead.blockId || change.blockId === headBlockId,
+					change.blockId === writeHead.blockId ||
+					change.blockId === headBlockId,
 			)
 		) {
 			return true;
@@ -103,7 +105,8 @@ export function openEditorTextStream(
 		return summary.structural.some(
 			(change) =>
 				change.type === "block-removed" &&
-				(change.blockId === writeHead.blockId || change.blockId === headBlockId),
+				(change.blockId === writeHead.blockId ||
+					change.blockId === headBlockId),
 		);
 	}
 
@@ -144,7 +147,11 @@ export function openEditorTextStream(
 		if (head !== previous) {
 			mintPoint = null;
 		}
-		if (head === previous && moves.length === 0 && !summaryTouchesHead(summary)) {
+		if (
+			head === previous &&
+			moves.length === 0 &&
+			!summaryTouchesHead(summary)
+		) {
 			return;
 		}
 		const resolved = editor.anchors.resolve(head);

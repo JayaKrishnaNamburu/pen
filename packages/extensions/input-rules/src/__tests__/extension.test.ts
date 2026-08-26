@@ -39,7 +39,7 @@ function createMockEditor(textContent: string) {
 		apply,
 		getBlock: () => ({
 			type: "paragraph",
-			textContent: () => textContent
+			textContent: () => textContent,
 		}),
 		onBeforeApply: vi.fn((hook: BeforeApplyHook) => {
 			beforeApplyHook = hook;
@@ -48,26 +48,26 @@ function createMockEditor(textContent: string) {
 			};
 		}),
 		internals: {
-			assignSlot: vi.fn()
+			assignSlot: vi.fn(),
 		},
 		selection: {
 			type: "text" as const,
 			anchor: { blockId: "b1", offset: textContent.length },
-			focus: { blockId: "b1", offset: textContent.length }
+			focus: { blockId: "b1", offset: textContent.length },
 		},
 		schema: {
 			resolve: () => ({
 				content: "inline",
-				fieldEditor: "richtext"
+				fieldEditor: "richtext",
 			}),
-			resolveInline: () => ({ kind: "mark" })
-		}
+			resolveInline: () => ({ kind: "mark" }),
+		},
 	} satisfies InputRulesExtensionTestEditor;
 
 	return {
 		editor: editor as unknown as Editor,
 		apply,
-		getHook: () => beforeApplyHook
+		getHook: () => beforeApplyHook,
 	};
 }
 
@@ -80,27 +80,38 @@ describe("inputRulesExtension", () => {
 			editor,
 			dom: {} as Document,
 			emit: () => undefined,
-			getState: () => undefined
+			getState: () => undefined,
 		});
 
 		const hook = getHook();
 		expect(hook).toBeTypeOf("function");
 
 		const ops = hook!(
-			[{ type: "splice-text", blockId: "b1", from: 1,
-				to: 1,
-				insert: " " }],
+			[
+				{
+					type: "splice-text",
+					blockId: "b1",
+					from: 1,
+					to: 1,
+					insert: " ",
+				},
+			],
 			{ origin: "user" },
 		);
 
 		expect(ops).toEqual([
-			{ type: "splice-text", blockId: "b1", from: 1,
-				to: 1,
-				insert: " " },
-			{ type: "splice-text", blockId: "b1", from: 0,
-				to: 0 + 2 , insert: "" },
+			{ type: "splice-text", blockId: "b1", from: 1, to: 1, insert: " " },
 			{
-				type: "set-props", blockId: "b1", props: { type: "heading", ...{ level: 1  }}
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
+				to: 0 + 2,
+				insert: "",
+			},
+			{
+				type: "set-props",
+				blockId: "b1",
+				props: { type: "heading", ...{ level: 1 } },
 			},
 		]);
 		expect(apply).not.toHaveBeenCalled();
@@ -120,44 +131,48 @@ describe("inputRulesExtension", () => {
 					handler: (_match, ctx) => {
 						fires += 1;
 						if (fires > 8) {
-							throw new Error("input rule rematched its own output");
+							throw new Error(
+								"input rule rematched its own output",
+							);
 						}
 						return [
 							{
 								type: "splice-text",
 								blockId: ctx.blockId,
 								from: ctx.fullText.length + 1,
-				to: ctx.fullText.length + 1,
-				insert: " "
+								to: ctx.fullText.length + 1,
+								insert: " ",
 							},
 						];
-					}
+					},
 				},
-			]
+			],
 		});
 
 		await extension.activateClient?.({
 			editor,
 			dom: {} as Document,
 			emit: () => undefined,
-			getState: () => undefined
+			getState: () => undefined,
 		});
 
 		const ops = getHook()!(
-			[{ type: "splice-text", blockId: "b1", from: 1,
-				to: 1,
-				insert: " " }],
+			[
+				{
+					type: "splice-text",
+					blockId: "b1",
+					from: 1,
+					to: 1,
+					insert: " ",
+				},
+			],
 			{ origin: "user" },
 		);
 
 		expect(fires).toBe(1);
 		expect(ops).toEqual([
-			{ type: "splice-text", blockId: "b1", from: 1,
-				to: 1,
-				insert: " " },
-			{ type: "splice-text", blockId: "b1", from: 2,
-				to: 2,
-				insert: " " },
+			{ type: "splice-text", blockId: "b1", from: 1, to: 1, insert: " " },
+			{ type: "splice-text", blockId: "b1", from: 2, to: 2, insert: " " },
 		]);
 	});
 
@@ -169,13 +184,11 @@ describe("inputRulesExtension", () => {
 			editor,
 			dom: {} as Document,
 			emit: () => undefined,
-			getState: () => undefined
+			getState: () => undefined,
 		});
 
 		const originalOps: DocumentOp[] = [
-			{ type: "splice-text", blockId: "b1", from: 1,
-				to: 1,
-				insert: " " },
+			{ type: "splice-text", blockId: "b1", from: 1, to: 1, insert: " " },
 		];
 		const ops = getHook()!(originalOps, { origin: "input-rule" });
 

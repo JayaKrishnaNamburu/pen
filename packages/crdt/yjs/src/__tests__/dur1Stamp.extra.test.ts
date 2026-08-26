@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	PEN_DOCUMENT_FORMAT,
-	PEN_FORMAT_METADATA_KEY,
-} from "@input/pen-types";
+import { PEN_DOCUMENT_FORMAT, PEN_FORMAT_METADATA_KEY } from "@input/pen-types";
 
 import { yjsAdapter } from "../adapter";
 import { createYjsDocument } from "../document";
@@ -32,9 +29,9 @@ describe("format stamp leftovers (DUR1)", () => {
 		expect(stamp.format).toBe(PEN_DOCUMENT_FORMAT);
 		expect(stamp.minReader).toBe(1);
 		expect(stamp.writer).toMatch(SEMVER);
-		expect(unstamped.penDocument.metadata.get(PEN_FORMAT_METADATA_KEY)).toEqual(
-			stamp,
-		);
+		expect(
+			unstamped.penDocument.metadata.get(PEN_FORMAT_METADATA_KEY),
+		).toEqual(stamp);
 	});
 
 	it("DUR1: a matching stamp is not rewritten on the first user write", () => {

@@ -33,14 +33,8 @@ import {
 } from "./caretMotion";
 import { handleVerticalCaret } from "./caretVerticalMotion";
 
-export type {
-	CaretMotionParam,
-	SelectBlockParam,
-} from "./caretParams";
-export type {
-	CellCaretFocus,
-	CellCaretWrite,
-} from "./caretCellEditing";
+export type { CaretMotionParam, SelectBlockParam } from "./caretParams";
+export type { CellCaretFocus, CellCaretWrite } from "./caretCellEditing";
 export {
 	caretBlockEnd,
 	caretBlockStart,

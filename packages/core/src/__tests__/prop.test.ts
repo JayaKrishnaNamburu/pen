@@ -3,7 +3,10 @@ import { prop } from "../schema/prop";
 
 describe("prop builder", () => {
 	it("prop.string() produces correct schema", () => {
-		expect(prop.string().toSchema()).toEqual({ type: "string", default: "" });
+		expect(prop.string().toSchema()).toEqual({
+			type: "string",
+			default: "",
+		});
 	});
 
 	it("prop.string() with chaining", () => {

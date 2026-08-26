@@ -41,6 +41,29 @@ const tools = toolRuntime.listTools();
 
 Prefer `@input/pen-ai/tools` for the main public agent/tool integration story. Reach for `@input/pen-document-ops` when you need the underlying document semantics or lower-level runtime escape hatches.
 
+## Tool surfaces
+
+This package registers every document tool. Which surface a tool is **mounted** on is a different question (`spec-v5/01-channel.md` UC7): the in-editor loop mounts reads plus exactly one mutator; the single-purpose mutators stay host-facing for external agents.
+
+| Tool                      | Surface                                                             |
+| ------------------------- | ------------------------------------------------------------------- |
+| `read_document`           | in-editor loop, host                                                |
+| `get_context`             | in-editor loop, host                                                |
+| `get_cursor_context`      | in-editor loop, host                                                |
+| `search_document`         | in-editor loop, host                                                |
+| `retrieve_document_spans` | in-editor loop, host                                                |
+| `list_block_types`        | in-editor loop, host                                                |
+| `inspect_target`          | host (describes the per-block mutators; stays off the edit channel) |
+| `list_valid_operations`   | host (same)                                                         |
+| `edit_document`           | in-editor loop (the one mutating tool), host                        |
+| `insert_block`            | host-facing                                                         |
+| `update_block`            | host-facing                                                         |
+| `delete_block`            | host-facing                                                         |
+| `move_block`              | host-facing                                                         |
+| `write_document`          | host-facing                                                         |
+
+A tool that serves neither surface is deleted.
+
 ## Payload validation (SEC6)
 
 Built-in document tools and `ToolContextImpl` validate each tool-call payload structurally **before** `editor.apply`. Pipeline phase 2 remains the backstop for every other op source.

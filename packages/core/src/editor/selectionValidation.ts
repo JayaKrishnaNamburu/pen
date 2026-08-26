@@ -108,7 +108,9 @@ export function selectionEquals(
 			if (left.blockIds.length !== right.blockIds.length) {
 				return false;
 			}
-			if (left.blockIds.some((id, index) => id !== right.blockIds[index])) {
+			if (
+				left.blockIds.some((id, index) => id !== right.blockIds[index])
+			) {
 				return false;
 			}
 			const leftHead =
@@ -257,7 +259,10 @@ function validateText(
 		doc: PenDocument;
 	},
 ): SelectionState | undefined {
-	if (!host.blockExists(sel.anchor.blockId) || !host.blockExists(sel.focus.blockId)) {
+	if (
+		!host.blockExists(sel.anchor.blockId) ||
+		!host.blockExists(sel.focus.blockId)
+	) {
 		host.emitMissingBlock(
 			host.blockExists(sel.anchor.blockId)
 				? sel.focus.blockId

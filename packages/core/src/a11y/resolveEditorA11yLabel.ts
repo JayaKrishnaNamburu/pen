@@ -39,7 +39,7 @@ function warnMissingA11yLabel(editor: Editor): void {
 		level: "warn",
 		source: "a11y",
 		message:
-			'pen.a11yLabel is required; provide createEditor({ a11yLabel }) or a11yLabelFacet.of(...)',
+			"pen.a11yLabel is required; provide createEditor({ a11yLabel }) or a11yLabelFacet.of(...)",
 		remediation:
 			"Pass a11yLabel at createEditor or register a pen.a11yLabel facet provider.",
 	});

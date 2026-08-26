@@ -11,7 +11,10 @@ const noDefaultExtensionsPreset = {
 
 describe("BlockHandle.as (API5)", () => {
 	it('API5: as("table") on a paragraph is null at runtime and unchecked use is a type error', () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const paragraph = editor.firstBlock();
 		expect(paragraph?.type).toBe("paragraph");
 
@@ -29,7 +32,10 @@ describe("BlockHandle.as (API5)", () => {
 	});
 
 	it('API5: as("table") follows schema-declared capabilities', () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		editor.apply([
 			{
 				type: "insert-block",

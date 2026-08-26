@@ -103,4 +103,3 @@ export function buildCommitEvent(input: {
 		diagnostics: input.diagnostics,
 	};
 }
-

@@ -145,15 +145,8 @@ function describeOutcome(generation: GenerationState | null): string {
 		return refusal;
 	}
 
-	const receiptStatus = generation.mutationReceipt?.status;
-	if (
-		receiptStatus === "staged_suggestions" ||
-		receiptStatus === "staged_review"
-	) {
-		const proposedCount =
-			generation.suggestionIds && generation.suggestionIds.length > 0
-				? generation.suggestionIds.length
-				: (generation.reviewItems?.length ?? 0);
+	if (generation.mutationReceipt?.status === "staged_suggestions") {
+		const proposedCount = generation.suggestionIds?.length ?? 0;
 		return `Proposed ${proposedCount} changes — review in the editor`;
 	}
 

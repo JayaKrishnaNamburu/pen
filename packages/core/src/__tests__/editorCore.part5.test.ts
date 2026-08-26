@@ -75,7 +75,6 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-
 describe("@input/pen-core createEditor", () => {
 	it("preserves formatted suffix text when deleting across blocks", () => {
 		const editor = createEditor();
@@ -95,12 +94,20 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hello" },
-			{ type: "splice-text", blockId: "b2", from: 0,
+				insert: "Hello",
+			},
+			{
+				type: "splice-text",
+				blockId: "b2",
+				from: 0,
 				to: 0,
-				insert: "Again" },
+				insert: "Again",
+			},
 			{
 				type: "format-text",
 				blockId: "b2",
@@ -164,15 +171,27 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hello" },
-			{ type: "splice-text", blockId: "b2", from: 0,
+				insert: "Hello",
+			},
+			{
+				type: "splice-text",
+				blockId: "b2",
+				from: 0,
 				to: 0,
-				insert: "World" },
-			{ type: "splice-text", blockId: "b3", from: 0,
+				insert: "World",
+			},
+			{
+				type: "splice-text",
+				blockId: "b3",
+				from: 0,
 				to: 0,
-				insert: "Again" },
+				insert: "Again",
+			},
 		]);
 		events.length = 0;
 		commits.length = 0;
@@ -193,7 +212,13 @@ describe("@input/pen-core createEditor", () => {
 			{ type: "splice-text", blockId: "b3", from: 0, to: 2, insert: "" },
 			{ type: "delete-block", blockId: "b2" },
 			{ type: "splice-text", blockId: "b1", from: 2, to: 2, insert: "X" },
-			{ type: "splice-text", blockId: "b1", from: 3, to: 3, insert: "ain" },
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 3,
+				to: 3,
+				insert: "ain",
+			},
 			{ type: "delete-block", blockId: "b3" },
 		]);
 		expect(editor.getBlock("b1")?.textContent()).toBe("HeXain");
@@ -423,5 +448,4 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.destroy();
 	});
-
 });

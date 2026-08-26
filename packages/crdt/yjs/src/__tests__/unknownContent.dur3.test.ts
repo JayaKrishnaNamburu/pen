@@ -37,7 +37,10 @@ function populateUnknownDocument(
 	adapter.transact(doc, () => {
 		initBlockMap(doc.penDocument.blocks, "p1", "paragraph", "inline");
 		const paragraph = doc.penDocument.blocks.get("p1")!;
-		(paragraph.get("props") as Y.Map<unknown>).set("hostAnnotation", "keep");
+		(paragraph.get("props") as Y.Map<unknown>).set(
+			"hostAnnotation",
+			"keep",
+		);
 		const content = paragraph.get("content") as Y.Text;
 		content.insert(0, "Hello world");
 		content.format(0, 5, { mysteryMark: "keep", bold: true });
@@ -48,14 +51,17 @@ function populateUnknownDocument(
 		(widget.get("content") as Y.Text).insert(0, "widget-body");
 
 		initBlockMap(doc.penDocument.blocks, "n1", "hostLayout", "nested");
-		(doc.penDocument.blocks.get("n1")!.get("children") as Y.Array<string>).push([
-			"w1",
-		]);
+		(
+			doc.penDocument.blocks.get("n1")!.get("children") as Y.Array<string>
+		).push(["w1"]);
 
 		doc.penDocument.blockOrder.push(["p1", "w1", "n1"]);
 		doc.penDocument.metadata.set("hostNote", "preserve");
 		doc.penDocument.apps.set("hostApp", new Y.Map());
-		(doc.penDocument.apps.get("hostApp") as Y.Map<unknown>).set("flag", true);
+		(doc.penDocument.apps.get("hostApp") as Y.Map<unknown>).set(
+			"flag",
+			true,
+		);
 	});
 	return doc;
 }
@@ -69,9 +75,9 @@ function expectUnknownContentIntact(doc: YjsCRDTDocument): void {
 		insert: "Hello",
 		attributes: { mysteryMark: "keep", bold: true },
 	});
-	expect((doc.penDocument.blocks.get("p1")?.get("content") as Y.Text).toString()).toBe(
-		"Hello world",
-	);
+	expect(
+		(doc.penDocument.blocks.get("p1")?.get("content") as Y.Text).toString(),
+	).toBe("Hello world");
 
 	expect(doc.penDocument.blocks.get("w1")?.get("type")).toBe("hostWidget");
 	expect(storedProps(doc, "w1")).toEqual({ payload: 42 });
@@ -81,7 +87,9 @@ function expectUnknownContentIntact(doc: YjsCRDTDocument): void {
 
 	expect(doc.penDocument.blocks.get("n1")?.get("type")).toBe("hostLayout");
 	expect(
-		(doc.penDocument.blocks.get("n1")?.get("children") as Y.Array<string>).toArray(),
+		(
+			doc.penDocument.blocks.get("n1")?.get("children") as Y.Array<string>
+		).toArray(),
 	).toEqual(["w1"]);
 
 	expect(doc.penDocument.metadata.get("hostNote")).toBe("preserve");

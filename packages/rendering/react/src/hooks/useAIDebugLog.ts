@@ -21,18 +21,17 @@ export interface AIDebugLogState {
 	status: string;
 	activeGenerationId: string | null;
 	activeSessionId: string | null;
-	fastApplySessionId: string | null;
+	commitSessionId: string | null;
 	sessionCount: number;
 	pendingSuggestionCount: number;
-	pendingReviewItemCount: number;
-	activeSessionFastApply: AIDebugLogFastApplyMetrics | null;
-	aggregateFastApply: AIDebugLogFastApplyMetrics;
+	activeSessionCommit: AIDebugLogCommitMetrics | null;
+	aggregateCommit: AIDebugLogCommitMetrics;
 	entries: readonly AIDebugLogEntry[];
 }
 
-export interface AIDebugLogFastApplyMetrics {
+export interface AIDebugLogCommitMetrics {
 	attemptCount: number;
-	nativeFastApplyCount: number;
+	selectionReplacementCount: number;
 	scopedReplacementCount: number;
 	plainMarkdownCount: number;
 	failedCount: number;
@@ -53,59 +52,55 @@ export function useAIDebugLog(
 	const suggestions = useSuggestions(editor);
 
 	return useMemo(() => {
-		const pendingReviewItemCount =
-			aiState.activeGeneration?.reviewItems?.length ?? 0;
 		const entries = streamEvents.map((event, index) =>
 			buildDebugLogEntry(event, index),
 		);
-		const fastApplySession =
+		const commitSession =
 			sessions.find((session) =>
 				options.sessionId
 					? session.id === options.sessionId
 					: session.id === activeSession?.id,
 			) ?? null;
-		const aggregateFastApply = sessions.reduce<AIDebugLogFastApplyMetrics>(
+		const aggregateCommit = sessions.reduce<AIDebugLogCommitMetrics>(
 			(accumulator, session) => ({
 				attemptCount:
 					accumulator.attemptCount +
-					session.metrics.fastApply.attemptCount,
-				nativeFastApplyCount:
-					accumulator.nativeFastApplyCount +
-					session.metrics.fastApply.nativeFastApplyCount,
+					session.metrics.commit.attemptCount,
+				selectionReplacementCount:
+					accumulator.selectionReplacementCount +
+					session.metrics.commit.selectionReplacementCount,
 				scopedReplacementCount:
 					accumulator.scopedReplacementCount +
-					session.metrics.fastApply.scopedReplacementCount,
+					session.metrics.commit.scopedReplacementCount,
 				plainMarkdownCount:
 					accumulator.plainMarkdownCount +
-					session.metrics.fastApply.plainMarkdownCount,
+					session.metrics.commit.plainMarkdownCount,
 				failedCount:
 					accumulator.failedCount +
-					session.metrics.fastApply.failedCount,
+					session.metrics.commit.failedCount,
 			}),
-			createEmptyFastApplyMetrics(),
+			createEmptyCommitMetrics(),
 		);
 
 		return {
 			status: aiState.status,
 			activeGenerationId: aiState.activeGeneration?.id ?? null,
 			activeSessionId: activeSession?.id ?? null,
-			fastApplySessionId: fastApplySession?.id ?? null,
+			commitSessionId: commitSession?.id ?? null,
 			sessionCount: sessions.length,
 			pendingSuggestionCount: suggestions.length,
-			pendingReviewItemCount,
-			activeSessionFastApply: fastApplySession
+			activeSessionCommit: commitSession
 				? {
-						...fastApplySession.metrics.fastApply,
+						...commitSession.metrics.commit,
 					}
 				: null,
-			aggregateFastApply,
+			aggregateCommit,
 			entries,
 		} satisfies AIDebugLogState;
 	}, [
 		options.sessionId,
 		activeSession?.id,
 		aiState.activeGeneration?.id,
-		aiState.activeGeneration?.reviewItems?.length,
 		aiState.status,
 		sessions,
 		streamEvents,
@@ -113,10 +108,10 @@ export function useAIDebugLog(
 	]);
 }
 
-function createEmptyFastApplyMetrics(): AIDebugLogFastApplyMetrics {
+function createEmptyCommitMetrics(): AIDebugLogCommitMetrics {
 	return {
 		attemptCount: 0,
-		nativeFastApplyCount: 0,
+		selectionReplacementCount: 0,
 		scopedReplacementCount: 0,
 		plainMarkdownCount: 0,
 		failedCount: 0,

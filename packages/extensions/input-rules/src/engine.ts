@@ -1,4 +1,9 @@
-import type { Editor, DocumentOp, InputRule, InputRuleContext } from "@input/pen-types";
+import type {
+	Editor,
+	DocumentOp,
+	InputRule,
+	InputRuleContext,
+} from "@input/pen-types";
 import { isCollapsed, supportsInlineInputRules } from "@input/pen-core";
 import type { InlineInputRule } from "./types";
 
@@ -59,7 +64,8 @@ export class InputRuleEngine {
 		};
 
 		for (const rule of this._rules) {
-			if (rule.blockTypes && !rule.blockTypes.includes(blockType)) continue;
+			if (rule.blockTypes && !rule.blockTypes.includes(blockType))
+				continue;
 
 			const match = textBefore.match(rule.match);
 			if (!match) continue;
@@ -119,15 +125,15 @@ export class InputRuleEngine {
 					type: "splice-text",
 					blockId,
 					from: matchStart,
-				to: matchStart + fullMatchLength,
-				insert: "",
+					to: matchStart + fullMatchLength,
+					insert: "",
 				},
 				{
 					type: "splice-text",
 					blockId,
 					from: matchStart,
-				to: matchStart,
-				insert: innerText,
+					to: matchStart,
+					insert: innerText,
 					marks: { [rule.markType]: true },
 				},
 			];

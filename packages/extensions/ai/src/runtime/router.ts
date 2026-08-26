@@ -2,7 +2,6 @@ import { isCollapsed } from "@input/pen-core";
 import type { SelectionState } from "@input/pen-types";
 import type { AISurface } from "../types";
 import type {
-	AIApplyStrategy,
 	AIBlockAdapterId,
 	AIBlockClass,
 	AIContentFormat,
@@ -40,7 +39,7 @@ export interface RequestRouterDecision {
 	lane: AIRouteLane;
 	mutationMode: AIMutationMode;
 	contentFormat: AIContentFormat;
-	applyStrategy: AIApplyStrategy;
+	editsArriveAsToolCalls: boolean;
 	targetKind: AITargetKind;
 	blockClass: AIBlockClass;
 	adapterId: AIBlockAdapterId;
@@ -64,12 +63,18 @@ interface NavigatorRefinementInput {
 
 export type { PromptIntent } from "./contracts";
 
-const REWRITE_PATTERNS = /\b(rewrite|retry|redo|again|do.?over|summari[sz]e|translate|simplify|fix|improve|shorten|expand|extend|polish|paraphrase|edit|revise|reword|rephrase)\b/i;
-const CONTINUE_PATTERNS = /\b(continue|finish|complete|keep writing|next paragraph|next section)\b/i;
-const GENERATIVE_PATTERNS = /\b(write|create|draft|compose|generate|brainstorm)\b/i;
-const SEARCH_PATTERNS = /\b(find|search|look for|locate|where (?:is|are|does|do)|list (?:all|every|each|the)|scan for)\b/i;
-const STRUCTURAL_PATTERNS = /\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert|turn\s+(?:\S+\s+){0,8}?into|(?:bullet(?:ed)?|numbered|ordered) list|checklist|table|heading hierarchy|merge|split)\b/i;
-const REVIEW_PATTERNS = /\b(review|critique|audit|compare|analyze entire|check whole)\b/i;
+const REWRITE_PATTERNS =
+	/\b(rewrite|retry|redo|again|do.?over|summari[sz]e|translate|simplify|fix|improve|shorten|expand|extend|polish|paraphrase|edit|revise|reword|rephrase)\b/i;
+const CONTINUE_PATTERNS =
+	/\b(continue|finish|complete|keep writing|next paragraph|next section)\b/i;
+const GENERATIVE_PATTERNS =
+	/\b(write|create|draft|compose|generate|brainstorm)\b/i;
+const SEARCH_PATTERNS =
+	/\b(find|search|look for|locate|where (?:is|are|does|do)|list (?:all|every|each|the)|scan for)\b/i;
+const STRUCTURAL_PATTERNS =
+	/\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert|turn\s+(?:\S+\s+){0,8}?into|(?:bullet(?:ed)?|numbered|ordered) list|checklist|table|heading hierarchy|merge|split)\b/i;
+const REVIEW_PATTERNS =
+	/\b(review|critique|audit|compare|analyze entire|check whole)\b/i;
 /**
  * Opening interrogatives only, and deliberately without the polite modals
  * (`can`, `could`, `would`, `will`): "Can you make the title purple?" is an
@@ -90,15 +95,17 @@ const TABLE_TARGET_PATTERNS = /\b(table|grid|rows?|columns?)\b/i;
 export const AI_ANNOTATED_WORKING_SET_MAX_BLOCKS = 120;
 
 /**
- * A tool-loop lane must not also ask the model for a text-parsed edit plan:
- * the durable edit has one source. Lanes that only stream text keep their
- * text strategy (EC1).
+ * Whether this lane's durable edits arrive as `edit_document` tool calls (EC1).
+ *
+ * This replaced a three-member apply-strategy union (UC5). The other two
+ * members — "text fast apply" and "markdown full replace" — were a restatement
+ * of `target` and `contentFormat`, which the decision already carries, and no
+ * consumer read them for anything but the absence of `tool-edit`. What every
+ * reader actually needed was this one bit: may the assistant text become a
+ * durable mutation, or is text the model talking?
  */
-function applyDurableEditStrategy(
-	strategy: AIApplyStrategy,
-	lane: AIRouteLane,
-): AIApplyStrategy {
-	return lane === "tool-loop" ? "tool-edit" : strategy;
+function editsArriveAsToolCalls(lane: AIRouteLane): boolean {
+	return lane === "tool-loop";
 }
 
 export function routeAIRequest(
@@ -109,7 +116,11 @@ export function routeAIRequest(
 	const intent = classifyPromptIntent(input.prompt);
 
 	let lane: AIRouteLane;
-	if (selectionExpanded && input.target === "selection" && intent === "rewrite") {
+	if (
+		selectionExpanded &&
+		input.target === "selection" &&
+		intent === "rewrite"
+	) {
 		lane = "selection-rewrite";
 	} else if (
 		input.target === "block" &&
@@ -178,13 +189,7 @@ export function routeAIRequest(
 		lane,
 		mutationMode,
 		contentFormat: resolvedContentFormat,
-		applyStrategy: applyDurableEditStrategy(
-			resolveApplyStrategy({
-				target: input.target,
-				contentFormat: resolvedContentFormat,
-			}),
-			lane,
-		),
+		editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 		targetKind,
 		blockClass: adapter.blockClass,
 		adapterId: adapter.id,
@@ -223,7 +228,10 @@ export function refineRouteWithNavigator(
 		}
 	}
 
-	if ((input.selectedTextLength ?? 0) > 1200 && lane === "selection-rewrite") {
+	if (
+		(input.selectedTextLength ?? 0) > 1200 &&
+		lane === "selection-rewrite"
+	) {
 		confidence = Math.min(confidence, 0.55);
 	}
 
@@ -240,12 +248,12 @@ export function refineRouteWithNavigator(
 			lane === decision.lane
 				? decision.mutationMode
 				: resolveMutationMode({
-					lane,
-					suggestMode: decision.suggestMode,
-					selection: null,
-					surface: decision.surface,
-					mutationPreference: decision.mutationPreference,
-				}),
+						lane,
+						suggestMode: decision.suggestMode,
+						selection: null,
+						surface: decision.surface,
+						mutationPreference: decision.mutationPreference,
+					}),
 		target: "block",
 		targetKind,
 		surface: decision.surface,
@@ -277,13 +285,7 @@ export function refineRouteWithNavigator(
 			transportKind: adapter.transportKind,
 			contentFormat,
 			mutationMode,
-			applyStrategy: applyDurableEditStrategy(
-				resolveApplyStrategy({
-					target: decision.target,
-					contentFormat,
-				}),
-				lane,
-			),
+			editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 			shouldStreamDirectly: shouldStreamDirectAIOutput({
 				mutationMode,
 				contentFormat,
@@ -297,13 +299,7 @@ export function refineRouteWithNavigator(
 		lane,
 		mutationMode,
 		contentFormat,
-		applyStrategy: applyDurableEditStrategy(
-			resolveApplyStrategy({
-				target: decision.target,
-				contentFormat,
-			}),
-			lane,
-		),
+		editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 		targetKind,
 		blockClass: adapter.blockClass,
 		adapterId: adapter.id,
@@ -392,14 +388,4 @@ function resolveStructuredMutationMode(input: {
 		return "streaming-suggestions";
 	}
 	return input.mutationMode;
-}
-
-function resolveApplyStrategy(input: {
-	target: "selection" | "block";
-	contentFormat: AIContentFormat;
-}): AIApplyStrategy {
-	if (input.target === "selection" || input.contentFormat === "text") {
-		return "text-fast-apply";
-	}
-	return "markdown-full-replace";
 }

@@ -1,13 +1,12 @@
 import type {
 	Affinity,
 	Editor,
+	Point,
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
 
 import { createTextSelection } from "../selection/helpers";
-
-export type Point = { blockId: string; offset: number };
 
 /** Command write payload. `blockOrder` is accepted for callers that still pass it. */
 export function textSelectionResult(

@@ -70,7 +70,10 @@ export class AutoSnapshotScheduler {
 					event?.code === "GENERATION_COMPLETE" &&
 					this.config.onAIGeneration
 				) {
-					void this.safeCreateSnapshot("Pre-AI generation", "ai-generation");
+					void this.safeCreateSnapshot(
+						"Pre-AI generation",
+						"ai-generation",
+					);
 				}
 			}),
 		);

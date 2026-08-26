@@ -4,9 +4,9 @@ Unique library-owned user-visible strings in `packages/extensions/ai/src`. Promp
 
 Kind: `button` (command-menu item text), `label` (command descriptions, shortcut descriptions, review chrome).
 
-Bindings store catalog keys; `getCommands()` and review-artifact builders resolve them through `pen.messages`. Custom command literals stay as provided.
+Bindings store catalog keys; `getCommands()` resolves them through `pen.messages`. Custom command literals stay as provided.
 
-**Count: 34.**
+**Count: 16.**
 
 | string | key | file | kind |
 | --- | --- | --- | --- |
@@ -26,21 +26,3 @@ Bindings store catalog keys; `getCommands()` and review-artifact builders resolv
 | Translate to another language | `pen.ai.command.translate.description` | `src/commands/defaultCommands.ts` | label |
 | Undo AI inline turn | `pen.ai.shortcut.undoInline` | `src/extension.ts` | label |
 | Redo AI inline turn | `pen.ai.shortcut.redoInline` | `src/extension.ts` | label |
-| Replace text | `pen.ai.review.replaceText` | `src/runtime/reviewArtifacts/previews.ts` | label |
-| Insert text | `pen.ai.review.insertText` | `src/runtime/reviewArtifacts/previews.ts` | label |
-| Append text | `pen.ai.review.appendText` | `src/runtime/reviewArtifacts/previews.ts` | label |
-| Updates the selected text range. | `pen.ai.review.updateSelection` | `src/runtime/reviewArtifacts/build.ts` | label |
-| `Flow patch: {operation}` | `pen.ai.review.flowPatch` | `src/runtime/reviewArtifacts/build.ts` | label |
-| `Block "{blockId}"` | `pen.ai.review.block` | `src/runtime/reviewArtifacts/build.ts` | label |
-| `Span "{spanId}"` | `pen.ai.review.span` | `src/runtime/reviewArtifacts/build.ts` | label |
-| Blocks | `pen.ai.review.blocks` | `src/runtime/reviewArtifacts/build.ts` | label |
-| Insert block | `pen.ai.review.insertBlock` | `src/runtime/reviewArtifacts/build.ts` | label |
-| `Adds a new {blockType} block.` | `pen.ai.review.insertBlock.summary` | `src/runtime/reviewArtifacts/build.ts` | label |
-| Update block | `pen.ai.review.updateBlock` | `src/runtime/reviewArtifacts/build.ts` | label |
-| Updates block properties. | `pen.ai.review.updateBlock.summary` | `src/runtime/reviewArtifacts/build.ts` | label |
-| `{count} prop changes` | `pen.ai.review.propChanges` | `src/runtime/reviewArtifacts/build.ts` | label |
-| Move block | `pen.ai.review.moveBlock` | `src/runtime/reviewArtifacts/build.ts` | label |
-| Moves this block to a new position. | `pen.ai.review.moveBlock.summary` | `src/runtime/reviewArtifacts/build.ts` | label |
-| Convert block | `pen.ai.review.convertBlock` | `src/runtime/reviewArtifacts/build.ts` | label |
-| `Converts this block to {newType}.` | `pen.ai.review.convertBlock.summary` | `src/runtime/reviewArtifacts/build.ts` | label |
-| (new block) | `pen.ai.review.newBlock` | `src/runtime/reviewArtifacts/build.ts` | label |

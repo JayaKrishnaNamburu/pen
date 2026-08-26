@@ -1,8 +1,5 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import {
-	type DocumentSession,
-	type PenStreamPart,
-} from "@input/pen-types";
+import { type DocumentSession, type PenStreamPart } from "@input/pen-types";
 import { defineExtension, getOpOriginType } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
@@ -74,7 +71,6 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-
 describe("@input/pen-core table operations", () => {
 	it("insert-block with table type produces seeded 2x2 grid", () => {
 		const editor = createEditor();
@@ -117,7 +113,9 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "grid", blockId: "t1", change: { kind: "insert-row", index: 2 },
+				type: "grid",
+				blockId: "t1",
+				change: { kind: "insert-row", index: 2 },
 			},
 		]);
 
@@ -145,7 +143,9 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "grid", blockId: "t1", change: { kind: "insert-column", index: 2 },
+				type: "grid",
+				blockId: "t1",
+				change: { kind: "insert-column", index: 2 },
 			},
 		]);
 
@@ -163,21 +163,28 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "grid", blockId: "t1", change: { kind: "insert-row", index: block.as("table")!.tableRowCount() },
+				type: "grid",
+				blockId: "t1",
+				change: {
+					kind: "insert-row",
+					index: block.as("table")!.tableRowCount(),
+				},
 			},
 			{
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 0, col: 2 },
-			from: 0,
-			to: 0,
-			insert: "Recovered",
+				from: 0,
+				to: 0,
+				insert: "Recovered",
 			},
 		]);
 
 		block = editor.getBlock("t1")!;
 		expect(block.as("table")!.tableRowCount()).toBe(3);
-		expect(block.as("table")!.tableCell(0, 2)?.textContent()).toBe("Recovered");
+		expect(block.as("table")!.tableCell(0, 2)?.textContent()).toBe(
+			"Recovered",
+		);
 		expect(block.as("table")!.tableCell(2, 0)).not.toBeNull();
 		expect(block.as("table")!.tableCell(2, 1)).not.toBeNull();
 		expect(block.as("table")!.tableCell(2, 2)).not.toBeNull();
@@ -200,7 +207,9 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "grid", blockId: "t1", change: { kind: "insert-column", index: 2 },
+				type: "grid",
+				blockId: "t1",
+				change: { kind: "insert-column", index: 2 },
 			},
 		]);
 
@@ -228,7 +237,9 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "grid", blockId: "t1", change: { kind: "delete-row", index: 0 },
+				type: "grid",
+				blockId: "t1",
+				change: { kind: "delete-row", index: 0 },
 			},
 		]);
 
@@ -252,7 +263,9 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "grid", blockId: "t1", change: { kind: "delete-column", index: 0 },
+				type: "grid",
+				blockId: "t1",
+				change: { kind: "delete-column", index: 0 },
 			},
 		]);
 
@@ -279,9 +292,9 @@ describe("@input/pen-core table operations", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 0, col: 1 },
-			from: 0,
-			to: 0,
-			insert: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 
@@ -306,17 +319,17 @@ describe("@input/pen-core table operations", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 0, col: 0 },
-			from: 0,
-			to: 0,
-			insert: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 0, col: 0 },
-			from: 1,
-			to: 4,
-			insert: "",
+				from: 1,
+				to: 4,
+				insert: "",
 			},
 		]);
 
@@ -341,9 +354,9 @@ describe("@input/pen-core table operations", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 0, col: 0 },
-			from: 0,
-			to: 0,
-			insert: "bold text",
+				from: 0,
+				to: 0,
+				insert: "bold text",
 			},
 			{
 				type: "format-text",
@@ -379,7 +392,9 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: "b1", props: { type: "table", ...{ }},
+				type: "set-props",
+				blockId: "b1",
+				props: { type: "table", ...{} },
 			},
 		]);
 
@@ -390,5 +405,4 @@ describe("@input/pen-core table operations", () => {
 
 		editor.destroy();
 	});
-
 });

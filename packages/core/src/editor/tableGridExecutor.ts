@@ -1,8 +1,4 @@
-import type {
-	CRDTAdapter,
-	GridOp,
-	TableColumnSchema,
-} from "@input/pen-types";
+import type { CRDTAdapter, GridOp, TableColumnSchema } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
@@ -42,7 +38,9 @@ export class TableGridExecutor {
 
 		switch (op.change.kind) {
 			case "insert-row": {
-				const row = this.createTableRow(this.resolveGridColumnCount(blockMap));
+				const row = this.createTableRow(
+					this.resolveGridColumnCount(blockMap),
+				);
 				tableContent.insert(op.change.index, [row]);
 				break;
 			}
@@ -53,7 +51,11 @@ export class TableGridExecutor {
 				break;
 			}
 			case "insert-column": {
-				for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
+				for (
+					let rowIndex = 0;
+					rowIndex < tableContent.length;
+					rowIndex++
+				) {
 					const row = tableContent.get(rowIndex);
 					if (!row || !isCRDTMap(row)) {
 						continue;
@@ -67,7 +69,11 @@ export class TableGridExecutor {
 				break;
 			}
 			case "delete-column": {
-				for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
+				for (
+					let rowIndex = 0;
+					rowIndex < tableContent.length;
+					rowIndex++
+				) {
 					const row = tableContent.get(rowIndex);
 					if (!row || !isCRDTMap(row)) {
 						continue;
@@ -109,7 +115,8 @@ export class TableGridExecutor {
 
 		const rowCount = Math.max(1, options?.rowCount ?? 2);
 		const colCount = Math.max(1, options?.colCount ?? 2);
-		const tableContent = this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
+		const tableContent =
+			this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
 		for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
 			tableContent.insert(rowIndex, [this.createTableRow(colCount)]);
 		}
@@ -134,7 +141,8 @@ export class TableGridExecutor {
 	createTableRow(colCount: number): CRDTUnknownMap {
 		const row = this._adapter.createMap() as CRDTUnknownMap;
 		row.set("id", generateId());
-		const cells = this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
+		const cells =
+			this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
 		for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
 			cells.insert(columnIndex, [this.createTableCell()]);
 		}
@@ -233,7 +241,10 @@ export class TableGridExecutor {
 			return false;
 		}
 
-		const nextIndex = Math.max(0, Math.min(targetIndex, tableContent.length - 1));
+		const nextIndex = Math.max(
+			0,
+			Math.min(targetIndex, tableContent.length - 1),
+		);
 		if (nextIndex === rowIndex) {
 			return true;
 		}
@@ -268,7 +279,11 @@ export class TableGridExecutor {
 			return;
 		}
 
-		for (let columnIndex = 0; columnIndex < snapshot.cells.length; columnIndex++) {
+		for (
+			let columnIndex = 0;
+			columnIndex < snapshot.cells.length;
+			columnIndex++
+		) {
 			const targetCell = targetCells.get(columnIndex);
 			const cellSnapshot = snapshot.cells[columnIndex];
 			if (!targetCell || !cellSnapshot || !isCRDTMap(targetCell)) {
@@ -312,7 +327,8 @@ export class TableGridExecutor {
 		blockMap: CRDTUnknownMap,
 		columns: Array<TableColumnSchema | Record<string, unknown>>,
 	): void {
-		const tableColumns = this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
+		const tableColumns =
+			this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
 		tableColumns.insert(
 			0,
 			columns.map((column) => this.createTableColumnMap(column)),
@@ -360,7 +376,11 @@ export class TableGridExecutor {
 		return columnMap;
 	}
 
-	setColumnValue(columnMap: CRDTUnknownMap, key: string, value: unknown): void {
+	setColumnValue(
+		columnMap: CRDTUnknownMap,
+		key: string,
+		value: unknown,
+	): void {
 		if (key === "id") {
 			return;
 		}
@@ -398,7 +418,9 @@ export class TableGridExecutor {
 		columnMap.set(key, value);
 	}
 
-	readColumnIds(tableColumns: CRDTUnknownArray<CRDTUnknownMap> | null): string[] {
+	readColumnIds(
+		tableColumns: CRDTUnknownArray<CRDTUnknownMap> | null,
+	): string[] {
 		if (!tableColumns) {
 			return [];
 		}

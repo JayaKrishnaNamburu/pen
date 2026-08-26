@@ -32,7 +32,10 @@ export function announceEditorA11y<K extends A11yMessageKey>(
 	announcer.announce(message, "polite", key);
 }
 
-export function resolveA11yBlockTypeLabel(editor: Editor, type: string): string {
+export function resolveA11yBlockTypeLabel(
+	editor: Editor,
+	type: string,
+): string {
 	const key = `pen.schema.${type}.title`;
 	if (isMessageKey(key)) {
 		const label = resolveEditorMessage(editor, key);

@@ -11,7 +11,9 @@ const REPLACEMENT = "light";
 
 describe("LOC5 fingerprint folding", () => {
 	it("LOC5: Turkish ı and I fingerprint equal only when both sides use foldAndNormalize", () => {
-		expect(TURKISH_CAPITAL.toLowerCase()).not.toBe(TURKISH_LOWER.toLowerCase());
+		expect(TURKISH_CAPITAL.toLowerCase()).not.toBe(
+			TURKISH_LOWER.toLowerCase(),
+		);
 
 		expect(
 			buildSuggestionFingerprint(

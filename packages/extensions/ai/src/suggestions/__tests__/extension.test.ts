@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
-import {
-	aiSuggestionsExtension,
-	getAISuggestionsController,
-} from "../index";
+import { aiSuggestionsExtension, getAISuggestionsController } from "../index";
 
 async function flushTimers(): Promise<void> {
 	await Promise.resolve();
@@ -25,7 +22,8 @@ function createDeferred<T>() {
 describe("@input/pen-ai/suggestions extension", () => {
 	it("registers a controller and materializes proactive suggestions", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -60,8 +58,8 @@ describe("@input/pen-ai/suggestions extension", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Ths sentence works.",
+					to: 0,
+					insert: "Ths sentence works.",
 				},
 			],
 			{ origin: "user" },
@@ -80,7 +78,8 @@ describe("@input/pen-ai/suggestions extension", () => {
 
 	it("applies a suggestion through editor ops", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -110,8 +109,8 @@ describe("@input/pen-ai/suggestions extension", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Ths sentence works.",
+					to: 0,
+					insert: "Ths sentence works.",
 				},
 			],
 			{ origin: "user" },
@@ -131,7 +130,8 @@ describe("@input/pen-ai/suggestions extension", () => {
 
 	it("caps displayed suggestions to the configured maximum after ranking", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -178,8 +178,8 @@ describe("@input/pen-ai/suggestions extension", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "alpha brvo charle",
+					to: 0,
+					insert: "alpha brvo charle",
 				},
 			],
 			{ origin: "user" },
@@ -191,10 +191,9 @@ describe("@input/pen-ai/suggestions extension", () => {
 		const suggestions = controller.getState().suggestions;
 
 		expect(suggestions).toHaveLength(2);
-		expect(suggestions.map((suggestion) => suggestion.originalText)).toEqual([
-			"brvo",
-			"charle",
-		]);
+		expect(
+			suggestions.map((suggestion) => suggestion.originalText),
+		).toEqual(["brvo", "charle"]);
 
 		editor.destroy();
 	});
@@ -209,7 +208,8 @@ describe("@input/pen-ai/suggestions extension", () => {
 			}>;
 		}>();
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -225,13 +225,15 @@ describe("@input/pen-ai/suggestions extension", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply(
-			[{
-				type: "splice-text",
-				blockId,
-				from: 0,
-				to: 0,
-				insert: "Ths sentence works.",
-			}],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Ths sentence works.",
+				},
+			],
 			{ origin: "user" },
 		);
 
@@ -274,7 +276,8 @@ describe("@input/pen-ai/suggestions extension", () => {
 	it("requires a fresh edit after re-enabling proactive suggestions", async () => {
 		let analyzeCallCount = 0;
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -302,13 +305,15 @@ describe("@input/pen-ai/suggestions extension", () => {
 
 		controller.setEnabled(false);
 		editor.apply(
-			[{
-				type: "splice-text",
-				blockId,
-				from: 0,
-				to: 0,
-				insert: "Ths sentence works.",
-			}],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Ths sentence works.",
+				},
+			],
 			{ origin: "user" },
 		);
 
@@ -323,13 +328,21 @@ describe("@input/pen-ai/suggestions extension", () => {
 		expect(analyzeCallCount).toBe(0);
 
 		editor.apply(
-			[{
-				type: "splice-text",
-				blockId,
-				from: editor.getBlock(blockId)?.textContent({ resolved: true }).length ?? 0,
-				to: editor.getBlock(blockId)?.textContent({ resolved: true }).length ?? 0,
-				insert: "!",
-			}],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from:
+						editor
+							.getBlock(blockId)
+							?.textContent({ resolved: true }).length ?? 0,
+					to:
+						editor
+							.getBlock(blockId)
+							?.textContent({ resolved: true }).length ?? 0,
+					insert: "!",
+				},
+			],
 			{ origin: "user" },
 		);
 

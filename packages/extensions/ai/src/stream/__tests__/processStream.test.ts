@@ -1,4 +1,9 @@
-import type { ApplyOptions, DocumentOp, Editor, PenStreamPart } from "@input/pen-types";
+import type {
+	ApplyOptions,
+	DocumentOp,
+	Editor,
+	PenStreamPart,
+} from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import { processStream } from "../processStream";
 
@@ -83,7 +88,9 @@ function createToolRuntimeEditor(): {
 	};
 }
 
-async function* createStream(parts: PenStreamPart[]): AsyncIterable<PenStreamPart> {
+async function* createStream(
+	parts: PenStreamPart[],
+): AsyncIterable<PenStreamPart> {
 	for (const part of parts) {
 		yield part;
 	}

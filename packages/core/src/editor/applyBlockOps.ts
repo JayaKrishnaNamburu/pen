@@ -161,9 +161,7 @@ function convertBlock(
 	const newContent = newSchema.content;
 	const preservedInlineDeltas =
 		oldContent === "inline"
-			? getPreservedInlineDeltas(
-					getTextContent(pipeline, blockMap),
-				)
+			? getPreservedInlineDeltas(getTextContent(pipeline, blockMap))
 			: [];
 
 	if (oldContent === "inline" && newContent !== "inline") {
@@ -206,7 +204,11 @@ function applyLayoutReplacement(
 		blockMap.delete("layout");
 		return;
 	}
-	if (layout === undefined || typeof layout !== "object" || Array.isArray(layout)) {
+	if (
+		layout === undefined ||
+		typeof layout !== "object" ||
+		Array.isArray(layout)
+	) {
 		return;
 	}
 	const layoutMap = getOrCreateMapProp(pipeline, blockMap, "layout");

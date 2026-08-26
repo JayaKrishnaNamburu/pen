@@ -1,8 +1,7 @@
 import { selectionToRange } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
-import type { AIApplyStrategy } from "../runtime/contracts";
 import type { AIMutationReceipt, GenerationState } from "../types";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 import {
 	appendUniqueString,
 	buildSessionExecutionPrompt,
@@ -15,450 +14,419 @@ import {
 import { excerptsFromOperation, streamThroughEgress } from "../egress";
 import { finalizeLocalOperationExecution } from "./localOperationExecutionFinalize";
 import type { ExecuteLocalOperationInput } from "./generationExecutionState";
-import {
-	markdownStreamingPreviewText,
-	resolveMarkdownPreviewTarget,
-} from "./streamingPreviewInput";
+import { markdownReviewPreviewInput } from "./streamingPreviewInput";
 
 export async function executeLocalOperation(
-	controller: AIControllerMethodHost,
+	controller: AIControllerImpl,
 	input: ExecuteLocalOperationInput,
 ): Promise<GenerationState> {
-		const {
-			prompt,
-			target,
-			blockId,
-			commandId,
-			context,
-			abortController,
-			baselineSuggestionIds,
-			operation,
-		} = input;
-		const sessionTurnId = context?.sessionId
-			? generateId()
-			: undefined;
-		const mutationMode: NonNullable<GenerationState["mutationMode"]> =
-			"persistent-suggestions";
-		const contentFormat = resolveLocalOperationContentFormat(
-			controller._editor,
-			operation,
-			controller._resolveContentFormat("block", context?.surface),
-		);
-		const streamsMarkdownSelectionPreview =
-			operation.kind === "rewrite-selection" &&
-			operation.target.kind === "scoped-range" &&
-			contentFormat === "markdown" &&
-			operation.target.blockIds.length > 0;
-		const applyStrategy: AIApplyStrategy | undefined =
-			(operation.kind === "rewrite-block" ||
-				streamsMarkdownSelectionPreview ||
-				(operation.kind === "document-transform" &&
-					operation.target.kind === "document" &&
-					(operation.target.placement === "replace-blocks" ||
-						operation.target.placement ===
-							"replace-empty-block"))) &&
-			contentFormat === "markdown"
-				? "markdown-full-replace"
-				: undefined;
-		const seedGeneration: GenerationState = {
-			id: generateId(),
-			zoneId: generateId(),
-			blockId,
-			target: target.type,
-			sessionId: context?.sessionId,
-			turnId: sessionTurnId,
-			surface: context?.surface,
-			prompt,
-			operation,
-			status: "streaming",
-			tokenCount: 0,
-			steps: [],
-			undoGroupId: generateId(),
-			text: "",
-			commandId,
-			suggestionIds: [],
-			route:
-				operation.kind === "rewrite-selection"
-					? "selection-rewrite"
-					: operation.kind === "continue-block"
-						? "cursor-context"
-						: "tool-loop",
-			mutationMode,
-			contentFormat,
-			applyStrategy,
-			planState: "none",
-			plan: null,
-			structuredIntent: null,
-			reviewItems: [],
-			targetKind: undefined,
-			blockClass: "flow",
-			adapterId: "flow-markdown",
-			transportKind: "flow-text",
-			mutationReceipt: null,
-			debug: {
-				messageAssemblyLatencyMs: 0,
-				firstToolStartMs: null,
-				firstToolResultMs: null,
-				firstVisibleTextMs: null,
-				toolExecutionMs: 0,
-				qualitySignals: {},
-			},
-		};
-		const existingSession =
-			context?.sessionId != null
-				? (controller._state.sessions.find(
-						(session) => session.id === context.sessionId,
-					) ?? null)
-				: null;
-		const executionPrompt = buildSessionExecutionPrompt(
-			existingSession,
-			prompt,
-		);
+	const {
+		prompt,
+		target,
+		blockId,
+		commandId,
+		context,
+		abortController,
+		baselineSuggestionIds,
+		operation,
+	} = input;
+	const sessionTurnId = context?.sessionId ? generateId() : undefined;
+	const mutationMode: NonNullable<GenerationState["mutationMode"]> =
+		"persistent-suggestions";
+	const contentFormat = resolveLocalOperationContentFormat(
+		controller._editor,
+		operation,
+		controller._resolveContentFormat("block", context?.surface),
+	);
+	const streamsMarkdownSelectionPreview =
+		operation.kind === "rewrite-selection" &&
+		operation.target.kind === "scoped-range" &&
+		contentFormat === "markdown" &&
+		operation.target.blockIds.length > 0;
+	const seedGeneration: GenerationState = {
+		id: generateId(),
+		zoneId: generateId(),
+		blockId,
+		target: target.type,
+		sessionId: context?.sessionId,
+		turnId: sessionTurnId,
+		surface: context?.surface,
+		prompt,
+		operation,
+		status: "streaming",
+		tokenCount: 0,
+		steps: [],
+		undoGroupId: generateId(),
+		text: "",
+		commandId,
+		suggestionIds: [],
+		route:
+			operation.kind === "rewrite-selection"
+				? "selection-rewrite"
+				: operation.kind === "continue-block"
+					? "cursor-context"
+					: "tool-loop",
+		mutationMode,
+		contentFormat,
+		// No tool runs on the requested-operation path; text is the edit.
+		editsArriveAsToolCalls: false,
+		targetKind: undefined,
+		blockClass: "flow",
+		adapterId: "flow-markdown",
+		transportKind: "flow-text",
+		mutationReceipt: null,
+		debug: {
+			messageAssemblyLatencyMs: 0,
+			firstToolStartMs: null,
+			firstToolResultMs: null,
+			firstVisibleTextMs: null,
+			toolExecutionMs: 0,
+			qualitySignals: {},
+		},
+	};
+	const existingSession =
+		context?.sessionId != null
+			? (controller._state.sessions.find(
+					(session) => session.id === context.sessionId,
+				) ?? null)
+			: null;
+	const executionPrompt = buildSessionExecutionPrompt(
+		existingSession,
+		prompt,
+	);
 
-		if (context?.sessionId) {
-			const nextSelectionSnapshot =
+	if (context?.sessionId) {
+		const nextSelectionSnapshot =
+			target.type === "selection"
+				? resolveSessionSelectionSnapshot(
+						controller._editor,
+						target.selection,
+					)
+				: undefined;
+		controller._updateSession(context.sessionId, {
+			status: "streaming",
+			operation,
+			activeTurnId: sessionTurnId,
+			anchor:
 				target.type === "selection"
-					? resolveSessionSelectionSnapshot(
+					? resolveSessionAnchor(controller._editor, target.selection)
+					: resolveSessionAnchor(
 							controller._editor,
-							target.selection,
-						)
-					: undefined;
-			controller._updateSession(context.sessionId, {
-				status: "streaming",
-				operation,
-				activeTurnId: sessionTurnId,
-				anchor:
-					target.type === "selection"
-						? resolveSessionAnchor(
-								controller._editor,
-								target.selection,
-							)
-						: resolveSessionAnchor(
-								controller._editor,
-								controller._editor.selection,
-							),
-				generationIds: appendUniqueString(
-					existingSession?.generationIds ?? [],
-					seedGeneration.id,
-				),
-				promptHistory: [
-					...(existingSession?.promptHistory ?? []),
-					{
-						id: generateId(),
-						prompt,
-						createdAt: Date.now(),
-						generationId: seedGeneration.id,
-						operation,
-					},
-				],
-				turns: sessionTurnId
-					? [
-							...(existingSession?.turns ?? []),
-							{
-								id: sessionTurnId,
-								prompt,
-								createdAt: Date.now(),
-								undoGroupId: seedGeneration.undoGroupId,
-								generationId: seedGeneration.id,
-								target: target.type,
-								operation,
-								status: "streaming",
-								suggestionIds: [],
-								reviewItemIds: [],
-								generatedBlockIds: [],
-								anchor:
-									target.type === "selection"
-										? resolveSessionAnchor(
-												controller._editor,
-												target.selection,
-											)
-										: undefined,
-								selection:
-									target.type === "selection"
-										? resolveSessionSelectionSnapshot(
-												controller._editor,
-												target.selection,
-											)
-										: undefined,
-							},
-						]
-					: existingSession?.turns,
-				contextualPrompt: existingSession?.contextualPrompt
-					? {
-							...existingSession.contextualPrompt,
+							controller._editor.selection,
+						),
+			generationIds: appendUniqueString(
+				existingSession?.generationIds ?? [],
+				seedGeneration.id,
+			),
+			promptHistory: [
+				...(existingSession?.promptHistory ?? []),
+				{
+					id: generateId(),
+					prompt,
+					createdAt: Date.now(),
+					generationId: seedGeneration.id,
+					operation,
+				},
+			],
+			turns: sessionTurnId
+				? [
+						...(existingSession?.turns ?? []),
+						{
+							id: sessionTurnId,
+							prompt,
+							createdAt: Date.now(),
+							undoGroupId: seedGeneration.undoGroupId,
+							generationId: seedGeneration.id,
+							target: target.type,
+							operation,
+							status: "streaming",
+							suggestionIds: [],
+							generatedBlockIds: [],
 							anchor:
 								target.type === "selection"
-									? {
-											...existingSession.contextualPrompt
-												.anchor,
-											selectionSnapshot:
-												nextSelectionSnapshot,
-											focusBlockId: selectionToRange(
-												controller._editor.internals
-													.doc,
-												target.selection,
-											).start.blockId,
-											status: "valid",
-										}
-									: existingSession.contextualPrompt.anchor,
-							composer: {
-								...existingSession.contextualPrompt.composer,
-								draftPrompt: "",
-								isSubmitting: true,
-								isOpen: true,
-								openReason: "user",
-							},
-						}
-					: undefined,
-			});
-		}
-
-		controller._setState({
-			status: "thinking",
-			activeGeneration: seedGeneration,
-			commandMenuOpen: false,
-			lastRoute: seedGeneration.route,
-			activeSessionId: context?.sessionId ?? controller._state.activeSessionId,
+									? resolveSessionAnchor(
+											controller._editor,
+											target.selection,
+										)
+									: undefined,
+							selection:
+								target.type === "selection"
+									? resolveSessionSelectionSnapshot(
+											controller._editor,
+											target.selection,
+										)
+									: undefined,
+						},
+					]
+				: existingSession?.turns,
+			contextualPrompt: existingSession?.contextualPrompt
+				? {
+						...existingSession.contextualPrompt,
+						anchor:
+							target.type === "selection"
+								? {
+										...existingSession.contextualPrompt
+											.anchor,
+										selectionSnapshot:
+											nextSelectionSnapshot,
+										focusBlockId: selectionToRange(
+											controller._editor.internals.doc,
+											target.selection,
+										).start.blockId,
+										status: "valid",
+									}
+								: existingSession.contextualPrompt.anchor,
+						composer: {
+							...existingSession.contextualPrompt.composer,
+							draftPrompt: "",
+							isSubmitting: true,
+							isOpen: true,
+							openReason: "user",
+						},
+					}
+				: undefined,
 		});
-		controller._setStreamEvents([
-			createAIStreamEvent(seedGeneration, {
-				type: "generation-start",
-				prompt,
-				target: target.type,
-			}),
-			createAIStreamEvent(seedGeneration, {
-				type: "status",
-				status: "thinking",
-			}),
-		]);
+	}
 
-		let currentText = "";
-		let currentMutationReceipt: AIMutationReceipt | null = null;
-		let sawStructuredFinalFrame = false;
-		const previewSessionId = context?.sessionId ?? seedGeneration.id;
-		const showScopedMarkdownPreview = (
-			previewBlockId: string,
-			replaceBlockIds: readonly string[] | undefined,
-			text: string,
-		) => {
-			controller.setStreamingReviewPreview({
+	controller._setState({
+		status: "thinking",
+		activeGeneration: seedGeneration,
+		commandMenuOpen: false,
+		lastRoute: seedGeneration.route,
+		activeSessionId:
+			context?.sessionId ?? controller._state.activeSessionId,
+	});
+	controller._setStreamEvents([
+		createAIStreamEvent(seedGeneration, {
+			type: "generation-start",
+			prompt,
+			target: target.type,
+		}),
+		createAIStreamEvent(seedGeneration, {
+			type: "status",
+			status: "thinking",
+		}),
+	]);
+
+	let currentText = "";
+	let currentMutationReceipt: AIMutationReceipt | null = null;
+	let sawStructuredFinalFrame = false;
+	const previewSessionId = context?.sessionId ?? seedGeneration.id;
+	const showScopedMarkdownPreview = (
+		previewBlockId: string,
+		replaceBlockIds: readonly string[] | undefined,
+		text: string,
+	) => {
+		controller.setStreamingReviewPreview(
+			markdownReviewPreviewInput(controller._editor, {
 				sessionId: previewSessionId,
 				turnId: sessionTurnId,
-				target: resolveMarkdownPreviewTarget(controller._editor, {
-					blockId: previewBlockId,
-					offset: 0,
-					replaceTargetBlock: true,
-					replaceBlockIds,
-				}),
-				text: markdownStreamingPreviewText(text),
-			});
-		};
-		const clearScopedMarkdownPreview = () => {
-			controller.clearStreamingReviewPreview(previewSessionId);
-		};
-		const updatePreview = (text: string, phase: "preview" | "final") => {
-			currentText = text;
-			const nextStatus =
-				phase === "preview" && text.length > 0
-					? "writing"
-					: controller._state.status;
-			if (phase === "preview" && text.length > 0) {
-				controller._setState({ status: "writing" });
-				controller._appendStreamEvent(
-					createAIStreamEvent(seedGeneration, {
-						type: "status",
-						status: "writing",
-					}),
-				);
-			}
-			controller._resolveActiveGeneration({
+				blockId: previewBlockId,
+				offset: 0,
+				replaceTargetBlock: true,
+				replaceBlockIds,
 				text,
-				status: "streaming",
-				operation,
-			});
+			}),
+		);
+	};
+	const clearScopedMarkdownPreview = () => {
+		controller.clearStreamingReviewPreview(previewSessionId);
+	};
+	const updatePreview = (text: string, phase: "preview" | "final") => {
+		currentText = text;
+		if (phase === "preview" && text.length > 0) {
+			controller._setState({ status: "writing" });
 			controller._appendStreamEvent(
 				createAIStreamEvent(seedGeneration, {
-					type: "operation",
-					operation,
-					phase,
-					text,
+					type: "status",
+					status: "writing",
 				}),
 			);
-			void nextStatus;
-		};
+		}
+		controller._resolveActiveGeneration({
+			text,
+			status: "streaming",
+			operation,
+		});
+		controller._appendStreamEvent(
+			createAIStreamEvent(seedGeneration, {
+				type: "operation",
+				operation,
+				phase,
+				text,
+			}),
+		);
+	};
 
-		try {
-			const stream = streamThroughEgress(
-				controller._editor,
-				controller._model!,
-				{
-					feature: "generation",
-					messages: [{ role: "user", content: executionPrompt }],
-					documentExcerpts: excerptsFromOperation(operation, blockId),
-					tools: [],
-				},
-				{
-					signal: abortController.signal,
-					requestMode: resolveGenerationRequestMode({
-						...context,
-						targetType: target.type,
-						operation,
-					}),
+	try {
+		const stream = streamThroughEgress(
+			controller._editor,
+			controller._model!,
+			{
+				feature: "generation",
+				messages: [{ role: "user", content: executionPrompt }],
+				documentExcerpts: excerptsFromOperation(operation, blockId),
+				tools: [],
+			},
+			{
+				signal: abortController.signal,
+				requestMode: resolveGenerationRequestMode({
+					...context,
+					targetType: target.type,
 					operation,
-					sessionId: context?.sessionId,
-					turnId: sessionTurnId,
-					generationId: seedGeneration.id,
-				},
-			);
+				}),
+				operation,
+				sessionId: context?.sessionId,
+				turnId: sessionTurnId,
+				generationId: seedGeneration.id,
+			},
+		);
 
-			for await (const event of stream) {
-				if (abortController.signal.aborted) {
-					break;
-				}
+		for await (const event of stream) {
+			if (abortController.signal.aborted) {
+				break;
+			}
 
-				if (event.type === "error") {
-					throw event.error;
-				}
+			if (event.type === "error") {
+				throw event.error;
+			}
 
-				if (event.type === "conflict") {
-					controller._appendStreamEvent(
-						createAIStreamEvent(seedGeneration, {
-							type: "operation",
-							operation,
-							phase: "conflict",
-							reason: event.reason,
-						}),
-					);
-					throw new Error(event.reason);
-				}
+			if (event.type === "conflict") {
+				controller._appendStreamEvent(
+					createAIStreamEvent(seedGeneration, {
+						type: "operation",
+						operation,
+						phase: "conflict",
+						reason: event.reason,
+					}),
+				);
+				throw new Error(event.reason);
+			}
 
-				if (event.type === "text-delta") {
-					if (
-						operation.kind === "document-transform" ||
-						streamsMarkdownSelectionPreview
-					) {
-						currentText += event.delta;
-						if (
-							streamsMarkdownSelectionPreview &&
-							operation.target.kind === "scoped-range"
-						) {
-							updatePreview(currentText, "preview");
-							showScopedMarkdownPreview(
-								operation.target.blockIds?.[0] ??
-									operation.target.anchor.blockId,
-								operation.target.blockIds,
-								currentText,
-							);
-						}
-						continue;
-					}
-					throw new Error(
-						"Local AI operations must stream typed operation payloads, not raw text deltas.",
-					);
-				}
-
+			if (event.type === "text-delta") {
 				if (
-					event.type === "replace-preview" ||
-					event.type === "insert-preview"
+					operation.kind === "document-transform" ||
+					streamsMarkdownSelectionPreview
 				) {
-					updatePreview(event.text, "preview");
+					currentText += event.delta;
 					if (
 						streamsMarkdownSelectionPreview &&
 						operation.target.kind === "scoped-range"
 					) {
+						updatePreview(currentText, "preview");
 						showScopedMarkdownPreview(
 							operation.target.blockIds?.[0] ??
 								operation.target.anchor.blockId,
 							operation.target.blockIds,
-							event.text,
+							currentText,
 						);
 					}
 					continue;
 				}
-
-				if (
-					event.type === "replace-final" ||
-					event.type === "insert-final"
-				) {
-					sawStructuredFinalFrame = true;
-					updatePreview(event.text, "final");
-					if (
-						streamsMarkdownSelectionPreview &&
-						operation.target.kind === "scoped-range"
-					) {
-						clearScopedMarkdownPreview();
-					}
-					currentMutationReceipt =
-						controller._commitRequestedOperationResult(
-							operation,
-							event.text,
-							context?.sessionId,
-							{
-								contentFormat,
-								applyStrategy,
-							},
-						);
-					continue;
-				}
-
-				if (event.type === "done") {
-					break;
-				}
-			}
-
-			if (
-				!sawStructuredFinalFrame &&
-				currentText.length > 0 &&
-				operation.kind !== "document-transform" &&
-				!streamsMarkdownSelectionPreview
-			) {
 				throw new Error(
-					"Local AI operations must return a validated final payload before they can be applied.",
+					"Local AI operations must stream typed operation payloads, not raw text deltas.",
 				);
 			}
+
 			if (
-				!sawStructuredFinalFrame &&
-				currentText.length > 0 &&
-				operation.kind === "document-transform"
+				event.type === "replace-preview" ||
+				event.type === "insert-preview"
 			) {
-				currentMutationReceipt = controller._commitRequestedOperationResult(
-					operation,
-					currentText,
-					context?.sessionId,
-					{
-						contentFormat,
-						applyStrategy,
-					},
-				);
-			} else if (
-				!sawStructuredFinalFrame &&
-				currentText.length > 0 &&
-				streamsMarkdownSelectionPreview
-			) {
-				clearScopedMarkdownPreview();
-				currentMutationReceipt = controller._commitRequestedOperationResult(
-					operation,
-					currentText,
-					context?.sessionId,
-					{
-						contentFormat,
-						applyStrategy,
-					},
-				);
+				updatePreview(event.text, "preview");
+				if (
+					streamsMarkdownSelectionPreview &&
+					operation.target.kind === "scoped-range"
+				) {
+					showScopedMarkdownPreview(
+						operation.target.blockIds?.[0] ??
+							operation.target.anchor.blockId,
+						operation.target.blockIds,
+						event.text,
+					);
+				}
+				continue;
 			}
-			return finalizeLocalOperationExecution(controller, {
-				context,
-				sessionTurnId,
-				operation,
-				currentText,
-				currentMutationReceipt,
-				seedGeneration,
-				abortController,
-				baselineSuggestionIds,
-			});
-		} finally {
-			if (controller._abortController === abortController) {
-				controller._abortController = null;
+
+			if (
+				event.type === "replace-final" ||
+				event.type === "insert-final"
+			) {
+				sawStructuredFinalFrame = true;
+				updatePreview(event.text, "final");
+				if (
+					streamsMarkdownSelectionPreview &&
+					operation.target.kind === "scoped-range"
+				) {
+					clearScopedMarkdownPreview();
+				}
+				currentMutationReceipt =
+					controller._commitRequestedOperationResult(
+						operation,
+						event.text,
+						context?.sessionId,
+						{
+							contentFormat,
+						},
+					);
+				continue;
+			}
+
+			if (event.type === "done") {
+				break;
 			}
 		}
+
+		if (
+			!sawStructuredFinalFrame &&
+			currentText.length > 0 &&
+			operation.kind !== "document-transform" &&
+			!streamsMarkdownSelectionPreview
+		) {
+			throw new Error(
+				"Local AI operations must return a validated final payload before they can be applied.",
+			);
+		}
+		if (
+			!sawStructuredFinalFrame &&
+			currentText.length > 0 &&
+			operation.kind === "document-transform"
+		) {
+			currentMutationReceipt = controller._commitRequestedOperationResult(
+				operation,
+				currentText,
+				context?.sessionId,
+				{
+					contentFormat,
+				},
+			);
+		} else if (
+			!sawStructuredFinalFrame &&
+			currentText.length > 0 &&
+			streamsMarkdownSelectionPreview
+		) {
+			clearScopedMarkdownPreview();
+			currentMutationReceipt = controller._commitRequestedOperationResult(
+				operation,
+				currentText,
+				context?.sessionId,
+				{
+					contentFormat,
+				},
+			);
+		}
+		return finalizeLocalOperationExecution(controller, {
+			context,
+			sessionTurnId,
+			operation,
+			currentText,
+			currentMutationReceipt,
+			seedGeneration,
+			abortController,
+			baselineSuggestionIds,
+		});
+	} finally {
+		if (controller._abortController === abortController) {
+			controller._abortController = null;
+		}
+	}
 }

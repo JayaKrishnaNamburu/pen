@@ -1,4 +1,9 @@
-import type { RawCommitDelta, StructuralOriginTag, YArrayDelta, YTextDelta } from "@input/pen-crdt-yjs";
+import type {
+	RawCommitDelta,
+	StructuralOriginTag,
+	YArrayDelta,
+	YTextDelta,
+} from "@input/pen-crdt-yjs";
 
 import { affectedBlockIdsFromSummary } from "./affectedBlocks";
 import type { BlockIndexSnapshot } from "./blockIndex";
@@ -68,7 +73,11 @@ function buildTextChanges(
 	const changes: BlockTextChange[] = [];
 	for (const [blockId, textDeltaList] of delta.textDeltas) {
 		for (const textDelta of textDeltaList) {
-			const logicalLength = logicalLengthForTextDelta(blockId, textDelta, index);
+			const logicalLength = logicalLengthForTextDelta(
+				blockId,
+				textDelta,
+				index,
+			);
 			const { splices, formatRanges } = textDeltaToSplices(
 				textDelta,
 				logicalLength,
@@ -168,9 +177,12 @@ function buildStructuralChanges(
 
 	const insertedIds = new Set(inserted.map((item) => item.id));
 	const removedIds = new Set(removed.map((item) => item.id));
-	const splitNewId = structuralOrigin?.kind === "split" ? structuralOrigin.newBlockId : null;
+	const splitNewId =
+		structuralOrigin?.kind === "split" ? structuralOrigin.newBlockId : null;
 	const mergeSourceId =
-		structuralOrigin?.kind === "merge" ? structuralOrigin.sourceBlockId : null;
+		structuralOrigin?.kind === "merge"
+			? structuralOrigin.sourceBlockId
+			: null;
 
 	if (structuralOrigin?.kind === "split") {
 		structural.push({
@@ -185,7 +197,8 @@ function buildStructuralChanges(
 			type: "blocks-merged",
 			targetBlockId: structuralOrigin.targetBlockId,
 			sourceBlockId: structuralOrigin.sourceBlockId,
-			joinOffset: index.lengthById.get(structuralOrigin.targetBlockId) ?? 0,
+			joinOffset:
+				index.lengthById.get(structuralOrigin.targetBlockId) ?? 0,
 		});
 	}
 
@@ -196,7 +209,8 @@ function buildStructuralChanges(
 			const fromIndex = (
 				index.childrenByParentId.get(fromParentId) ?? []
 			).indexOf(item.id);
-			if (fromParentId === item.parentId && fromIndex === item.index) continue;
+			if (fromParentId === item.parentId && fromIndex === item.index)
+				continue;
 			structural.push({
 				type: "block-moved",
 				blockId: item.id,
@@ -228,7 +242,9 @@ function buildStructuralChanges(
 	}
 
 	const newIds = new Set<string>([
-		...inserted.filter((item) => !index.parentById.has(item.id)).map((item) => item.id),
+		...inserted
+			.filter((item) => !index.parentById.has(item.id))
+			.map((item) => item.id),
 		...(splitNewId ? [splitNewId] : []),
 	]);
 
@@ -236,7 +252,9 @@ function buildStructuralChanges(
 		if (newIds.has(blockId)) continue;
 		const keyList = [...keys];
 		const fromType = index.typeById.get(blockId) ?? "";
-		const residual = keyList.filter((key) => !IGNORABLE_BLOCK_KEYS.has(key));
+		const residual = keyList.filter(
+			(key) => !IGNORABLE_BLOCK_KEYS.has(key),
+		);
 		if (residual.length === 0) continue;
 
 		const looksTable =
@@ -281,12 +299,18 @@ function collectArrayEdits(
 	inserted: { id: string; parentId: string | null; index: number }[];
 	removed: { id: string; parentId: string | null; index: number }[];
 } {
-	const inserted: { id: string; parentId: string | null; index: number }[] = [];
-	const removed: { id: string; parentId: string | null; index: number }[] = [];
+	const inserted: { id: string; parentId: string | null; index: number }[] =
+		[];
+	const removed: { id: string; parentId: string | null; index: number }[] =
+		[];
 
 	const rootEdits = interpretArrayDelta(index.roots, delta.blockOrderDelta);
-	inserted.push(...rootEdits.inserted.map((item) => ({ ...item, parentId: null })));
-	removed.push(...rootEdits.removed.map((item) => ({ ...item, parentId: null })));
+	inserted.push(
+		...rootEdits.inserted.map((item) => ({ ...item, parentId: null })),
+	);
+	removed.push(
+		...rootEdits.removed.map((item) => ({ ...item, parentId: null })),
+	);
 
 	for (const [parentId, arrayDelta] of delta.childArrayDeltas) {
 		const pre = index.childrenByParentId.get(parentId) ?? [];
@@ -301,7 +325,10 @@ function collectArrayEdits(
 function interpretArrayDelta(
 	pre: readonly string[],
 	delta: YArrayDelta,
-): { inserted: { id: string; index: number }[]; removed: { id: string; index: number }[] } {
+): {
+	inserted: { id: string; index: number }[];
+	removed: { id: string; index: number }[];
+} {
 	const inserted: { id: string; index: number }[] = [];
 	const removed: { id: string; index: number }[] = [];
 	let oldIndex = 0;

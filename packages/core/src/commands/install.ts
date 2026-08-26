@@ -1,14 +1,7 @@
-import type {
-	Editor,
-	SelectionOrigin,
-	SelectionState,
-} from "@input/pen-types";
+import type { Editor, SelectionOrigin, SelectionState } from "@input/pen-types";
 
 import { builtinCommandHandlers } from "./builtin";
-import {
-	createCommandRegistry,
-	type CommandRegistry,
-} from "./registry";
+import { createCommandRegistry, type CommandRegistry } from "./registry";
 
 const registries = new WeakMap<Editor, CommandRegistry>();
 
@@ -45,6 +38,8 @@ export function installEditorCommandRegistry(editor: Editor): CommandRegistry {
 	return registry;
 }
 
-export function getCommandRegistry(editor: Editor): CommandRegistry | undefined {
+export function getCommandRegistry(
+	editor: Editor,
+): CommandRegistry | undefined {
 	return registries.get(editor);
 }

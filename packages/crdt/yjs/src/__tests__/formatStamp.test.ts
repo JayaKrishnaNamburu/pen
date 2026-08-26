@@ -23,7 +23,9 @@ describe("format stamp (DUR1)", () => {
 		expect(stamp.minReader).toBe(1);
 		expect(stamp.writer).toMatch(SEMVER);
 		expect(
-			(doc as YjsCRDTDocument).penDocument.metadata.get(PEN_FORMAT_METADATA_KEY),
+			(doc as YjsCRDTDocument).penDocument.metadata.get(
+				PEN_FORMAT_METADATA_KEY,
+			),
 		).toEqual(stamp);
 	});
 
@@ -39,7 +41,9 @@ describe("format stamp (DUR1)", () => {
 			minReader: 1,
 			writer: "unknown",
 		});
-		expect(loaded.penDocument.metadata.get(PEN_FORMAT_METADATA_KEY)).toBeUndefined();
+		expect(
+			loaded.penDocument.metadata.get(PEN_FORMAT_METADATA_KEY),
+		).toBeUndefined();
 		expect(loaded.penDocument.metadata.get("hostNote")).toBe("keep");
 
 		adapter.transact(loaded, () => {
@@ -66,9 +70,9 @@ describe("format stamp (DUR1)", () => {
 		});
 
 		expect(doc.penDocument.metadata.get("clientTheme")).toBe("dark");
-		expect(doc.penDocument.metadata.get(DOCUMENT_PROFILE_METADATA_KEY)).toBe(
-			"flow",
-		);
+		expect(
+			doc.penDocument.metadata.get(DOCUMENT_PROFILE_METADATA_KEY),
+		).toBe("flow");
 		expect(readFormatStamp(doc).format).toBe(PEN_DOCUMENT_FORMAT);
 	});
 

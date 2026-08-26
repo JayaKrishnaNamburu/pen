@@ -20,7 +20,9 @@ async function* createStream(parts: PenStreamPart[]) {
 	}
 }
 
-function listenDiagnostics(editor: ReturnType<typeof createEditor>): DiagnosticEvent[] {
+function listenDiagnostics(
+	editor: ReturnType<typeof createEditor>,
+): DiagnosticEvent[] {
 	const diagnostics: DiagnosticEvent[] = [];
 	editor.on("diagnostic", (event) => {
 		diagnostics.push(event);
@@ -63,9 +65,15 @@ describe("@input/pen-ai/stream processStream AIB5 document", () => {
 		const diagnostics = listenDiagnostics(editor);
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "seed" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "seed",
+				},
+			],
 			{ origin: "user" },
 		);
 
@@ -108,12 +116,20 @@ describe("@input/pen-ai/stream processStream AIB5 document", () => {
 		]);
 
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 4,
-				to: 4,
-				insert: " still-writable" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 4,
+					to: 4,
+					insert: " still-writable",
+				},
+			],
 			{ origin: "user" },
 		);
-		expect(editor.getBlock(seedId)?.textContent()).toContain("still-writable");
+		expect(editor.getBlock(seedId)?.textContent()).toContain(
+			"still-writable",
+		);
 
 		expect(editor.undoManager.undo()).toBe(true);
 		expect(editor.getBlock(seedId)?.textContent()).toBe("seed");
@@ -169,9 +185,15 @@ describe("@input/pen-ai/stream processStream AIB5 document", () => {
 		const editor = createStreamEditor();
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "before" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "before",
+				},
+			],
 			{ origin: "user" },
 		);
 		const before = editor.documentState.blockOrder.map(

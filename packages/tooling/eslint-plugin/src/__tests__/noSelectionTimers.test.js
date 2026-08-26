@@ -33,7 +33,7 @@ const allowlistedEntry = allowlist.entries.find(
 );
 const authorityPath =
 	allowlistedEntry?.file ??
-	"packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts";
+	"packages/rendering/dom/src/field-editor/contenteditableBackend.ts";
 const allowlistedSymbol =
 	allowlistedEntry?.symbol ?? "scheduleActiveDOMMatchCheck";
 
@@ -80,7 +80,7 @@ describe("no-selection-timers (S4)", () => {
 		);
 		expect(
 			isSelectionModule(
-				"packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts",
+				"packages/rendering/dom/src/field-editor/contenteditableBackend.ts",
 			),
 		).toBe(true);
 		expect(

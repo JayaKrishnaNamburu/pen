@@ -73,7 +73,9 @@ export const prop = {
 	},
 	enum(values: readonly (string | number)[]) {
 		const inferredType =
-			values.length > 0 && typeof values[0] === "number" ? "number" : "string";
+			values.length > 0 && typeof values[0] === "number"
+				? "number"
+				: "string";
 		return new PropChainImpl({
 			type: inferredType,
 			default: values[0],

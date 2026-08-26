@@ -1,7 +1,6 @@
 node_modules/
 dist/
 .turbo/
-.fallow/
 coverage/
 *.tsbuildinfo
 .DS_Store

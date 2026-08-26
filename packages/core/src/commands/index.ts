@@ -37,10 +37,7 @@ export {
 	splitBlock,
 	toggleMark,
 } from "./text";
-export {
-	resolveDefaultKeymap,
-	serializeDefaultKeymap,
-} from "./defaultKeymap";
+export { resolveDefaultKeymap, serializeDefaultKeymap } from "./defaultKeymap";
 export type {
 	DefaultKeymapBinding,
 	KeymapPlatform,
@@ -63,10 +60,7 @@ export {
 	tableCellPrev,
 	tableEscapeGrid,
 } from "./table";
-export {
-	historyRedo,
-	historyUndo,
-} from "./history";
+export { historyRedo, historyUndo } from "./history";
 export { builtinCommandHandlers } from "./builtin";
 export {
 	getVerticalCaretGoalX,

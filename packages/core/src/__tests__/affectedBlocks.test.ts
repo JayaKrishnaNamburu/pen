@@ -18,7 +18,10 @@ function summaryWith(
 		...base,
 		blockText,
 		structural,
-		affectedBlockIds: affectedBlockIdsFromSummary({ blockText, structural }),
+		affectedBlockIds: affectedBlockIdsFromSummary({
+			blockText,
+			structural,
+		}),
 	};
 }
 

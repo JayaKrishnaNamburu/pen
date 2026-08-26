@@ -14,7 +14,10 @@ export function buildAISuggestionDecorations(
 	}
 
 	return suggestions
-		.filter((suggestion) => !suggestion.invalidated && suggestion.to > suggestion.from)
+		.filter(
+			(suggestion) =>
+				!suggestion.invalidated && suggestion.to > suggestion.from,
+		)
 		.map((suggestion) => {
 			const isActive = suggestion.id === activeSuggestionId;
 			const attributes: Record<string, string | number | boolean> = {

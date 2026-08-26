@@ -296,48 +296,48 @@ describe("@input/pen-react AI primitives", () => {
 					data-active-generation-id={
 						debugLog.activeGenerationId ?? undefined
 					}
-					data-aggregate-fast-apply-attempt-count={String(
-						debugLog.aggregateFastApply.attemptCount,
+					data-aggregate-commit-attempt-count={String(
+						debugLog.aggregateCommit.attemptCount,
 					)}
-					data-aggregate-fast-apply-native-count={String(
-						debugLog.aggregateFastApply.nativeFastApplyCount,
+					data-aggregate-commit-selection-replacement-count={String(
+						debugLog.aggregateCommit.selectionReplacementCount,
 					)}
-					data-fast-apply-attempt-count={
-						debugLog.activeSessionFastApply
+					data-commit-attempt-count={
+						debugLog.activeSessionCommit
 							? String(
-									debugLog.activeSessionFastApply
+									debugLog.activeSessionCommit
 										.attemptCount,
 								)
 							: undefined
 					}
-					data-fast-apply-native-count={
-						debugLog.activeSessionFastApply
+					data-commit-selection-replacement-count={
+						debugLog.activeSessionCommit
 							? String(
-									debugLog.activeSessionFastApply
-										.nativeFastApplyCount,
+									debugLog.activeSessionCommit
+										.selectionReplacementCount,
 								)
 							: undefined
 					}
-					data-fast-apply-scoped-count={
-						debugLog.activeSessionFastApply
+					data-commit-scoped-count={
+						debugLog.activeSessionCommit
 							? String(
-									debugLog.activeSessionFastApply
+									debugLog.activeSessionCommit
 										.scopedReplacementCount,
 								)
 							: undefined
 					}
-					data-fast-apply-plain-count={
-						debugLog.activeSessionFastApply
+					data-commit-plain-count={
+						debugLog.activeSessionCommit
 							? String(
-									debugLog.activeSessionFastApply
+									debugLog.activeSessionCommit
 										.plainMarkdownCount,
 								)
 							: undefined
 					}
-					data-fast-apply-failed-count={
-						debugLog.activeSessionFastApply
+					data-commit-failed-count={
+						debugLog.activeSessionCommit
 							? String(
-									debugLog.activeSessionFastApply.failedCount,
+									debugLog.activeSessionCommit.failedCount,
 								)
 							: undefined
 					}
@@ -380,16 +380,16 @@ describe("@input/pen-react AI primitives", () => {
 		);
 		expect(probe?.getAttribute("data-active-generation-id")).toBeTruthy();
 		expect(
-			probe?.getAttribute("data-aggregate-fast-apply-attempt-count"),
+			probe?.getAttribute("data-aggregate-commit-attempt-count"),
 		).toBe("1");
 		expect(
-			probe?.getAttribute("data-aggregate-fast-apply-native-count"),
+			probe?.getAttribute("data-aggregate-commit-selection-replacement-count"),
 		).toBe("1");
-		expect(probe?.getAttribute("data-fast-apply-attempt-count")).toBe("1");
-		expect(probe?.getAttribute("data-fast-apply-native-count")).toBe("1");
-		expect(probe?.getAttribute("data-fast-apply-scoped-count")).toBe("0");
-		expect(probe?.getAttribute("data-fast-apply-plain-count")).toBe("0");
-		expect(probe?.getAttribute("data-fast-apply-failed-count")).toBe("0");
+		expect(probe?.getAttribute("data-commit-attempt-count")).toBe("1");
+		expect(probe?.getAttribute("data-commit-selection-replacement-count")).toBe("1");
+		expect(probe?.getAttribute("data-commit-scoped-count")).toBe("0");
+		expect(probe?.getAttribute("data-commit-plain-count")).toBe("0");
+		expect(probe?.getAttribute("data-commit-failed-count")).toBe("0");
 		expect(probe?.getAttribute("data-last-entry-label")).toBe(
 			"Generation finished",
 		);
@@ -400,7 +400,7 @@ describe("@input/pen-react AI primitives", () => {
 		container.remove();
 	});
 
-	it("reads fast-apply metrics for a requested session in the debug hook", async () => {
+	it("reads commit metrics for a requested session in the debug hook", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [
@@ -420,28 +420,28 @@ describe("@input/pen-react AI primitives", () => {
 
 			return (
 				<div
-					data-fast-apply-session-id={
-						debugLog.fastApplySessionId ?? undefined
+					data-commit-session-id={
+						debugLog.commitSessionId ?? undefined
 					}
-					data-aggregate-fast-apply-attempt-count={String(
-						debugLog.aggregateFastApply.attemptCount,
+					data-aggregate-commit-attempt-count={String(
+						debugLog.aggregateCommit.attemptCount,
 					)}
-					data-aggregate-fast-apply-native-count={String(
-						debugLog.aggregateFastApply.nativeFastApplyCount,
+					data-aggregate-commit-selection-replacement-count={String(
+						debugLog.aggregateCommit.selectionReplacementCount,
 					)}
-					data-fast-apply-attempt-count={
-						debugLog.activeSessionFastApply
+					data-commit-attempt-count={
+						debugLog.activeSessionCommit
 							? String(
-									debugLog.activeSessionFastApply
+									debugLog.activeSessionCommit
 										.attemptCount,
 								)
 							: undefined
 					}
-					data-fast-apply-native-count={
-						debugLog.activeSessionFastApply
+					data-commit-selection-replacement-count={
+						debugLog.activeSessionCommit
 							? String(
-									debugLog.activeSessionFastApply
-										.nativeFastApplyCount,
+									debugLog.activeSessionCommit
+										.selectionReplacementCount,
 								)
 							: undefined
 					}
@@ -465,15 +465,15 @@ describe("@input/pen-react AI primitives", () => {
 
 		await act(async () => {
 			const controllerAny = controller as any;
-			controllerAny?._recordSessionFastApplyMetrics(
+			controllerAny?._recordSessionCommitMetrics(
 				bottomChatSession.id,
 				{
 					attempted: true,
 					succeeded: true,
-					executionPath: "native-fast-apply",
+					executionPath: "selection-replacement",
 				},
 			);
-			controllerAny?._recordSessionFastApplyMetrics(
+			controllerAny?._recordSessionCommitMetrics(
 				bottomChatSession.id,
 				{
 					attempted: true,
@@ -490,19 +490,19 @@ describe("@input/pen-react AI primitives", () => {
 		});
 
 		const probe = container.querySelector(
-			"[data-fast-apply-session-id]",
+			"[data-commit-session-id]",
 		) as HTMLElement | null;
-		expect(probe?.getAttribute("data-fast-apply-session-id")).toBe(
+		expect(probe?.getAttribute("data-commit-session-id")).toBe(
 			bottomChatSession.id,
 		);
 		expect(
-			probe?.getAttribute("data-aggregate-fast-apply-attempt-count"),
+			probe?.getAttribute("data-aggregate-commit-attempt-count"),
 		).toBe("2");
 		expect(
-			probe?.getAttribute("data-aggregate-fast-apply-native-count"),
+			probe?.getAttribute("data-aggregate-commit-selection-replacement-count"),
 		).toBe("1");
-		expect(probe?.getAttribute("data-fast-apply-attempt-count")).toBe("2");
-		expect(probe?.getAttribute("data-fast-apply-native-count")).toBe("1");
+		expect(probe?.getAttribute("data-commit-attempt-count")).toBe("2");
+		expect(probe?.getAttribute("data-commit-selection-replacement-count")).toBe("1");
 
 		await act(async () => {
 			root.unmount();

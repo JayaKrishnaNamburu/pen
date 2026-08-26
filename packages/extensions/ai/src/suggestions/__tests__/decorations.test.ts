@@ -22,13 +22,12 @@ function suggestion(overrides: Partial<AISuggestion> = {}): AISuggestion {
 
 describe("HOST6 AI suggestion decorations", () => {
 	it("HOST6 reads --pen-ai-suggestion-line with a default instead of writing it", () => {
-		const [decoration] = buildAISuggestionDecorations(
-			[suggestion()],
-			null,
-		);
+		const [decoration] = buildAISuggestionDecorations([suggestion()], null);
 
 		expect(decoration).toBeDefined();
-		expect(decoration?.attributes.class).toContain("pen-ai-suggestion-underline");
+		expect(decoration?.attributes.class).toContain(
+			"pen-ai-suggestion-underline",
+		);
 		expect(decoration?.attributes.style).toBeUndefined();
 	});
 
@@ -38,8 +37,12 @@ describe("HOST6 AI suggestion decorations", () => {
 			"suggestion-1",
 		);
 
-		expect(decoration?.attributes.class).toContain("pen-ai-suggestion-underline");
-		expect(decoration?.attributes.class).toContain("pen-ai-suggestion-active");
+		expect(decoration?.attributes.class).toContain(
+			"pen-ai-suggestion-underline",
+		);
+		expect(decoration?.attributes.class).toContain(
+			"pen-ai-suggestion-active",
+		);
 		expect(decoration?.attributes.style).toBeUndefined();
 	});
 });

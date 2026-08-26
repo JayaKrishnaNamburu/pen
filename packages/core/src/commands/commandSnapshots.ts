@@ -17,10 +17,7 @@ import {
 	logicalInline,
 	PARENT_ID_CONTAINER_TYPES,
 } from "./commandBlockContext";
-import {
-	blockSelectionResult,
-	textSelectionResult,
-} from "./commandSelection";
+import { blockSelectionResult, textSelectionResult } from "./commandSelection";
 
 /**
  * Captures a {@link NormalPositionSnapshot} from an editor's current document.
@@ -72,7 +69,8 @@ export function buildTransitionSnapshot(editor: Editor): TransitionSnapshot {
 			length: block.length(),
 			parentId,
 			containerId: listContainer?.id ?? parentId,
-			containerKind: listContainer?.kind ?? parentContainerKind(editor, parentId),
+			containerKind:
+				listContainer?.kind ?? parentContainerKind(editor, parentId),
 		};
 	}
 	return {
@@ -82,9 +80,7 @@ export function buildTransitionSnapshot(editor: Editor): TransitionSnapshot {
 	};
 }
 
-export function toTransitionSelection(
-	editor: Editor,
-): TransitionSelection {
+export function toTransitionSelection(editor: Editor): TransitionSelection {
 	const selection = editor.selection;
 	if (!selection) {
 		return null;

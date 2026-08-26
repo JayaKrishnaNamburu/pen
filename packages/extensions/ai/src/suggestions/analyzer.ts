@@ -1,9 +1,6 @@
 import { foldAndNormalize, localeFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import {
-	buildSuggestionsAIRequest,
-	streamThroughEgress,
-} from "./aiEgress";
+import { buildSuggestionsAIRequest, streamThroughEgress } from "./aiEgress";
 import { AI_SUGGESTIONS_REQUEST_MODE } from "./constants";
 import { buildAISuggestionMessages } from "./promptBuilder";
 import type { BuiltSuggestionScope } from "./scopeBuilder";
@@ -31,7 +28,12 @@ export async function analyzeSuggestionScope(input: {
 	const { editor, scope, config, signal } = input;
 
 	if (config.analyzer) {
-		return analyzeWithCustomAnalyzer(config.analyzer, editor, scope, signal);
+		return analyzeWithCustomAnalyzer(
+			config.analyzer,
+			editor,
+			scope,
+			signal,
+		);
 	}
 
 	if (!config.model) {
@@ -199,7 +201,10 @@ function sanitizeCandidates(
 			title: normalizedTitle,
 			originalText: normalizedOriginalText,
 			replacementText: normalizedReplacementText,
-			reason: typeof reason === "string" ? reason.trim() || undefined : undefined,
+			reason:
+				typeof reason === "string"
+					? reason.trim() || undefined
+					: undefined,
 			confidence:
 				typeof confidence === "number" && Number.isFinite(confidence)
 					? Math.max(0, Math.min(1, confidence))

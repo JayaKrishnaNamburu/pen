@@ -219,10 +219,7 @@ function areGenerationsEqual(
 		previous.contentFormat !== next.contentFormat ||
 		previous.route !== next.route ||
 		previous.mutationMode !== next.mutationMode ||
-		previous.planState !== next.planState ||
 		previous.targetKind !== next.targetKind ||
-		!areStructuredValuesEqual(previous.reviewItems, next.reviewItems) ||
-		!areStructuredValuesEqual(previous.plan, next.plan) ||
 		!areStructuredValuesEqual(previous.debug, next.debug)
 	) {
 		return false;
@@ -301,10 +298,6 @@ export function areSessionsEqual(
 			!areStringArraysEqual(
 				previousSession.pendingSuggestionIds,
 				nextSession.pendingSuggestionIds,
-			) ||
-			!areStringArraysEqual(
-				previousSession.pendingReviewItemIds,
-				nextSession.pendingReviewItemIds,
 			) ||
 			!areStructuredValuesEqual(
 				previousSession.metrics,

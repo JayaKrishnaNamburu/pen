@@ -4,7 +4,7 @@ import {
 	deleteAdjacentInlineAtom,
 	deleteBackward,
 	deleteForward,
-	selectAdjacentInlineAtom
+	selectAdjacentInlineAtom,
 } from "..";
 import { isCollapsed } from "../../selection/helpers";
 import {
@@ -12,7 +12,7 @@ import {
 	createCommandEditor,
 	createCommandHarness,
 	insertMention,
-	liveRegistry
+	liveRegistry,
 } from "./fixture";
 
 /**
@@ -72,8 +72,8 @@ describe("inline atom delete select-then-delete", () => {
 				{
 					insert: {
 						type: "mention",
-						props: { id: "1", label: "Ada" }
-					}
+						props: { id: "1", label: "Ada" },
+					},
 				},
 				{ insert: "z" },
 			]);
@@ -89,19 +89,22 @@ describe("inline atom delete select-then-delete", () => {
 				expect.objectContaining({
 					type: "text",
 					anchor: { blockId: "a", offset: 2 },
-					focus: { blockId: "a", offset: 3 }
+					focus: { blockId: "a", offset: 3 },
 				}),
 			);
 			expect(
-				editor.getBlock("a")?.inlineDeltas()?.some((delta) => {
-					const insert = delta.insert;
-					return (
-						typeof insert === "object" &&
-						insert !== null &&
-						"type" in insert &&
-						insert.type === "mention"
-					);
-				}),
+				editor
+					.getBlock("a")
+					?.inlineDeltas()
+					?.some((delta) => {
+						const insert = delta.insert;
+						return (
+							typeof insert === "object" &&
+							insert !== null &&
+							"type" in insert &&
+							insert.type === "mention"
+						);
+					}),
 			).toBe(true);
 			editor.destroy();
 		});
@@ -197,11 +200,11 @@ describe("inline atom delete select-then-delete", () => {
 						type: "splice-text",
 						blockId: "a",
 						from: 2,
-				to: 2 + 1,
-				insert: ""
+						to: 2 + 1,
+						insert: "",
 					},
 				],
-				caret: { blockId: "a", offset: 2 }
+				caret: { blockId: "a", offset: 2 },
 			});
 			expect(hasMention(editor)).toBe(true);
 			editor.apply(oneShot!.ops, { origin: "user" });
@@ -227,7 +230,7 @@ describe("inline atom delete select-then-delete", () => {
 			expect.objectContaining({
 				type: "text",
 				anchor: { blockId: "a", offset: 2 },
-				focus: { blockId: "a", offset: 3 }
+				focus: { blockId: "a", offset: 3 },
 			}),
 		);
 		expectAtomSelected(liveEditor);

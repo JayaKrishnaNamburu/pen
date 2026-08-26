@@ -9,14 +9,17 @@ const noDefaultExtensionsPreset = {
 	},
 };
 
-function storedInserts(editor: ReturnType<typeof createHeadlessEditor>, blockId: string) {
+function storedInserts(
+	editor: ReturnType<typeof createHeadlessEditor>,
+	blockId: string,
+) {
 	return (editor.getBlock(blockId)?.textDeltas() ?? [])
 		.map((delta) => delta.insert)
 		.filter((insert): insert is string => typeof insert === "string");
 }
 
 describe("empty blocks EM1", () => {
-	it("EM1: empty text-capable storage stays \"\" through repeated normalize (I10)", () => {
+	it('EM1: empty text-capable storage stays "" through repeated normalize (I10)', () => {
 		const editor = createHeadlessEditor({
 			schema: createDefaultSchema(),
 			preset: noDefaultExtensionsPreset,

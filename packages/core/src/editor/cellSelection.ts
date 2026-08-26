@@ -1,4 +1,8 @@
-import type { BlockHandle, CellSelection, TableBlockHandle } from "@input/pen-types";
+import type {
+	BlockHandle,
+	CellSelection,
+	TableBlockHandle,
+} from "@input/pen-types";
 
 export interface ResolvedCellSelectionCell {
 	row: number;
@@ -10,7 +14,9 @@ export interface ResolvedCellSelectionCell {
 export function hasIndexedCellSelectionMetadata(
 	selection: CellSelection,
 ): boolean {
-	return Array.isArray(selection.rowIds) && Array.isArray(selection.columnIds);
+	return (
+		Array.isArray(selection.rowIds) && Array.isArray(selection.columnIds)
+	);
 }
 
 export function resolveCellSelectionCoord(
@@ -140,7 +146,11 @@ function findRowIndexById(block: BlockHandle, rowId: string): number {
 }
 
 function findColumnIndexById(block: BlockHandle, columnId: string): number {
-	return asTable(block)?.tableColumns().findIndex((column) => column.id === columnId) ?? -1;
+	return (
+		asTable(block)
+			?.tableColumns()
+			.findIndex((column) => column.id === columnId) ?? -1
+	);
 }
 
 function asTable(block: BlockHandle): TableBlockHandle | null {

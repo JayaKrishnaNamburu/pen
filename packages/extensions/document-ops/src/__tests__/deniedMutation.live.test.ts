@@ -185,7 +185,11 @@ describe("denied mutating tools leave the live document unchanged", () => {
 
 		for (const tool of tools) {
 			await expectUnchanged(editor, () =>
-				runtime.executeTool(tool.name, deniedInput(tool.name), {} as never),
+				runtime.executeTool(
+					tool.name,
+					deniedInput(tool.name),
+					{} as never,
+				),
 			);
 		}
 	});
@@ -218,7 +222,9 @@ describe("denied mutating tools leave the live document unchanged", () => {
 		await expectUnchanged(editor, () =>
 			context.updateBlock("fixture-subdoc", { title: "No" }),
 		);
-		await expectUnchanged(editor, () => context.deleteBlock("fixture-subdoc"));
+		await expectUnchanged(editor, () =>
+			context.deleteBlock("fixture-subdoc"),
+		);
 	});
 
 	it("applyValidatedOps entry: hidden insert and hidden mutate do not write", async () => {
@@ -293,7 +299,10 @@ describe("denied mutating tools leave the live document unchanged", () => {
 					format: "blocks",
 					blocks: [
 						{ blockType: "paragraph", content: "Allowed sibling" },
-						{ blockType: "not-a-real-type", content: "Should not land" },
+						{
+							blockType: "not-a-real-type",
+							content: "Should not land",
+						},
 					],
 				},
 				{} as never,
@@ -356,8 +365,8 @@ describe("denied mutating tools leave the live document unchanged", () => {
 					type: "splice-text",
 					blockId: "fixture-body",
 					from: 0,
-				to: 0,
-				insert: "after-denial",
+					to: 0,
+					insert: "after-denial",
 				},
 			],
 			{ origin: "user" },

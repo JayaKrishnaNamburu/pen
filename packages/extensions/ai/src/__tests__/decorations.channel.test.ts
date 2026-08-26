@@ -96,8 +96,8 @@ function insertHelloBlocks(editor: Editor, count: number): void {
 			type: "splice-text",
 			blockId: firstBlockId,
 			from: 0,
-				to: 0,
-				insert: "hello 0",
+			to: 0,
+			insert: "hello 0",
 		},
 	];
 	let previousId = firstBlockId;
@@ -114,8 +114,8 @@ function insertHelloBlocks(editor: Editor, count: number): void {
 			type: "splice-text",
 			blockId,
 			from: 0,
-				to: 0,
-				insert: `hello ${index}`,
+			to: 0,
+			insert: `hello ${index}`,
 		});
 		previousId = blockId;
 	}
@@ -141,7 +141,9 @@ describe("ai decorations channel", () => {
 
 		expect("decorations" in extension).toBe(false);
 		expect(
-			editor.facet(decorationsFacet).some((source) => typeof source === "function"),
+			editor
+				.facet(decorationsFacet)
+				.some((source) => typeof source === "function"),
 		).toBe(true);
 		editor.destroy();
 	});
@@ -200,8 +202,8 @@ describe("ai decorations channel", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "h",
+					to: 0,
+					insert: "h",
 				},
 			],
 			{ origin: "user" },

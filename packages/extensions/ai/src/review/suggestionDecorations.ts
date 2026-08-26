@@ -139,49 +139,28 @@ function buildSuggestionAttributes(
 	suggestion: Record<string, unknown>,
 	suggestionPresentation: SuggestionPresentation,
 ): DecorationAttributes {
-	if (suggestionPresentation === "final-text") {
-		return {
-			class:
-				action === "delete"
-					? [
-							REVIEW_SURFACE_CLASSES.suggestionDelete,
-							REVIEW_SURFACE_CLASSES.reviewDelete,
-						].join(" ")
-					: [
-							REVIEW_SURFACE_CLASSES.suggestionInsert,
-							REVIEW_SURFACE_CLASSES.suggestionFinalTextChange,
-							REVIEW_SURFACE_CLASSES.reviewInsert,
-						].join(" "),
-			"data-suggestion-id": String(suggestion.id),
-			"data-suggestion-action": action,
-			"data-suggestion-author": String(suggestion.author ?? ""),
-			"data-suggestion-author-type": String(
-				suggestion.authorType ?? "user",
-			),
-			[AI_REVIEW_ROLE_ATTRIBUTE]:
-				action === "delete" ? "delete-hidden" : "insert",
-			...(action === "delete"
-				? { [FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true }
-				: { "data-pen-final-text-review-change": true }),
-		};
-	}
-
+	const isFinalText = suggestionPresentation === "final-text";
+	const isDelete = action === "delete";
+	const role: AIReviewPresentationRole =
+		isFinalText && isDelete
+			? "delete-hidden"
+			: isDelete
+				? "delete"
+				: "insert";
 	return {
-		class:
-			action === "delete"
-				? [
-						REVIEW_SURFACE_CLASSES.suggestionDelete,
-						REVIEW_SURFACE_CLASSES.reviewDelete,
-					].join(" ")
-				: [
-						REVIEW_SURFACE_CLASSES.suggestionInsert,
-						REVIEW_SURFACE_CLASSES.reviewInsert,
-					].join(" "),
+		class: isDelete
+			? REVIEW_SURFACE_CLASSES.suggestionDelete
+			: REVIEW_SURFACE_CLASSES.suggestionInsert,
 		"data-suggestion-id": String(suggestion.id),
 		"data-suggestion-action": action,
 		"data-suggestion-author": String(suggestion.author ?? ""),
 		"data-suggestion-author-type": String(suggestion.authorType ?? "user"),
-		[AI_REVIEW_ROLE_ATTRIBUTE]: action,
+		[AI_REVIEW_ROLE_ATTRIBUTE]: role,
+		...(isFinalText && isDelete
+			? { [FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true }
+			: isFinalText
+				? { "data-pen-final-text-review-change": true }
+				: {}),
 	};
 }
 
@@ -201,9 +180,7 @@ function createSuggestionInlineDecoration(
 	};
 }
 
-function resolveBlockSuggestionRole(
-	action: string,
-): AIReviewPresentationRole {
+function resolveBlockSuggestionRole(action: string): AIReviewPresentationRole {
 	switch (action) {
 		case "insert-block":
 			return "block-insert";

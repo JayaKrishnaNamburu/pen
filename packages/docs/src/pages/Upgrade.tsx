@@ -6,8 +6,8 @@ export function UpgradePage() {
 				There is no adopter-facing <code>MIGRATION.md</code> at the
 				repository root yet. Wave 7 assembles that file from per-wave
 				notes. The current assembly stub is{" "}
-				<code>spec/MIGRATION.md</code>. It is an engineering record,
-				not a 2.0 cut, and it marks each item landed or not-yet.
+				<code>spec/MIGRATION.md</code>. It is an engineering record, not
+				a 2.0 cut, and it marks each item landed or not-yet.
 			</p>
 
 			<h2>Support</h2>

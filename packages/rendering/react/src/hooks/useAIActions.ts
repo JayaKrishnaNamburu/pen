@@ -18,10 +18,6 @@ export function useAIActions(editor: Editor): {
 	acceptAllSuggestions: () => void;
 	rejectAllSuggestions: () => void;
 	acceptActiveGeneration: () => boolean;
-	acceptReviewItem: (id: string) => boolean;
-	rejectReviewItem: (id: string) => boolean;
-	acceptReviewItems: (ids: readonly string[]) => boolean;
-	rejectReviewItems: (ids: readonly string[]) => boolean;
 	retryActiveGeneration: () => Promise<unknown>;
 	openCommandMenu: () => void;
 	closeCommandMenu: () => void;
@@ -75,18 +71,6 @@ export function useAIActions(editor: Editor): {
 		},
 		acceptActiveGeneration() {
 			return controller?.acceptActiveGeneration() ?? false;
-		},
-		acceptReviewItem(id: string) {
-			return controller?.acceptReviewItem(id) ?? false;
-		},
-		rejectReviewItem(id: string) {
-			return controller?.rejectReviewItem(id) ?? false;
-		},
-		acceptReviewItems(ids: readonly string[]) {
-			return controller?.acceptReviewItems(ids) ?? false;
-		},
-		rejectReviewItems(ids: readonly string[]) {
-			return controller?.rejectReviewItems(ids) ?? false;
 		},
 		retryActiveGeneration() {
 			if (!controller) {

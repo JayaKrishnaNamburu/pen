@@ -11,7 +11,9 @@ import { processStream } from "../processStream";
 
 function createStreamEditor(): {
 	editor: Editor;
-	apply: ReturnType<typeof vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>>;
+	apply: ReturnType<
+		typeof vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>
+	>;
 	emit: ReturnType<typeof vi.fn>;
 } {
 	const apply = vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>();
@@ -45,7 +47,9 @@ function createStreamEditor(): {
 	return { editor, apply, emit };
 }
 
-async function* createStream(parts: PenStreamPart[]): AsyncIterable<PenStreamPart> {
+async function* createStream(
+	parts: PenStreamPart[],
+): AsyncIterable<PenStreamPart> {
 	for (const part of parts) {
 		yield part;
 	}

@@ -104,9 +104,7 @@ describe("@input/pen-core origin shape contract", () => {
 				txnOrigins[0] !== null &&
 				(txnOrigins[0] as { type?: unknown }).type,
 		).toBe("user");
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"typed",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("typed");
 
 		editor.destroy();
 	});
@@ -123,9 +121,7 @@ describe("@input/pen-core origin shape contract", () => {
 		expect(commits[0]!.origin).toBe(origin);
 		expect(txnOrigins[0]).toBe(origin);
 		expect(commits[0]!.origin.type).toBe("user");
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"typed",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("typed");
 
 		editor.destroy();
 	});
@@ -206,9 +202,7 @@ describe("@input/pen-core origin shape contract", () => {
 		expect(commits[0]!.source).not.toBe("remote");
 		expect(txnOrigins.length).toBeGreaterThan(0);
 		expect(originTypeOf(txnOrigins[0])).not.toBe("user");
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"typed",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("typed");
 
 		editor.destroy();
 	});
@@ -242,8 +236,8 @@ describe("@input/pen-core origin shape contract", () => {
 						type: "splice-text",
 						blockId,
 						from: next.getBlock(blockId)!.length(),
-				to: next.getBlock(blockId)!.length(),
-				insert: "upgraded",
+						to: next.getBlock(blockId)!.length(),
+						insert: "upgraded",
 					},
 				]);
 			},
@@ -252,9 +246,7 @@ describe("@input/pen-core origin shape contract", () => {
 		const report = runMigrations(editor, [migration]);
 
 		expect(report.applied).toEqual(["upgrade"]);
-		expect(editor.firstBlock()!.textContent()).toBe(
-			"upgraded",
-		);
+		expect(editor.firstBlock()!.textContent()).toBe("upgraded");
 		expect(commits.length).toBeGreaterThan(0);
 		for (const event of commits) {
 			expect(event.origin.type).not.toBe("user");
@@ -280,9 +272,7 @@ describe("@input/pen-core origin shape contract", () => {
 		const adapter = editor.internals.adapter;
 		const ydoc = adapter.raw<Y.Doc>(editor.internals.crdtDoc);
 		const blockId = editor.firstBlock()!.id;
-		const content = (
-			ydoc.getMap("blocks") as Y.Map<Y.Map<unknown>>
-		)
+		const content = (ydoc.getMap("blocks") as Y.Map<Y.Map<unknown>>)
 			.get(blockId)
 			?.get("content");
 		if (!(content instanceof Y.Text)) {
@@ -297,9 +287,7 @@ describe("@input/pen-core origin shape contract", () => {
 			origin,
 		);
 
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"typed",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("typed");
 		expect(commits.length).toBeGreaterThan(0);
 		const event = commits.at(-1)!;
 		expect(event.origin).toBe(origin);
@@ -318,9 +306,7 @@ describe("@input/pen-core origin shape contract", () => {
 		const adapter = editor.internals.adapter;
 		const ydoc = adapter.raw<Y.Doc>(editor.internals.crdtDoc);
 		const blockId = editor.firstBlock()!.id;
-		const content = (
-			ydoc.getMap("blocks") as Y.Map<Y.Map<unknown>>
-		)
+		const content = (ydoc.getMap("blocks") as Y.Map<Y.Map<unknown>>)
 			.get(blockId)
 			?.get("content");
 		if (!(content instanceof Y.Text)) {
@@ -335,9 +321,7 @@ describe("@input/pen-core origin shape contract", () => {
 			origin,
 		);
 
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"remote",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("remote");
 		const event = commits.at(-1)!;
 		expect(event.origin).toBe(origin);
 		expect(event.origin.type).toBe("collaborator");
@@ -371,9 +355,7 @@ describe("@input/pen-core origin shape contract", () => {
 			expect(event.origin.type).not.toBe("user");
 			expect(event.source).toBe("stream");
 		}
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"streamed",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("streamed");
 
 		editor.destroy();
 	});

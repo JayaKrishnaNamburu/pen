@@ -23,7 +23,9 @@ describe("createFormatterCache", () => {
 	it("LOC6: omitted options and empty options share an instance", () => {
 		const cache = createFormatterCache();
 
-		expect(cache.getNumberFormat("en")).toBe(cache.getNumberFormat("en", {}));
+		expect(cache.getNumberFormat("en")).toBe(
+			cache.getNumberFormat("en", {}),
+		);
 		expect(cache.getPluralRules("ar")).toBe(cache.getPluralRules("ar", {}));
 		expect(cache.getDateTimeFormat("de-DE")).toBe(
 			cache.getDateTimeFormat("de-DE", {}),
@@ -50,9 +52,9 @@ describe("createFormatterCache", () => {
 	it("LOC6: different options do not return the same instance", () => {
 		const cache = createFormatterCache();
 
-		expect(cache.getNumberFormat("en", { maximumFractionDigits: 2 })).not.toBe(
-			cache.getNumberFormat("en", { maximumFractionDigits: 0 }),
-		);
+		expect(
+			cache.getNumberFormat("en", { maximumFractionDigits: 2 }),
+		).not.toBe(cache.getNumberFormat("en", { maximumFractionDigits: 0 }));
 		expect(cache.getPluralRules("en", { type: "cardinal" })).not.toBe(
 			cache.getPluralRules("en", { type: "ordinal" }),
 		);

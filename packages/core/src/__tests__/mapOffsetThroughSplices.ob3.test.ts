@@ -24,14 +24,21 @@ type AgreementMeta = {
 
 function loadJson<T>(name: string): T {
 	return JSON.parse(
-		readFileSync(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)), "utf8"),
+		readFileSync(
+			fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)),
+			"utf8",
+		),
 	) as T;
 }
 
 describe("mapOffsetThroughSplices", () => {
 	it("OB3: agrees with recorded pre-deletion ChangeSummary.mapOffset fixtures", () => {
-		const meta = loadJson<AgreementMeta>("mapOffsetThroughSplices.ob3.meta.json");
-		const cases = loadJson<AgreementCase[]>("mapOffsetThroughSplices.ob3.json");
+		const meta = loadJson<AgreementMeta>(
+			"mapOffsetThroughSplices.ob3.meta.json",
+		);
+		const cases = loadJson<AgreementCase[]>(
+			"mapOffsetThroughSplices.ob3.json",
+		);
 
 		expect(meta.caseCount).toBe(100_015);
 		expect(meta.randomized).toBe(100_000);
@@ -40,9 +47,9 @@ describe("mapOffsetThroughSplices", () => {
 		expect(cases.length).toBe(meta.recordedCount);
 
 		for (const row of cases) {
-			expect(mapOffsetThroughSplices(row.splices, row.offset, row.assoc)).toBe(
-				row.expected,
-			);
+			expect(
+				mapOffsetThroughSplices(row.splices, row.offset, row.assoc),
+			).toBe(row.expected);
 		}
 	});
 });

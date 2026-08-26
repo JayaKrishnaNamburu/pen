@@ -44,12 +44,20 @@ export function materializeSuggestionsFromCandidates(input: {
 export function dedupeOverlappingSuggestions(
 	suggestions: readonly AISuggestion[],
 ): readonly AISuggestion[] {
-	const sortedSuggestions = [...suggestions].sort(compareSuggestionsForDedupe);
+	const sortedSuggestions = [...suggestions].sort(
+		compareSuggestionsForDedupe,
+	);
 	const acceptedSuggestions: AISuggestion[] = [];
 
 	for (const suggestion of sortedSuggestions) {
-		const overlapsAcceptedSuggestion = acceptedSuggestions.some((existing) =>
-			rangesOverlap(existing.from, existing.to, suggestion.from, suggestion.to),
+		const overlapsAcceptedSuggestion = acceptedSuggestions.some(
+			(existing) =>
+				rangesOverlap(
+					existing.from,
+					existing.to,
+					suggestion.from,
+					suggestion.to,
+				),
 		);
 		if (overlapsAcceptedSuggestion) {
 			continue;

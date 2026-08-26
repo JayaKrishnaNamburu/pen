@@ -31,17 +31,20 @@ export function installChangeSummaries(host: ChangeSummaryHost): void {
 			: emptyBlockIndexSnapshot(),
 	);
 	try {
-		host._unsubSummary = createSummarySource(host._crdtDoc as never, (delta) => {
-			host._pendingSummary = buildChangeSummary(
-				delta,
-				host._blockIndex.snapshot(),
-				0,
-			);
-			host._blockIndex.replace(
-				createBlockIndexSnapshotFromDocument(host._doc),
-			);
-			flushDeferredCRDTEvent(host);
-		});
+		host._unsubSummary = createSummarySource(
+			host._crdtDoc as never,
+			(delta) => {
+				host._pendingSummary = buildChangeSummary(
+					delta,
+					host._blockIndex.snapshot(),
+					0,
+				);
+				host._blockIndex.replace(
+					createBlockIndexSnapshotFromDocument(host._doc),
+				);
+				flushDeferredCRDTEvent(host);
+			},
+		);
 	} catch {
 		host._unsubSummary = null;
 	}

@@ -15,7 +15,6 @@ export interface DirtyBlockState {
 	lastChangedAt: number;
 	changeCount: number;
 	changedCharsEstimate: number;
-	lastRevision: number;
 	lastChangedOffset: number | null;
 }
 
@@ -78,8 +77,8 @@ export class AISuggestionScheduler {
 				lastChangedAt: now,
 				changeCount: (previous?.changeCount ?? 0) + 1,
 				changedCharsEstimate:
-					(previous?.changedCharsEstimate ?? 0) + changedCharsEstimate,
-				lastRevision: this.editor.getBlockRevision(blockId),
+					(previous?.changedCharsEstimate ?? 0) +
+					changedCharsEstimate,
 				lastChangedOffset:
 					lastChangedOffset ?? previous?.lastChangedOffset ?? null,
 			});
@@ -172,8 +171,8 @@ function estimateChangedCharsForBlock(
 ): number {
 	const change = summary.blockText.find((item) => item.blockId === blockId);
 	if (!change) {
-		return summary.structural.some((item) =>
-			"blockId" in item && item.blockId === blockId,
+		return summary.structural.some(
+			(item) => "blockId" in item && item.blockId === blockId,
 		)
 			? 1
 			: 0;

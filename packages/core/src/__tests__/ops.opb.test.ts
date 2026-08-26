@@ -1,4 +1,8 @@
-import type { BlockSchema, DiagnosticEvent, DocumentOp } from "@input/pen-types";
+import type {
+	BlockSchema,
+	DiagnosticEvent,
+	DocumentOp,
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -43,8 +47,14 @@ const PRIMITIVE_FLAGS = {
 	"stream-open": true,
 } as const satisfies Record<DocumentOp["type"], true>;
 
-type ExtraPrimitiveKey = Exclude<keyof typeof PRIMITIVE_FLAGS, DocumentOp["type"]>;
-type MissingPrimitiveKey = Exclude<DocumentOp["type"], keyof typeof PRIMITIVE_FLAGS>;
+type ExtraPrimitiveKey = Exclude<
+	keyof typeof PRIMITIVE_FLAGS,
+	DocumentOp["type"]
+>;
+type MissingPrimitiveKey = Exclude<
+	DocumentOp["type"],
+	keyof typeof PRIMITIVE_FLAGS
+>;
 const _exactTen: [MissingPrimitiveKey] extends [never]
 	? [ExtraPrimitiveKey] extends [never]
 		? true
@@ -186,7 +196,12 @@ describe("ops op-boundary OPB1 OPB2 OPB5 OPB6", () => {
 			{ type: "delete-block", blockId: "p2" },
 			{ type: "move-block", blockId: "p2", position: "first" },
 			{ type: "set-props", blockId: seed, props: { type: "heading" } },
-			{ type: "set-meta", blockId: seed, namespace: "note", data: { a: 1 } },
+			{
+				type: "set-meta",
+				blockId: seed,
+				namespace: "note",
+				data: { a: 1 },
+			},
 			{
 				type: "grid",
 				blockId: "t1",
@@ -210,7 +225,10 @@ describe("ops op-boundary OPB1 OPB2 OPB5 OPB6", () => {
 		for (const [index, payload] of payloads.entries()) {
 			appliedTypes.push(payload.type);
 			editor.apply([
-				withRejectedOwnKey(payload, rejectedKeys[index % rejectedKeys.length]!),
+				withRejectedOwnKey(
+					payload,
+					rejectedKeys[index % rejectedKeys.length]!,
+				),
 			]);
 		}
 
@@ -312,12 +330,24 @@ describe("ops op-boundary OPB1 OPB2 OPB5 OPB6", () => {
 				position: "last",
 			},
 		]);
-		const tableRowsBeforeGrid = editor.getBlock("t1")!.as("table")!.tableRowCount();
+		const tableRowsBeforeGrid = editor
+			.getBlock("t1")!
+			.as("table")!
+			.tableRowCount();
 		editor.apply([
-			{ type: "set-props", blockId: seed, props: { type: "heading", level: 2 } },
+			{
+				type: "set-props",
+				blockId: seed,
+				props: { type: "heading", level: 2 },
+			},
 		]);
 		editor.apply([
-			{ type: "set-meta", blockId: seed, namespace: "note", data: { a: 1 } },
+			{
+				type: "set-meta",
+				blockId: seed,
+				namespace: "note",
+				data: { a: 1 },
+			},
 		]);
 		editor.apply([
 			{
@@ -343,7 +373,9 @@ describe("ops op-boundary OPB1 OPB2 OPB5 OPB6", () => {
 		editor.apply([{ type: "stream-open", blockId: seed }]);
 		editor.apply([{ type: "delete-block", blockId: "p2" }]);
 
-		expect([...new Set(executed)].sort()).toEqual([...SPEC_PRIMITIVE_TYPES]);
+		expect([...new Set(executed)].sort()).toEqual([
+			...SPEC_PRIMITIVE_TYPES,
+		]);
 		expect(editor.getBlock(seed)!.textContent()).toBe("hello");
 		expect(editor.getBlock(seed)!.textDeltas()).toEqual([
 			{ insert: "hello", attributes: { bold: true } },
@@ -389,7 +421,10 @@ describe("ops op-boundary OPB1 OPB2 OPB5 OPB6", () => {
 				blockId,
 				from: 1,
 				to: 1,
-				insert: { nodeType: "mention", props: { id: "1", label: "Ada" } },
+				insert: {
+					nodeType: "mention",
+					props: { id: "1", label: "Ada" },
+				},
 			},
 			{
 				type: "insert-block",
@@ -456,7 +491,12 @@ describe("ops op-boundary OPB1 OPB2 OPB5 OPB6", () => {
 			{ type: "delete-block", blockId: "p1" },
 			{ type: "move-block", blockId: "p1", position: "last" },
 			{ type: "set-props", blockId: "p1", props: { type: "widget" } },
-			{ type: "set-meta", blockId: "p1", namespace: "note", data: { a: 1 } },
+			{
+				type: "set-meta",
+				blockId: "p1",
+				namespace: "note",
+				data: { a: 1 },
+			},
 			{
 				type: "grid",
 				blockId: "t1",

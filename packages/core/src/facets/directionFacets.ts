@@ -16,9 +16,10 @@ export const blockDirectionFacet = defineFacet<
 	combine: (inputs) => inputs,
 });
 
-export const defaultDirectionFacet = defineFacet<BlockDirection, BlockDirection>(
-	{
-		name: "pen.defaultDirection",
-		combine: (inputs) => inputs[0] ?? "ltr",
-	},
-);
+export const defaultDirectionFacet = defineFacet<
+	BlockDirection,
+	BlockDirection
+>({
+	name: "pen.defaultDirection",
+	combine: (inputs) => inputs[0] ?? "ltr",
+});

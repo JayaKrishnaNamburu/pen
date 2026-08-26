@@ -32,51 +32,47 @@ export function resolveStreamingPreviewAnchor(
 	}
 }
 
-export function appendVirtualPreviewTextDecorations(
-	decorations: Decoration[],
-	{
-		blockId,
-		offset,
-		preview,
-		text,
-	}: {
-		blockId: string;
-		offset: number;
-		preview: AIStreamingReviewPreview;
-		text: string;
-	},
-): void {
+export function virtualPreviewTextDecorations({
+	blockId,
+	offset,
+	preview,
+	text,
+}: {
+	blockId: string;
+	offset: number;
+	preview: AIStreamingReviewPreview;
+	text: string;
+}): Decoration[] {
 	if (text.length === 0) {
-		return;
+		return [];
 	}
 
-	// Stable key so growing text updates the same span.
-	decorations.push({
-		type: "inline",
-		blockId,
-		from: offset,
-		to: offset,
-		virtualText: text,
-		virtualPlacement: "after",
-		key: [
-			"ai-streaming-review-preview",
-			preview.sessionId,
-			preview.turnId ?? "turn",
+	return [
+		{
+			type: "inline",
 			blockId,
-			String(offset),
-		].join(":"),
-		attributes: {
-			class: [
-				REVIEW_SURFACE_CLASSES.suggestionInsert,
-				REVIEW_SURFACE_CLASSES.suggestionFinalTextChange,
-				REVIEW_SURFACE_CLASSES.reviewInsert,
-				REVIEW_SURFACE_CLASSES.preview,
-			].join(" "),
-			[AI_REVIEW_ROLE_ATTRIBUTE]: "insert",
-			[AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE]: true,
-			"data-pen-ai-preview-streaming": true,
-			"data-pen-final-text-review-change": true,
-			contenteditable: "false",
+			from: offset,
+			to: offset,
+			virtualText: text,
+			virtualPlacement: "after",
+			key: [
+				"ai-streaming-review-preview",
+				preview.sessionId,
+				preview.turnId ?? "turn",
+				blockId,
+				String(offset),
+			].join(":"),
+			attributes: {
+				class: [
+					REVIEW_SURFACE_CLASSES.suggestionInsert,
+					REVIEW_SURFACE_CLASSES.preview,
+				].join(" "),
+				[AI_REVIEW_ROLE_ATTRIBUTE]: "insert",
+				[AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE]: true,
+				"data-pen-ai-preview-streaming": true,
+				"data-pen-final-text-review-change": true,
+				contenteditable: "false",
+			},
 		},
-	});
+	];
 }

@@ -1,9 +1,10 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { type DocumentSession, type PenStreamPart } from "@input/pen-types";
 import {
-	type DocumentSession,
-	type PenStreamPart,
-} from "@input/pen-types";
-import { decorationsFacet, defineExtension, getOpOriginType } from "@input/pen-core";
+	decorationsFacet,
+	defineExtension,
+	getOpOriginType,
+} from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";
@@ -74,7 +75,6 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-
 describe("@input/pen-core table operations", () => {
 	it("convert-block to table preserves inline text in the first cell", () => {
 		const editor = createEditor();
@@ -98,13 +98,17 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: "b1", props: { type: "table", ...{ }},
+				type: "set-props",
+				blockId: "b1",
+				props: { type: "table", ...{} },
 			},
 		]);
 
 		const block = editor.getBlock("b1")!;
 		expect(block.type).toBe("table");
-		expect(block.as("table")!.tableCell(0, 0)?.textContent()).toBe("Hello table");
+		expect(block.as("table")!.tableCell(0, 0)?.textContent()).toBe(
+			"Hello table",
+		);
 		expect(block.as("table")!.tableCell(0, 1)?.textContent()).toBe("");
 		expect(block.as("table")!.tableCell(1, 0)?.textContent()).toBe("");
 		expect(block.as("table")!.tableCell(1, 1)?.textContent()).toBe("");
@@ -134,7 +138,7 @@ describe("@input/pen-core table operations", () => {
 		editor.destroy();
 	});
 
-	it("API5: as(\"table\") is null for non-table blocks", () => {
+	it('API5: as("table") is null for non-table blocks', () => {
 		const editor = createEditor();
 
 		const block = editor.firstBlock()!;
@@ -178,8 +182,8 @@ describe("@input/pen-core table operations", () => {
 					type: "splice-text",
 					blockId: editor.firstBlock()!.id,
 					from: 0,
-				to: 0,
-				insert: "trigger",
+					to: 0,
+					insert: "trigger",
 				},
 			],
 			{ origin: "user" },

@@ -285,8 +285,7 @@ export function AIContextualPromptComposer(
 	]);
 
 	const turnItems = sessionTurns.map((turn) => {
-		const pendingChangeCount =
-			turn.suggestionIds.length + turn.reviewItemIds.length;
+		const pendingChangeCount = turn.suggestionIds.length;
 		const isTurnRunning =
 			state.activeGeneration?.sessionId === sessionId &&
 			state.activeGeneration.turnId === turn.id &&

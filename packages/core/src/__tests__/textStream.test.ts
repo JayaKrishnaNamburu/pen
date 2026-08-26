@@ -10,9 +10,11 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-function originOf(
-	entry: { options?: ApplyOptions } | undefined,
-): { groupId?: string; source?: string; type?: string } {
+function originOf(entry: { options?: ApplyOptions } | undefined): {
+	groupId?: string;
+	source?: string;
+	type?: string;
+} {
 	const origin = entry?.options?.origin;
 	if (origin == null || typeof origin === "string") {
 		return { type: origin };
@@ -20,9 +22,7 @@ function originOf(
 	return origin;
 }
 
-function createWriter(
-	overrides: Partial<CreateTextStreamWriterOptions> = {},
-): {
+function createWriter(overrides: Partial<CreateTextStreamWriterOptions> = {}): {
 	writer: ReturnType<typeof createTextStreamWriter>;
 	applies: Array<{ ops: DocumentOp[]; options?: ApplyOptions }>;
 	point: { current: Point };
@@ -35,7 +35,10 @@ function createWriter(
 		((ops: DocumentOp[], options?: ApplyOptions) => {
 			applies.push({ ops, options });
 			for (const op of ops) {
-				if (op.type !== "splice-text" || op.blockId !== point.current.blockId) {
+				if (
+					op.type !== "splice-text" ||
+					op.blockId !== point.current.blockId
+				) {
 					continue;
 				}
 				const insert = typeof op.insert === "string" ? op.insert : "";
@@ -184,8 +187,8 @@ describe("createTextStreamWriter", () => {
 					type: "splice-text",
 					blockId: "b1",
 					from: 4,
-				to: 4,
-				insert: "ab",
+					to: 4,
+					insert: "ab",
 				},
 			],
 		]);

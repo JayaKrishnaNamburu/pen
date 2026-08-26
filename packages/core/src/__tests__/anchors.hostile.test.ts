@@ -22,18 +22,39 @@ const HOSTILE: readonly { name: string; input: string }[] = [
 	{ name: "not-json", input: "not-json" },
 	{ name: "array", input: "[]" },
 	{ name: "missing-fields", input: "{}" },
-	{ name: "unknown-version", input: JSON.stringify({ v: 2, b: "b1", a: 1, p: "AA==" }) },
+	{
+		name: "unknown-version",
+		input: JSON.stringify({ v: 2, b: "b1", a: 1, p: "AA==" }),
+	},
 	{ name: "missing-block", input: JSON.stringify({ v: 1, a: 1, p: "AA==" }) },
-	{ name: "wrong-assoc-type", input: JSON.stringify({ v: 1, b: "b1", a: 0, p: "AA==" }) },
-	{ name: "assoc-string", input: JSON.stringify({ v: 1, b: "b1", a: "1", p: "AA==" }) },
-	{ name: "malformed-base64", input: JSON.stringify({ v: 1, b: "b1", a: 1, p: "***" }) },
+	{
+		name: "wrong-assoc-type",
+		input: JSON.stringify({ v: 1, b: "b1", a: 0, p: "AA==" }),
+	},
+	{
+		name: "assoc-string",
+		input: JSON.stringify({ v: 1, b: "b1", a: "1", p: "AA==" }),
+	},
+	{
+		name: "malformed-base64",
+		input: JSON.stringify({ v: 1, b: "b1", a: 1, p: "***" }),
+	},
 	{
 		name: "oversize-base64",
 		input: JSON.stringify({ v: 1, b: "b1", a: 1, p: "A".repeat(345) }),
 	},
-	{ name: "cell-wrong-shape", input: JSON.stringify({ v: 1, b: "b1", a: 1, c: "nope", p: "AA==" }) },
-	{ name: "cell-short", input: JSON.stringify({ v: 1, b: "b1", a: 1, c: [1], p: "AA==" }) },
-	{ name: "empty-position", input: JSON.stringify({ v: 1, b: "b1", a: 1, p: "" }) },
+	{
+		name: "cell-wrong-shape",
+		input: JSON.stringify({ v: 1, b: "b1", a: 1, c: "nope", p: "AA==" }),
+	},
+	{
+		name: "cell-short",
+		input: JSON.stringify({ v: 1, b: "b1", a: 1, c: [1], p: "AA==" }),
+	},
+	{
+		name: "empty-position",
+		input: JSON.stringify({ v: 1, b: "b1", a: 1, p: "" }),
+	},
 ];
 
 describe("editor.anchors AN6 hostile corpus", () => {
@@ -48,16 +69,22 @@ describe("editor.anchors AN6 hostile corpus", () => {
 		});
 
 		for (const sample of HOSTILE) {
-			expect(() => editor.anchors.deserialize(sample.input), sample.name).not.toThrow();
-			expect(editor.anchors.deserialize(sample.input), sample.name).toBeNull();
+			expect(
+				() => editor.anchors.deserialize(sample.input),
+				sample.name,
+			).not.toThrow();
+			expect(
+				editor.anchors.deserialize(sample.input),
+				sample.name,
+			).toBeNull();
 		}
 
 		const truncated = editor.anchors.deserialize(
 			JSON.stringify({ v: 1, b: "b1", a: 1, p: "/w8=" }),
 		);
-		expect(truncated === null || editor.anchors.resolve(truncated) === null).toBe(
-			true,
-		);
+		expect(
+			truncated === null || editor.anchors.resolve(truncated) === null,
+		).toBe(true);
 
 		const peer = createEditor();
 		const crossed = peer.anchors.deserialize(crossDocument);
@@ -67,7 +94,9 @@ describe("editor.anchors AN6 hostile corpus", () => {
 
 		expect(
 			diagnostics.every(
-				(event) => event.code === "anchor-decode" || event.code === "anchor-target-missing",
+				(event) =>
+					event.code === "anchor-decode" ||
+					event.code === "anchor-target-missing",
 			),
 		).toBe(true);
 		editor.destroy();
@@ -87,16 +116,18 @@ describe("editor.anchors AN6 hostile corpus", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 1, col: 1 },
-			from: 0,
-			to: 0,
-			insert: "cell text",
+				from: 0,
+				to: 0,
+				insert: "cell text",
 			},
 		]);
 		const live = editor.anchors.create(
 			{ blockId: "t1", offset: 5, cell: { row: 1, col: 1 } },
 			1,
 		)!;
-		const restored = editor.anchors.deserialize(editor.anchors.serialize(live));
+		const restored = editor.anchors.deserialize(
+			editor.anchors.serialize(live),
+		);
 		expect(restored).not.toBeNull();
 		expect(restored?.cell).toEqual({ row: 1, col: 1 });
 		expect(editor.anchors.resolve(restored!)).toEqual({

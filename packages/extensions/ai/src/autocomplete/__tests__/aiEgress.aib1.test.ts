@@ -14,12 +14,12 @@ import type {
 	DiagnosticEvent,
 	ModelAdapter,
 } from "@input/pen-types";
-import { AI_REQUEST_REFUSED_CODE, FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
-import { streamThroughEgress as localStreamThroughEgress } from "../aiEgress";
 import {
-	autocompleteExtension,
-	getAutocompleteController,
-} from "../index";
+	AI_REQUEST_REFUSED_CODE,
+	FIELD_EDITOR_SLOT_KEY,
+} from "@input/pen-types";
+import { streamThroughEgress as localStreamThroughEgress } from "../aiEgress";
+import { autocompleteExtension, getAutocompleteController } from "../index";
 
 const SECRET = "SECRET";
 
@@ -58,7 +58,10 @@ function fieldEditorSlot() {
 			name: "test-field-editor-slot",
 			activateClient: async ({ editor: nextEditor }) => {
 				activeEditor = nextEditor;
-				nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+				nextEditor.internals.assignSlot(
+					FIELD_EDITOR_SLOT_KEY,
+					fieldEditor,
+				);
 			},
 			deactivateClient: async () => {
 				activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
@@ -82,7 +85,8 @@ function countingAdapter(inner: ModelAdapter): ModelAdapter & {
 }
 
 function redactSecret(context: AIRequestContext): AIRequestContext {
-	const redact = (value: string) => value.replace(new RegExp(SECRET, "g"), "[redacted]");
+	const redact = (value: string) =>
+		value.replace(new RegExp(SECRET, "g"), "[redacted]");
 	return {
 		...context,
 		documentExcerpts: context.documentExcerpts.map((excerpt) => ({
@@ -106,7 +110,9 @@ function assertAutocompleteDeclaration(recorded: AIRequestContext): void {
 		expect(["target", "context"]).toContain(excerpt.kind);
 	}
 	expect(
-		recorded.documentExcerpts.some((excerpt) => excerpt.kind === "selection"),
+		recorded.documentExcerpts.some(
+			(excerpt) => excerpt.kind === "selection",
+		),
 	).toBe(false);
 	expect(
 		recorded.documentExcerpts.some(
@@ -144,9 +150,7 @@ describe("AIB1 autocomplete live egress", () => {
 		const blockId = editor.firstBlock()!.id;
 		slot.fieldEditor.focusBlockId = blockId;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 5, 5);
@@ -193,8 +197,8 @@ describe("AIB1 autocomplete live egress", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "Neighbor SECRET context.",
+					to: 0,
+					insert: "Neighbor SECRET context.",
 				},
 			],
 			{ origin: "user" },
@@ -213,8 +217,8 @@ describe("AIB1 autocomplete live egress", () => {
 					type: "splice-text",
 					blockId: targetBlockId,
 					from: 0,
-				to: 0,
-				insert: "Hello SECRET",
+					to: 0,
+					insert: "Hello SECRET",
 				},
 			],
 			{ origin: "user" },
@@ -227,7 +231,8 @@ describe("AIB1 autocomplete live egress", () => {
 		expect(controller?.request({ explicit: true })).toBe(true);
 		await waitForCondition(
 			() =>
-				inlineCompletion?.getState().visibleSuggestion?.text === " world",
+				inlineCompletion?.getState().visibleSuggestion?.text ===
+				" world",
 		);
 
 		expect(double.requests).toHaveLength(1);
@@ -236,13 +241,15 @@ describe("AIB1 autocomplete live egress", () => {
 		expect(
 			recorded.documentExcerpts.some(
 				(excerpt) =>
-					excerpt.blockId === targetBlockId && excerpt.kind === "target",
+					excerpt.blockId === targetBlockId &&
+					excerpt.kind === "target",
 			),
 		).toBe(true);
 		expect(
 			recorded.documentExcerpts.some(
 				(excerpt) =>
-					excerpt.blockId === firstBlockId && excerpt.kind === "context",
+					excerpt.blockId === firstBlockId &&
+					excerpt.kind === "context",
 			),
 		).toBe(true);
 		const payload = JSON.stringify(recorded);
@@ -287,9 +294,7 @@ describe("AIB1 autocomplete live egress", () => {
 		const blockId = editor.firstBlock()!.id;
 		slot.fieldEditor.focusBlockId = blockId;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 5, 5);
@@ -344,8 +349,8 @@ describe("AIB1 autocomplete live egress", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Hello SECRET",
+					to: 0,
+					insert: "Hello SECRET",
 				},
 			],
 			{ origin: "user" },

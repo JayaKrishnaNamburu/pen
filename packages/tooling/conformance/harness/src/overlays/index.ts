@@ -1,4 +1,4 @@
-export { createOverlayLayer, applyPaintPlan, onPaintPlan } from "./overlayLayer";
+export { createOverlayLayer } from "./overlayLayer";
 export { flushOverlay } from "./flushOverlay";
 export { readPaintPlan } from "./paintPlan";
 export {

@@ -202,22 +202,27 @@ describe("@input/pen-document-ops live document tools", () => {
 				{} as never,
 			);
 
-			expect(commits.map((event) => event.origin)).toEqual([{ type: "ai" }]);
+			expect(commits.map((event) => event.origin)).toEqual([
+				{ type: "ai" },
+			]);
 		});
 
 		it("leaves the document unchanged when position.after is missing", async () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				insertBlockTool(editor).handler(
-					{
-						position: { after: "missing-block" },
-						blockType: "paragraph",
-						content: "Should not land",
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					insertBlockTool(editor).handler(
+						{
+							position: { after: "missing-block" },
+							blockType: "paragraph",
+							content: "Should not land",
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -242,15 +247,18 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				insertBlockTool(editor).handler(
-					{
-						position: "last",
-						blockType: "not-a-block",
-						content: "Should not land",
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					insertBlockTool(editor).handler(
+						{
+							position: "last",
+							blockType: "not-a-block",
+							content: "Should not land",
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -269,15 +277,18 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				insertBlockTool(editor).handler(
-					{
-						position: "last",
-						blockType: "subdocument",
-						content: "Should not land",
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					insertBlockTool(editor).handler(
+						{
+							position: "last",
+							blockType: "subdocument",
+							content: "Should not land",
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -297,15 +308,18 @@ describe("@input/pen-document-ops live document tools", () => {
 			const diagnostics = listenDiagnostics(editor);
 			const content = "x".repeat(MAX_OP_TEXT_FIELD_LENGTH + 1);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				insertBlockTool(editor).handler(
-					{
-						position: "last",
-						blockType: "paragraph",
-						content,
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					insertBlockTool(editor).handler(
+						{
+							position: "last",
+							blockType: "paragraph",
+							content,
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -379,7 +393,9 @@ describe("@input/pen-document-ops live document tools", () => {
 				{} as never,
 			);
 
-			expect(commits.map((event) => event.origin)).toEqual([{ type: "ai" }]);
+			expect(commits.map((event) => event.origin)).toEqual([
+				{ type: "ai" },
+			]);
 		});
 
 		it("is idempotent when the same props are applied twice", async () => {
@@ -415,14 +431,17 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				updateBlockTool(editor).handler(
-					{
-						blockId: "missing-block",
-						props: { level: 3 },
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					updateBlockTool(editor).handler(
+						{
+							blockId: "missing-block",
+							props: { level: 3 },
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -459,7 +478,9 @@ describe("@input/pen-document-ops live document tools", () => {
 				{} as never,
 			);
 
-			expect(commits.map((event) => event.origin)).toEqual([{ type: "ai" }]);
+			expect(commits.map((event) => event.origin)).toEqual([
+				{ type: "ai" },
+			]);
 		});
 
 		it("is idempotent after the block is already gone", async () => {
@@ -481,11 +502,14 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				deleteBlockTool(editor).handler(
-					{ blockId: "missing-block" },
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					deleteBlockTool(editor).handler(
+						{ blockId: "missing-block" },
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -528,7 +552,9 @@ describe("@input/pen-document-ops live document tools", () => {
 				{} as never,
 			);
 
-			expect(commits.map((event) => event.origin)).toEqual([{ type: "ai" }]);
+			expect(commits.map((event) => event.origin)).toEqual([
+				{ type: "ai" },
+			]);
 		});
 
 		it("is idempotent when the block is already at the requested position", async () => {
@@ -549,14 +575,17 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				moveBlockTool(editor).handler(
-					{
-						blockId: "fixture-body",
-						position: { after: "missing-block" },
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					moveBlockTool(editor).handler(
+						{
+							blockId: "fixture-body",
+							position: { after: "missing-block" },
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -576,14 +605,17 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				moveBlockTool(editor).handler(
-					{
-						blockId: "missing-block",
-						position: "first",
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					moveBlockTool(editor).handler(
+						{
+							blockId: "missing-block",
+							position: "first",
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -694,22 +726,27 @@ describe("@input/pen-document-ops live document tools", () => {
 				{} as never,
 			);
 
-			expect(commits.map((event) => event.origin)).toEqual([{ type: "ai" }]);
+			expect(commits.map((event) => event.origin)).toEqual([
+				{ type: "ai" },
+			]);
 		});
 
 		it("leaves the document unchanged when position.after is missing", async () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				writeDocumentTool(editor).handler(
-					{
-						format: "text",
-						content: "Should not land",
-						position: { after: "missing-block" },
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					writeDocumentTool(editor).handler(
+						{
+							format: "text",
+							content: "Should not land",
+							position: { after: "missing-block" },
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -731,14 +768,17 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			const diagnostics = listenDiagnostics(editor);
 
-			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
-				writeDocumentTool(editor).handler(
-					{
-						format: "text",
-						content: "",
-					},
-					{} as never,
-				),
+			const error = await expectRejectedAndUnchanged(
+				editor,
+				FIXTURE_BLOCKS,
+				() =>
+					writeDocumentTool(editor).handler(
+						{
+							format: "text",
+							content: "",
+						},
+						{} as never,
+					),
 			);
 
 			expect(error).toEqual(
@@ -775,8 +815,8 @@ describe("@input/pen-document-ops live document tools", () => {
 							type: "splice-text",
 							blockId: "fixture-body",
 							from: 999,
-				to: 999,
-				insert: "should not land",
+							to: 999,
+							insert: "should not land",
 						},
 					],
 					{ origin: "ai" },
@@ -830,14 +870,18 @@ describe("@input/pen-document-ops live document tools", () => {
 			});
 			const before = encodeDocument(editor);
 
-			expect(() => context.updateBlock("missing-block", { level: 1 })).toThrow(
-				'Unknown block: "missing-block"',
-			);
+			expect(() =>
+				context.updateBlock("missing-block", { level: 1 }),
+			).toThrow('Unknown block: "missing-block"');
 			expect(() => context.deleteBlock("missing-block")).toThrow(
 				'Unknown block: "missing-block"',
 			);
 			expect(() =>
-				context.insertBlock("paragraph", {}, { after: "missing-block" }),
+				context.insertBlock(
+					"paragraph",
+					{},
+					{ after: "missing-block" },
+				),
 			).toThrow("Invalid tool payload");
 
 			expect(parts).toEqual([]);
@@ -889,7 +933,10 @@ describe("@input/pen-document-ops live document tools", () => {
 		}
 
 		function inputFor(name: string): unknown {
-			if (name === "search_document" || name === "retrieve_document_spans") {
+			if (
+				name === "search_document" ||
+				name === "retrieve_document_spans"
+			) {
 				return { query: "NESTED-SEARCH-HIT" };
 			}
 			return {};
@@ -948,7 +995,9 @@ describe("@input/pen-document-ops live document tools", () => {
 			)) as { blocks: Array<{ id: string }> };
 
 			expect(read.blocks.map((block) => block.id)).toContain("nested-1");
-			expect(context.blocks.map((block) => block.id)).toContain("nested-1");
+			expect(context.blocks.map((block) => block.id)).toContain(
+				"nested-1",
+			);
 			expect(editor.documentState.blockOrder).not.toContain("nested-1");
 		});
 
@@ -986,8 +1035,8 @@ describe("@input/pen-document-ops live document tools", () => {
 						type: "splice-text",
 						blockId: "deep-1",
 						from: 0,
-				to: 0,
-				insert: "DEEP-NESTED-HIT",
+						to: 0,
+						insert: "DEEP-NESTED-HIT",
 					},
 				],
 				{ origin: "user" },
@@ -1029,7 +1078,9 @@ describe("@input/pen-document-ops live document tools", () => {
 			expect(matches).toEqual([
 				expect.objectContaining({ blockId: "layout-child-1" }),
 			]);
-			expect(editor.documentState.blockOrder).not.toContain("layout-child-1");
+			expect(editor.documentState.blockOrder).not.toContain(
+				"layout-child-1",
+			);
 		});
 	});
 

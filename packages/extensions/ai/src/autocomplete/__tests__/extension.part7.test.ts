@@ -1,13 +1,6 @@
-import {
-	describe,
-	expect,
-	it } from "vitest";
-import {
-	createEditor,
-	getInlineCompletionController,
-	} from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY,
-} from "@input/pen-types";
+import { describe, expect, it } from "vitest";
+import { createEditor, getInlineCompletionController } from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -41,7 +34,8 @@ describe("@input/pen-ai/autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					prefetchAfterAccept: true,
@@ -58,8 +52,7 @@ describe("@input/pen-ai/autocomplete", () => {
 							}
 							yield {
 								type: "text-delta" as const,
-								delta:
-									'", but happy to be back. He looked forward to a quiet evening at home, away from the hustle and bustle of the office."',
+								delta: '", but happy to be back. He looked forward to a quiet evening at home, away from the hustle and bustle of the office."',
 							};
 							yield { type: "done" as const };
 						},
@@ -69,10 +62,16 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
 					},
 				}),
@@ -80,13 +79,15 @@ describe("@input/pen-ai/autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{
-			type: "splice-text",
-			blockId,
-			from: 0,
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
 				insert: "He came home ",
-		}]);
+			},
+		]);
 		editor.selectText(blockId, 13, 13);
 
 		const controller = getAutocompleteController(editor);
@@ -100,10 +101,14 @@ describe("@input/pen-ai/autocomplete", () => {
 
 		expect(controller?.acceptVisibleSuggestion()).toBe(true);
 		await waitForCondition(
-			() => (inlineCompletion?.getState().visibleSuggestion?.previewBlocks?.length ?? 0) === 1,
+			() =>
+				(inlineCompletion?.getState().visibleSuggestion?.previewBlocks
+					?.length ?? 0) === 1,
 		);
 
-		expect(inlineCompletion?.getState().visibleSuggestion?.previewBlocks).toEqual([
+		expect(
+			inlineCompletion?.getState().visibleSuggestion?.previewBlocks,
+		).toEqual([
 			expect.objectContaining({
 				blockType: "paragraph",
 				text: expect.stringContaining(

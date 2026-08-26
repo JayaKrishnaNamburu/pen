@@ -1,11 +1,11 @@
 import { isCollapsed } from "@input/pen-core";
 import type { DocumentOp, OpOrigin, SelectionState } from "@input/pen-types";
 import type { GenerationState } from "../types";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 
 export const commitSupportMethods = {
 	_applySuggestedAIOps(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		ops: readonly DocumentOp[],
 		sessionId?: string,
 		options?: {
@@ -21,7 +21,7 @@ export const commitSupportMethods = {
 	},
 
 	_createSelectionSignature(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		selection: SelectionState,
 	): string | null {
 		if (!selection) {
@@ -54,7 +54,7 @@ export const commitSupportMethods = {
 	},
 
 	_resolveActiveGeneration(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		overrides: Partial<GenerationState>,
 	): void {
 		const activeGeneration = this._state.activeGeneration;
@@ -66,18 +66,6 @@ export const commitSupportMethods = {
 			activeGeneration: {
 				...activeGeneration,
 				...overrides,
-				plan:
-					overrides.planState === "none" ||
-					overrides.planState === "rejected"
-						? null
-						: (overrides.plan ?? activeGeneration.plan),
-				reviewItems:
-					overrides.planState === "none" ||
-					overrides.planState === "rejected"
-						? []
-						: (overrides.reviewItems ??
-							activeGeneration.reviewItems ??
-							[]),
 				suggestionIds:
 					overrides.suggestionIds ??
 					activeGeneration.suggestionIds ??

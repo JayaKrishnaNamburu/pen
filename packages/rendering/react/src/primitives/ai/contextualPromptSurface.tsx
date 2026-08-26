@@ -138,9 +138,7 @@ export function AIContextualPromptSurface(
 		return null;
 	}
 
-	const pendingReviewCount =
-		session.pendingSuggestionIds.length +
-		session.pendingReviewItemIds.length;
+	const pendingReviewCount = session.pendingSuggestionIds.length;
 	const selectionOverlay =
 		mode !== "inserted" && pendingReviewCount === 0 ? (
 			<ContextualPromptSelectionOverlay

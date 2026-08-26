@@ -53,7 +53,7 @@ scenario(
 
 		// Firefox may echo the live win-24 caret over this selectText.
 		// Not a sentinel leak — applyDomTextSelection in
-		// contenteditableBackendSelection.ts writes the DOM caret back.
+		// contenteditableBackend.ts writes the DOM caret back.
 		await page.evaluate(() => {
 			window.__penConformance.selectText(0, 0);
 		});

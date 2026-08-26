@@ -79,8 +79,8 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "hello",
+					to: 0,
+					insert: "hello",
 				},
 			],
 			{ origin },
@@ -91,9 +91,7 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(commits[0]!.source).toBe("apply");
 		expect(txnOrigins.length).toBeGreaterThan(0);
 		expect(txnOrigins[0]).toBe(origin);
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"hello",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("hello");
 
 		editor.destroy();
 	});
@@ -117,8 +115,8 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "peer",
+					to: 0,
+					insert: "peer",
 				},
 			],
 			{ origin },
@@ -130,9 +128,7 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(commits[0]!.source).toBe("remote");
 		expect(txnOrigins.length).toBeGreaterThan(0);
 		expect(txnOrigins[0]).toBe(origin);
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"peer",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("peer");
 		expect(Object.keys(origin)).toEqual(["type", "actorId"]);
 
 		editor.destroy();
@@ -164,8 +160,8 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "remote-kept",
+					to: 0,
+					insert: "remote-kept",
 				},
 			],
 			{ origin },
@@ -177,9 +173,7 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(commits[0]!.origin.type).toBe("collaborator");
 		expect(commits[0]!.source).toBe("remote");
 		expect(txnOrigins[0]).toBe(origin);
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"remote-kept",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("remote-kept");
 
 		editor.destroy();
 	});
@@ -205,8 +199,8 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId: "b1",
 					from: 0,
-				to: 0,
-				insert: "hello world",
+					to: 0,
+					insert: "hello world",
 				},
 			],
 			{ origin },
@@ -251,15 +245,13 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "kept",
+					to: 0,
+					insert: "kept",
 				},
 			]);
 		}).not.toThrow();
 
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"kept",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("kept");
 		expect(diagnostics).toContainEqual(
 			expect.objectContaining({
 				code: "PEN_APPLY_005",
@@ -307,12 +299,10 @@ describe("apply pipeline contract (Lane 179)", () => {
 			type: "splice-text",
 			blockId,
 			from: 0,
-				to: 0,
-				insert: "kept",
+			to: 0,
+			insert: "kept",
 		});
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"kept",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("kept");
 		expect(diagnostics).toContainEqual(
 			expect.objectContaining({
 				code: "PEN_APPLY_005",
@@ -365,9 +355,7 @@ describe("apply pipeline contract (Lane 179)", () => {
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
 		});
-		editor.onBeforeApply(
-			() => undefined as unknown as DocumentOp[],
-		);
+		editor.onBeforeApply(() => undefined as unknown as DocumentOp[]);
 
 		expect(() => {
 			editor.apply([
@@ -375,15 +363,13 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "kept",
+					to: 0,
+					insert: "kept",
 				},
 			]);
 		}).not.toThrow();
 
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"kept",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("kept");
 		expect(diagnostics).toContainEqual(
 			expect.objectContaining({
 				code: "PEN_APPLY_005",
@@ -414,29 +400,29 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: -1,
-				to: -1,
-				insert: "nope",
+					to: -1,
+					insert: "nope",
 				} as DocumentOp,
 				{
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: 123,
+					to: 0,
+					insert: 123,
 				} as unknown as DocumentOp,
 				{
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0 + Number.NaN,
-				insert: "",
+					to: 0 + Number.NaN,
+					insert: "",
 				} as DocumentOp,
 				{
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "ok",
+					to: 0,
+					insert: "ok",
 				},
 			]);
 		}).not.toThrow();
@@ -588,8 +574,12 @@ describe("apply pipeline contract (Lane 179)", () => {
 			(block) => block.id,
 		);
 
-		expect(fromEditor).toEqual(expect.arrayContaining([rootId, "parent", "child"]));
-		expect(fromState).toEqual(expect.arrayContaining([rootId, "parent", "child"]));
+		expect(fromEditor).toEqual(
+			expect.arrayContaining([rootId, "parent", "child"]),
+		);
+		expect(fromState).toEqual(
+			expect.arrayContaining([rootId, "parent", "child"]),
+		);
 		expect(fromEditor).toContain("child");
 		expect(editor.getBlock("child")?.textContent()).toBe("nested");
 		expect(editor.documentState.blockOrder).not.toContain("child");
@@ -695,8 +685,8 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "x",
+					to: 0,
+					insert: "x",
 				},
 			];
 		});
@@ -764,9 +754,7 @@ describe("apply pipeline contract (Lane 179)", () => {
 		]);
 
 		expect(seen).toEqual(["one", "two"]);
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"mutatedmutated",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("mutatedmutated");
 
 		editor.destroy();
 	});
@@ -794,15 +782,13 @@ describe("apply pipeline contract (Lane 179)", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "kept",
+					to: 0,
+					insert: "kept",
 				},
 			]);
 		}).not.toThrow();
 
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"kept",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("kept");
 		expect(diagnostics).toContainEqual(
 			expect.objectContaining({
 				code: "PEN_EXT_001",
@@ -828,7 +814,9 @@ describe("apply pipeline contract (Lane 179)", () => {
 		]);
 
 		expect(editor.firstBlock()?.id).toBe(editor.documentState.blockAt(0));
-		expect(editor.firstBlock()?.id).toBe(editor.documentState.blockOrder[0]);
+		expect(editor.firstBlock()?.id).toBe(
+			editor.documentState.blockOrder[0],
+		);
 		expect(editor.lastBlock()?.id).toBe(
 			editor.documentState.blockOrder[
 				editor.documentState.blockOrder.length - 1

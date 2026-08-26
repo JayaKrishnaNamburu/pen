@@ -1,10 +1,11 @@
 import {
 	createGeometryReader,
 	DomScheduler,
+	getRootGeometry,
 	verticalCaretTarget,
 	type GeometryReaderHost,
 } from "@input/pen-dom";
-import type { CommitEvent, Editor, Unsubscribe } from "@input/pen-types";
+import type { Editor } from "@input/pen-types";
 import {
 	createOverlayLayer,
 	OVERLAY_ITEM_ATTR,
@@ -37,8 +38,6 @@ type GeometryHost = {
 	reader: GeometryReaderHost;
 	scheduler: DomScheduler;
 	overlay: OverlayLayer;
-	pendingCommits: CommitEvent[];
-	unsubscribers: Unsubscribe[];
 };
 
 let host: GeometryHost | null = null;

@@ -50,10 +50,7 @@ function skillByName(
 	return skill;
 }
 
-function fileByPath(
-	files: readonly AISkillFile[],
-	path: string,
-): AISkillFile {
+function fileByPath(files: readonly AISkillFile[], path: string): AISkillFile {
 	const file = files.find((entry) => entry.path === path);
 	if (!file) {
 		throw new Error(`Expected file ${path}`);
@@ -94,7 +91,10 @@ describe("@input/pen-ai/skills", () => {
 	});
 
 	it("renders SKILL.md with frontmatter, numbered instructions, tools, and the closer", () => {
-		const skill = skillByName(listDefaultAISkills(tools), "pen-document-agent");
+		const skill = skillByName(
+			listDefaultAISkills(tools),
+			"pen-document-agent",
+		);
 		const markdown = fileByPath(
 			renderSkillFiles(skill),
 			"pen-document-agent/SKILL.md",

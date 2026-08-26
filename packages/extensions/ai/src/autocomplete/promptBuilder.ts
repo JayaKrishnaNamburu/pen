@@ -60,7 +60,8 @@ export async function buildAutocompleteMessages(options: {
 	messages: ModelMessage[];
 	providerTimings: readonly AutocompleteProviderTiming[];
 }> {
-	const { providerSections, providerTimings } = await collectProviderSections(options);
+	const { providerSections, providerTimings } =
+		await collectProviderSections(options);
 	const systemPrompt =
 		options.mode === "continuation"
 			? AUTOCOMPLETE_CONTINUATION_SYSTEM_PROMPT
@@ -154,7 +155,9 @@ function buildPrompt(
 		`suffix=${JSON.stringify(context.suffixText)}`,
 	];
 	if (context.previousBlockText.trim().length > 0) {
-		sections.push(`previous_block=${JSON.stringify(context.previousBlockText)}`);
+		sections.push(
+			`previous_block=${JSON.stringify(context.previousBlockText)}`,
+		);
 	}
 	if (context.nextBlockText.trim().length > 0) {
 		sections.push(`next_block=${JSON.stringify(context.nextBlockText)}`);

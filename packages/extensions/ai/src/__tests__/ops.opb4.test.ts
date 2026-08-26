@@ -56,7 +56,8 @@ describe("ops op-boundary OPB4", () => {
 		expect(
 			withoutIntent.suggestions.some(
 				(suggestion) =>
-					suggestion.kind === "block" && suggestion.action === "split-block",
+					suggestion.kind === "block" &&
+					suggestion.action === "split-block",
 			),
 		).toBe(false);
 		expect(withIntent.suggestions).toContainEqual(

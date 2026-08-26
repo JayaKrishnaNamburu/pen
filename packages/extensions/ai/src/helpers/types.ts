@@ -12,7 +12,6 @@ import type {
 	ToolDefinition,
 	ToolRuntime,
 } from "@input/pen-types";
-import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
 import type {
 	AIControllerState,
 	AIInlineHistoryDirection,
@@ -134,49 +133,6 @@ export interface AIInlineShortcutHistoryWaypoint {
 	state: AIInlineShortcutHistoryState;
 }
 
-export function resolveOrderedReviewItems(
-	reviewItems: readonly StructuralReviewItem[],
-	ids: readonly string[],
-): StructuralReviewItem[] {
-	const remainingIds = new Set(ids);
-	const orderedReviewItems: StructuralReviewItem[] = [];
-	for (const reviewItem of reviewItems) {
-		if (!remainingIds.has(reviewItem.id)) {
-			continue;
-		}
-		orderedReviewItems.push(reviewItem);
-		remainingIds.delete(reviewItem.id);
-	}
-	return orderedReviewItems;
-}
-
-export function sortReviewItemsForRemoval(
-	reviewItems: readonly StructuralReviewItem[],
-): StructuralReviewItem[] {
-	return [...reviewItems].sort(compareReviewItemRemovalOrder);
-}
-
-function compareReviewItemRemovalOrder(
-	left: StructuralReviewItem,
-	right: StructuralReviewItem,
-): number {
-	const maxPathLength = Math.max(
-		left.bundlePath.length,
-		right.bundlePath.length,
-	);
-	for (let index = 0; index < maxPathLength; index += 1) {
-		const leftPart = left.bundlePath[index] ?? -1;
-		const rightPart = right.bundlePath[index] ?? -1;
-		if (leftPart !== rightPart) {
-			return rightPart - leftPart;
-		}
-	}
-
-	const leftStepIndex = left.stepIndex ?? -1;
-	const rightStepIndex = right.stepIndex ?? -1;
-	return rightStepIndex - leftStepIndex;
-}
-
 export function resolveActiveBlockId(selection: SelectionState): string | null {
 	if (!selection) return null;
 	if (selection.type === "text") return selection.focus.blockId;
@@ -185,17 +141,15 @@ export function resolveActiveBlockId(selection: SelectionState): string | null {
 	return null;
 }
 
-export function readModelId(model: ModelAdapter | undefined): string | undefined {
+export function readModelId(
+	model: ModelAdapter | undefined,
+): string | undefined {
 	if (!model || typeof model !== "object") return undefined;
 	const candidate = model as ModelAdapter & {
 		name?: string;
 		modelId?: string;
 	};
 	return candidate.modelId ?? candidate.name;
-}
-
-export function supportsStructuredIntent(model: ModelAdapter | undefined): boolean {
-	return model?.capabilities?.structuredIntent === true;
 }
 
 type AIStreamEventInput =
@@ -308,7 +262,9 @@ export function resolveSessionSelectionSnapshot(
 	return {
 		anchor: { ...selection.anchor },
 		focus: { ...selection.focus },
-		blockRange: [...getSelectionBlockRange(editor.internals.doc, selection)],
+		blockRange: [
+			...getSelectionBlockRange(editor.internals.doc, selection),
+		],
 		isMultiBlock: isMultiBlock(selection),
 	};
 }

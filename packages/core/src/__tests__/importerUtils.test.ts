@@ -201,9 +201,7 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const ops = blocksToOps(blocks);
-		const fmtOps = ops.filter(
-			(op) => op.type === "format-text" && op.cell,
-		);
+		const fmtOps = ops.filter((op) => op.type === "format-text" && op.cell);
 		expect(fmtOps.length).toBe(1);
 		const formatOp = fmtOps[0] as FormatTableCellTextOp;
 		expect(formatOp.marks).toEqual({ bold: true });
@@ -244,7 +242,11 @@ describe("blocksToOps table materialization", () => {
 						type: "__table_row",
 						props: {},
 						children: [
-							{ type: "__table_cell", props: {}, content: "Only" },
+							{
+								type: "__table_cell",
+								props: {},
+								content: "Only",
+							},
 						],
 					},
 				],
@@ -252,7 +254,8 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
@@ -261,7 +264,9 @@ describe("blocksToOps table materialization", () => {
 		expect(imported.type).toBe("table");
 		expect(imported.as("table")!.tableRowCount()).toBe(1);
 		expect(imported.as("table")!.tableColumnCount()).toBe(1);
-		expect(imported.as("table")!.tableCell(0, 0)?.textContent()).toBe("Only");
+		expect(imported.as("table")!.tableCell(0, 0)?.textContent()).toBe(
+			"Only",
+		);
 
 		editor.destroy();
 	});
@@ -275,24 +280,31 @@ describe("blocksToOps table materialization", () => {
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "A" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "A" },
+						],
 					},
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "B" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "B" },
+						],
 					},
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "C" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "C" },
+						],
 					},
 				],
 			},
 		];
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
@@ -314,7 +326,9 @@ describe("blocksToOps table materialization", () => {
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "A" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "A" },
+						],
 					},
 					{
 						type: "__table_row",
@@ -330,7 +344,8 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
@@ -345,7 +360,8 @@ describe("blocksToOps table materialization", () => {
 
 	it("DUR3: passthrough resolve keeps schema-unknown pending blocks at the import filter", () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 		});
 		const normalized = normalizePendingBlocksForImport(
 			[
@@ -361,14 +377,17 @@ describe("blocksToOps table materialization", () => {
 			"heading",
 		]);
 		expect(normalized.violations).toEqual([]);
-		expect(editor.schema.resolve("customWidget")?.type).toBe("customWidget");
+		expect(editor.schema.resolve("customWidget")?.type).toBe(
+			"customWidget",
+		);
 
 		editor.destroy();
 	});
 
 	it("emits a diagnostic when import normalization drops unknown block types", () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 		});
 		const diagnostics: unknown[] = [];
 

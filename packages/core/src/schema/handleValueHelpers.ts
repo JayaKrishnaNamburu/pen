@@ -135,7 +135,9 @@ function toPlainArray(value: unknown): TableColumnSchema["options"] {
 		.filter((item): item is Record<string, unknown> => item !== null)
 		.map(
 			(item) =>
-				item as unknown as NonNullable<TableColumnSchema["options"]>[number],
+				item as unknown as NonNullable<
+					TableColumnSchema["options"]
+				>[number],
 		);
 }
 

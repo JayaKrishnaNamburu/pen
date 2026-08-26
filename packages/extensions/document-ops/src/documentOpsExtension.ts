@@ -17,51 +17,49 @@ import { editDocumentTool } from "./tools/editDocument";
 import { DOCUMENT_OPS_TOOL_RUNTIME_SLOT } from "./constants/toolServer";
 
 export interface DocumentOpsOptions {
-  enableGenerationZones?: boolean;
+	enableGenerationZones?: boolean;
 }
 
-export function documentOpsExtension(
-  _options?: DocumentOpsOptions,
-): Extension {
-  let toolRuntime: ToolRuntimeImpl | null = null;
-  let activeEditor: Editor | null = null;
+export function documentOpsExtension(_options?: DocumentOpsOptions): Extension {
+	let toolRuntime: ToolRuntimeImpl | null = null;
+	let activeEditor: Editor | null = null;
 
-  return {
-    name: "document-ops",
-    version: "0.0.0",
+	return {
+		name: "document-ops",
+		version: "0.0.0",
 
-    activateClient: async (ctx) => {
-      activeEditor = ctx.editor;
-      toolRuntime = new ToolRuntimeImpl();
+		activateClient: async (ctx) => {
+			activeEditor = ctx.editor;
+			toolRuntime = new ToolRuntimeImpl();
 
-      toolRuntime.registerTool(readDocumentTool(ctx.editor));
-      toolRuntime.registerTool(writeDocumentTool(ctx.editor));
-      toolRuntime.registerTool(getContextTool(ctx.editor));
-      toolRuntime.registerTool(getCursorContextTool(ctx.editor));
-      toolRuntime.registerTool(inspectTargetTool(ctx.editor));
-      toolRuntime.registerTool(listValidOperationsTool(ctx.editor));
-      toolRuntime.registerTool(searchDocumentTool(ctx.editor));
-      toolRuntime.registerTool(retrieveDocumentSpansTool(ctx.editor));
-      toolRuntime.registerTool(listBlockTypesTool(ctx.editor));
-      toolRuntime.registerTool(insertBlockTool(ctx.editor));
-      toolRuntime.registerTool(updateBlockTool(ctx.editor));
-      toolRuntime.registerTool(deleteBlockTool(ctx.editor));
-      toolRuntime.registerTool(moveBlockTool(ctx.editor));
-      toolRuntime.registerTool(editDocumentTool(ctx.editor));
+			toolRuntime.registerTool(readDocumentTool(ctx.editor));
+			toolRuntime.registerTool(writeDocumentTool(ctx.editor));
+			toolRuntime.registerTool(getContextTool(ctx.editor));
+			toolRuntime.registerTool(getCursorContextTool(ctx.editor));
+			toolRuntime.registerTool(inspectTargetTool(ctx.editor));
+			toolRuntime.registerTool(listValidOperationsTool(ctx.editor));
+			toolRuntime.registerTool(searchDocumentTool(ctx.editor));
+			toolRuntime.registerTool(retrieveDocumentSpansTool(ctx.editor));
+			toolRuntime.registerTool(listBlockTypesTool(ctx.editor));
+			toolRuntime.registerTool(insertBlockTool(ctx.editor));
+			toolRuntime.registerTool(updateBlockTool(ctx.editor));
+			toolRuntime.registerTool(deleteBlockTool(ctx.editor));
+			toolRuntime.registerTool(moveBlockTool(ctx.editor));
+			toolRuntime.registerTool(editDocumentTool(ctx.editor));
 
-      ctx.editor.internals.assignSlot(
-        DOCUMENT_OPS_TOOL_RUNTIME_SLOT,
-        toolRuntime,
-      );
-    },
+			ctx.editor.internals.assignSlot(
+				DOCUMENT_OPS_TOOL_RUNTIME_SLOT,
+				toolRuntime,
+			);
+		},
 
-    deactivateClient: async () => {
-      activeEditor?.internals.assignSlot(
-        DOCUMENT_OPS_TOOL_RUNTIME_SLOT,
-        undefined,
-      );
-      activeEditor = null;
-      toolRuntime = null;
-    },
-  };
+		deactivateClient: async () => {
+			activeEditor?.internals.assignSlot(
+				DOCUMENT_OPS_TOOL_RUNTIME_SLOT,
+				undefined,
+			);
+			activeEditor = null;
+			toolRuntime = null;
+		},
+	};
 }

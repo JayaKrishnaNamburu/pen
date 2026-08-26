@@ -113,7 +113,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "dom-divergence",
 		levels: ["warn"],
-		sources: ["rendering/dom/src/field-editor/contenteditableBackendEvents.ts"],
+		sources: ["rendering/dom/src/field-editor/contenteditableBackend.ts"],
 	},
 	{
 		code: "editor-root-editor-replaced",

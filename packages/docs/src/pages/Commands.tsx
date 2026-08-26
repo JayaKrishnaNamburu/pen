@@ -3,21 +3,21 @@ export function CommandsPage() {
 		<>
 			<h1>Commands and keymaps</h1>
 			<p>
-				Every built-in editing action is a named{" "}
-				<code>Command</code> with a typed parameter. Handlers live on a
-				registry. Keymaps, menus, and tests are supposed to dispatch
-				those names instead of reimplementing Enter or Backspace.
-				Contracts are <code>Command</code>, <code>CommandHandler</code>
-				, and <code>CommandHandlerProvider</code> on{" "}
+				Every built-in editing action is a named <code>Command</code>{" "}
+				with a typed parameter. Handlers live on a registry. Keymaps,
+				menus, and tests are supposed to dispatch those names instead of
+				reimplementing Enter or Backspace. Contracts are{" "}
+				<code>Command</code>, <code>CommandHandler</code>, and{" "}
+				<code>CommandHandlerProvider</code> on{" "}
 				<code>@input/pen-types</code>. The design record is{" "}
 				<code>spec/rules/commands.md</code>.
 			</p>
 			<p>
 				<code>Editor</code> has no <code>dispatch</code> or{" "}
-				<code>canDispatch</code> method.{" "}
-				<code>createEditor</code> installs a registry of the 31 built-in
-				handlers. Hosts reach it with{" "}
-				<code>getCommandRegistry(editor)</code>. The command tokens,
+				<code>canDispatch</code> method. <code>createEditor</code>{" "}
+				installs a registry of the 31 built-in handlers. Hosts reach it
+				with <code>getCommandRegistry(editor)</code>. The command
+				tokens,
 				<code>defineCommand</code>, <code>commandHandler</code>, and{" "}
 				<code>createCommandRegistry</code> export from{" "}
 				<code>@input/pen-core</code>.
@@ -30,8 +30,8 @@ export function CommandsPage() {
 				of <code>commandHandler(...)</code> providers. It resolves those
 				providers once, by command name. <code>createEditor</code>{" "}
 				passes <code>builtinCommandHandlers()</code> and wires apply /
-				selection back onto the editor.{" "}
-				<code>getCommandRegistry</code> returns that installed instance.
+				selection back onto the editor. <code>getCommandRegistry</code>{" "}
+				returns that installed instance.
 			</p>
 			<pre>
 				<code>{`import {
@@ -80,39 +80,39 @@ registry?.dispatch(insertText, { text: "Hello" });`}</code>
 					editor APIs
 				</li>
 				<li>
-					<code>{"{ ops, options? }"}</code> — one{" "}
-					<code>apply</code>. Origin is{" "}
-					<code>context.origin ?? "user"</code>, then the result&apos;s{" "}
-					<code>options</code>
+					<code>{"{ ops, options? }"}</code> — one <code>apply</code>.
+					Origin is <code>context.origin ?? "user"</code>, then the
+					result&apos;s <code>options</code>
 				</li>
 				<li>
-					<code>{"{ selection }"}</code> — one selection write.
-					Origin is <code>keyboard</code> when{" "}
+					<code>{"{ selection }"}</code> — one selection write. Origin
+					is <code>keyboard</code> when{" "}
 					<code>context.fromKeymap</code> is set, otherwise{" "}
 					<code>programmatic</code>
 				</li>
 			</ul>
 			<p>
 				A handler that calls <code>editor.apply</code> and then returns
-				ops emits <code>command-double-effect</code> and still counts
-				as handled. Dispatch is synchronous. A nested{" "}
-				<code>dispatch</code> queues and runs after the current one;
-				the outer call still returns the outer result.
+				ops emits <code>command-double-effect</code> and still counts as
+				handled. Dispatch is synchronous. A nested <code>dispatch</code>{" "}
+				queues and runs after the current one; the outer call still
+				returns the outer result.
 			</p>
 			<p>
 				<code>canDispatch</code> runs the same handlers on a probe
-				editor whose <code>apply</code> and selection writes are
-				no-ops. It is <code>true</code> when some handler would not
-				miss. Use it to ask; use <code>dispatch</code> to commit.
+				editor whose <code>apply</code> and selection writes are no-ops.
+				It is <code>true</code> when some handler would not miss. Use it
+				to ask; use <code>dispatch</code> to commit.
 			</p>
 
 			<h2>Registering or overriding</h2>
 			<p>
 				<code>defineCommand(name)</code> is a <code>{"{ name }"}</code>{" "}
-				token. <code>commandHandler(command, handler, precedence?)</code>{" "}
-				wraps a handler as a <code>pen.commands</code> provider
-				(default precedence <code>default</code>). Pass extra providers
-				into <code>createCommandRegistry</code> after the built-ins. A{" "}
+				token.{" "}
+				<code>commandHandler(command, handler, precedence?)</code> wraps
+				a handler as a <code>pen.commands</code> provider (default
+				precedence <code>default</code>). Pass extra providers into{" "}
+				<code>createCommandRegistry</code> after the built-ins. A{" "}
 				<code>high</code> handler that returns <code>false</code> falls
 				through; one that returns a result wins.
 			</p>
@@ -179,10 +179,9 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 
 			<h2>Built-in catalog</h2>
 			<p>
-				Thirty-three frozen names, all thirty-three with a core
-				handler. <code>pen.caretUp</code> and{" "}
-				<code>pen.caretDown</code> need geometry that core, being
-				headless, does not have: register{" "}
+				Thirty-three frozen names, all thirty-three with a core handler.{" "}
+				<code>pen.caretUp</code> and <code>pen.caretDown</code> need
+				geometry that core, being headless, does not have: register{" "}
 				<code>setVerticalCaretMeasure</code> after{" "}
 				<code>createEditor</code> to get real column-preserving motion.
 				Without it they still cross block boundaries logically, and a
@@ -193,7 +192,9 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 				handlers exist to replace.
 			</p>
 			<table>
-				<caption>Caret and selection. Param is {`{ extend }`} unless noted.</caption>
+				<caption>
+					Caret and selection. Param is {`{ extend }`} unless noted.
+				</caption>
 				<thead>
 					<tr>
 						<th>Name</th>
@@ -210,7 +211,10 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 						<td>
 							<code>caretLeft</code> / <code>caretRight</code>
 						</td>
-						<td>Grapheme step; atom-adjacent select; block-boundary T4.</td>
+						<td>
+							Grapheme step; atom-adjacent select; block-boundary
+							T4.
+						</td>
 					</tr>
 					<tr>
 						<td>
@@ -257,7 +261,8 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 							<code>pen.caretDocEnd</code>
 						</td>
 						<td>
-							<code>caretDocStart</code> / <code>caretDocEnd</code>
+							<code>caretDocStart</code> /{" "}
+							<code>caretDocEnd</code>
 						</td>
 						<td>First / last normal position in document order.</td>
 					</tr>
@@ -351,8 +356,8 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 							<code>splitBlock</code>
 						</td>
 						<td>
-							<code>void</code>. Split, list continuation, empty-list
-							convert, heading → paragraph.
+							<code>void</code>. Split, list continuation,
+							empty-list convert, heading → paragraph.
 						</td>
 					</tr>
 					<tr>
@@ -409,7 +414,8 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 							<code>pen.moveBlockDown</code>
 						</td>
 						<td>
-							<code>moveBlockUp</code> / <code>moveBlockDown</code>
+							<code>moveBlockUp</code> /{" "}
+							<code>moveBlockDown</code>
 						</td>
 						<td>
 							<code>{"{ blockId? }"}</code>. First / last sibling
@@ -423,9 +429,7 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 						<td>
 							<code>duplicateBlock</code>
 						</td>
-						<td>
-							Copy after the original. Unbound.
-						</td>
+						<td>Copy after the original. Unbound.</td>
 					</tr>
 					<tr>
 						<td>
@@ -476,8 +480,8 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 							Calls the undo controller /{" "}
 							<code>editor.undoManager</code>. Without{" "}
 							<code>undoExtension</code> /{" "}
-							<code>defaultPreset()</code> that manager is
-							an inert stub: <code>canUndo()</code> is{" "}
+							<code>defaultPreset()</code> that manager is an
+							inert stub: <code>canUndo()</code> is{" "}
 							<code>false</code>, <code>undo()</code> does
 							nothing, no error.
 						</td>
@@ -533,29 +537,26 @@ void hostKeys;`}</code>
 			</pre>
 			<p>
 				Host-contributed bindings go through{" "}
-				<code>extension.facets</code> as <code>keymapFacet</code>{" "}
-				(<code>pen.keymap</code>) providers. A <code>KeyBinding</code>{" "}
-				has <code>key</code> and{" "}
-				<code>handler(editor, event)</code>, not a command token.{" "}
-				<code>keymapFacet.of</code> takes a <code>KeyBinding[]</code>{" "}
-				and an optional precedence (<code>highest</code> /{" "}
-				<code>high</code> / <code>default</code> / <code>low</code> /{" "}
-				<code>lowest</code>).{" "}
+				<code>extension.facets</code> as <code>keymapFacet</code> (
+				<code>pen.keymap</code>) providers. A <code>KeyBinding</code>{" "}
+				has <code>key</code> and <code>handler(editor, event)</code>,
+				not a command token. <code>keymapFacet.of</code> takes a{" "}
+				<code>KeyBinding[]</code> and an optional precedence (
+				<code>highest</code> / <code>high</code> / <code>default</code>{" "}
+				/ <code>low</code> / <code>lowest</code>).{" "}
 				<code>defaultPreset()</code> installs{" "}
 				<code>richTextShortcutsExtension</code> from{" "}
 				<code>@input/pen-shortcuts</code> unless{" "}
-				<code>shortcuts: false</code> is passed. Read the
-				merged list with <code>editor.facet(keymapFacet)</code>.
+				<code>shortcuts: false</code> is passed. Read the merged list
+				with <code>editor.facet(keymapFacet)</code>.
 			</p>
 			<p>
-				The field editor now walks{" "}
-				<code>resolveDefaultKeymap</code> and{" "}
-				<code>dispatch</code>es the matching command. A miss —
-				including <code>pen.caretUp</code> /{" "}
-				<code>pen.caretDown</code> — falls through to{" "}
-				<code>keymapFacet</code> (
-				<code>KeyBinding.handler</code>, not a command token). Those
-				two tables are not one. Until they are, a host chord stays on{" "}
+				The field editor now walks <code>resolveDefaultKeymap</code> and{" "}
+				<code>dispatch</code>es the matching command. A miss — including{" "}
+				<code>pen.caretUp</code> / <code>pen.caretDown</code> — falls
+				through to <code>keymapFacet</code> (
+				<code>KeyBinding.handler</code>, not a command token). Those two
+				tables are not one. Until they are, a host chord stays on{" "}
 				<code>keymapFacet</code>; a host that needs an editing action
 				the default keymap does not cover calls{" "}
 				<code>getCommandRegistry(editor)?.dispatch(...)</code>.{" "}

@@ -69,10 +69,7 @@ export function searchDocumentTool(editor: Editor): ToolDefinition {
 						length: query.length,
 						snippet: text.slice(
 							Math.max(0, idx - 30),
-							Math.min(
-								text.length,
-								idx + query.length + 30,
-							),
+							Math.min(text.length, idx + query.length + 30),
 						),
 					});
 					offset = idx + 1;

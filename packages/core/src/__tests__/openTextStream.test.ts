@@ -4,7 +4,11 @@ import { mapOffsetThroughSplices } from "../changes/mapOffsetThroughSplices";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";
-import { applyMergeBlocks, applySplitBlock, createEditor as createCoreEditor } from "../index";
+import {
+	applyMergeBlocks,
+	applySplitBlock,
+	createEditor as createCoreEditor,
+} from "../index";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -20,10 +24,15 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	});
 }
 
-function mapSerial(start: Point, summaries: readonly CommitEvent["summary"][]): Point {
+function mapSerial(
+	start: Point,
+	summaries: readonly CommitEvent["summary"][],
+): Point {
 	let point = start;
 	for (const summary of summaries) {
-		const change = summary.blockText.find((item) => item.blockId === point.blockId);
+		const change = summary.blockText.find(
+			(item) => item.blockId === point.blockId,
+		);
 		if (!change) {
 			continue;
 		}
@@ -42,7 +51,9 @@ type TestYTextLike = {
 type TestRawDocLike = {
 	transact(fn: () => void, origin?: unknown): void;
 	getMap(name: "blocks"): {
-		get(blockId: string): { get(key: "content"): TestYTextLike } | undefined;
+		get(
+			blockId: string,
+		): { get(key: "content"): TestYTextLike } | undefined;
 	};
 };
 
@@ -75,9 +86,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 			groupId: "gen-1",
 			source: "stream",
 		});
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"hello",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("hello");
 
 		writer.flush();
 		expect(commits).toHaveLength(1);
@@ -87,9 +96,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		expect(commits).toHaveLength(2);
 		expect(commits[1].source).toBe("stream");
 		expect(commits[1].origin.groupId).toBe("gen-1");
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"hello!",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("hello!");
 
 		writer.close();
 		expect(diagnostics).not.toContain("normalize-cap");
@@ -111,9 +118,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		writer.append("hello");
 		writer.close();
 
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"hello",
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("hello");
 		expect(diagnostics).not.toContain("normalize-cap");
 
 		editor.destroy();
@@ -189,7 +194,10 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		const editorDoc = editor.internals.crdtDoc;
 		const remoteDoc = adapter.loadDocument(adapter.encodeState(editorDoc));
 		const remoteYDoc = adapter.raw<TestRawDocLike>(remoteDoc);
-		const remoteFirst = remoteYDoc.getMap("blocks").get(firstId)?.get("content");
+		const remoteFirst = remoteYDoc
+			.getMap("blocks")
+			.get(firstId)
+			?.get("content");
 		const remoteSecond = remoteYDoc
 			.getMap("blocks")
 			.get(secondId)
@@ -215,9 +223,13 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: source, from: 0,
+			{
+				type: "splice-text",
+				blockId: source,
+				from: 0,
 				to: 0,
-				insert: "meadow sage" },
+				insert: "meadow sage",
+			},
 		]);
 
 		const writer = editor.openTextStream(
@@ -248,9 +260,13 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		const editor = createEditor();
 		const target = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: target, from: 0,
+			{
+				type: "splice-text",
+				blockId: target,
+				from: 0,
 				to: 0,
-				insert: "meadow sage" },
+				insert: "meadow sage",
+			},
 			{
 				type: "insert-block",
 				blockId: "keep",
@@ -258,9 +274,13 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "keep", from: 0,
+			{
+				type: "splice-text",
+				blockId: "keep",
+				from: 0,
 				to: 0,
-				insert: "keep" },
+				insert: "keep",
+			},
 		]);
 
 		const writer = editor.openTextStream(
@@ -288,9 +308,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 
 		writer.append("?");
 		writer.flush();
-		expect(editor.getBlock(target)!.textContent()).toBe(
-			"meadow sage!?",
-		);
+		expect(editor.getBlock(target)!.textContent()).toBe("meadow sage!?");
 		expect(writer.position).toEqual({ blockId: target, offset: 13 });
 
 		const lastKnown = writer.position;
@@ -307,7 +325,9 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		expect(commits).toHaveLength(1);
 		expect(
 			commits[0]?.summary.structural.some(
-				(change) => change.type === "block-removed" && change.blockId === target,
+				(change) =>
+					change.type === "block-removed" &&
+					change.blockId === target,
 			),
 		).toBe(true);
 		expect(editor.getBlock("keep")!.textContent()).toBe("keep");
@@ -336,16 +356,16 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 			return originalResolve(anchor);
 		};
 
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "x" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "x" },
+		]);
 		expect(writer.position).toEqual(start);
 		expect(editor.getBlock(blockId)).not.toBeNull();
 
 		forceNull = false;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "y" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "y" },
+		]);
 		expect(writer.position).toEqual({ blockId, offset: 2 });
 
 		forceNull = true;
@@ -370,9 +390,13 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		const editor = createEditor();
 		const target = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: target, from: 0,
+			{
+				type: "splice-text",
+				blockId: target,
+				from: 0,
 				to: 0,
-				insert: "meadow" },
+				insert: "meadow",
+			},
 			{
 				type: "insert-block",
 				blockId: "source",
@@ -423,9 +447,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		}
 
 		expect(editor.anchors.liveCount).toBe(minted);
-		expect(editor.getBlock(blockId)!.textContent()).toBe(
-			"a".repeat(100),
-		);
+		expect(editor.getBlock(blockId)!.textContent()).toBe("a".repeat(100));
 
 		writer.close();
 		editor.destroy();

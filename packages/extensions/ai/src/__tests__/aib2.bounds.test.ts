@@ -51,9 +51,15 @@ describe("AIB2 agentic tool-result send bounds", () => {
 
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId: seedId, from: 0,
-				to: 0,
-				insert: "seed" }],
+			[
+				{
+					type: "splice-text",
+					blockId: seedId,
+					from: 0,
+					to: 0,
+					insert: "seed",
+				},
+			],
 			{ origin: "user" },
 		);
 

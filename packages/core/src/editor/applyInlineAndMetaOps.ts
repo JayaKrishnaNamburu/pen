@@ -14,10 +14,7 @@ import {
 } from "./crdtShapes";
 import type { ApplyPipelineDocumentAccess } from "./applyPipelineContext";
 import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
-import {
-	ensureCellContent,
-	getCellContent,
-} from "./tableGridCellHelpers";
+import { ensureCellContent, getCellContent } from "./tableGridCellHelpers";
 import {
 	createMutableMap,
 	getInlineTextContent,
@@ -77,14 +74,15 @@ function resolveCellText(
 	if (!tableContent) return null;
 	if (forInsert) {
 		return (
-			ensureCellContent(
-				tableContent.get(cell.row),
-				cell.col,
-				() => pipeline._tableGrid.createTableCell(),
+			ensureCellContent(tableContent.get(cell.row), cell.col, () =>
+				pipeline._tableGrid.createTableCell(),
 			) ?? null
 		);
 	}
-	return getCellContent(tableContent.get(cell.row), cell.col) as CRDTTextLike | null;
+	return getCellContent(
+		tableContent.get(cell.row),
+		cell.col,
+	) as CRDTTextLike | null;
 }
 
 function emitClamped(
@@ -298,12 +296,16 @@ export function getPreservedInlineDeltas(
 	if (!content || typeof content.toDelta !== "function") {
 		return [];
 	}
-	return content.toDelta().filter(
-		(
-			delta,
-		): delta is { insert: string; attributes?: Record<string, unknown> } =>
-			typeof delta.insert === "string",
-	);
+	return content
+		.toDelta()
+		.filter(
+			(
+				delta,
+			): delta is {
+				insert: string;
+				attributes?: Record<string, unknown>;
+			} => typeof delta.insert === "string",
+		);
 }
 
 export function setMeta(

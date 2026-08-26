@@ -10,18 +10,15 @@ import type {
 import type { AIToolBudgetLimits, AIToolConfirmFn, AIToolTurn } from "../tools";
 import type { EditDocumentPreviewUpdate } from "../runtime/editDocumentPreview";
 import type {
-	AIApplyStrategy,
 	AIMutationPreference,
 	AIRouteLane,
 	AIBlockAdapterId,
 	AIBlockClass,
 	AIExecutionMode,
-	AIQualityMetricId,
 	AITargetKind,
 	AITransportKind,
 	AIWorkingSetViewMode,
 } from "../runtime/contracts";
-import type { FlowPatchAlignmentMetrics } from "../runtime/planExecutor";
 import type {
 	AIEditStreaming,
 	AIStatus,
@@ -223,10 +220,6 @@ export interface AIController {
 	retryActiveGeneration(): Promise<GenerationState | null>;
 	acceptActiveGeneration(): boolean;
 	rejectActiveGeneration(): boolean;
-	acceptReviewItem(id: string): boolean;
-	rejectReviewItem(id: string): boolean;
-	acceptReviewItems(ids: readonly string[]): boolean;
-	rejectReviewItems(ids: readonly string[]): boolean;
 	cancelActiveGeneration(): void;
 	openCommandMenu(): void;
 	closeCommandMenu(): void;
@@ -297,11 +290,13 @@ export interface AgenticLoopOptions {
 	onDebug?: (debug: GenerationDebugState) => void;
 	feature?: AIRequestContext["feature"];
 	/**
-	 * The route's apply strategy. `tool-edit` is the edit channel, which owns
-	 * two loop behaviors: a clean mutating pass ends the turn (EC14), and a
-	 * stale working set is corrected in-turn rather than thrown (EC9).
+	 * Whether this route's durable edits arrive as `edit_document` calls. That
+	 * is the edit channel, which owns two loop behaviors: a clean mutating pass
+	 * ends the turn (EC14), and a stale working set is corrected in-turn rather
+	 * than thrown (EC9). Absent, the pass is not the edit channel and neither
+	 * behavior applies.
 	 */
-	applyStrategy?: AIApplyStrategy;
+	editsArriveAsToolCalls?: boolean;
 	/**
 	 * Whether the prompt asked for an edit. EC17 forces the edit tool on an
 	 * edit-intent pass only: forcing a pass that asked a question would answer
@@ -326,7 +321,6 @@ export interface AIWorkingSetEnvelope {
 	context: unknown;
 	routeConfidence?: number;
 	trackedBlockIds: string[];
-	blockRevisions: Record<string, number>;
 	viewHashes?: Record<string, string>;
 	selectionSignature: string | null;
 }
@@ -356,10 +350,13 @@ export interface GenerationDebugState {
 	firstToolResultMs: number | null;
 	firstVisibleTextMs: number | null;
 	toolExecutionMs: number;
-	qualitySignals: Partial<Record<AIQualityMetricId, number>>;
+	qualitySignals: {
+		staleContextRate?: number;
+		requestRestartRateUnderChurn?: number;
+	};
 	routeConfidence?: number;
 	structured?: StructuredGenerationDebugState;
-	fastApply?: FastApplyDebugState;
+	commit?: CommitDebugState;
 }
 
 export interface StructuredGenerationDebugState {
@@ -368,24 +365,20 @@ export interface StructuredGenerationDebugState {
 	validationIssueCount?: number;
 }
 
-export interface FastApplyDebugState {
+export interface CommitDebugState {
 	attempted: boolean;
 	succeeded: boolean;
 	executionPath?:
-		| "native-fast-apply"
+		| "selection-replacement"
 		| "scoped-replacement"
 		| "plain-markdown";
 	contextChars?: number;
 	diffChars?: number;
-	confidence?: number;
 	fallbackReason?: string;
-	verificationFailureReason?: string;
-	untouchedBlockMutationCount?: number;
-	alignment?: FlowPatchAlignmentMetrics;
-	fallback?: FastApplyFallbackMetrics;
+	fallback?: CommitFallbackMetrics;
 }
 
-export interface FastApplyFallbackMetrics {
+export interface CommitFallbackMetrics {
 	kind: "scoped-replacement" | "plain-markdown";
 	opsCount: number;
 	insertedBlockCount: number;
@@ -395,7 +388,6 @@ export interface FastApplyFallbackMetrics {
 
 export type AIMutationReceiptStatus =
 	| "applied"
-	| "staged_review"
 	| "staged_suggestions"
 	| "noop"
 	| "invalid"

@@ -12,10 +12,7 @@ import type {
 	AISessionSelectionSnapshot,
 	AISessionTarget,
 } from "../types";
-import {
-	resolveActiveBlockId,
-	resolveSessionSelectionSnapshot,
-} from "./types";
+import { resolveActiveBlockId, resolveSessionSelectionSnapshot } from "./types";
 
 export function resolveContextualPromptAnchor(
 	editor: Editor,
@@ -142,7 +139,6 @@ export function cloneInlineHistorySessions(
 		turns: session.turns.map((turn) => ({
 			...turn,
 			suggestionIds: [...turn.suggestionIds],
-			reviewItemIds: [...turn.reviewItemIds],
 			anchor: turn.anchor ? { ...turn.anchor } : undefined,
 			selection: turn.selection
 				? {
@@ -156,10 +152,9 @@ export function cloneInlineHistorySessions(
 		promptHistory: session.promptHistory.map((prompt) => ({ ...prompt })),
 		generationIds: [...session.generationIds],
 		pendingSuggestionIds: [...session.pendingSuggestionIds],
-		pendingReviewItemIds: [...session.pendingReviewItemIds],
 		metrics: {
 			...session.metrics,
-			fastApply: { ...session.metrics.fastApply },
+			commit: { ...session.metrics.commit },
 		},
 		anchor: session.anchor ? { ...session.anchor } : undefined,
 	}));

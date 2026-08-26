@@ -16,7 +16,6 @@ import {
 	fromTransitionSelection,
 	getEditorLocale,
 	toTransitionSelection,
-	type Point,
 } from "./helpers";
 import type { CaretMotionParam } from "./caretParams";
 
@@ -52,9 +51,10 @@ export function setCellCaretFocus(
 	focus: CellCaretFocus | null,
 	write: CellCaretWrite | null = null,
 ): void {
-	(
-		editor as unknown as Record<symbol, CellCaretSeam>
-	)[CELL_CARET_SEAM] = { focus, write };
+	(editor as unknown as Record<symbol, CellCaretSeam>)[CELL_CARET_SEAM] = {
+		focus,
+		write,
+	};
 }
 
 export function getCellCaretFocus(editor: Editor): CellCaretFocus | null {
@@ -87,7 +87,14 @@ export function handleCellEditingCaret(
 	const start = clampCellOffset(length, focus.start);
 	const end = clampCellOffset(length, focus.end);
 
-	const next = stepCellTextOffset(text, start, end, direction, param.extend, locale);
+	const next = stepCellTextOffset(
+		text,
+		start,
+		end,
+		direction,
+		param.extend,
+		locale,
+	);
 	seam.write?.({ start: next.start, end: next.end });
 	seam.focus = {
 		blockId: focus.blockId,

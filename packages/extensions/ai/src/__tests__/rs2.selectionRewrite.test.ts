@@ -59,9 +59,7 @@ describe("RS2: selection rewrites ride the review surface", () => {
 				.getState()
 				.streamingReviewPreviews.map((preview) => preview.text),
 		).toEqual(["Rewritten"]);
-		expect(inlineClasses(editor)).not.toContain(
-			"pen-ephemeral-suggestion",
-		);
+		expect(inlineClasses(editor)).not.toContain("pen-ephemeral-suggestion");
 
 		releaseDone.resolve();
 		const generation = await generationPromise;

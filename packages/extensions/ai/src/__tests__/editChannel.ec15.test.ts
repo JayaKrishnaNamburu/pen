@@ -537,7 +537,7 @@ describe("EC15: content in an edit payload streams into the blocks it addresses"
 			toolRuntime,
 			prompt: PROMPT,
 			blockId: "closing",
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			editStreaming: "preview",
 			signal: abort.signal,
 			onEditPreview: (preview) => {

@@ -46,13 +46,13 @@ export function ExtensionsPage() {
 					<code>commandsFacet</code> (<code>pen.commands</code>)
 				</li>
 				<li>
-					<code>ariaReadOnlyFacet</code> (<code>pen.ariaReadOnly</code>
-					) — sets <code>aria-readonly</code> only. It does
-					not decline typing, <code>editor.apply</code>, or
-					the wire. The <code>readonly</code> prop on{" "}
-					<code>EditorRoot</code>, <code>PenEditor</code>, or{" "}
-					<code>mountEditor</code> is what declines local
-					typing.
+					<code>ariaReadOnlyFacet</code> (
+					<code>pen.ariaReadOnly</code>) — sets{" "}
+					<code>aria-readonly</code> only. It does not decline typing,{" "}
+					<code>editor.apply</code>, or the wire. The{" "}
+					<code>readonly</code> prop on <code>EditorRoot</code>,{" "}
+					<code>PenEditor</code>, or <code>mountEditor</code> is what
+					declines local typing.
 				</li>
 				<li>
 					<code>clipboardFacet</code> (<code>pen.clipboard</code>)

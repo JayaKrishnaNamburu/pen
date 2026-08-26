@@ -24,21 +24,17 @@ export { AICommandRegistry } from "./commands/registry";
 export { defaultAICommands } from "./commands/defaultCommands";
 export {
 	AI_EXECUTION_MODES,
-	AI_APPLY_STRATEGIES,
 	AI_BLOCK_ADAPTER_IDS,
 	AI_BLOCK_CLASSES,
-	AI_STRUCTURED_LANES,
 	AI_TARGET_KINDS,
 	AI_TRANSPORT_KINDS,
 } from "./runtime/contracts";
 export type {
 	AIBlockAdapterId,
-	AIApplyStrategy,
 	AIBlockClass,
 	AIMutationPreference,
 	AITargetKind,
 	AIExecutionMode,
-	AIStructuredLane,
 	AITransportKind,
 } from "./runtime/contracts";
 export {
@@ -47,18 +43,6 @@ export {
 	resolveBlockAdapter,
 	resolveBlockAdapterContentFormat,
 } from "./runtime/blockAdapters";
-export { DOCUMENT_MUTATION_PLAN_KINDS } from "./runtime/planTypes";
-export {
-	PLAN_VALIDATION_SEVERITIES,
-	isDocumentMutationPlan,
-	validateDocumentMutationPlanShape,
-} from "./runtime/planValidation";
-export {
-	buildStructuredIntentModelPrompt,
-	getStructuredIntentOutputSchema,
-	parseStructuredIntentRequestPrompt,
-} from "./runtime/structuredIntent";
-
 export {
 	acceptSuggestion,
 	rejectSuggestion,
@@ -93,7 +77,7 @@ export type {
 	AIStreamingReviewPreviewInput,
 	AIStreamingReviewPreviewTarget,
 	AISessionMetrics,
-	AISessionFastApplyMetrics,
+	AISessionCommitMetrics,
 	AISessionPrompt,
 	AISessionStatus,
 	AISessionTarget,
@@ -122,10 +106,9 @@ export type {
 	AISessionResolution,
 	AIContentFormatOptions,
 	AISuggestionPresentation,
-	GenerationPlanState,
 	GenerationTargetKind,
 	StructuredGenerationDebugState,
-	FastApplyDebugState,
+	CommitDebugState,
 	AIWorkingSetRetrievedSpan,
 	AIStreamEvent,
 	AIStreamEventType,
@@ -137,17 +120,3 @@ export type {
 	ApplySuggestedAIOperationsOptions,
 	ApplySuggestedAIOperationsResult,
 } from "./suggestions/applySuggestedAIOperations";
-export type {
-	DocumentMutationPlan,
-	DocumentMutationPlanKind,
-} from "./runtime/planTypes";
-export type {
-	PlanValidationContext,
-	PlanValidationIssue,
-	PlanValidationResult,
-	PlanValidationSeverity,
-} from "./runtime/planValidation";
-export type {
-	StructuralReviewItem,
-	StructuralReviewComparisonRow,
-} from "./runtime/reviewArtifacts";

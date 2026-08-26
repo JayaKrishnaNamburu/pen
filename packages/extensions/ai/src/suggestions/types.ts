@@ -1,10 +1,11 @@
-import type { CommitEvent, Editor, ModelAdapter, Unsubscribe } from "@input/pen-types";
+import type {
+	CommitEvent,
+	Editor,
+	ModelAdapter,
+	Unsubscribe,
+} from "@input/pen-types";
 
-export type AISuggestionKind =
-	| "spelling"
-	| "grammar"
-	| "rephrase"
-	| "clarity";
+export type AISuggestionKind = "spelling" | "grammar" | "rephrase" | "clarity";
 
 export interface AISuggestion {
 	id: string;
@@ -41,7 +42,6 @@ export interface AISuggestionScope {
 	to: number;
 	hash: string;
 	documentGeneration: number;
-	blockRevision: number;
 }
 
 export interface AISuggestionGroup {
@@ -128,7 +128,12 @@ export interface AISuggestionsController {
 	subscribe(listener: () => void): Unsubscribe;
 	getRuntimeSettings(): AISuggestionsExtensionConfig;
 	updateRuntimeSettings(
-		patch: Partial<Omit<AISuggestionsExtensionConfig, "model" | "analyzer" | "blockPolicy">>,
+		patch: Partial<
+			Omit<
+				AISuggestionsExtensionConfig,
+				"model" | "analyzer" | "blockPolicy"
+			>
+		>,
 	): AISuggestionsExtensionConfig;
 	setEnabled(enabled: boolean): void;
 	setActiveSuggestion(id: string | null): void;

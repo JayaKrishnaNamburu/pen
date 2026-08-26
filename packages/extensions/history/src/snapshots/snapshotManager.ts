@@ -1,4 +1,9 @@
-import type { Editor, PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-types";
+import type {
+	Editor,
+	PenPersistence,
+	VersionEntry,
+	VersionMetadata,
+} from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 
 export class SnapshotManager {
@@ -29,7 +34,11 @@ export class SnapshotManager {
 			timestamp: Date.now(),
 		};
 
-		await this.persistence.saveVersionSnapshot(this.docId, snapshot, metadata);
+		await this.persistence.saveVersionSnapshot(
+			this.docId,
+			snapshot,
+			metadata,
+		);
 
 		const [latestEntry] = await this.persistence.listVersions(this.docId, {
 			limit: 1,
@@ -77,6 +86,8 @@ export class SnapshotManager {
 
 	async listSnapshots(): Promise<readonly VersionEntry[]> {
 		const snapshots = await this.persistence.listVersions(this.docId);
-		return [...snapshots].sort((left, right) => right.createdAt - left.createdAt);
+		return [...snapshots].sort(
+			(left, right) => right.createdAt - left.createdAt,
+		);
 	}
 }

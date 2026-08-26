@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import type { Decoration, Editor } from "@input/pen-types";
+import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
 import { deltaStreamExtension } from "../stream";
 import { aiExtension, getAIController } from "../index";
-import type { AISession, GenerationState } from "../types";
+import type { AISession } from "../types";
 import {
+	type AIReviewPostureSession,
 	type AIReviewPresentationState,
 	resolveAIReviewPresentationState,
 } from "../review/reviewPresentationState";
@@ -16,58 +18,116 @@ import { createDeferred } from "./extension.testUtils";
 /**
  * RS3: posture is total, including the end of a session.
  *
- * Two claims. First, that the posture resolver is total: no combination of
- * generation and session state falls through to nothing, so a reviewable edit
- * can never sit in a state the surface has no answer for. Second, that a turn
- * ending with an edit neither applied nor staged says so — a silent no-op is
- * the one outcome a host cannot distinguish from success
- * (`spec-v5/02-review-surface.md` RS3).
+ * Two claims. First, that the posture resolver maps each input to a pinned
+ * posture, so a swapped return cannot hide inside a closed-set walk. Second,
+ * that a turn ending with an edit neither applied nor staged does not report
+ * success (`spec-v5/02-review-surface.md` RS3).
  */
 
-const DEFINED_POSTURES = new Set<AIReviewPresentationState>([
-	"user-input",
-	"thinking",
-	"ai-writing",
-	"user-reviewing",
-	"resolved",
-]);
-
 describe("RS3: every reviewable state renders a defined posture", () => {
-	it("RS3: the posture resolver is total across generation and session state", () => {
-		// The resolver reads three things; this walks their product rather than
-		// sampling it, so a new branch that forgets to return fails here.
-		const generations: Array<GenerationState | null> = [
-			null,
-			{ status: "streaming", sessionId: "s1" } as GenerationState,
-			{ status: "complete", sessionId: "s1" } as GenerationState,
-			{ status: "streaming", sessionId: "other" } as GenerationState,
-			{ status: "error", sessionId: "s1" } as GenerationState,
-		];
-		const sessions: Array<AISession | null> = [
-			null,
-			session("inline-edit", true),
-			session("inline-edit", false),
-			session("bottom-chat", true),
+	it("RS3: the posture resolver maps each input to a pinned posture", () => {
+		const inlineOpen = session("inline-edit", true);
+		const inlineClosed = session("inline-edit", false);
+		const bottomChat = session("bottom-chat", true);
+		const streamingHere = {
+			status: "streaming" as const,
+			sessionId: "s1",
+		};
+		const streamingOther = {
+			status: "streaming" as const,
+			sessionId: "other",
+		};
+		const complete = {
+			status: "complete" as const,
+			sessionId: "s1",
+		};
+		const errored = { status: "error" as const, sessionId: "s1" };
+
+		const cases: Array<{
+			label: string;
+			activeGeneration: {
+				status: "streaming" | "complete" | "error";
+				sessionId: string;
+			} | null;
+			activeSession: AIReviewPostureSession | null;
+			hasSuggestions: boolean;
+			expected: AIReviewPresentationState;
+		}> = [
+			{
+				label: "no session",
+				activeGeneration: streamingHere,
+				activeSession: null,
+				hasSuggestions: true,
+				expected: "resolved",
+			},
+			{
+				label: "composer closed",
+				activeGeneration: streamingHere,
+				activeSession: inlineClosed,
+				hasSuggestions: true,
+				expected: "resolved",
+			},
+			{
+				label: "bottom-chat",
+				activeGeneration: streamingHere,
+				activeSession: bottomChat,
+				hasSuggestions: true,
+				expected: "resolved",
+			},
+			{
+				label: "suggestions pending",
+				activeGeneration: streamingHere,
+				activeSession: inlineOpen,
+				hasSuggestions: true,
+				expected: "user-reviewing",
+			},
+			{
+				label: "streaming this session",
+				activeGeneration: streamingHere,
+				activeSession: inlineOpen,
+				hasSuggestions: false,
+				expected: "ai-writing",
+			},
+			{
+				label: "streaming other session",
+				activeGeneration: streamingOther,
+				activeSession: inlineOpen,
+				hasSuggestions: false,
+				expected: "user-input",
+			},
+			{
+				label: "complete",
+				activeGeneration: complete,
+				activeSession: inlineOpen,
+				hasSuggestions: false,
+				expected: "user-input",
+			},
+			{
+				label: "error",
+				activeGeneration: errored,
+				activeSession: inlineOpen,
+				hasSuggestions: false,
+				expected: "user-input",
+			},
+			{
+				label: "idle composer",
+				activeGeneration: null,
+				activeSession: inlineOpen,
+				hasSuggestions: false,
+				expected: "user-input",
+			},
 		];
 
-		let combinations = 0;
-		for (const activeGeneration of generations) {
-			for (const activeSession of sessions) {
-				for (const hasSuggestions of [true, false]) {
-					const posture = resolveAIReviewPresentationState({
-						activeGeneration,
-						activeSession,
-						hasSuggestions,
-					});
-					expect(
-						DEFINED_POSTURES.has(posture),
-						`posture "${posture}" is not a defined posture`,
-					).toBe(true);
-					combinations += 1;
-				}
-			}
+		for (const row of cases) {
+			expect(
+				resolveAIReviewPresentationState({
+					activeGeneration: row.activeGeneration,
+					activeSession: row.activeSession,
+					hasSuggestions: row.hasSuggestions,
+				}),
+				row.label,
+			).toBe(row.expected);
 		}
-		expect(combinations).toBe(40);
 	});
 
 	it("RS3: in-flight, awaiting-review, and terminal each render their posture", async () => {
@@ -108,7 +168,7 @@ describe("RS3: every reviewable state renders a defined posture", () => {
 		expect(
 			controller.getState().streamingReviewPreviews.length,
 		).toBeGreaterThan(0);
-		expect(reviewClasses(editor)).toContain("pen-ai-review-preview");
+		expect(reviewClasses(editor)).toContain(REVIEW_SURFACE_CLASSES.preview);
 
 		release.resolve();
 		await generationPromise;
@@ -117,7 +177,9 @@ describe("RS3: every reviewable state renders a defined posture", () => {
 		const suggestions = controller.getSuggestions();
 		expect(suggestions.length).toBeGreaterThan(0);
 		expect(controller.getState().streamingReviewPreviews).toEqual([]);
-		expect(reviewClasses(editor)).toContain("pen-suggestion-insert");
+		expect(reviewClasses(editor)).toContain(
+			REVIEW_SURFACE_CLASSES.suggestionInsert,
+		);
 
 		// resolving, then terminal: accept applies and the posture resolves away,
 		// leaving no review decoration behind.
@@ -130,8 +192,8 @@ describe("RS3: every reviewable state renders a defined posture", () => {
 	});
 });
 
-describe("RS3: a turn that applies nothing reports it", () => {
-	it("RS3: a non-loop markdown block turn whose target vanishes reports the unapplied edit", async () => {
+describe("RS3: a turn that applies nothing does not report success", () => {
+	it("RS3: a non-loop markdown block turn whose target vanishes does not report success", async () => {
 		const release = createDeferred();
 		const diagnostics: Array<{ code: string; level: string }> = [];
 		const editor = createEditor({
@@ -214,17 +276,12 @@ describe("RS3: a turn that applies nothing reports it", () => {
 	});
 });
 
-function session(
-	surface: AISession["surface"],
-	composerIsOpen: boolean,
-): AISession {
-	// The resolver reads only the id, the surface, and whether the contextual
-	// composer is open; a fuller row would not change what it decides.
+function session(surface: AISession["surface"], composerIsOpen: boolean) {
 	return {
 		id: "s1",
 		surface,
 		contextualPrompt: { composer: { isOpen: composerIsOpen } },
-	} as unknown as AISession;
+	} as AISession;
 }
 
 function reviewClasses(editor: Editor): string[] {

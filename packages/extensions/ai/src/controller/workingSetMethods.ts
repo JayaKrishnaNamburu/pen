@@ -1,7 +1,6 @@
 import { selectionToRange } from "@input/pen-core";
 import type { ToolRuntime } from "@input/pen-types";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
-import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
 import {
 	AI_ANNOTATED_WORKING_SET_MAX_BLOCKS,
 	refineRouteWithNavigator,
@@ -14,11 +13,11 @@ import type {
 } from "../types";
 import type { GenerationTarget } from "../helpers";
 import { resolveSelectionText } from "../helpers";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 
 export const workingSetMethods = {
 	_buildFallbackMutationReceipt(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		input: {
 			/**
 			 * Whether the assistant text this turn produced became a document
@@ -29,30 +28,11 @@ export const workingSetMethods = {
 			 */
 			committedText: boolean;
 			suggestionIds: readonly string[];
-			reviewItems: readonly StructuralReviewItem[];
-			planExecutionIssueCount: number;
 			adapterId: NonNullable<GenerationState["adapterId"]>;
 			blockClass: NonNullable<GenerationState["blockClass"]>;
 			transportKind: NonNullable<GenerationState["transportKind"]>;
 		},
 	): AIMutationReceipt {
-		if (input.planExecutionIssueCount > 0) {
-			return buildMutationReceipt({
-				status: "invalid",
-				adapterId: input.adapterId,
-				blockClass: input.blockClass,
-				transportKind: input.transportKind,
-				issues: ["The generated mutation plan could not be executed."],
-			});
-		}
-		if (input.reviewItems.length > 0) {
-			return buildMutationReceipt({
-				status: "staged_review",
-				adapterId: input.adapterId,
-				blockClass: input.blockClass,
-				transportKind: input.transportKind,
-			});
-		}
 		if (input.suggestionIds.length > 0) {
 			return buildMutationReceipt({
 				status: "staged_suggestions",
@@ -70,7 +50,7 @@ export const workingSetMethods = {
 	},
 
 	async _buildWorkingSet(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		toolRuntime: ToolRuntime,
 		route: RequestRouterDecision,
 		target: GenerationTarget,
@@ -103,7 +83,6 @@ export const workingSetMethods = {
 					),
 				},
 				trackedBlockIds,
-				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
 				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
 			};
@@ -115,7 +94,7 @@ export const workingSetMethods = {
 		// `edit_document` addresses blocks by the ids these annotations carry.
 		if (
 			scope === "document" &&
-			route.applyStrategy === "tool-edit" &&
+			route.editsArriveAsToolCalls &&
 			this._editor.blockCount() <= AI_ANNOTATED_WORKING_SET_MAX_BLOCKS
 		) {
 			const context = (await toolRuntime.executeTool(
@@ -154,7 +133,6 @@ export const workingSetMethods = {
 				},
 				routeConfidence: route.confidence,
 				trackedBlockIds,
-				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
 				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
 			};
@@ -192,7 +170,6 @@ export const workingSetMethods = {
 						context.structuredTarget?.target?.kind ?? null,
 				}).confidence,
 				trackedBlockIds: [...new Set(trackedBlockIds)],
-				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
 				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
 			};
@@ -244,7 +221,6 @@ export const workingSetMethods = {
 						context.structuredTarget?.target?.kind ?? null,
 				}).confidence,
 				trackedBlockIds: [...new Set(trackedBlockIds)],
-				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
 				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
 			};
@@ -257,14 +233,13 @@ export const workingSetMethods = {
 			context: null,
 			routeConfidence: route.confidence,
 			trackedBlockIds: [blockId],
-			blockRevisions: this._captureBlockRevisions([blockId]),
 			viewHashes: this._captureBlockViewHashes([blockId]),
 			selectionSignature,
 		};
 	},
 
 	_refineRouteWithWorkingSet(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		route: RequestRouterDecision,
 		workingSet: AIWorkingSetEnvelope | null,
 	): RequestRouterDecision {

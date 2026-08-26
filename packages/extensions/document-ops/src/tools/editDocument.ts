@@ -331,7 +331,8 @@ function buildReplaceBlocks(editor: Editor, request: EditRequest): BuildResult {
 		ops: [
 			...written.ops,
 			...targets.blockIds.map(
-				(blockId) => ({ type: "delete-block", blockId }) satisfies DocumentOp,
+				(blockId) =>
+					({ type: "delete-block", blockId }) satisfies DocumentOp,
 			),
 		],
 	};
@@ -357,7 +358,8 @@ function buildDeleteBlocks(editor: Editor, request: EditRequest): BuildResult {
 	return {
 		ok: true,
 		ops: targets.blockIds.map(
-			(blockId) => ({ type: "delete-block", blockId }) satisfies DocumentOp,
+			(blockId) =>
+				({ type: "delete-block", blockId }) satisfies DocumentOp,
 		),
 	};
 }
@@ -434,10 +436,7 @@ function buildFormatText(editor: Editor, request: EditRequest): BuildResult {
 	};
 }
 
-function buildSetBlockProps(
-	editor: Editor,
-	request: EditRequest,
-): BuildResult {
+function buildSetBlockProps(editor: Editor, request: EditRequest): BuildResult {
 	const target = resolveOneBlock(editor, request.blockId);
 	if (!target.ok) {
 		return target;
@@ -461,7 +460,10 @@ function buildSetBlockProps(
 	if (typeof blockType === "string") {
 		const typeReason = checkToolCanUseBlockType(editor, blockType);
 		if (typeReason) {
-			return { ok: false, reason: `block-type-not-allowed: ${typeReason}` };
+			return {
+				ok: false,
+				reason: `block-type-not-allowed: ${typeReason}`,
+			};
 		}
 	}
 
@@ -469,8 +471,7 @@ function buildSetBlockProps(
 	if (blockType === undefined && !hasProps) {
 		return {
 			ok: false,
-			reason:
-				"missing-change: set_block_props needs `blockType` and/or a non-empty `props` record.",
+			reason: "missing-change: set_block_props needs `blockType` and/or a non-empty `props` record.",
 		};
 	}
 
@@ -490,8 +491,7 @@ function buildSetBlockProps(
 		if (Object.keys(props).length === 0 && blockType === undefined) {
 			return {
 				ok: false,
-				reason:
-					"missing-change: set_block_props needs `blockType` and/or a non-empty `props` record.",
+				reason: "missing-change: set_block_props needs `blockType` and/or a non-empty `props` record.",
 			};
 		}
 	}
@@ -536,16 +536,14 @@ function readMarks(
 	if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
 		return {
 			ok: false,
-			reason:
-				"missing-marks: format_text needs a non-empty `marks` record.",
+			reason: "missing-marks: format_text needs a non-empty `marks` record.",
 		};
 	}
 	const entries = Object.entries(raw as Record<string, unknown>);
 	if (entries.length === 0) {
 		return {
 			ok: false,
-			reason:
-				"missing-marks: format_text needs a non-empty `marks` record.",
+			reason: "missing-marks: format_text needs a non-empty `marks` record.",
 		};
 	}
 
@@ -571,7 +569,10 @@ function readMarks(
 		const props = value as Record<string, unknown>;
 		const unknownKeys = Object.keys(props).filter(
 			(key) =>
-				!Object.prototype.hasOwnProperty.call(markSchema.propSchema ?? {}, key),
+				!Object.prototype.hasOwnProperty.call(
+					markSchema.propSchema ?? {},
+					key,
+				),
 		);
 		if (unknownKeys.length > 0) {
 			return {
@@ -586,10 +587,7 @@ function readMarks(
 	return { ok: true, marks };
 }
 
-function resolveMarkSchema(
-	editor: Editor,
-	name: string,
-): InlineSchema | null {
+function resolveMarkSchema(editor: Editor, name: string): InlineSchema | null {
 	const inline = editor.schema.resolveInline(name);
 	if (!inline || inline.kind !== "mark") {
 		return null;
@@ -623,8 +621,7 @@ function refuseHtmlPayload(payload: string): BuildResult | null {
 	}
 	return {
 		ok: false,
-		reason:
-			"html-in-payload: payloads are plain text/markdown, not HTML; use format_text with marks for styling",
+		reason: "html-in-payload: payloads are plain text/markdown, not HTML; use format_text with marks for styling",
 	};
 }
 
@@ -664,17 +661,18 @@ function resolveFormatRange(
 		if (request.occurrence !== undefined) {
 			return {
 				ok: false,
-				reason:
-					"invalid-occurrence: occurrence is only valid with matchText.",
+				reason: "invalid-occurrence: occurrence is only valid with matchText.",
 			};
 		}
 		return { ok: true, from: 0, to: text.length };
 	}
-	if (typeof request.matchText !== "string" || request.matchText.length === 0) {
+	if (
+		typeof request.matchText !== "string" ||
+		request.matchText.length === 0
+	) {
 		return {
 			ok: false,
-			reason:
-				"missing-match: format_text `matchText` must be a non-empty string.",
+			reason: "missing-match: format_text `matchText` must be a non-empty string.",
 		};
 	}
 

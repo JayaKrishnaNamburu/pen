@@ -67,7 +67,7 @@ function maybeEmitDocumentSizeOnCadence(
 }
 
 export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
-	const emitDiagnostic = options?.onDiagnostic ?? (() => { });
+	const emitDiagnostic = options?.onDiagnostic ?? (() => {});
 
 	const adapter: CRDTAdapter = {
 		createDocument() {
@@ -99,11 +99,7 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 		applyUpdate(doc, update) {
 			const ydoc = asYjsDoc(doc).ydoc;
 			try {
-				Y.applyUpdate(
-					ydoc,
-					update,
-					createRemoteUpdateOrigin(),
-				);
+				Y.applyUpdate(ydoc, update, createRemoteUpdateOrigin());
 			} catch (err) {
 				emitDiagnostic({
 					code: "MALFORMED_UPDATE",
@@ -118,7 +114,10 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 
 		transact(doc, fn, origin?) {
 			refreshFormatStamp(doc);
-			const normalized = normalizeTransactionOrigin(origin ?? "user", true);
+			const normalized = normalizeTransactionOrigin(
+				origin ?? "user",
+				true,
+			);
 			if (normalized.diagnostic) {
 				emitDiagnostic(normalized.diagnostic);
 			}
@@ -209,7 +208,8 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 
 			const ranges: AttributionRange[] = [];
 			let offset = 0;
-			let item = (content as unknown as { _start: YTextItem | null })._start;
+			let item = (content as unknown as { _start: YTextItem | null })
+				._start;
 
 			while (item) {
 				if (!item.deleted) {
@@ -219,7 +219,8 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 						if (
 							previousRange &&
 							previousRange.clientId === item.id.client &&
-							previousRange.offset + previousRange.length === offset
+							previousRange.offset + previousRange.length ===
+								offset
 						) {
 							previousRange.length += length;
 						} else {

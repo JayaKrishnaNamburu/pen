@@ -35,21 +35,25 @@ export function buildAgentMessages(
 	for (const toolResult of input.toolResults) {
 		messages.push({
 			role: "assistant",
-			content: [{
-				type: "tool-call",
-				toolCallId: toolResult.toolCallId,
-				toolName: toolResult.toolName,
-				input: toolResult.input,
-			}],
+			content: [
+				{
+					type: "tool-call",
+					toolCallId: toolResult.toolCallId,
+					toolName: toolResult.toolName,
+					input: toolResult.input,
+				},
+			],
 		});
 		messages.push({
 			role: "tool",
-			content: [{
-				type: "tool-result",
-				toolCallId: toolResult.toolCallId,
-				result: compactToolResult(toolResult.output),
-				isError: toolResult.isError,
-			}],
+			content: [
+				{
+					type: "tool-result",
+					toolCallId: toolResult.toolCallId,
+					result: compactToolResult(toolResult.output),
+					isError: toolResult.isError,
+				},
+			],
 		});
 	}
 
@@ -96,7 +100,10 @@ export function compactToolResult(value: unknown): unknown {
 		const allEntries = Object.entries(value as Record<string, unknown>);
 		const entries = allEntries.slice(0, MAX_OBJECT_KEYS);
 		const compacted = Object.fromEntries(
-			entries.map(([key, entryValue]) => [key, compactToolResult(entryValue)]),
+			entries.map(([key, entryValue]) => [
+				key,
+				compactToolResult(entryValue),
+			]),
 		);
 		if (allEntries.length > MAX_OBJECT_KEYS) {
 			compacted["[truncated]"] =

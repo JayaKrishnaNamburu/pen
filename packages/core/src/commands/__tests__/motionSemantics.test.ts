@@ -30,7 +30,9 @@ function bindingNamed(
 	platform: KeymapPlatform,
 	key: string,
 ): DefaultKeymapBinding {
-	const binding = resolveDefaultKeymap(platform).find((entry) => entry.key === key);
+	const binding = resolveDefaultKeymap(platform).find(
+		(entry) => entry.key === key,
+	);
 	if (!binding) {
 		throw new Error(`missing ${platform} binding ${key}`);
 	}
@@ -82,8 +84,8 @@ describe("motion semantics M1–M6", () => {
 		];
 		for (const [platform, key, command] of arrowCases) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
@@ -100,8 +102,8 @@ describe("motion semantics M1–M6", () => {
 		];
 		for (const [platform, key, command] of wordCases) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
@@ -111,9 +113,12 @@ describe("motion semantics M1–M6", () => {
 			editor,
 			bindingNamed("macos", "ArrowLeft"),
 		);
-		expect(registry.dispatch(remapped.command, remapped.param as { extend: boolean })).toBe(
-			true,
-		);
+		expect(
+			registry.dispatch(
+				remapped.command,
+				remapped.param as { extend: boolean },
+			),
+		).toBe(true);
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 1 });
 		editor.destroy();
 	});
@@ -144,8 +149,10 @@ describe("motion semantics M1–M6", () => {
 				.command.name,
 		).toBe(caretLeft.name);
 		expect(
-			resolveDirectedBinding(editor, bindingNamed("macos", "Alt-ArrowLeft"))
-				.command.name,
+			resolveDirectedBinding(
+				editor,
+				bindingNamed("macos", "Alt-ArrowLeft"),
+			).command.name,
 		).toBe(caretWordLeft.name);
 		editor.destroy();
 	});
@@ -167,15 +174,15 @@ describe("motion semantics M1–M6", () => {
 					type: "splice-text",
 					blockId: "a",
 					from: 0,
-				to: 0 + ARABIC.length,
-				insert: "",
+					to: 0 + ARABIC.length,
+					insert: "",
 				},
 				{
 					type: "splice-text",
 					blockId: "a",
 					from: 0,
-				to: 0,
-				insert: "Hello",
+					to: 0,
+					insert: "Hello",
 				},
 			],
 			{ origin: "user" },
@@ -200,24 +207,26 @@ describe("motion semantics M1–M6", () => {
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 5 });
 
 		expect(
-			resolveDirectedBinding(editor, bindingNamed("windows", "Home")).command
-				.name,
+			resolveDirectedBinding(editor, bindingNamed("windows", "Home"))
+				.command.name,
 		).toBe(caretLineStart.name);
 		expect(
-			resolveDirectedBinding(editor, bindingNamed("windows", "End")).command
-				.name,
+			resolveDirectedBinding(editor, bindingNamed("windows", "End"))
+				.command.name,
 		).toBe(caretLineEnd.name);
 		expect(
-			resolveDirectedBinding(editor, bindingNamed("macos", "Home")).command
-				.name,
+			resolveDirectedBinding(editor, bindingNamed("macos", "Home"))
+				.command.name,
 		).toBe(caretLineStart.name);
 		expect(
 			resolveDirectedBinding(editor, bindingNamed("macos", "End")).command
 				.name,
 		).toBe(caretLineEnd.name);
 		expect(
-			resolveDirectedBinding(editor, bindingNamed("macos", "Meta-ArrowLeft"))
-				.command.name,
+			resolveDirectedBinding(
+				editor,
+				bindingNamed("macos", "Meta-ArrowLeft"),
+			).command.name,
 		).toBe(caretLineStart.name);
 		expect(
 			resolveDirectedBinding(
@@ -226,8 +235,10 @@ describe("motion semantics M1–M6", () => {
 			).command.name,
 		).toBe(caretLineStart.name);
 		expect(
-			resolveDirectedBinding(editor, bindingNamed("macos", "Meta-ArrowRight"))
-				.command.name,
+			resolveDirectedBinding(
+				editor,
+				bindingNamed("macos", "Meta-ArrowRight"),
+			).command.name,
 		).toBe(caretLineEnd.name);
 		editor.destroy();
 	});
@@ -244,8 +255,12 @@ describe("motion semantics M1–M6", () => {
 		expect(registry.dispatch(caretWordRight, { extend: false })).toBe(true);
 		expect(caretOf(editor).offset).toBe(5);
 
-		expect(resolveDirectedCommand(caretWordLeft, "rtl")).toBe(caretWordRight);
-		expect(resolveDirectedCommand(caretWordRight, "ltr")).toBe(caretWordRight);
+		expect(resolveDirectedCommand(caretWordLeft, "rtl")).toBe(
+			caretWordRight,
+		);
+		expect(resolveDirectedCommand(caretWordRight, "ltr")).toBe(
+			caretWordRight,
+		);
 		editor.destroy();
 	});
 
@@ -263,8 +278,8 @@ describe("motion semantics M1–M6", () => {
 		];
 		for (const [platform, key, command] of vertical) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
@@ -311,8 +326,8 @@ describe("motion semantics M1–M6", () => {
 		];
 		for (const [platform, key, command] of deleteCases) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}

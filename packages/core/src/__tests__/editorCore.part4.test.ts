@@ -1,8 +1,5 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import {
-	type DocumentSession,
-	type PenStreamPart
-} from "@input/pen-types";
+import { type DocumentSession, type PenStreamPart } from "@input/pen-types";
 import { defineExtension, getOpOriginType } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
@@ -12,20 +9,20 @@ import {
 	createDocumentSession,
 	createEditor as createCoreEditor,
 	createHeadlessEditor,
-	ensureInlineCompletionController
+	ensureInlineCompletionController,
 } from "../index";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
 		return { extensions: [] };
-	}
+	},
 };
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
 		schema: createDefaultSchema(),
 		...options,
-		preset: options.preset ?? noDefaultExtensionsPreset
+		preset: options.preset ?? noDefaultExtensionsPreset,
 	});
 }
 
@@ -34,7 +31,7 @@ function createDefaultEditor(
 ) {
 	return createCoreEditor({
 		schema: createDefaultSchema(),
-		...options
+		...options,
 	});
 }
 
@@ -81,10 +78,10 @@ describe("@input/pen-core createEditor", () => {
 			name: "capture-observed-dispatch",
 			observe(events) {
 				observed.push([...events]);
-			}
+			},
 		});
 		const editor = createEditor({
-			extensions: [ext]
+			extensions: [ext],
 		});
 		const commits: unknown[] = [];
 		const adapter = editor.internals.adapter;
@@ -118,11 +115,12 @@ describe("@input/pen-core createEditor", () => {
 		expect(commits).toHaveLength(1);
 		expect(commits[0]).toMatchObject({
 			commitId: 1,
-			origin: { type: "collaborator" }
+			origin: { type: "collaborator" },
 		});
 		expect(
-			(commits[0] as { summary: { blockText: { blockId: string }[] } })
-				.summary.blockText.map((text) => text.blockId),
+			(
+				commits[0] as { summary: { blockText: { blockId: string }[] } }
+			).summary.blockText.map((text) => text.blockId),
 		).toContain(blockId);
 		expect(observed).toHaveLength(1);
 		expect(observed[0]).toHaveLength(1);
@@ -139,14 +137,14 @@ describe("@input/pen-core createEditor", () => {
 				blockId: "b1",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "splice-text",
 				blockId: "b1",
 				from: 0,
 				to: 0,
-				insert: "hello"
+				insert: "hello",
 			},
 		]);
 
@@ -154,13 +152,13 @@ describe("@input/pen-core createEditor", () => {
 		expect(editor.getSelection()).toMatchObject({
 			type: "text",
 			anchor: { blockId: "b1", offset: 5 },
-			focus: { blockId: "b1", offset: 5 }
+			focus: { blockId: "b1", offset: 5 },
 		});
 
 		editor.setSelection({
 			type: "text",
 			anchor: { blockId: "b1", offset: 5 },
-			focus: { blockId: "b1", offset: 2 }
+			focus: { blockId: "b1", offset: 2 },
 		});
 
 		expect(editor.getSelectedText()).toBe("llo");
@@ -177,31 +175,43 @@ describe("@input/pen-core createEditor", () => {
 				blockId: "b1",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "b2",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "b3",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hello" },
-			{ type: "splice-text", blockId: "b2", from: 0,
+				insert: "Hello",
+			},
+			{
+				type: "splice-text",
+				blockId: "b2",
+				from: 0,
 				to: 0,
-				insert: "World" },
-			{ type: "splice-text", blockId: "b3", from: 0,
+				insert: "World",
+			},
+			{
+				type: "splice-text",
+				blockId: "b3",
+				from: 0,
 				to: 0,
-				insert: "Again" },
+				insert: "Again",
+			},
 		]);
 
 		editor.selectTextRange(
@@ -212,7 +222,7 @@ describe("@input/pen-core createEditor", () => {
 		expect(editor.getSelection()).toMatchObject({
 			type: "text",
 			anchor: { blockId: "b1", offset: 2 },
-			focus: { blockId: "b3", offset: 3 }
+			focus: { blockId: "b3", offset: 3 },
 		});
 		expect(editor.getSelectedText()).toBe("llo\nWorld\nAga");
 		expect(editor.getSelectedBlocks().map((block) => block.id)).toEqual([
@@ -233,31 +243,43 @@ describe("@input/pen-core createEditor", () => {
 				blockId: "b1",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "b2",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "b3",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hello" },
-			{ type: "splice-text", blockId: "b2", from: 0,
+				insert: "Hello",
+			},
+			{
+				type: "splice-text",
+				blockId: "b2",
+				from: 0,
 				to: 0,
-				insert: "World" },
-			{ type: "splice-text", blockId: "b3", from: 0,
+				insert: "World",
+			},
+			{
+				type: "splice-text",
+				blockId: "b3",
+				from: 0,
 				to: 0,
-				insert: "Again" },
+				insert: "Again",
+			},
 		]);
 
 		editor.selectTextRange(
@@ -272,7 +294,7 @@ describe("@input/pen-core createEditor", () => {
 		expect(editor.getSelection()).toMatchObject({
 			type: "text",
 			anchor: { blockId: "b1", offset: 2 },
-			focus: { blockId: "b1", offset: 2 }
+			focus: { blockId: "b1", offset: 2 },
 		});
 
 		editor.destroy();
@@ -287,7 +309,7 @@ describe("@input/pen-core createEditor", () => {
 				blockId: "d1",
 				blockType: "divider",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 		]);
 
@@ -298,7 +320,7 @@ describe("@input/pen-core createEditor", () => {
 		expect(editor.getSelection()).toMatchObject({
 			type: "block",
 			blockIds: ["d1"],
-			head: "d1"
+			head: "d1",
 		});
 		editor.deleteSelection();
 
@@ -317,7 +339,7 @@ describe("@input/pen-core createEditor", () => {
 				blockId: "t1",
 				blockType: "table",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 		]);
 
@@ -328,7 +350,7 @@ describe("@input/pen-core createEditor", () => {
 		expect(editor.getSelection()).toMatchObject({
 			type: "block",
 			blockIds: ["t1"],
-			head: "t1"
+			head: "t1",
 		});
 		editor.deleteSelection();
 
@@ -347,28 +369,36 @@ describe("@input/pen-core createEditor", () => {
 				blockId: "p1",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "d1",
 				blockType: "divider",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "p2",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
-			{ type: "splice-text", blockId: "p1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "p1",
+				from: 0,
 				to: 0,
-				insert: "Hello" },
-			{ type: "splice-text", blockId: "p2", from: 0,
+				insert: "Hello",
+			},
+			{
+				type: "splice-text",
+				blockId: "p2",
+				from: 0,
 				to: 0,
-				insert: "World" },
+				insert: "World",
+			},
 		]);
 
 		editor.selectTextRange(
@@ -384,7 +414,7 @@ describe("@input/pen-core createEditor", () => {
 		expect(editor.getSelection()).toMatchObject({
 			type: "text",
 			anchor: { blockId: "p1", offset: 2 },
-			focus: { blockId: "p1", offset: 2 }
+			focus: { blockId: "p1", offset: 2 },
 		});
 
 		editor.destroy();
@@ -399,31 +429,43 @@ describe("@input/pen-core createEditor", () => {
 				blockId: "b1",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "b2",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 			{
 				type: "insert-block",
 				blockId: "b3",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "Hello" },
-			{ type: "splice-text", blockId: "b2", from: 0,
+				insert: "Hello",
+			},
+			{
+				type: "splice-text",
+				blockId: "b2",
+				from: 0,
 				to: 0,
-				insert: "World" },
-			{ type: "splice-text", blockId: "b3", from: 0,
+				insert: "World",
+			},
+			{
+				type: "splice-text",
+				blockId: "b3",
+				from: 0,
 				to: 0,
-				insert: "Again" },
+				insert: "Again",
+			},
 		]);
 
 		editor.selectTextRange(
@@ -438,10 +480,9 @@ describe("@input/pen-core createEditor", () => {
 		expect(editor.getSelection()).toMatchObject({
 			type: "text",
 			anchor: { blockId: "b1", offset: 3 },
-			focus: { blockId: "b1", offset: 3 }
+			focus: { blockId: "b1", offset: 3 },
 		});
 
 		editor.destroy();
 	});
-
 });

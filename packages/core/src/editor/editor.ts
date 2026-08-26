@@ -1,5 +1,54 @@
-import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter, EditorAnchors, SelectAllBehavior } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
+import type {
+	Editor,
+	EditorInternals,
+	CreateEditorOptions,
+	PenEventMap,
+	CRDTAdapter,
+	CRDTDocument,
+	CRDTEvent,
+	PenDocument,
+	SchemaRegistry,
+	Awareness,
+	DocumentSession,
+	DocumentScope,
+	DocumentScopeReplacementEvent,
+	DocumentProfile,
+	Extension,
+	DocumentOp,
+	ApplyOptions,
+	OpOrigin,
+	MutationGroupMetadata,
+	SelectionState,
+	TextSelection,
+	DocumentRange,
+	BlockHandle,
+	Block,
+	DocumentState,
+	UndoManager,
+	Unsubscribe,
+	CRDTMap,
+	CRDTArray,
+	Position,
+	DecorationSet,
+	EditorViewMode,
+	ChangeSummary,
+	Facet,
+	FacetOutput,
+	PipelinePhase,
+	SelectionRecord,
+	SelectionOrigin,
+	OpenTextStreamOptions,
+	TextStreamWriter,
+	EditorAnchors,
+	SelectAllBehavior,
+} from "@input/pen-types";
+import {
+	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+	COLLECT_KEY_BINDINGS_SLOT_KEY,
+	MUTATION_GROUP_METADATA_KEY,
+	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+	generateId,
+} from "@input/pen-types";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { resolveEditorSchema } from "../schema/emptySchema";
 import { SchemaEngineImpl } from "../schema/normalize";
@@ -9,7 +58,12 @@ import { ApplyPipeline } from "./apply";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { filterOpsForDocumentProfile } from "./profilePolicy";
 import type { CRDTUnknownMap } from "./crdtShapes";
-import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDTMap } from "./crdtShapes";
+import {
+	getTextProp,
+	getTableContent,
+	getCellText as getCellTextFromRow,
+	isCRDTMap,
+} from "./crdtShapes";
 import { ExtensionManagerImpl } from "./extensionManager";
 import { EditorAnchorsImpl } from "./anchors";
 import { SelectionAuthorityImpl } from "./selection";
@@ -26,17 +80,63 @@ import {
 	messagesFacet,
 	resolveEnvironmentLocale,
 } from "../facets/i18nFacets";
+import { createFacetRegistry, type FacetRegistry } from "../facets/registry";
 import {
-	createFacetRegistry,
-	type FacetRegistry,
-} from "../facets/registry";
-import { getRawBlockMap, getEditorInternals, applyEditorOps, recordMutationGroupMetadata, loadEditorDocument, iterateBlocks, getEditorBlock, getFirstBlock, getLastBlock, getBlockCount, getEditorBlockRevision, destroyEditor } from "./editorApiHelpers";
+	getRawBlockMap,
+	getEditorInternals,
+	applyEditorOps,
+	recordMutationGroupMetadata,
+	loadEditorDocument,
+	iterateBlocks,
+	getEditorBlock,
+	getFirstBlock,
+	getLastBlock,
+	getBlockCount,
+	getEditorBlockRevision,
+	destroyEditor,
+} from "./editorApiHelpers";
 import { createEmptyBlockIndex } from "../changes/blockIndex";
 import { snapshotSelectionRecord } from "./commitEvent";
 import { openEditorTextStream } from "./openTextStream";
-import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePolicyHook, enforceDocumentProfileBoundary, refreshCoreSlots, bindEditorSession, bindEditorScope, handleEditorScopeReplacement, resolveEditorDocumentProfile, persistEditorDocumentProfile, rebindActiveScope, refreshUndoManager, activateEditorExtensions, queueExtensionLifecycle, ensureInitialParagraph, createCommitEvent, dispatchCRDTEvent, syncDocumentProfileFromStorage, wireEditorObservation, teardownEditorObservation } from "./editorLifecycle";
-import { replaceEditorSelection, deleteEditorSelection, getTextForBlock, usesInlineTextSelectionForBlock, getBlockSelectionSpan, isWholeBlockSelection, sliceInlineDeltas, buildMultiBlockTextReplacement, deleteMultiBlockTextRange, replaceMultiBlockTextRange } from "./editorSelectionMutations";
-import type { DocumentCommitEvent, EditorImplInternal, EditorSelectionMutationContext } from "./editorImplContext";
+import {
+	createPenDocumentForEditor,
+	resolveEditorExtensions,
+	installProfilePolicyHook,
+	enforceDocumentProfileBoundary,
+	refreshCoreSlots,
+	bindEditorSession,
+	bindEditorScope,
+	handleEditorScopeReplacement,
+	resolveEditorDocumentProfile,
+	persistEditorDocumentProfile,
+	rebindActiveScope,
+	refreshUndoManager,
+	activateEditorExtensions,
+	queueExtensionLifecycle,
+	ensureInitialParagraph,
+	createCommitEvent,
+	dispatchCRDTEvent,
+	syncDocumentProfileFromStorage,
+	wireEditorObservation,
+	teardownEditorObservation,
+} from "./editorLifecycle";
+import {
+	replaceEditorSelection,
+	deleteEditorSelection,
+	getTextForBlock,
+	usesInlineTextSelectionForBlock,
+	getBlockSelectionSpan,
+	isWholeBlockSelection,
+	sliceInlineDeltas,
+	buildMultiBlockTextReplacement,
+	deleteMultiBlockTextRange,
+	replaceMultiBlockTextRange,
+} from "./editorSelectionMutations";
+import type {
+	DocumentCommitEvent,
+	EditorImplInternal,
+	EditorSelectionMutationContext,
+} from "./editorImplContext";
 import { runPendingEmptyBlockMigrations } from "../migrations/runPendingEmptyBlockMigrations";
 import { createTextSelection, selectionToRange } from "../selection/helpers";
 import {
@@ -48,7 +148,17 @@ import { escalateSelectAll } from "../selection/transitions";
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
 // Stub undo manager for when @input/pen-undo is excluded
-const NOOP_UNDO: UndoManager = { undo: () => false, redo: () => false, canUndo: () => false, canRedo: () => false, stopCapturing: () => {}, syncExplicitUndoGroup: () => {}, setGroupTimeout: () => {}, registerTrackedOrigins: () => () => {}, onStackChange: () => () => {} };
+const NOOP_UNDO: UndoManager = {
+	undo: () => false,
+	redo: () => false,
+	canUndo: () => false,
+	canRedo: () => false,
+	stopCapturing: () => {},
+	syncExplicitUndoGroup: () => {},
+	setGroupTimeout: () => {},
+	registerTrackedOrigins: () => () => {},
+	onStackChange: () => () => {},
+};
 
 class EditorImpl implements Editor {
 	private readonly _adapter: CRDTAdapter;
@@ -85,8 +195,9 @@ class EditorImpl implements Editor {
 	private _facetRegistry!: FacetRegistry;
 	private _slotDeprecationWarned = new Set<string>();
 	private _isDestroyed = false;
-	private readonly _pipelinePhaseListeners: Array<(phase: PipelinePhase) => void> =
-		[];
+	private readonly _pipelinePhaseListeners: Array<
+		(phase: PipelinePhase) => void
+	> = [];
 	private readonly _eventDeprecationWarned = new Set<string>();
 	private _selectionBeforeRecord: SelectionRecord | null = null;
 
@@ -265,9 +376,13 @@ class EditorImpl implements Editor {
 		return this._documentState;
 	}
 
-	private _getRawBlockMap(blockId: string): CRDTUnknownMap | null { return getRawBlockMap(this._impl, blockId); }
+	private _getRawBlockMap(blockId: string): CRDTUnknownMap | null {
+		return getRawBlockMap(this._impl, blockId);
+	}
 
-	get internals(): EditorInternals { return getEditorInternals(this._impl); }
+	get internals(): EditorInternals {
+		return getEditorInternals(this._impl);
+	}
 
 	get lastChangeSummary(): ChangeSummary | null {
 		return this._lastChangeSummary;
@@ -275,7 +390,9 @@ class EditorImpl implements Editor {
 
 	// ── Mutations ────────────────────────────────────────────
 
-	apply(ops: DocumentOp[], options?: ApplyOptions): void { applyEditorOps(this._impl, ops, options); }
+	apply(ops: DocumentOp[], options?: ApplyOptions): void {
+		applyEditorOps(this._impl, ops, options);
+	}
 
 	openTextStream(
 		target: { blockId: string },
@@ -293,9 +410,16 @@ class EditorImpl implements Editor {
 		});
 	}
 
-	private _recordMutationGroupMetadata(origin: OpOrigin, groupId: string | undefined): void { recordMutationGroupMetadata(this._impl, origin, groupId); }
+	private _recordMutationGroupMetadata(
+		origin: OpOrigin,
+		groupId: string | undefined,
+	): void {
+		recordMutationGroupMetadata(this._impl, origin, groupId);
+	}
 
-	loadDocument(doc: CRDTDocument): void { loadEditorDocument(this._impl, doc); }
+	loadDocument(doc: CRDTDocument): void {
+		loadEditorDocument(this._impl, doc);
+	}
 
 	onBeforeApply(
 		hook: (ops: DocumentOp[], options: ApplyOptions) => DocumentOp[],
@@ -317,17 +441,29 @@ class EditorImpl implements Editor {
 
 	// ── Block Traversal ──────────────────────────────────────
 
-	*blocks(type?: string): Iterable<BlockHandle> { yield* iterateBlocks(this._impl, type); }
+	*blocks(type?: string): Iterable<BlockHandle> {
+		yield* iterateBlocks(this._impl, type);
+	}
 
-	getBlock(blockId: string): BlockHandle | null { return getEditorBlock(this._impl, blockId); }
+	getBlock(blockId: string): BlockHandle | null {
+		return getEditorBlock(this._impl, blockId);
+	}
 
-	firstBlock(): BlockHandle | null { return getFirstBlock(this._impl); }
+	firstBlock(): BlockHandle | null {
+		return getFirstBlock(this._impl);
+	}
 
-	lastBlock(): BlockHandle | null { return getLastBlock(this._impl); }
+	lastBlock(): BlockHandle | null {
+		return getLastBlock(this._impl);
+	}
 
-	blockCount(): number { return getBlockCount(this._impl); }
+	blockCount(): number {
+		return getBlockCount(this._impl);
+	}
 
-	getBlockRevision(blockId: string): number { return getEditorBlockRevision(this._impl, blockId); }
+	getBlockRevision(blockId: string): number {
+		return getEditorBlockRevision(this._impl, blockId);
+	}
 
 	// ── Selection ────────────────────────────────────────────
 
@@ -421,9 +557,13 @@ class EditorImpl implements Editor {
 		return this._selection.getSelectedBlocks();
 	}
 
-	replaceSelection(content: string | Block[]): void { replaceEditorSelection(this._selectionCtx, content); }
+	replaceSelection(content: string | Block[]): void {
+		replaceEditorSelection(this._selectionCtx, content);
+	}
 
-	deleteSelection(options?: ApplyOptions): void { deleteEditorSelection(this._selectionCtx, options); }
+	deleteSelection(options?: ApplyOptions): void {
+		deleteEditorSelection(this._selectionCtx, options);
+	}
 
 	// ── Decorations ──────────────────────────────────────────
 
@@ -477,41 +617,80 @@ class EditorImpl implements Editor {
 
 	// ── Destroy ──────────────────────────────────────────────
 
-	destroy(): Promise<void> { return destroyEditor(this._impl); }
+	destroy(): Promise<void> {
+		return destroyEditor(this._impl);
+	}
 
 	// ── Private ──────────────────────────────────────────────
 
-	private _createPenDocument(crdtDoc: CRDTDocument): PenDocument { return createPenDocumentForEditor(this._impl, crdtDoc); }
+	private _createPenDocument(crdtDoc: CRDTDocument): PenDocument {
+		return createPenDocumentForEditor(this._impl, crdtDoc);
+	}
 
-	private _resolveExtensions(options: CreateEditorOptions): Extension[] { return resolveEditorExtensions(this._impl, options); }
+	private _resolveExtensions(options: CreateEditorOptions): Extension[] {
+		return resolveEditorExtensions(this._impl, options);
+	}
 
-	private _installProfilePolicyHook(): void { installProfilePolicyHook(this._impl); }
+	private _installProfilePolicyHook(): void {
+		installProfilePolicyHook(this._impl);
+	}
 
-	private _enforceDocumentProfileBoundary(ops: DocumentOp[]): DocumentOp[] { return enforceDocumentProfileBoundary(this._impl, ops); }
+	private _enforceDocumentProfileBoundary(ops: DocumentOp[]): DocumentOp[] {
+		return enforceDocumentProfileBoundary(this._impl, ops);
+	}
 
-	private _refreshCoreSlots(): void { refreshCoreSlots(this._impl); }
+	private _refreshCoreSlots(): void {
+		refreshCoreSlots(this._impl);
+	}
 
-	private _bindSession(session: DocumentSession, scopeId?: string): void { bindEditorSession(this._impl, session, scopeId); }
+	private _bindSession(session: DocumentSession, scopeId?: string): void {
+		bindEditorSession(this._impl, session, scopeId);
+	}
 
-	private _bindScope(session: DocumentSession, scopeId?: string): void { bindEditorScope(this._impl, session, scopeId); }
+	private _bindScope(session: DocumentSession, scopeId?: string): void {
+		bindEditorScope(this._impl, session, scopeId);
+	}
 
-	private _handleScopeReplacement(session: DocumentSession, event: DocumentScopeReplacementEvent): void { handleEditorScopeReplacement(this._impl, session, event); }
+	private _handleScopeReplacement(
+		session: DocumentSession,
+		event: DocumentScopeReplacementEvent,
+	): void {
+		handleEditorScopeReplacement(this._impl, session, event);
+	}
 
-	private _resolveDocumentProfile(requestedProfile?: DocumentProfile): DocumentProfile { return resolveEditorDocumentProfile(this._impl, requestedProfile); }
+	private _resolveDocumentProfile(
+		requestedProfile?: DocumentProfile,
+	): DocumentProfile {
+		return resolveEditorDocumentProfile(this._impl, requestedProfile);
+	}
 
-	private async _rebindActiveScope(): Promise<void> { await rebindActiveScope(this._impl); }
+	private async _rebindActiveScope(): Promise<void> {
+		await rebindActiveScope(this._impl);
+	}
 
-	private _refreshUndoManager(): void { refreshUndoManager(this._impl); }
+	private _refreshUndoManager(): void {
+		refreshUndoManager(this._impl);
+	}
 
-	private async _activateExtensions(): Promise<void> { await activateEditorExtensions(this._impl); }
+	private async _activateExtensions(): Promise<void> {
+		await activateEditorExtensions(this._impl);
+	}
 
-	private _queueExtensionLifecycle(task: () => Promise<void>): Promise<void> { return queueExtensionLifecycle(this._impl, task); }
+	private _queueExtensionLifecycle(task: () => Promise<void>): Promise<void> {
+		return queueExtensionLifecycle(this._impl, task);
+	}
 
-	private _ensureInitialParagraph(): void { ensureInitialParagraph(this._impl); }
+	private _ensureInitialParagraph(): void {
+		ensureInitialParagraph(this._impl);
+	}
 
-	private _createCommitEvent(event: CRDTEvent): DocumentCommitEvent { return createCommitEvent(this._impl, event); }
+	private _createCommitEvent(event: CRDTEvent): DocumentCommitEvent {
+		return createCommitEvent(this._impl, event);
+	}
 
-	private _dispatchCRDTEvent(event: CRDTEvent): void { dispatchCRDTEvent(this._impl, event); }
+	private _dispatchCRDTEvent(event: CRDTEvent): void {
+		dispatchCRDTEvent(this._impl, event);
+	}
 
 	private _recordPipelinePhase(phase: PipelinePhase): void {
 		for (const listener of this._pipelinePhaseListeners) {
@@ -551,21 +730,46 @@ class EditorImpl implements Editor {
 		}
 	}
 
-	private _syncDocumentProfileFromStorage(): void { syncDocumentProfileFromStorage(this._impl); }
+	private _syncDocumentProfileFromStorage(): void {
+		syncDocumentProfileFromStorage(this._impl);
+	}
 
-	private _wireObservation(): void { wireEditorObservation(this._impl); }
+	private _wireObservation(): void {
+		wireEditorObservation(this._impl);
+	}
 
-	private _teardownObservation(): void { teardownEditorObservation(this._impl); }
+	private _teardownObservation(): void {
+		teardownEditorObservation(this._impl);
+	}
 
-	private _getTextForBlock(blockId: string): string { return getTextForBlock(this._selectionCtx, blockId); }
+	private _getTextForBlock(blockId: string): string {
+		return getTextForBlock(this._selectionCtx, blockId);
+	}
 
-	private _getSelectionRange(sel: TextSelection): DocumentRange { return selectionToRange(this._doc, sel); }
+	private _getSelectionRange(sel: TextSelection): DocumentRange {
+		return selectionToRange(this._doc, sel);
+	}
 
-	private _usesInlineTextSelection(blockId: string): boolean { return usesInlineTextSelectionForBlock(this._selectionCtx, blockId); }
+	private _usesInlineTextSelection(blockId: string): boolean {
+		return usesInlineTextSelectionForBlock(this._selectionCtx, blockId);
+	}
 
-	private _getBlockSelectionSpan(blockId: string): number { return getBlockSelectionSpan(this._selectionCtx, blockId); }
+	private _getBlockSelectionSpan(blockId: string): number {
+		return getBlockSelectionSpan(this._selectionCtx, blockId);
+	}
 
-	private _isWholeBlockSelection(blockId: string, startOffset: number, endOffset: number): boolean { return isWholeBlockSelection(this._selectionCtx, blockId, startOffset, endOffset); }
+	private _isWholeBlockSelection(
+		blockId: string,
+		startOffset: number,
+		endOffset: number,
+	): boolean {
+		return isWholeBlockSelection(
+			this._selectionCtx,
+			blockId,
+			startOffset,
+			endOffset,
+		);
+	}
 
 	private _collapseToPoint(point: { blockId: string; offset: number }): void {
 		this._writeSelection(
@@ -574,13 +778,37 @@ class EditorImpl implements Editor {
 		);
 	}
 
-	private _sliceInlineDeltas(blockId: string, startOffset: number): Array<{ insert: string; attributes?: Record<string, unknown> }> { return sliceInlineDeltas(this._selectionCtx, blockId, startOffset); }
+	private _sliceInlineDeltas(
+		blockId: string,
+		startOffset: number,
+	): Array<{ insert: string; attributes?: Record<string, unknown> }> {
+		return sliceInlineDeltas(this._selectionCtx, blockId, startOffset);
+	}
 
-	private _buildMultiBlockTextReplacement(range: DocumentRange, insertedText: string): { ops: DocumentOp[]; caret: { blockId: string; offset: number } } { return buildMultiBlockTextReplacement(this._selectionCtx, range, insertedText); }
+	private _buildMultiBlockTextReplacement(
+		range: DocumentRange,
+		insertedText: string,
+	): { ops: DocumentOp[]; caret: { blockId: string; offset: number } } {
+		return buildMultiBlockTextReplacement(
+			this._selectionCtx,
+			range,
+			insertedText,
+		);
+	}
 
-	private _deleteMultiBlockTextRange(range: DocumentRange, options?: ApplyOptions): { blockId: string; offset: number } | null { return deleteMultiBlockTextRange(this._selectionCtx, range, options); }
+	private _deleteMultiBlockTextRange(
+		range: DocumentRange,
+		options?: ApplyOptions,
+	): { blockId: string; offset: number } | null {
+		return deleteMultiBlockTextRange(this._selectionCtx, range, options);
+	}
 
-	private _replaceMultiBlockTextRange(range: DocumentRange, text: string): { blockId: string; offset: number } { return replaceMultiBlockTextRange(this._selectionCtx, range, text); }
+	private _replaceMultiBlockTextRange(
+		range: DocumentRange,
+		text: string,
+	): { blockId: string; offset: number } {
+		return replaceMultiBlockTextRange(this._selectionCtx, range, text);
+	}
 
 	private _resolveBeforeApplyHooks(): ReadonlyArray<
 		(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
@@ -594,7 +822,6 @@ class EditorImpl implements Editor {
 			.filter((hook) => !registeredSet.has(hook));
 		return [...extras, ...registered];
 	}
-
 }
 
 export function createEditor(options?: CreateEditorOptions): Editor {

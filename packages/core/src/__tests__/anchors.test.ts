@@ -17,9 +17,14 @@ function createEditor() {
 	});
 }
 
-function seedText(editor: ReturnType<typeof createEditor>, text: string): string {
+function seedText(
+	editor: ReturnType<typeof createEditor>,
+	text: string,
+): string {
 	const blockId = editor.firstBlock()!.id;
-	editor.apply([{ type: "splice-text", blockId, from: 0, to: 0, insert: text }]);
+	editor.apply([
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: text },
+	]);
 	return blockId;
 }
 
@@ -81,10 +86,19 @@ describe("editor.anchors AN1", () => {
 			},
 		]);
 		const initial = editor.firstBlock()!.id;
-		editor.apply([{ type: "splice-text", blockId: initial, from: 0,
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId: initial,
+				from: 0,
 				to: 0,
-				insert: "gone" }]);
-		const anchor = editor.anchors.create({ blockId: initial, offset: 2 }, 1)!;
+				insert: "gone",
+			},
+		]);
+		const anchor = editor.anchors.create(
+			{ blockId: initial, offset: 2 },
+			1,
+		)!;
 		editor.apply([{ type: "delete-block", blockId: initial }]);
 		expect(editor.anchors.resolve(anchor)).toBeNull();
 		editor.destroy();
@@ -132,11 +146,16 @@ describe("editor.anchors AN6 AN11 AN12", () => {
 		};
 		expect(wire).toMatchObject({ v: 1, b: blockId, a: -1 });
 		expect(typeof wire.p).toBe("string");
-		const restored = editor.anchors.deserialize(editor.anchors.serialize(local))!;
+		const restored = editor.anchors.deserialize(
+			editor.anchors.serialize(local),
+		)!;
 		expect(restored.provenance).toBe("wire");
 		expect(restored.blockId).toBe(blockId);
 		expect(restored.assoc).toBe(-1);
-		expect(editor.anchors.resolve(restored)).toEqual({ blockId, offset: 2 });
+		expect(editor.anchors.resolve(restored)).toEqual({
+			blockId,
+			offset: 2,
+		});
 		editor.destroy();
 	});
 
@@ -155,8 +174,12 @@ describe("editor.anchors AN6 AN11 AN12", () => {
 		const editor = createEditor();
 		const blockId = seedText(editor, "round trip");
 		const anchor = editor.anchors.create({ blockId, offset: 5 }, 1)!;
-		const again = editor.anchors.deserialize(editor.anchors.serialize(anchor))!;
-		expect(editor.anchors.resolve(again)).toEqual(editor.anchors.resolve(anchor));
+		const again = editor.anchors.deserialize(
+			editor.anchors.serialize(anchor),
+		)!;
+		expect(editor.anchors.resolve(again)).toEqual(
+			editor.anchors.resolve(anchor),
+		);
 		editor.destroy();
 	});
 });
@@ -176,9 +199,9 @@ describe("editor.anchors AN8", () => {
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 2 });
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 2 });
 		expect(calls).toBe(1);
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "xx" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "xx" },
+		]);
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 4 });
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 4 });
 		expect(calls).toBe(2);
@@ -197,7 +220,9 @@ describe("editor.anchors AN9", () => {
 		for (let i = 0; i < 5000; i++) {
 			editor.anchors.create({ blockId, offset: 0 }, 1);
 		}
-		const budget = diagnostics.filter((event) => event.code === "anchor-budget");
+		const budget = diagnostics.filter(
+			(event) => event.code === "anchor-budget",
+		);
 		expect(budget).toHaveLength(1);
 		expect(typeof budget[0]?.site).toBe("string");
 		expect(String(budget[0]?.site)).toContain("anchors.test.ts");
@@ -211,7 +236,9 @@ describe("editor.anchors AN13", () => {
 		const editor = createEditor();
 		const blockId = seedText(editor, "hello world");
 		const local = editor.anchors.create({ blockId, offset: 6 }, 1)!;
-		const wire = editor.anchors.deserialize(editor.anchors.serialize(local))!;
+		const wire = editor.anchors.deserialize(
+			editor.anchors.serialize(local),
+		)!;
 		expect(local.provenance).toBe("local");
 		expect(wire.provenance).toBe("wire");
 		const undo = editor.internals.adapter.createUndoManager(
@@ -278,9 +305,9 @@ describe("editor.anchors AN10 table-cell cohort", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 1, col: 1 },
-			from: 0,
-			to: 0,
-			insert: "xx",
+				from: 0,
+				to: 0,
+				insert: "xx",
 			},
 		]);
 		expect(editor.anchors.resolve(insertAnchor)).toEqual({
@@ -293,9 +320,9 @@ describe("editor.anchors AN10 table-cell cohort", () => {
 				type: "splice-text",
 				blockId: "t1",
 				cell: { row: 1, col: 1 },
-			from: 3,
-			to: 7,
-			insert: "",
+				from: 3,
+				to: 7,
+				insert: "",
 			},
 		]);
 		expect(editor.anchors.resolve(deleteAnchor)).toEqual({
@@ -324,7 +351,9 @@ describe("editor.anchors AN10 table-cell cohort", () => {
 			p: string;
 		};
 		expect(wire).toMatchObject({ v: 1, b: "t1", a: -1, c: [0, 1] });
-		const restored = editor.anchors.deserialize(editor.anchors.serialize(local))!;
+		const restored = editor.anchors.deserialize(
+			editor.anchors.serialize(local),
+		)!;
 		expect(restored.provenance).toBe("wire");
 		expect(restored.cell).toEqual({ row: 0, col: 1 });
 		expect(editor.anchors.resolve(restored)).toEqual({

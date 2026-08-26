@@ -43,17 +43,6 @@ export function createOverlayLayer(options: OverlayLayerOptions): OverlayLayer {
 	return layer;
 }
 
-export function applyPaintPlan(layer: OverlayLayer, plan: PaintPlan): void {
-	layer.applyPaintPlan(plan);
-}
-
-export function onPaintPlan(
-	layer: OverlayLayer,
-	listener: (plan: PaintPlan) => void,
-): () => void {
-	return layer.onPaintPlan(listener);
-}
-
 function applyPaintPlanToElement(
 	layer: HTMLElement,
 	painted: Map<string, HTMLElement>,

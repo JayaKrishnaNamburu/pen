@@ -11,10 +11,7 @@ import {
 	logAutocompleteEvent,
 	previewAutocompleteTextForLog,
 } from "./autocompleteDebug";
-import {
-	buildAutocompleteAIRequest,
-	streamThroughEgress,
-} from "./aiEgress";
+import { buildAutocompleteAIRequest, streamThroughEgress } from "./aiEgress";
 import { AUTOCOMPLETE_REQUEST_MODE } from "./constants";
 import { buildAutocompleteMessages } from "./promptBuilder";
 import { createAutocompleteStructuredCandidate } from "./structuredCandidate";

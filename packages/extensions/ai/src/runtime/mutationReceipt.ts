@@ -67,5 +67,7 @@ function buildMutationEvidence(
 }
 
 function readBlockId(op: DocumentOp): string | null {
-	return "blockId" in op && typeof op.blockId === "string" ? op.blockId : null;
+	return "blockId" in op && typeof op.blockId === "string"
+		? op.blockId
+		: null;
 }

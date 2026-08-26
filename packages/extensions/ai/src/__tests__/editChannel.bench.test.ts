@@ -107,7 +107,9 @@ function firstFeedbackMs(
 		firstDocumentChangeMs,
 		debug?.firstVisibleTextMs ?? null,
 		debug?.firstToolResultMs ?? null,
-	].filter((value): value is number => value != null && Number.isFinite(value));
+	].filter(
+		(value): value is number => value != null && Number.isFinite(value),
+	);
 	if (candidates.length === 0) {
 		return wallMs > 0 ? wallMs : null;
 	}
@@ -179,7 +181,10 @@ function proseModel(): { adapter: ModelAdapter; passes: () => number } {
 	const adapter: ModelAdapter = {
 		async *stream() {
 			passes += 1;
-			yield { type: "text-delta", delta: OFF_CONTRACT_OUTPUT } as ModelStreamEvent;
+			yield {
+				type: "text-delta",
+				delta: OFF_CONTRACT_OUTPUT,
+			} as ModelStreamEvent;
 			yield { type: "done" } as ModelStreamEvent;
 		},
 	};
@@ -219,9 +224,12 @@ async function runOnce(options: {
 		}
 	});
 
-	const generation = await getAIController(editor)!.runPrompt(options.prompt, {
-		target: "document",
-	});
+	const generation = await getAIController(editor)!.runPrompt(
+		options.prompt,
+		{
+			target: "document",
+		},
+	);
 	const wallMs = performance.now() - started;
 	unsubscribe();
 
@@ -272,46 +280,50 @@ describe("edit channel corpus bench (GATE 0.14)", () => {
 		"runs the tool channel on the full corpus plus the off-contract control",
 		{ timeout: 60_000 },
 		async () => {
-		const rows: BenchRow[] = [];
+			const rows: BenchRow[] = [];
 
-		for (const channel of CHANNELS) {
-			for (const entry of EDIT_CHANNEL_CORPUS) {
+			for (const channel of CHANNELS) {
+				for (const entry of EDIT_CHANNEL_CORPUS) {
+					rows.push(
+						await runOnce({
+							channel,
+							promptId: entry.id,
+							prompt: entry.prompt,
+							knownWeak: entry.knownWeak,
+							kind: "corpus",
+							corpusId: entry.id,
+						}),
+					);
+				}
 				rows.push(
 					await runOnce({
 						channel,
-						promptId: entry.id,
-						prompt: entry.prompt,
-						knownWeak: entry.knownWeak,
-						kind: "corpus",
-						corpusId: entry.id,
+						promptId: "off-contract",
+						prompt: OFF_CONTRACT_PROMPT,
+						kind: "off-contract",
 					}),
 				);
 			}
-			rows.push(
-				await runOnce({
-					channel,
-					promptId: "off-contract",
-					prompt: OFF_CONTRACT_PROMPT,
-					kind: "off-contract",
-				}),
+
+			const toolCorpus = rows.filter(
+				(row) =>
+					row.channel === "tool" && row.promptId !== "off-contract",
 			);
-		}
+			expect(toolCorpus.map((row) => row.promptId)).toEqual(
+				EDIT_CHANNEL_CORPUS.map((entry) => entry.id),
+			);
+			expect(
+				toolCorpus.some(
+					(row) => row.promptId === "p9" && row.knownWeak,
+				),
+			).toBe(true);
 
-		const toolCorpus = rows.filter(
-			(row) => row.channel === "tool" && row.promptId !== "off-contract",
-		);
-		expect(toolCorpus.map((row) => row.promptId)).toEqual(
-			EDIT_CHANNEL_CORPUS.map((entry) => entry.id),
-		);
-		expect(toolCorpus.some((row) => row.promptId === "p9" && row.knownWeak)).toBe(
-			true,
-		);
-
-		const toolControl = rows.find(
-			(row) => row.channel === "tool" && row.promptId === "off-contract",
-		)!;
-		expect(toolControl.documentChanged).toBe(false);
-		expect(toolControl.wrongEdit).toBe(false);
+			const toolControl = rows.find(
+				(row) =>
+					row.channel === "tool" && row.promptId === "off-contract",
+			)!;
+			expect(toolControl.documentChanged).toBe(false);
+			expect(toolControl.wrongEdit).toBe(false);
 		},
 	);
 });

@@ -28,8 +28,7 @@ export function resolveMutationMode(
 		return "streaming-suggestions";
 	}
 	if (
-		(input.surface === "bottom-chat" ||
-			input.surface === "inline-edit") &&
+		(input.surface === "bottom-chat" || input.surface === "inline-edit") &&
 		input.lane === "cursor-context"
 	) {
 		return "streaming-suggestions";
@@ -57,15 +56,9 @@ export function shouldStreamDirectAIOutput(options: {
 	contentFormat: AIContentFormat;
 	target: "selection" | "block";
 }): boolean {
-	if (
-		options.target === "block" &&
-		options.contentFormat === "markdown"
-	) {
+	if (options.target === "block" && options.contentFormat === "markdown") {
 		return false;
 	}
 
-	return (
-		options.mutationMode === "direct-stream" ||
-		options.mutationMode === "ephemeral-preview"
-	);
+	return options.mutationMode === "direct-stream";
 }

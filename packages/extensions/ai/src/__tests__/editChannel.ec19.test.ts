@@ -141,7 +141,9 @@ async function waitUntil(predicate: () => boolean): Promise<void> {
 			setTimeout(resolve, 0);
 		});
 	}
-	throw new Error("Timed out waiting for generation to enter the model stream");
+	throw new Error(
+		"Timed out waiting for generation to enter the model stream",
+	);
 }
 
 describe("EC19: the review posture is a live setting", () => {

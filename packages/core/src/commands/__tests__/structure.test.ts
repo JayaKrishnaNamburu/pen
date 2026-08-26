@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	deleteBlock,
-	duplicateBlock,
-	moveBlockDown,
-	moveBlockUp,
-} from "..";
+import { deleteBlock, duplicateBlock, moveBlockDown, moveBlockUp } from "..";
 import { caretOf, createCommandEditor, createCommandHarness } from "./fixture";
 
 function blockOrder(editor: ReturnType<typeof createCommandEditor>): string[] {

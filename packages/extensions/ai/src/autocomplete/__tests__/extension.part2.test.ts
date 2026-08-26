@@ -1,19 +1,12 @@
-import {
-	describe,
-	expect,
-	it } from "vitest";
-import {
-	createEditor,
-	getInlineCompletionController
-	} from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY
-} from "@input/pen-types";
+import { describe, expect, it } from "vitest";
+import { createEditor, getInlineCompletionController } from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
-	getAutocompleteController
+	getAutocompleteController,
 } from "../index";
 
 async function waitForCondition(
@@ -37,18 +30,22 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false
+			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: " world from pen" };
+							yield {
+								type: "text-delta" as const,
+								delta: " world from pen",
+							};
 							yield { type: "done" as const };
-						}
-					}
+						},
+					},
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -60,18 +57,19 @@ describe("@input/pen-ai/autocomplete", () => {
 						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
-					}
+					},
 				}),
-			]
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -88,13 +86,15 @@ describe("@input/pen-ai/autocomplete", () => {
 		);
 
 		expect(controller?.acceptVisibleSuggestion()).toBe(true);
-		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world from pen");
+		expect(editor.getBlock(blockId)?.textContent()).toBe(
+			"Hello world from pen",
+		);
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			focus: {
 				blockId,
-				offset: 20
-			}
+				offset: 20,
+			},
 		});
 		expect(inlineCompletion?.getState().visibleSuggestion).toBeNull();
 		editor.destroy();
@@ -106,44 +106,56 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false
+			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: " world!" };
+							yield {
+								type: "text-delta" as const,
+								delta: " world!",
+							};
 							yield { type: "done" as const };
-						}
-					}
+						},
+					},
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
-					}
+					},
 				}),
-			]
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
+		]);
 		editor.selectText(blockId, 5, 5);
 
 		const controller = getAutocompleteController(editor);
 		const inlineCompletion = getInlineCompletionController(editor);
 		expect(controller?.request({ explicit: true })).toBe(true);
 		await waitForCondition(
-			() => inlineCompletion?.getState().visibleSuggestion?.text === " world!",
+			() =>
+				inlineCompletion?.getState().visibleSuggestion?.text ===
+				" world!",
 		);
 
 		expect(inlineCompletion?.buildDecorations()).toEqual(
@@ -154,8 +166,8 @@ describe("@input/pen-ai/autocomplete", () => {
 					from: 4,
 					to: 5,
 					attributes: expect.objectContaining({
-						"data-suggestion-placement": "after"
-					})
+						"data-suggestion-placement": "after",
+					}),
 				}),
 			]),
 		);
@@ -169,37 +181,53 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false
+			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: "today, with more detail" };
+							yield {
+								type: "text-delta" as const,
+								delta: "today, with more detail",
+							};
 							yield { type: "done" as const };
-						}
-					}
+						},
+					},
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
-					}
+					},
 				}),
-			]
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello there" }]);
+				insert: "Hello there",
+			},
+		]);
 		editor.selectText(blockId, 11, 11);
 
 		const controller = getAutocompleteController(editor);
@@ -220,44 +248,56 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false
+			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: "nd timeline" };
+							yield {
+								type: "text-delta" as const,
+								delta: "nd timeline",
+							};
 							yield { type: "done" as const };
-						}
-					}
+						},
+					},
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
-					}
+					},
 				}),
-			]
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "a" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "a" },
+		]);
 		editor.selectText(blockId, 1, 1);
 
 		const controller = getAutocompleteController(editor);
 		const inlineCompletion = getInlineCompletionController(editor);
 		expect(controller?.request({ explicit: true })).toBe(true);
 		await waitForCondition(
-			() => inlineCompletion?.getState().visibleSuggestion?.text === "nd timeline",
+			() =>
+				inlineCompletion?.getState().visibleSuggestion?.text ===
+				"nd timeline",
 		);
 
 		editor.destroy();
@@ -269,37 +309,50 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false
+			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: "go" };
 							yield { type: "done" as const };
-						}
-					}
+						},
+					},
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
-					}
+					},
 				}),
-			]
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello there" }]);
+				insert: "Hello there",
+			},
+		]);
 		editor.selectText(blockId, 11, 11);
 
 		const controller = getAutocompleteController(editor);
@@ -319,50 +372,64 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false
+			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					acceptanceStrategy: "full",
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: " world from pen" };
+							yield {
+								type: "text-delta" as const,
+								delta: " world from pen",
+							};
 							yield { type: "done" as const };
-						}
-					}
+						},
+					},
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
-					}
+					},
 				}),
-			]
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
+		]);
 		editor.selectText(blockId, 5, 5);
 
 		const controller = getAutocompleteController(editor);
 		const inlineCompletion = getInlineCompletionController(editor);
 		expect(controller?.request({ explicit: true })).toBe(true);
 		await waitForCondition(
-			() => inlineCompletion?.getState().visibleSuggestion?.text === " world from pen",
+			() =>
+				inlineCompletion?.getState().visibleSuggestion?.text ===
+				" world from pen",
 		);
 
 		expect(controller?.getState().settings.acceptanceStrategy).toBe("full");
 		expect(controller?.acceptVisibleSuggestion()).toBe(true);
-		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world from pen");
+		expect(editor.getBlock(blockId)?.textContent()).toBe(
+			"Hello world from pen",
+		);
 		expect(inlineCompletion?.getState().visibleSuggestion).toBeNull();
 		expect(controller?.getState().metrics.acceptCount).toBe(1);
 
@@ -375,37 +442,47 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false
+			isComposing: false,
 		};
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				autocompleteExtension({
 					debounceMs: 10,
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: " world from pen" };
+							yield {
+								type: "text-delta" as const,
+								delta: " world from pen",
+							};
 							yield { type: "done" as const };
-						}
-					}
+						},
+					},
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							fieldEditor,
+						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(
+							FIELD_EDITOR_SLOT_KEY,
+							null,
+						);
 						activeEditor = null;
-					}
+					},
 				}),
-			]
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
+		]);
 		editor.selectText(blockId, 5, 5);
 
 		const controller = getAutocompleteController(editor);
@@ -416,11 +493,12 @@ describe("@input/pen-ai/autocomplete", () => {
 		editor.selectText(blockId, 5, 5);
 
 		await waitForCondition(
-			() => inlineCompletion?.getState().visibleSuggestion?.text === " world from pen",
+			() =>
+				inlineCompletion?.getState().visibleSuggestion?.text ===
+				" world from pen",
 		);
 		expect(controller?.getState().metrics.successCount).toBe(1);
 
 		editor.destroy();
 	});
-
 });

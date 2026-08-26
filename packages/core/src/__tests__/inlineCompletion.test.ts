@@ -15,14 +15,23 @@ const noDefaultExtensionsPreset = {
 
 describe("inline completion decorations", () => {
 	it("marks the suggestion block while an inline suggestion is visible", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const blockId = editor.firstBlock()!.id;
 		const inlineCompletion = ensureInlineCompletionController(editor);
 
 		try {
-			editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }]);
+			editor.apply([
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello",
+				},
+			]);
 			inlineCompletion.controller.showSuggestion({
 				id: "suggestion-1",
 				blockId,
@@ -54,7 +63,10 @@ describe("inline completion decorations", () => {
 	});
 
 	it("keeps a block marker for block suggestions without inline anchors", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const blockId = editor.firstBlock()!.id;
 		const inlineCompletion = ensureInlineCompletionController(editor);
 

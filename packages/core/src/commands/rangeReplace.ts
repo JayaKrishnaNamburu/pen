@@ -1,6 +1,7 @@
 import type {
 	DocumentOp,
 	Editor,
+	Point,
 	StructuralOriginTag,
 	TextSelection,
 } from "@input/pen-types";
@@ -10,10 +11,7 @@ import {
 	spliceInsertOp,
 } from "../ops/recipes";
 import { isEditableTextBlock } from "./commandBlockContext";
-import {
-	documentOrderedTextPoints,
-	type Point,
-} from "./commandSelection";
+import { documentOrderedTextPoints } from "./commandSelection";
 
 export type RangeReplaceResult = {
 	ops: DocumentOp[];
@@ -248,12 +246,18 @@ function replaceMixedBoundaryRange(
 		ops.push(spliceInsertOp(caret.blockId, caret.offset, text, marks));
 		return {
 			ops,
-			caret: { blockId: caret.blockId, offset: caret.offset + text.length },
+			caret: {
+				blockId: caret.blockId,
+				offset: caret.offset + text.length,
+			},
 		};
 	}
 	return { ops, caret };
 }
 
-function coversStructuralBlock(startOffset: number, endOffset: number): boolean {
+function coversStructuralBlock(
+	startOffset: number,
+	endOffset: number,
+): boolean {
 	return startOffset <= 0 && endOffset >= 1;
 }

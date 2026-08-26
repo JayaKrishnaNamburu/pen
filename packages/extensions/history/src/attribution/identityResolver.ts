@@ -82,12 +82,13 @@ export function resolvePresenceDisplayHint(
 }
 
 function readHostResolver(editor: Editor): ResolveHistoryAuthor | undefined {
-	return (
-		editor.facet(historyControllerFacet) as HistoryController | null
-	)?.resolveAuthor;
+	return (editor.facet(historyControllerFacet) as HistoryController | null)
+		?.resolveAuthor;
 }
 
-function toVerifiedAuthor(identity: HistoryAuthorIdentity): VerifiedHistoryAuthor {
+function toVerifiedAuthor(
+	identity: HistoryAuthorIdentity,
+): VerifiedHistoryAuthor {
 	return {
 		verified: true,
 		id: identity.id,

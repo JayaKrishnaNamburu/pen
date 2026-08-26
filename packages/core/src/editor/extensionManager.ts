@@ -209,7 +209,9 @@ export class ExtensionManagerImpl {
 		for (const source of editor.facet(decorationsFacet)) {
 			try {
 				const set =
-					typeof source === "function" ? source(state, editor) : source;
+					typeof source === "function"
+						? source(state, editor)
+						: source;
 				if (set && set.decorations.length > 0) {
 					sets.push(set);
 				}

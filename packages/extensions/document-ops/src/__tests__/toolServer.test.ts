@@ -10,11 +10,7 @@ describe("@input/pen-document-ops ToolRuntimeImpl", () => {
 		const runtime = new ToolRuntimeImpl();
 
 		await expect(
-			runtime.executeTool(
-				"missing_tool",
-				{},
-				{} as never,
-			),
+			runtime.executeTool("missing_tool", {}, {} as never),
 		).rejects.toThrow('Unknown tool: "missing_tool"');
 	});
 

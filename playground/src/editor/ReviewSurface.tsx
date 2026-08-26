@@ -1,5 +1,5 @@
-import type { PersistentSuggestion, StructuralReviewItem } from "@input/pen-ai";
-import { useAIActions, useGeneration, useSuggestions } from "@input/pen-react";
+import type { PersistentSuggestion } from "@input/pen-ai";
+import { useAIActions, useSuggestions } from "@input/pen-react";
 import type { Editor } from "@input/pen-types";
 import type { MouseEvent, ReactNode } from "react";
 import { Badge } from "../ui/Badge";
@@ -22,13 +22,6 @@ const ACTION_LABELS = {
 	"format-text": "Format",
 } as const satisfies Record<PersistentSuggestion["action"], string>;
 
-const REVIEW_KIND_LABELS = {
-	added: "Add",
-	removed: "Remove",
-	updated: "Update",
-	moved: "Move",
-} as const satisfies Record<StructuralReviewItem["changeKind"], string>;
-
 /**
  * Hosts the document review bar.
  *
@@ -38,14 +31,9 @@ const REVIEW_KIND_LABELS = {
  */
 export function ReviewSurface({ editor, children }: ReviewSurfaceProps) {
 	const suggestions = useSuggestions(editor);
-	const generation = useGeneration(editor);
 	const aiActions = useAIActions(editor);
 
-	const reviewItems = generation?.reviewItems ?? [];
-	const reviewActionsEnabled =
-		generation?.status !== "streaming" &&
-		generation?.planState === "validated";
-	const pendingCount = suggestions.length + reviewItems.length;
+	const pendingCount = suggestions.length;
 	const orderedSuggestions = sortSuggestionsByDocumentOrder(
 		editor,
 		suggestions,
@@ -53,16 +41,10 @@ export function ReviewSurface({ editor, children }: ReviewSurfaceProps) {
 
 	function acceptAll() {
 		aiActions.acceptAllSuggestions();
-		if (reviewItems.length > 0 && reviewActionsEnabled) {
-			aiActions.acceptReviewItems(reviewItems.map((item) => item.id));
-		}
 	}
 
 	function rejectAll() {
 		aiActions.rejectAllSuggestions();
-		if (reviewItems.length > 0 && reviewActionsEnabled) {
-			aiActions.rejectReviewItems(reviewItems.map((item) => item.id));
-		}
 	}
 
 	const suggestionRows = orderedSuggestions.map((suggestion) => (
@@ -90,28 +72,6 @@ export function ReviewSurface({ editor, children }: ReviewSurfaceProps) {
 		/>
 	));
 
-	const reviewRows = reviewItems.map((item) => (
-		<ReviewChangeRow
-			key={item.id}
-			badge={REVIEW_KIND_LABELS[item.changeKind]}
-			badgeColor={
-				item.changeKind === "removed"
-					? "var(--palette-b40)"
-					: "var(--palette-purple)"
-			}
-			where={item.groupLabel}
-			summary={item.summary || item.label}
-			acceptEnabled={reviewActionsEnabled}
-			rejectEnabled={reviewActionsEnabled}
-			onAccept={() => {
-				aiActions.acceptReviewItem(item.id);
-			}}
-			onReject={() => {
-				aiActions.rejectReviewItem(item.id);
-			}}
-		/>
-	));
-
 	const reviewBar =
 		pendingCount > 0 ? (
 			<div className="review-bar">
@@ -129,10 +89,7 @@ export function ReviewSurface({ editor, children }: ReviewSurfaceProps) {
 					</Button>
 				</div>
 				<div className="review-change-list">
-					<ScrollArea>
-						{suggestionRows}
-						{reviewRows}
-					</ScrollArea>
+					<ScrollArea>{suggestionRows}</ScrollArea>
 				</div>
 			</div>
 		) : null;
@@ -150,8 +107,6 @@ interface ReviewChangeRowProps {
 	badgeColor: string;
 	where: string;
 	summary: string;
-	acceptEnabled?: boolean;
-	rejectEnabled?: boolean;
 	onAccept: () => void;
 	onReject: () => void;
 }
@@ -161,8 +116,6 @@ function ReviewChangeRow({
 	badgeColor,
 	where,
 	summary,
-	acceptEnabled = true,
-	rejectEnabled = true,
 	onAccept,
 	onReject,
 }: ReviewChangeRowProps) {
@@ -177,7 +130,6 @@ function ReviewChangeRow({
 				<Button
 					kind="faded"
 					size="sm"
-					disabled={!rejectEnabled}
 					onMouseDown={preventEditorBlur}
 					onClick={onReject}
 				>
@@ -186,7 +138,6 @@ function ReviewChangeRow({
 				<Button
 					kind="primary"
 					size="sm"
-					disabled={!acceptEnabled}
 					onMouseDown={preventEditorBlur}
 					onClick={onAccept}
 				>

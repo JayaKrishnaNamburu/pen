@@ -66,7 +66,10 @@ describe("ops primitives PR1–PR10", () => {
 				blockId,
 				from: 1,
 				to: 1,
-				insert: { nodeType: "mention", props: { id: "1", label: "Ada" } },
+				insert: {
+					nodeType: "mention",
+					props: { id: "1", label: "Ada" },
+				},
 			},
 		]);
 		expect(editor.getBlock(blockId)!.length()).toBe(3);
@@ -131,7 +134,9 @@ describe("ops primitives PR1–PR10", () => {
 			},
 		]);
 		expect(editor.getBlock(blockId)!.textContent()).toBe("Hi");
-		expect(editor.getBlock(blockId)!.textDeltas()).toEqual([{ insert: "Hi" }]);
+		expect(editor.getBlock(blockId)!.textDeltas()).toEqual([
+			{ insert: "Hi" },
+		]);
 		editor.destroy();
 	});
 

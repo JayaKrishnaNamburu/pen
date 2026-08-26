@@ -180,9 +180,9 @@ export class DomScheduler {
 	private flush(): void {
 		this._projectedThisFlush = false;
 		// Collect: commits since the last flush, the current selection
-		// record, and pending read/write queues. Wave 2 will drive
-		// acceptCommit from CommitEvent batches; this module only stores
-		// what callers feed it.
+		// record, and pending read/write queues. The field editor feeds
+		// acceptCommit for every commit on its editor; this module only
+		// stores what callers feed it.
 		this._collect = {
 			commits: this.pendingCommits,
 			selection: this.selection,

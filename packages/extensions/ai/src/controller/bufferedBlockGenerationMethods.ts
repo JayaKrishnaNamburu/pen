@@ -1,4 +1,4 @@
-import type { AIApplyStrategy, AIContentFormat } from "../runtime/contracts";
+import type { AIContentFormat } from "../runtime/contracts";
 import { normalizeFlowMarkdownOutput } from "../runtime/flowMarkdown";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type {
@@ -7,18 +7,17 @@ import type {
 	GenerationState,
 } from "../types";
 import { aiGroupedApplyOptions } from "../helpers";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 
 export const bufferedBlockGenerationMethods = {
 	_commitBufferedBlockGeneration(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		blockId: string,
 		text: string,
 		mutationMode: NonNullable<GenerationState["mutationMode"]>,
 		contentFormat: AIContentFormat,
 		sessionId?: string,
 		options?: {
-			applyStrategy?: AIApplyStrategy;
 			insertionOffset?: number;
 			workingSet?: AIWorkingSetEnvelope | null;
 			replaceTargetBlock?: boolean;
@@ -39,7 +38,7 @@ export const bufferedBlockGenerationMethods = {
 				: [];
 		if (contentFormat === "markdown" && scopedReplaceBlockIds.length > 0) {
 			if (normalizedText.trim().length > 0) {
-				const verification = this._verifyMarkdownFastApplyResult(
+				const verification = this._verifyMarkdownCommitResult(
 					scopedReplaceBlockIds,
 					normalizedText,
 				);
@@ -59,19 +58,18 @@ export const bufferedBlockGenerationMethods = {
 				scopedReplaceBlockIds,
 				normalizedText,
 			);
-			const scopedReplacementFallback =
-				this._summarizeFastApplyFallbackOps(
-					"scoped-replacement",
-					ops,
-					scopedReplaceBlockIds.length,
-				);
+			const scopedReplacementFallback = this._summarizeCommitFallbackOps(
+				"scoped-replacement",
+				ops,
+				scopedReplaceBlockIds.length,
+			);
 			if (
 				mutationMode === "persistent-suggestions" ||
 				mutationMode === "streaming-suggestions" ||
 				mutationMode === "staged-review"
 			) {
 				this._applySuggestedAIOps(ops, sessionId);
-				this._recordFastApplyDebug({
+				this._recordCommitDebug({
 					executionPath: "scoped-replacement",
 					fallback: scopedReplacementFallback,
 				});
@@ -85,9 +83,11 @@ export const bufferedBlockGenerationMethods = {
 			}
 			this._editor.apply(
 				ops,
-				aiGroupedApplyOptions(this._state.activeGeneration?.undoGroupId),
+				aiGroupedApplyOptions(
+					this._state.activeGeneration?.undoGroupId,
+				),
 			);
-			this._recordFastApplyDebug({
+			this._recordCommitDebug({
 				executionPath: "scoped-replacement",
 				fallback: scopedReplacementFallback,
 			});

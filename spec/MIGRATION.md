@@ -903,7 +903,7 @@ const range = selectionToRange(editor.internals.doc, sel);
 
 ## the S4 waiver timer
 
-**Not yet shipped.** The three S4 waivers (`contenteditableBackendSelection.ts` / `scheduleActiveDOMMatchCheck`, react `inlineAtomSelectionInteraction.ts`, react `useSelectionToolbar.ts`) are resolved with a no-Pen-code browser probe, after which the timer and its allowlist `entries` are deleted. Hosts never imported these; there is no host replacement. An investigation that concludes a timer is required becomes an S4 spec amendment, not a renewed waiver.
+**Not yet shipped.** The three S4 waivers (`contenteditableBackend.ts` / `scheduleActiveDOMMatchCheck`, react `inlineAtomSelectionInteraction.ts`, react `useSelectionToolbar.ts`) are resolved with a no-Pen-code browser probe, after which the timer and its allowlist `entries` are deleted. Hosts never imported these; there is no host replacement. An investigation that concludes a timer is required becomes an S4 spec amendment, not a renewed waiver.
 
 ---
 
@@ -1096,13 +1096,34 @@ One capability is removed rather than replaced: previews of a partially-arrived 
 
 ## `AIApplyStrategy` and `AI_APPLY_STRATEGIES`
 
-**Not yet shipped.** UC5 folds the strategy vocabulary into a mutation preference. Hosts that passed `applyStrategy` will pass a mutation preference; the surviving streaming-generation strategies are renamed in the same fold, so their string values change too.
+**Shipped 2026-08-26 (v5 wave 3, UC5).** The strategy vocabulary is gone. Durable edits arrive as `edit_document` tool calls (`editsArriveAsToolCalls` on the route); streaming generation is selected by `target` and `contentFormat`. Hosts that passed `applyStrategy` pass a mutation preference (`suggestions` | `direct`) instead.
 
 ---
 
 ## `getBlockRevision`
 
-**Not yet shipped.** UC4 leaves one staleness authority. The per-block revision counter leaves edit gating and tool payloads; working-set view fingerprints are what a mutating tool consults. Hosts that echoed a revision from a tool payload read the fingerprint instead.
+**Shipped 2026-08-26 (v5 wave 3, UC4).** The per-block revision counter left AI edit gating and tool payloads. Working-set view fingerprints are what a mutating tool consults. Hosts that echoed a revision from a tool payload read the fingerprint instead.
+
+---
+
+## The `fastApply` debug and metrics names
+
+**Shipped 2026-08-26 (v5 wave 3, UC5).** These carried the name of the XML channel deleted in wave 1. They are renamed, not removed — the behavior is unchanged, and the new name is `commit`, which is what this codebase calls turning generated text into document ops.
+
+| Before                       | After                       |
+| ---------------------------- | --------------------------- |
+| `FastApplyDebugState`        | `CommitDebugState`          |
+| `FastApplyFallbackMetrics`   | `CommitFallbackMetrics`     |
+| `AISessionFastApplyMetrics`  | `AISessionCommitMetrics`    |
+| `AIDebugLogFastApplyMetrics` | `AIDebugLogCommitMetrics`   |
+| `AISessionMetrics.fastApply` | `AISessionMetrics.commit`   |
+| generation debug `fastApply` | generation debug `commit`   |
+| `nativeFastApplyCount`       | `selectionReplacementCount` |
+| `"native-fast-apply"`        | `"selection-replacement"`   |
+
+`CommitDebugState` also drops `confidence`, `verificationFailureReason`, and `untouchedBlockMutationCount`. No code wrote them, so a host reading them was reading `undefined`.
+
+Two of these are **wire-visible**: the document-write telemetry surfaces `ai-markdown-fast-apply` and `ai-markdown-fast-apply-verify` are now `ai-markdown-commit` and `ai-markdown-commit-verify`. A host filtering commit telemetry on the old surface strings sees no events rather than an error, so update the strings even though nothing fails to compile.
 
 ---
 

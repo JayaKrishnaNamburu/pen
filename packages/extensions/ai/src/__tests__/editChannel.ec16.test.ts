@@ -38,7 +38,10 @@ function toolNames(tools: readonly ToolSchema[] | undefined): string[] {
 }
 
 function capturingModel(
-	eventsForPass: (pass: number, request: CapturedRequest) => ModelStreamEvent[],
+	eventsForPass: (
+		pass: number,
+		request: CapturedRequest,
+	) => ModelStreamEvent[],
 ): { adapter: ModelAdapter; captured: () => CapturedRequest[] } {
 	const captured: CapturedRequest[] = [];
 	const adapter: ModelAdapter = {
@@ -72,7 +75,6 @@ function annotatedWorkingSet() {
 		source: "document-summary" as const,
 		context: ANNOTATED_CONTEXT,
 		trackedBlockIds: ["title", "closing"],
-		blockRevisions: {},
 		selectionSignature: null,
 	};
 }
@@ -84,7 +86,6 @@ function unannotatedWorkingSet() {
 		source: "document-summary" as const,
 		context: "A document with no block annotations.",
 		trackedBlockIds: [] as string[],
-		blockRevisions: {},
 		selectionSignature: null,
 	};
 }
@@ -101,7 +102,7 @@ describe("EC16: every pass pays for the tools it is offered", () => {
 			toolRuntime,
 			prompt: "Shorten the closing paragraph.",
 			blockId: editor.firstBlock()!.id,
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			allowedMutatingTools: ["edit_document"],
 			workingSet: annotatedWorkingSet(),
 		});
@@ -122,7 +123,7 @@ describe("EC16: every pass pays for the tools it is offered", () => {
 			toolRuntime,
 			prompt: "Read the document, then edit.",
 			blockId: editor.firstBlock()!.id,
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			allowedMutatingTools: ["edit_document"],
 			workingSet: unannotatedWorkingSet(),
 		});
@@ -206,7 +207,7 @@ describe("EC16: every pass pays for the tools it is offered", () => {
 			toolRuntime,
 			prompt: "Rewrite the closing paragraph.",
 			blockId: editor.firstBlock()!.id,
-			applyStrategy: "tool-edit",
+			editsArriveAsToolCalls: true,
 			allowedMutatingTools: ["edit_document"],
 			workingSet: annotatedWorkingSet(),
 		});
@@ -215,8 +216,12 @@ describe("EC16: every pass pays for the tools it is offered", () => {
 		expect(captured()).toHaveLength(2);
 		expect(captured()[0]?.tools).toEqual([...ANNOTATED_EDIT_TOOL_NAMES]);
 		expect(captured()[1]?.tools).toEqual([...ANNOTATED_EDIT_TOOL_NAMES]);
-		expect(JSON.stringify(captured()[1]?.messages)).toContain("unknown-block");
-		expect(editor.getBlock("closing")?.textContent()).toBe("Corrected closing.");
+		expect(JSON.stringify(captured()[1]?.messages)).toContain(
+			"unknown-block",
+		);
+		expect(editor.getBlock("closing")?.textContent()).toBe(
+			"Corrected closing.",
+		);
 
 		editor.destroy();
 	});

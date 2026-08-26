@@ -80,8 +80,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "#",
+					to: 0,
+					insert: "#",
 				},
 			],
 			{ origin: "user" },
@@ -93,8 +93,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 1,
-				to: 1,
-				insert: " ",
+					to: 1,
+					insert: " ",
 				},
 			],
 			{ origin: "user" },
@@ -118,8 +118,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "**hello*",
+					to: 0,
+					insert: "**hello*",
 				},
 			],
 			{ origin: "user" },
@@ -130,8 +130,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 8,
-				to: 8,
-				insert: "*",
+					to: 8,
+					insert: "*",
 				},
 			],
 			{ origin: "user" },
@@ -164,15 +164,17 @@ describe("inputRulesExtension editor activation", () => {
 					handler: (_match, ctx) => {
 						fires += 1;
 						if (fires > 8) {
-							throw new Error("input rule rematched its own output");
+							throw new Error(
+								"input rule rematched its own output",
+							);
 						}
 						return [
 							{
 								type: "splice-text",
 								blockId: ctx.blockId,
 								from: ctx.fullText.length + 1,
-				to: ctx.fullText.length + 1,
-				insert: " ",
+								to: ctx.fullText.length + 1,
+								insert: " ",
 							},
 						];
 					},
@@ -188,8 +190,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "!",
+					to: 0,
+					insert: "!",
 				},
 			],
 			{ origin: "user" },
@@ -201,8 +203,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 1,
-				to: 1,
-				insert: " ",
+					to: 1,
+					insert: " ",
 				},
 			],
 			{ origin: "user" },
@@ -210,7 +212,9 @@ describe("inputRulesExtension editor activation", () => {
 		await flushMicrotasks();
 
 		expect(fires).toBe(1);
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("!  ");
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+			"!  ",
+		);
 
 		editor.destroy();
 	});
@@ -227,8 +231,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "#",
+					to: 0,
+					insert: "#",
 				},
 			],
 			{ origin: "input-rule" },
@@ -240,8 +244,8 @@ describe("inputRulesExtension editor activation", () => {
 					type: "splice-text",
 					blockId,
 					from: 1,
-				to: 1,
-				insert: " ",
+					to: 1,
+					insert: " ",
 				},
 			],
 			{ origin: "input-rule" },

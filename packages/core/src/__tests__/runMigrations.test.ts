@@ -100,8 +100,8 @@ describe("runMigrations (DUR4)", () => {
 							type: "splice-text",
 							blockId,
 							from: editor.getBlock(blockId)!.length(),
-				to: editor.getBlock(blockId)!.length(),
-				insert: "gone",
+							to: editor.getBlock(blockId)!.length(),
+							insert: "gone",
 						},
 					]);
 					throw new Error("migration failed");
@@ -164,8 +164,8 @@ describe("runMigrations (DUR4)", () => {
 						type: "splice-text",
 						blockId,
 						from: 0,
-				to: 0,
-				insert: "x",
+						to: 0,
+						insert: "x",
 					};
 					nextEditor.apply([op]);
 				},

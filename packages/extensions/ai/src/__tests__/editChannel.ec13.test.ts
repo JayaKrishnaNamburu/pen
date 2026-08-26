@@ -3,7 +3,11 @@ import { createEditor } from "@input/pen-core";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
 import { undoExtension } from "@input/pen-undo";
-import type { CommitEvent, ModelAdapter, ModelStreamEvent } from "@input/pen-types";
+import type {
+	CommitEvent,
+	ModelAdapter,
+	ModelStreamEvent,
+} from "@input/pen-types";
 import { aiExtension, getAIController } from "../index";
 import { isAIToolCallDenied } from "../tools";
 import { deltaStreamExtension } from "../stream";

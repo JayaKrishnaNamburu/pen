@@ -49,8 +49,8 @@ export const defaultBlockRules: InputRule[] = [
 					type: "splice-text",
 					blockId: ctx.blockId,
 					from: 0,
-				to: 0 + match[0].length,
-				insert: "",
+					to: 0 + match[0].length,
+					insert: "",
 				},
 				{
 					type: "set-props",
@@ -104,7 +104,9 @@ export const defaultBlockRules: InputRule[] = [
 		handler: (match, ctx) => {
 			const raw = (match[1] ?? "info").toLowerCase();
 			const severity = CALLOUT_SEVERITY_MAP[raw] ?? "info";
-			return convertBlockOps(ctx, "callout", match[0].length, { severity });
+			return convertBlockOps(ctx, "callout", match[0].length, {
+				severity,
+			});
 		},
 	},
 ];
@@ -130,8 +132,8 @@ function convertBlockOps(
 			type: "splice-text",
 			blockId: ctx.blockId,
 			from: 0,
-				to: 0 + deleteLength,
-				insert: "",
+			to: 0 + deleteLength,
+			insert: "",
 		},
 		{
 			type: "set-props",

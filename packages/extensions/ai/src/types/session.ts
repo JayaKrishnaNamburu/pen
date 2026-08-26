@@ -10,7 +10,6 @@ import type {
 import type { AIToolConfirmFn } from "../tools";
 import type { EditDocumentPreviewUpdate } from "../runtime/editDocumentPreview";
 import type {
-	AIApplyStrategy,
 	AIMutationMode,
 	AIMutationPreference,
 	AIRouteLane,
@@ -20,9 +19,6 @@ import type {
 	AITargetKind,
 	AITransportKind,
 } from "../runtime/contracts";
-import type { DocumentMutationPlan } from "../runtime/planTypes";
-import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
-import type { StructuredIntent } from "../runtime/structuredIntent";
 import type {
 	AICommandBinding,
 	AIPromptTarget,
@@ -179,7 +175,6 @@ export interface AISessionTurn {
 	target: Exclude<AIPromptTarget, "auto">;
 	status: AISessionTurnStatus;
 	suggestionIds: string[];
-	reviewItemIds: string[];
 	generatedBlockIds: string[];
 	operation?: AIRequestedOperation;
 	anchor?: AISessionAnchor;
@@ -192,12 +187,12 @@ export interface AISessionMetrics {
 	toolMs?: number;
 	streamEventCount: number;
 	patchCount: number;
-	fastApply: AISessionFastApplyMetrics;
+	commit: AISessionCommitMetrics;
 }
 
-export interface AISessionFastApplyMetrics {
+export interface AISessionCommitMetrics {
 	attemptCount: number;
-	nativeFastApplyCount: number;
+	selectionReplacementCount: number;
 	scopedReplacementCount: number;
 	plainMarkdownCount: number;
 	failedCount: number;
@@ -262,7 +257,6 @@ export interface AISession {
 	promptHistory: AISessionPrompt[];
 	generationIds: string[];
 	pendingSuggestionIds: string[];
-	pendingReviewItemIds: string[];
 	createdAt: number;
 	updatedAt: number;
 	metrics: AISessionMetrics;
@@ -390,11 +384,8 @@ export interface GenerationState {
 	route?: AIRouteLane;
 	mutationMode?: AIMutationMode;
 	contentFormat?: AIContentFormat;
-	applyStrategy?: AIApplyStrategy;
-	planState?: GenerationPlanState;
-	plan?: DocumentMutationPlan | null;
-	structuredIntent?: StructuredIntent | null;
-	reviewItems?: StructuralReviewItem[];
+	/** Whether this turn's durable edits arrived as `edit_document` calls (EC1). */
+	editsArriveAsToolCalls?: boolean;
 	targetKind?: GenerationTargetKind;
 	blockClass?: AIBlockClass;
 	adapterId?: AIBlockAdapterId;
@@ -403,8 +394,6 @@ export interface GenerationState {
 	debug?: GenerationDebugState;
 	editPreview?: EditDocumentPreviewUpdate | null;
 }
-
-export type GenerationPlanState = "none" | "drafted" | "validated" | "rejected";
 
 export type GenerationTargetKind = AITargetKind;
 

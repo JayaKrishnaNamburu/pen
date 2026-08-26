@@ -1,7 +1,4 @@
-export {
-	inputRulesExtension,
-	INPUT_RULES_EXTENSION_NAME,
-} from "./extension";
+export { inputRulesExtension, INPUT_RULES_EXTENSION_NAME } from "./extension";
 export { defaultBlockRules } from "./defaultRules";
 export { defaultInlineRules } from "./inlineRules";
 export { PEN_INPUT_RULES_FACET_NAME } from "./providers";

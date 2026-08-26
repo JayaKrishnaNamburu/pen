@@ -11,9 +11,11 @@ describe("API1 empty default schema", () => {
 		const editor = createEditor();
 
 		expect(editor.schema.allBlocks()).toEqual([]);
-		expect(editor.schema.allBlocks().some((schema) => schema.type === "paragraph")).toBe(
-			false,
-		);
+		expect(
+			editor.schema
+				.allBlocks()
+				.some((schema) => schema.type === "paragraph"),
+		).toBe(false);
 		expect(editor.firstBlock()).toBeNull();
 
 		editor.destroy();

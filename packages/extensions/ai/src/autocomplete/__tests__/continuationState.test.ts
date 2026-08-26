@@ -1,4 +1,8 @@
-import { applyMergeBlocks, applySplitBlock, createEditor } from "@input/pen-core";
+import {
+	applyMergeBlocks,
+	applySplitBlock,
+	createEditor,
+} from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import type { SelectionState } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
@@ -9,14 +13,14 @@ const candidate: AutocompleteStructuredCandidate = {
 	rawText: " world",
 	inlineText: " world",
 	appendedBlocks: [],
-	previewBlocks: []
+	previewBlocks: [],
 };
 
 function textSelection(blockId: string, offset: number): SelectionState {
 	return {
 		type: "text",
 		anchor: { blockId, offset },
-		focus: { blockId, offset }
+		focus: { blockId, offset },
 	};
 }
 
@@ -36,7 +40,7 @@ describe("AutocompleteContinuationState", () => {
 			sourceRequestId: "request-1",
 			blockId: "block-1",
 			startOffset: 6,
-			continuationDepth: 1
+			continuationDepth: 1,
 		});
 		state.setPrefetchedContinuation({
 			sourceRequestId: "request-1",
@@ -44,7 +48,7 @@ describe("AutocompleteContinuationState", () => {
 			blockId: "block-1",
 			startOffset: 6,
 			candidate,
-			continuationDepth: 1
+			continuationDepth: 1,
 		});
 
 		expect(
@@ -61,7 +65,7 @@ describe("AutocompleteContinuationState", () => {
 			requestId: "request-2",
 			blockId: "block-1",
 			startOffset: 6,
-			continuationDepth: 1
+			continuationDepth: 1,
 		});
 		expect(state.sequence).toBe(activated);
 	});
@@ -87,23 +91,21 @@ describe("AutocompleteContinuationState", () => {
 				startOffset: 6,
 				candidate,
 				continuationDepth: 1,
-				requestPrefix: "Hello "
+				requestPrefix: "Hello ",
 			},
 			editor,
 		);
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "xx" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "xx" }],
 			{ origin: { type: "collaborator" } },
 		);
-		expect(
-			state.syncThroughCommit(editor, editor.lastChangeSummary!),
-		).toBe(true);
+		expect(state.syncThroughCommit(editor, editor.lastChangeSummary!)).toBe(
+			true,
+		);
 		expect(state.sequence).toMatchObject({
 			blockId,
-			startOffset: 8
+			startOffset: 8,
 		});
 
 		editor.destroy();
@@ -117,7 +119,7 @@ describe("AutocompleteContinuationState", () => {
 				blockId: "keep",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
 		]);
 		const state = new AutocompleteContinuationState();
@@ -127,17 +129,17 @@ describe("AutocompleteContinuationState", () => {
 				blockId,
 				startOffset: 6,
 				candidate,
-				continuationDepth: 1
+				continuationDepth: 1,
 			},
 			editor,
 		);
 
 		editor.apply([{ type: "delete-block", blockId }], {
-			origin: { type: "collaborator" }
+			origin: { type: "collaborator" },
 		});
-		expect(
-			state.syncThroughCommit(editor, editor.lastChangeSummary!),
-		).toBe(false);
+		expect(state.syncThroughCommit(editor, editor.lastChangeSummary!)).toBe(
+			false,
+		);
 		expect(state.sequence).toBeNull();
 
 		editor.destroy();
@@ -152,7 +154,7 @@ describe("AutocompleteContinuationState", () => {
 				blockId,
 				startOffset: 9,
 				candidate,
-				continuationDepth: 1
+				continuationDepth: 1,
 			},
 			editor,
 		);
@@ -161,14 +163,14 @@ describe("AutocompleteContinuationState", () => {
 			blockId,
 			offset: 6,
 			newBlockId: "tail",
-			applyOptions: { origin: { type: "collaborator" } }
+			applyOptions: { origin: { type: "collaborator" } },
 		});
-		expect(
-			state.syncThroughCommit(editor, editor.lastChangeSummary!),
-		).toBe(true);
+		expect(state.syncThroughCommit(editor, editor.lastChangeSummary!)).toBe(
+			true,
+		);
 		expect(state.sequence).toMatchObject({
 			blockId: "tail",
-			startOffset: 3
+			startOffset: 3,
 		});
 
 		editor.destroy();
@@ -182,11 +184,15 @@ describe("AutocompleteContinuationState", () => {
 				blockId: "source",
 				blockType: "paragraph",
 				props: {},
-				position: "last"
+				position: "last",
 			},
-			{ type: "splice-text", blockId: "source", from: 0,
+			{
+				type: "splice-text",
+				blockId: "source",
+				from: 0,
 				to: 0,
-				insert: " sage" },
+				insert: " sage",
+			},
 		]);
 		const state = new AutocompleteContinuationState();
 		state.setSequence(
@@ -195,7 +201,7 @@ describe("AutocompleteContinuationState", () => {
 				blockId: "source",
 				startOffset: 1,
 				candidate,
-				continuationDepth: 1
+				continuationDepth: 1,
 			},
 			editor,
 		);
@@ -203,14 +209,14 @@ describe("AutocompleteContinuationState", () => {
 		applyMergeBlocks(editor, {
 			targetBlockId: blockId,
 			sourceBlockId: "source",
-			applyOptions: { origin: { type: "collaborator" } }
+			applyOptions: { origin: { type: "collaborator" } },
 		});
-		expect(
-			state.syncThroughCommit(editor, editor.lastChangeSummary!),
-		).toBe(true);
+		expect(state.syncThroughCommit(editor, editor.lastChangeSummary!)).toBe(
+			true,
+		);
 		expect(state.sequence).toMatchObject({
 			blockId,
-			startOffset: 7
+			startOffset: 7,
 		});
 
 		editor.destroy();

@@ -1,5 +1,5 @@
 import type { TextSelection } from "@input/pen-types";
-import type { AIApplyStrategy, AIContentFormat } from "../runtime/contracts";
+import type { AIContentFormat } from "../runtime/contracts";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type {
 	AIMutationReceipt,
@@ -13,17 +13,16 @@ import {
 	resolveSelectionForRequestedOperation,
 	resolveSelectionText,
 } from "../helpers";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 
 export const operationCommitMethods = {
 	_commitRequestedOperationResult(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		operation: AIRequestedOperation,
 		text: string,
 		sessionId: string | undefined,
 		options: {
 			contentFormat: AIContentFormat;
-			applyStrategy?: AIApplyStrategy;
 		},
 	): AIMutationReceipt {
 		const conflictReason = resolveRequestedOperationConflict(
@@ -71,7 +70,6 @@ export const operationCommitMethods = {
 					"markdown",
 					sessionId,
 					{
-						applyStrategy: options.applyStrategy,
 						replaceTargetBlock: true,
 						replaceBlockIds: markdownBlockIds,
 					},
@@ -116,7 +114,6 @@ export const operationCommitMethods = {
 				options.contentFormat,
 				sessionId,
 				{
-					applyStrategy: options.applyStrategy,
 					replaceTargetBlock: true,
 				},
 			);
@@ -192,7 +189,6 @@ export const operationCommitMethods = {
 				options.contentFormat,
 				sessionId,
 				{
-					applyStrategy: options.applyStrategy,
 					replaceTargetBlock:
 						target.placement === "replace-blocks" ||
 						target.placement === "replace-empty-block" ||
@@ -226,7 +222,7 @@ export const operationCommitMethods = {
 	},
 
 	_commitSelectionRewrite(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		selection: TextSelection,
 		text: string,
 		mutationMode: NonNullable<GenerationState["mutationMode"]>,
@@ -240,10 +236,10 @@ export const operationCommitMethods = {
 			mutationMode === "staged-review"
 		) {
 			this._applySuggestedAIOps(ops, sessionId);
-			this._recordFastApplyDebug({
+			this._recordCommitDebug({
 				attempted: true,
 				succeeded: true,
-				executionPath: "native-fast-apply",
+				executionPath: "selection-replacement",
 				contextChars: selectedText.length,
 				diffChars: text.length,
 			});
@@ -259,7 +255,7 @@ export const operationCommitMethods = {
 		this._editor.deleteSelection({ origin: "ai" });
 		const nextSelection = this._editor.selection;
 		if (nextSelection?.type !== "text") {
-			this._recordFastApplyDebug({
+			this._recordCommitDebug({
 				attempted: true,
 				succeeded: false,
 				contextChars: selectedText.length,
@@ -300,10 +296,10 @@ export const operationCommitMethods = {
 				offset: caret.offset + text.length,
 			},
 		);
-		this._recordFastApplyDebug({
+		this._recordCommitDebug({
 			attempted: true,
 			succeeded: true,
-			executionPath: "native-fast-apply",
+			executionPath: "selection-replacement",
 			contextChars: selectedText.length,
 			diffChars: text.length,
 		});

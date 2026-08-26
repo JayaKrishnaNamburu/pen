@@ -138,7 +138,7 @@ describe("EC14: a finished edit does not wait on a closing pass", () => {
 		);
 
 		expect(generation.status).toBe("complete");
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 		expect(passes).toBe(1);
 		expect(editor.getBlock(closingId)?.textContent()).toBe("Revenue grew.");
 		expect(editor.getBlock(closingId)?.textContent()).not.toBe(before);
@@ -282,7 +282,7 @@ describe("EC10: refuse-then-correct completes inside one turn", () => {
 		);
 
 		expect(generation.status).toBe("complete");
-		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(generation.editsArriveAsToolCalls).toBe(true);
 		expect(passes).toBe(2);
 		expect(refusalPayload).toContain("unknown-block");
 		expect(refusalPayload).toContain("does-not-exist");

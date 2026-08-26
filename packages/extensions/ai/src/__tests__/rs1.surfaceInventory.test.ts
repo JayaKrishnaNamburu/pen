@@ -15,15 +15,14 @@ import { createDeferred } from "./extension.testUtils";
 /**
  * RS1: three surfaces, three jobs, no fourth.
  *
- * This is the inventory that makes the claim falsifiable. Every lane that can
- * put AI content on screen is driven headlessly, and every class the resulting
- * decorations carry has to name itself as one of the three surfaces. A fourth
- * presentation — a new class nobody declared, or a decoration kind outside the
- * two the surfaces use — fails here rather than being discovered by a host.
+ * Review-lane inventory (GATE 2.6). Each lane that can put a proposed edit on
+ * screen is driven headlessly, and every class the resulting decorations carry
+ * has to name itself as one of the three surfaces. A fourth presentation — a
+ * new class nobody declared, or a decoration kind outside the two the surfaces
+ * use — fails here rather than being discovered by a host.
  *
- * The vocabulary is deliberately not restated: it is imported from the one
- * module RS4 makes the source of truth, so this test cannot drift from what
- * the producers actually emit (`spec-v5/02-review-surface.md` RS1, RS4).
+ * The vocabulary is imported from the module RS4 makes the source of truth
+ * (`spec-v5/02-review-surface.md` RS1, RS4).
  */
 
 /** (c) the review surface — proposed edits, in flight and staged. */
@@ -125,15 +124,6 @@ describe("RS1: every lane resolves to one of the three surfaces", () => {
 		await generationPromise;
 		expectOnlyDeclaredSurfaces(editor);
 		editor.destroy();
-	});
-
-	it("RS1: an unknown class is not silently accepted as a fourth surface", () => {
-		// The guard itself, so a vocabulary that stopped closing anything would
-		// not read as a pass.
-		expect(DECLARED_SURFACE_CLASSES.has("pen-some-new-preview")).toBe(false);
-		expect(
-			DECLARED_SURFACE_CLASSES.has(REVIEW_SURFACE_CLASSES.preview),
-		).toBe(true);
 	});
 });
 

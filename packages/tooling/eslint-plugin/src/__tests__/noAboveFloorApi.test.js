@@ -29,11 +29,11 @@ describe("no-above-floor-api (HOST4)", () => {
 			valid: [
 				{
 					code: 'if ("EditContext" in globalThis && typeof globalThis.EditContext === "function") { useBackend(); }\n',
-					filename: "packages/rendering/dom/src/field-editor/fieldEditorImplRuntime.ts",
+					filename: "packages/rendering/dom/src/field-editor/fieldEditorImpl.ts",
 				},
 				{
 					code: "const Ctor = (globalThis as { EditContext?: unknown }).EditContext;\nif (!Ctor) { throw new Error(\"missing\"); }\n",
-					filename: "packages/rendering/dom/src/field-editor/editContextBackendCore.ts",
+					filename: "packages/rendering/dom/src/field-editor/editContextBackend.ts",
 				},
 				{
 					code: "const clone = globalThis.structuredClone;\nif (typeof clone === \"function\") { return clone(value); }\nreturn JSON.parse(JSON.stringify(value));\n",

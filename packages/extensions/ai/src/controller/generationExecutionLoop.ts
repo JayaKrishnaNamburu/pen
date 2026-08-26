@@ -1,12 +1,10 @@
-import { selectionToRange } from "@input/pen-core";
 import { runAgenticLoop } from "../agentic/loop";
 import type { GenerationState } from "../types";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 import {
-	markdownStreamingPreviewText,
-	resolveMarkdownPreviewTarget,
-	resolveSelectionPreviewTarget,
-} from "./streamingPreviewInput";
+	applyEditDocumentPreview,
+	applyGenerationStreamingDelta,
+} from "./streamingSink";
 import {
 	createAIStreamEvent,
 	EMPTY_TOOL_RUNTIME,
@@ -17,7 +15,7 @@ import { bindAIToolMutationMode } from "../tools/execution";
 import type { GenerationExecutionState } from "./generationExecutionState";
 
 export async function runGenerationLoop(
-	controller: AIControllerMethodHost,
+	controller: AIControllerImpl,
 	state: GenerationExecutionState,
 ): Promise<GenerationState> {
 	const {
@@ -28,15 +26,8 @@ export async function runGenerationLoop(
 		seedGeneration,
 		maxSteps,
 		target,
-		shouldStreamDirectly,
 		streamingTarget,
-		selectionRange,
-		canStreamSelectionSuggestions,
-		canStreamBlockSuggestions,
-		canStreamMarkdownBlockSuggestions,
 		context,
-		baselineSuggestionIds,
-		shouldReplaceMarkdownTarget,
 		abortController,
 		workingSet,
 		sessionTurnId,
@@ -118,122 +109,7 @@ export async function runGenerationLoop(
 					return;
 				}
 				state.currentText += nextDelta;
-				if (target.type === "block" && shouldStreamDirectly) {
-					streamingTarget?.appendDelta(nextDelta);
-				} else if (canStreamSelectionSuggestions && selectionRange) {
-					if (!state.streamedSuggestionInitialized) {
-						controller._applySuggestedAIOps(
-							[
-								{
-									type: "splice-text",
-									blockId: selectionRange.start.blockId,
-									from: selectionRange.start.offset,
-									to: selectionRange.end.offset,
-									insert: nextDelta,
-								},
-							],
-							context?.sessionId,
-							{ undoGroupId: seedGeneration.undoGroupId },
-						);
-						state.streamedSuggestionInitialized = true;
-						state.streamedSuggestionLength = nextDelta.length;
-					} else if (nextDelta.length > 0) {
-						controller._applySuggestedAIOps(
-							[
-								{
-									type: "splice-text",
-									blockId: selectionRange.start.blockId,
-									from:
-										selectionRange.end.offset +
-										state.streamedSuggestionLength,
-									to:
-										selectionRange.end.offset +
-										state.streamedSuggestionLength,
-									insert: nextDelta,
-								},
-							],
-							context?.sessionId,
-							{ undoGroupId: seedGeneration.undoGroupId },
-						);
-						state.streamedSuggestionLength += nextDelta.length;
-					}
-				} else if (
-					canStreamBlockSuggestions &&
-					target.type === "block"
-				) {
-					if (nextDelta.length > 0) {
-						controller._applySuggestedAIOps(
-							[
-								{
-									type: "splice-text",
-									blockId: target.blockId,
-									from:
-										target.offset +
-										state.streamedSuggestionLength,
-									to:
-										target.offset +
-										state.streamedSuggestionLength,
-									insert: nextDelta,
-								},
-							],
-							context?.sessionId,
-							{ undoGroupId: seedGeneration.undoGroupId },
-						);
-						state.streamedSuggestionLength += nextDelta.length;
-					}
-				} else if (
-					canStreamMarkdownBlockSuggestions &&
-					target.type === "block"
-				) {
-					const active = controller._state.activeGeneration;
-					if (active) {
-						controller.setStreamingReviewPreview({
-							sessionId: active.sessionId ?? active.id,
-							turnId: active.turnId,
-							target: resolveMarkdownPreviewTarget(
-								controller._editor,
-								{
-									blockId: target.blockId,
-									offset: target.offset,
-									replaceTargetBlock:
-										shouldReplaceMarkdownTarget,
-									replaceBlockIds: context?.replaceBlockIds,
-								},
-							),
-							text: markdownStreamingPreviewText(
-								state.currentText,
-							),
-						});
-					}
-				} else if (target.type === "selection") {
-					// RS2: a proposed selection rewrite previews on the review
-					// surface. The ghost overlay stays for autocomplete, whose
-					// job is a keystroke-accepted completion rather than an
-					// edit awaiting review (RS1).
-					const active = controller._state.activeGeneration;
-					if (active) {
-						const previewTarget = resolveSelectionPreviewTarget(
-							controller._editor,
-							selectionToRange(
-								controller._editor.internals.doc,
-								target.selection,
-							),
-						);
-						if (previewTarget) {
-							controller.setStreamingReviewPreview({
-								sessionId: active.sessionId ?? active.id,
-								turnId: active.turnId,
-								target: previewTarget,
-								text:
-									state.contentFormat === "markdown"
-										? markdownStreamingPreviewText(
-												state.currentText,
-											)
-										: state.currentText,
-							});
-						}
-					}
-				}
+				applyGenerationStreamingDelta(controller, state, nextDelta);
 				const active = controller._state.activeGeneration;
 				if (!active) return;
 				controller._setState({
@@ -283,7 +159,7 @@ export async function runGenerationLoop(
 					}),
 				);
 			},
-			applyStrategy: route.applyStrategy,
+			editsArriveAsToolCalls: route.editsArriveAsToolCalls,
 			editIntent: route.intent !== "question",
 			editStreaming: controller._editStreaming,
 			mutationPreference: controller._mutationPreference,
@@ -304,10 +180,6 @@ export async function runGenerationLoop(
 					controller.dismissEphemeralSuggestion();
 					return;
 				}
-				// A fragment that has not reached its block id yet says nothing
-				// about where its text goes, and a guessed anchor covers the
-				// wrong block's text with a text-range preview. Show the words
-				// in the chat and wait for the payload to name its target.
 				const previewBlockId = preview.blockId;
 				if (previewBlockId == null) {
 					controller._setState({
@@ -315,33 +187,15 @@ export async function runGenerationLoop(
 					});
 					return;
 				}
-				// Posture governs where the edit *lands*, not whether you can watch
-				// it arrive (EC11, EC15). Both postures show the same in-document
-				// preview: it is a decoration either way, and nothing is written
-				// until the call closes.
-				const blockLength =
-					controller._editor.getBlock(previewBlockId)?.textContent()
-						.length ?? 0;
-				controller.setStreamingReviewPreview(
+				applyEditDocumentPreview(
+					controller,
 					{
-						sessionId: active.sessionId ?? active.id,
-						turnId: active.turnId,
 						operationIndex: preview.operationIndex,
-						target: isInsertingEditOperation(preview.operation)
-							? {
-									kind: "insertion-point",
-									blockId: previewBlockId,
-									offset: blockLength,
-								}
-							: {
-									kind: "text-range",
-									blockId: previewBlockId,
-									from: 0,
-									to: blockLength,
-								},
+						blockId: previewBlockId,
+						operation: preview.operation,
 						text: preview.text,
 					},
-					{ activeGeneration: nextGeneration },
+					nextGeneration,
 				);
 			},
 			onDebug: (debug) => {
@@ -356,8 +210,7 @@ export async function runGenerationLoop(
 			},
 			onStreamingStart: (zoneId, targetBlockId) => {
 				if (
-					target.type !== "block" ||
-					!shouldStreamDirectly ||
+					state.streamingSink.kind !== "direct-write" ||
 					state.blockStreamingStarted
 				)
 					return;
@@ -369,8 +222,7 @@ export async function runGenerationLoop(
 			},
 			onStreamingEnd: (status) => {
 				if (
-					target.type !== "block" ||
-					!shouldStreamDirectly ||
+					state.streamingSink.kind !== "direct-write" ||
 					!state.blockStreamingStarted
 				)
 					return;
@@ -381,13 +233,4 @@ export async function runGenerationLoop(
 	} finally {
 		restoreToolMutationMode();
 	}
-}
-
-/**
- * Whether the streamed operation adds content rather than replacing it. An
- * insert previewed as a replacement reads as the block being overwritten and
- * then snapping back, which is worse than showing nothing.
- */
-function isInsertingEditOperation(operation: string | null): boolean {
-	return operation === "insert_blocks";
 }

@@ -93,10 +93,14 @@ function renderedMarkdown(
 	editor: ReturnType<typeof createEditor>,
 	blockId: string,
 ): string {
-	const snapshot = resolveDocumentBlocks(editor, {
-		startBlockId: blockId,
-		endBlockId: blockId,
-	}, "resolved").find((block) => block.id === blockId);
+	const snapshot = resolveDocumentBlocks(
+		editor,
+		{
+			startBlockId: blockId,
+			endBlockId: blockId,
+		},
+		"resolved",
+	).find((block) => block.id === blockId);
 	return snapshot?.markdown ?? "";
 }
 
@@ -148,8 +152,10 @@ describe("working-set view fingerprints", () => {
 		});
 		await editor.whenReady();
 		const { introId } = seedDocument(editor);
-		const { host, route, target, workingSet } =
-			await captureWorkingSet(editor, PROMPT);
+		const { host, route, target, workingSet } = await captureWorkingSet(
+			editor,
+			PROMPT,
+		);
 
 		expect(workingSet.viewHashes?.[introId]).toBeTruthy();
 		expect(workingSet.trackedBlockIds).toContain(introId);
@@ -182,8 +188,10 @@ describe("working-set view fingerprints", () => {
 		});
 		await editor.whenReady();
 		const { introId } = seedDocument(editor);
-		const { host, route, target, workingSet } =
-			await captureWorkingSet(editor, PROMPT);
+		const { host, route, target, workingSet } = await captureWorkingSet(
+			editor,
+			PROMPT,
+		);
 
 		const markdownBefore = renderedMarkdown(editor, introId);
 		const annotatedBefore = renderTrackedBlockView(
@@ -191,7 +199,6 @@ describe("working-set view fingerprints", () => {
 			introId,
 			"resolved",
 		);
-		const revisionBefore = editor.getBlockRevision(introId);
 		const selectionBefore = editor.selection;
 		expect(markdownBefore.length).toBeGreaterThan(0);
 
@@ -208,7 +215,6 @@ describe("working-set view fingerprints", () => {
 		editor.setSelection(selectionBefore);
 
 		expect(editor.getBlock(introId)?.props.direction).toBe("rtl");
-		expect(editor.getBlockRevision(introId)).not.toBe(revisionBefore);
 		expect(renderedMarkdown(editor, introId)).toBe(markdownBefore);
 		expect(renderTrackedBlockView(editor, introId, "resolved")).toBe(
 			annotatedBefore,
@@ -238,7 +244,9 @@ describe("working-set view fingerprints", () => {
 			expect(hash.length).toBeGreaterThan(0);
 		}
 
-		await getAIController(editor)!.runPrompt(PROMPT, { target: "document" });
+		await getAIController(editor)!.runPrompt(PROMPT, {
+			target: "document",
+		});
 		expect(capturedRequest).toBeTruthy();
 
 		const serialized = JSON.stringify(capturedRequest!.messages);

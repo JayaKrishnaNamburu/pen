@@ -34,10 +34,16 @@ export function normalizeReplacementRange(
 	range: ReplacementRange,
 	blocks: readonly ReplacementRangeBlock[],
 ): NormalizedReplacementRange {
-	const startIndex = blocks.findIndex((block) => block.id === range.start.blockId);
-	const endIndex = blocks.findIndex((block) => block.id === range.end.blockId);
+	const startIndex = blocks.findIndex(
+		(block) => block.id === range.start.blockId,
+	);
+	const endIndex = blocks.findIndex(
+		(block) => block.id === range.end.blockId,
+	);
 	if (startIndex < 0 || endIndex < 0) {
-		throw new Error("Replacement range block was not found in the document.");
+		throw new Error(
+			"Replacement range block was not found in the document.",
+		);
 	}
 
 	const isForward =
@@ -67,7 +73,9 @@ export function resolveSelectedRangeTextFragments(
 		{
 			blockId: normalizedRange.start.blockId,
 			offset: normalizedRange.start.offset,
-			text: normalizedRange.startBlock.text.slice(normalizedRange.start.offset),
+			text: normalizedRange.startBlock.text.slice(
+				normalizedRange.start.offset,
+			),
 		},
 		...normalizedRange.middleBlocks.map((block) => ({
 			blockId: block.id,
@@ -77,7 +85,10 @@ export function resolveSelectedRangeTextFragments(
 		{
 			blockId: normalizedRange.end.blockId,
 			offset: 0,
-			text: normalizedRange.endBlock.text.slice(0, normalizedRange.end.offset),
+			text: normalizedRange.endBlock.text.slice(
+				0,
+				normalizedRange.end.offset,
+			),
 		},
 	];
 }

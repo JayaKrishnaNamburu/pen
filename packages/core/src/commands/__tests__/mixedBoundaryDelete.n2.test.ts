@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { deleteBackward, deleteForward, insertText } from "..";
-import {
-	caretOf,
-	createCommandEditor,
-	liveRegistry,
-} from "./fixture";
+import { caretOf, createCommandEditor, liveRegistry } from "./fixture";
 
 /**
  * N2 mixed-boundary delete.
@@ -32,9 +28,7 @@ function mixedBoundaryDoc() {
 	]);
 }
 
-function expectPrefixKept(
-	editor: ReturnType<typeof mixedBoundaryDoc>,
-): void {
+function expectPrefixKept(editor: ReturnType<typeof mixedBoundaryDoc>): void {
 	expect(editor.getBlock("p1")?.textContent()).toBe("He");
 	expect(editor.getBlock("d1")).toBeNull();
 	expect(editor.getBlock("p2")?.textContent()).toBe("World");

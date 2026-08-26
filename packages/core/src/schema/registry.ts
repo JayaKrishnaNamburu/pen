@@ -54,11 +54,15 @@ export class SchemaRegistryImpl implements ComposableSchema {
 	) => InlineSchema | "drop" | "passthrough";
 
 	constructor(config: SchemaRegistryConfig) {
-		this._blocks = new Map(config.blocks?.map((schema) => [schema.type, schema]));
+		this._blocks = new Map(
+			config.blocks?.map((schema) => [schema.type, schema]),
+		);
 		this._inlines = new Map(
 			config.inlines?.map((schema) => [schema.type, schema]),
 		);
-		this._apps = new Map(config.apps?.map((schema) => [schema.type, schema]));
+		this._apps = new Map(
+			config.apps?.map((schema) => [schema.type, schema]),
+		);
 
 		const systemMarks = new Map<string, InlineSchema>([
 			[suggestion.type, suggestion],
@@ -203,7 +207,11 @@ export class SchemaRegistryImpl implements ComposableSchema {
 			throw new Error(`Cannot override unknown block type: ${type}`);
 		}
 
-		const merged: BlockSchema = { ...existing, ...patch, type: existing.type };
+		const merged: BlockSchema = {
+			...existing,
+			...patch,
+			type: existing.type,
+		};
 		if (patch.serialize) {
 			merged.serialize = { ...existing.serialize, ...patch.serialize };
 		}
@@ -236,7 +244,9 @@ export class SchemaRegistryImpl implements ComposableSchema {
 	}
 }
 
-export function mergeSchemas(...registries: SchemaRegistry[]): ComposableSchema {
+export function mergeSchemas(
+	...registries: SchemaRegistry[]
+): ComposableSchema {
 	const blocks = new Map<string, BlockSchema>();
 	const inlines = new Map<string, InlineSchema>();
 	const apps = new Map<string, AppSchema>();

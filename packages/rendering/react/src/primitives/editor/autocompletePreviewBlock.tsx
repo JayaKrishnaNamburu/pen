@@ -61,7 +61,7 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 	if (listPreview) {
 		return (
 			<div
-				className="pen-block-suggestion pen-autocomplete-preview-block"
+				className="pen-autocomplete-preview-block"
 				data-pen-autocomplete-preview-block=""
 				data-block-type={block.blockType ?? "paragraph"}
 				data-anchor-block-type={anchorBlockType ?? undefined}
@@ -104,7 +104,7 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 
 	return (
 		<div
-			className="pen-block-suggestion pen-autocomplete-preview-block"
+			className="pen-autocomplete-preview-block"
 			data-pen-autocomplete-preview-block=""
 			data-block-type={block.blockType ?? "paragraph"}
 			data-anchor-block-type={anchorBlockType ?? undefined}

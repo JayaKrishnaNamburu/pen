@@ -105,6 +105,8 @@ describe("DIR1 — direction cache", () => {
 		expect(a).not.toBe(b);
 		expect(a).not.toBe(c);
 		expect(a).not.toBe(d);
-		expect(a).toBe(fingerprintDirectionInput("Hello", { direction: "auto" }, 1));
+		expect(a).toBe(
+			fingerprintDirectionInput("Hello", { direction: "auto" }, 1),
+		);
 	});
 });

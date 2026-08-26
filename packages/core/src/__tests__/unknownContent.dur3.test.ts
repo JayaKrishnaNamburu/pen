@@ -4,7 +4,11 @@ import type { CRDTDocument, DiagnosticEvent, Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { createHeadlessEditor, mergeSchemas, SchemaRegistryImpl } from "../index";
+import {
+	createHeadlessEditor,
+	mergeSchemas,
+	SchemaRegistryImpl,
+} from "../index";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -124,7 +128,11 @@ function rehydrateFromJson(
 				let offset = 0;
 				for (const delta of block.deltas) {
 					if (delta.attributes) {
-						content.format(offset, delta.insert.length, delta.attributes);
+						content.format(
+							offset,
+							delta.insert.length,
+							delta.attributes,
+						);
 					}
 					offset += delta.insert.length;
 				}
@@ -147,9 +155,11 @@ describe("DUR3 unknown-content preservation", () => {
 		const published = createDefaultSchema();
 
 		expect(published.resolve("futureWidget")?.type).toBe("futureWidget");
-		expect(published.allBlocks().some((schema) => schema.type === "futureWidget")).toBe(
-			false,
-		);
+		expect(
+			published
+				.allBlocks()
+				.some((schema) => schema.type === "futureWidget"),
+		).toBe(false);
 	});
 
 	it("DUR3: mergeSchemas keeps unknown-type passthrough", () => {
@@ -162,9 +172,9 @@ describe("DUR3 unknown-content preservation", () => {
 		);
 
 		expect(merged.resolve("futureWidget")?.type).toBe("futureWidget");
-		expect(merged.allBlocks().some((schema) => schema.type === "futureWidget")).toBe(
-			false,
-		);
+		expect(
+			merged.allBlocks().some((schema) => schema.type === "futureWidget"),
+		).toBe(false);
 	});
 
 	it("DUR3: stripDefaultProps only strips values equal to current defaults", () => {
@@ -264,19 +274,21 @@ describe("DUR3 unknown-content preservation", () => {
 		expect(unknownTypes.sort()).toEqual(["futureCallout", "futureWidget"]);
 
 		const before = snapshotBlocks(editor);
-		expect(before.find((block) => block.id === "p1")?.props.futureNote).toBe(
-			"keep",
-		);
+		expect(
+			before.find((block) => block.id === "p1")?.props.futureNote,
+		).toBe("keep");
 		expect(
 			before.find((block) => block.id === "p1")?.deltas[0]?.attributes,
 		).toMatchObject({
 			mysteryMark: "keep",
 			bold: true,
 		});
-		expect(before.filter((block) => block.type === "futureWidget")).toHaveLength(
-			3,
+		expect(
+			before.filter((block) => block.type === "futureWidget"),
+		).toHaveLength(3);
+		expect(before.find((block) => block.id === "c1")?.props.tone).toBe(
+			"alert",
 		);
-		expect(before.find((block) => block.id === "c1")?.props.tone).toBe("alert");
 
 		const encoded = adapter.encodeState(editor.internals.crdtDoc);
 		const loaded = adapter.loadDocument(encoded);

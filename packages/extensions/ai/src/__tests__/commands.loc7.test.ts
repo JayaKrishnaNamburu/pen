@@ -4,12 +4,7 @@ import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
-import {
-	aiExtension,
-	defaultAICommands,
-	getAIController,
-} from "../index";
-import { buildStructuralReviewItems } from "../runtime/reviewArtifacts";
+import { aiExtension, defaultAICommands, getAIController } from "../index";
 
 describe("AI command catalog (LOC1)", () => {
 	it("LOC1: default command bindings store catalog keys, not English literals", () => {
@@ -35,9 +30,7 @@ describe("AI command catalog (LOC1)", () => {
 
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 0, 5);
@@ -78,9 +71,7 @@ describe("AI command catalog (LOC1)", () => {
 
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 0, 5);
@@ -96,39 +87,6 @@ describe("AI command catalog (LOC1)", () => {
 			.find((command) => command.id === "ai:continue");
 		expect(continueCommand?.label).toBe("Weiter schreiben");
 
-		editor.destroy();
-	});
-
-	it("LOC1: review artifacts resolve through the catalog", () => {
-		const editor = createEditor({
-			schema: defaultSchema,
-			messages: {
-				"pen.ai.review.replaceText": "Text ersetzen",
-			},
-		});
-		const blockId = editor.firstBlock()!.id;
-		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
-			{ origin: "system" },
-		);
-
-		const items = buildStructuralReviewItems(editor, {
-			kind: "text_edit",
-			target: {
-				blockId,
-				range: {
-					startOffset: 6,
-					endOffset: 11,
-				},
-			},
-			operation: "replace",
-			text: "planet",
-		});
-
-		expect(items[0]?.label).toBe("Text ersetzen");
-		expect(items[0]?.groupLabel).toBe(`Block "${blockId}"`);
 		editor.destroy();
 	});
 });

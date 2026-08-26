@@ -3,10 +3,7 @@ import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
-import {
-	aiExtension,
-	getAIController,
-} from "../index";
+import { aiExtension, getAIController } from "../index";
 import { defaultSchema } from "@input/pen-schema-default";
 
 describe("aiExtension", () => {

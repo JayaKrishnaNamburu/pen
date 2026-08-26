@@ -1,4 +1,9 @@
-const AI_ROUTE_LANES = [
+/*
+ * Exported from this module but deliberately not from the package barrel: the
+ * router-property test reads them to prove every member still has a producer
+ * (UC5), which is not a reason to hand hosts a second vocabulary to switch on.
+ */
+export const AI_ROUTE_LANES = [
 	"selection-rewrite",
 	"cursor-context",
 	"tool-loop",
@@ -7,8 +12,7 @@ const AI_ROUTE_LANES = [
 
 export type AIRouteLane = (typeof AI_ROUTE_LANES)[number];
 
-const AI_MUTATION_MODES = [
-	"ephemeral-preview",
+export const AI_MUTATION_MODES = [
 	"direct-stream",
 	"persistent-suggestions",
 	"streaming-suggestions",
@@ -38,8 +42,8 @@ export function isAIMutationPreference(
 
 /**
  * What the prompt asked for. Lives here rather than next to the classifier in
- * `router.ts` because the planner reads it too, and a second copy of the union
- * is how a new member gets missed.
+ * `router.ts` because the classifier and the loop both read it, and a second
+ * copy of the union is how a new member gets missed.
  */
 export type PromptIntent =
 	| "rewrite"
@@ -52,37 +56,11 @@ export type PromptIntent =
 	| "question"
 	| "unknown";
 
-const AI_CONTENT_FORMATS = [
-	"text",
-	"markdown",
-] as const;
+const AI_CONTENT_FORMATS = ["text", "markdown"] as const;
 
 export type AIContentFormat = (typeof AI_CONTENT_FORMATS)[number];
 
-export const AI_APPLY_STRATEGIES = [
-	"text-fast-apply",
-	"markdown-full-replace",
-	/**
-	 * Durable document edits arrive as `edit_document` tool calls. Nothing is
-	 * parsed out of the assistant text stream
-	 * (`spec/packages/extensions/ai.md` EC1). Streaming lanes still use
-	 * `text-fast-apply` / `markdown-full-replace` for generation into a
-	 * target, which is not an edit plan.
-	 */
-	"tool-edit",
-] as const;
-
-export type AIApplyStrategy = (typeof AI_APPLY_STRATEGIES)[number];
-
 export type AIWorkingSetViewMode = "raw" | "resolved";
-
-export const AI_STRUCTURED_LANES = [
-	"block-structure",
-	"table",
-	"review",
-] as const;
-
-export type AIStructuredLane = (typeof AI_STRUCTURED_LANES)[number];
 
 export const AI_EXECUTION_MODES = [
 	"direct-stream",
@@ -96,32 +74,14 @@ export const AI_TARGET_KINDS = ["text", "block", "table"] as const;
 
 export type AITargetKind = (typeof AI_TARGET_KINDS)[number];
 
-export const AI_BLOCK_CLASSES = ["flow", "app"] as const;
+export const AI_BLOCK_CLASSES = ["flow"] as const;
 
 export type AIBlockClass = (typeof AI_BLOCK_CLASSES)[number];
 
-export const AI_BLOCK_ADAPTER_IDS = [
-	"flow-markdown",
-] as const;
+export const AI_BLOCK_ADAPTER_IDS = ["flow-markdown"] as const;
 
 export type AIBlockAdapterId = (typeof AI_BLOCK_ADAPTER_IDS)[number];
 
-export const AI_TRANSPORT_KINDS = [
-	"flow-text",
-	"app-structured",
-] as const;
+export const AI_TRANSPORT_KINDS = ["flow-text"] as const;
 
 export type AITransportKind = (typeof AI_TRANSPORT_KINDS)[number];
-
-const AI_QUALITY_METRIC_IDS = [
-	"wrongLaneRate",
-	"staleContextRate",
-	"unnecessaryToolCallRate",
-	"toolEscalationRate",
-	"selectionRewriteAcceptanceRate",
-	"suggestionAcceptRejectRatioByLane",
-	"structuralEditCorrectionRate",
-	"requestRestartRateUnderChurn",
-] as const;
-
-export type AIQualityMetricId = (typeof AI_QUALITY_METRIC_IDS)[number];

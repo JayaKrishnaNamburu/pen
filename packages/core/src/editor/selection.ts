@@ -15,10 +15,7 @@ import type {
 } from "@input/pen-types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { createBlockHandle } from "../schema/handles";
-import {
-	getSelectionBlockRange,
-	selectionToRange,
-} from "../selection/helpers";
+import { getSelectionBlockRange, selectionToRange } from "../selection/helpers";
 import { deriveContentMoves, repairAnchor } from "./anchorRepair";
 import type { EditorAnchorsImpl } from "./anchors";
 import { resolveCellSelectionMatrix } from "./cellSelection";
@@ -104,7 +101,8 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 				code: RESERVED_ORIGIN_CODE,
 				level: "warn",
 				source: "core",
-				message: 'origin "gc" is reserved for SelectionAuthority repair writes',
+				message:
+					'origin "gc" is reserved for SelectionAuthority repair writes',
 				remediation:
 					'Pass a caller origin such as "programmatic", "keyboard", or "pointer".',
 			});
@@ -230,7 +228,8 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 			blockExists: (blockId) => this._blockExists(blockId),
 			emitMissingBlock: (blockId) => this._emitMissingBlock(blockId),
 			isNonTextBlock: (blockId) => this._isNonTextBlock(blockId),
-			clampOffset: (blockId, offset) => this._clampOffset(blockId, offset),
+			clampOffset: (blockId, offset) =>
+				this._clampOffset(blockId, offset),
 			tableGrid: (blockId) => this._tableGrid(blockId),
 			doc: this._doc,
 		});
@@ -315,9 +314,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		return stored.length + embeds;
 	}
 
-	private _tableGrid(
-		blockId: string,
-	): { rows: number; cols: number } | null {
+	private _tableGrid(blockId: string): { rows: number; cols: number } | null {
 		const table = this._handle(blockId).as("table");
 		const rows = table?.tableRowCount() ?? 0;
 		const cols = table?.tableColumnCount() ?? 0;

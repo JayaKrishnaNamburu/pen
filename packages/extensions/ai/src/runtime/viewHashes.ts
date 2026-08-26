@@ -107,16 +107,14 @@ function targetIdsFromOperation(operation: Record<string, unknown>): string[] {
 	return ids;
 }
 
-function buildLiveOutline(
-	editor: Editor,
-): StaleEditDocumentRefusal["outline"] {
-	return summarizeBlocks(
-		resolveDocumentBlocks(editor, null, "resolved"),
-	).map((block) => ({
-		blockId: block.id,
-		blockType: block.type,
-		preview: block.preview,
-	}));
+function buildLiveOutline(editor: Editor): StaleEditDocumentRefusal["outline"] {
+	return summarizeBlocks(resolveDocumentBlocks(editor, null, "resolved")).map(
+		(block) => ({
+			blockId: block.id,
+			blockType: block.type,
+			preview: block.preview,
+		}),
+	);
 }
 
 /**

@@ -18,11 +18,11 @@ import {
 	captureBlockViewHashes,
 	viewHashesChanged,
 } from "../runtime/viewHashes";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 
 export const workingSetValidationMethods = {
 	_validateWorkingSet(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		route: RequestRouterDecision,
 		target: GenerationTarget,
 		workingSet: AIWorkingSetEnvelope | null,
@@ -69,20 +69,8 @@ export const workingSetValidationMethods = {
 		};
 	},
 
-	_captureBlockRevisions(
-		this: AIControllerMethodHost,
-		blockIds: readonly string[],
-	): Record<string, number> {
-		return Object.fromEntries(
-			blockIds.map((trackedBlockId) => [
-				trackedBlockId,
-				this._editor.getBlockRevision(trackedBlockId),
-			]),
-		);
-	},
-
 	_captureBlockViewHashes(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		blockIds: readonly string[],
 	): Record<string, string> {
 		return captureBlockViewHashes(
@@ -93,7 +81,7 @@ export const workingSetValidationMethods = {
 	},
 
 	_resolveContentFormat(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		target: GenerationState["target"],
 		_surface?: AISurface,
 	): AIContentFormat {
@@ -104,7 +92,7 @@ export const workingSetValidationMethods = {
 	},
 
 	_buildTextBlockGenerationOps(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		blockId: string,
 		text: string,
 		insertionOffset?: number,
@@ -130,7 +118,7 @@ export const workingSetValidationMethods = {
 	},
 
 	_buildMarkdownBlockGenerationOps(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		blockId: string,
 		text: string,
 		replaceTargetBlock?: boolean,

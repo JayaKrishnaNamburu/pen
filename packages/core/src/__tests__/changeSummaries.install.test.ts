@@ -29,9 +29,13 @@ describe("change summaries — editor install", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "b1", from: 0,
+			{
+				type: "splice-text",
+				blockId: "b1",
+				from: 0,
 				to: 0,
-				insert: "meadow sage" },
+				insert: "meadow sage",
+			},
 		]);
 		editor.selectText("b1", 9, 9);
 		applySplitBlock(editor, {
@@ -48,7 +52,9 @@ describe("change summaries — editor install", () => {
 			offset: 6,
 		});
 		expect(
-			summary!.structural.some((change) => change.type === "block-inserted"),
+			summary!.structural.some(
+				(change) => change.type === "block-inserted",
+			),
 		).toBe(false);
 		expect(editor.selection).toMatchObject({
 			type: "text",
@@ -77,9 +83,9 @@ describe("change summaries — editor install", () => {
 		expect(
 			summary!.blockText.length === 0 && summary!.structural.length === 0,
 		).toBe(false);
-		expect(summary!.blockText.some((change) => change.blockId === blockId)).toBe(
-			true,
-		);
+		expect(
+			summary!.blockText.some((change) => change.blockId === blockId),
+		).toBe(true);
 		expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
 
 		editor.destroy();
@@ -103,9 +109,9 @@ describe("change summaries — editor install", () => {
 		const summary = editor.lastChangeSummary;
 		expect(summary).not.toBeNull();
 		expect(summary!.commitId).toBe(before + 1);
-		expect(summary!.blockText.some((change) => change.blockId === blockId)).toBe(
-			true,
-		);
+		expect(
+			summary!.blockText.some((change) => change.blockId === blockId),
+		).toBe(true);
 
 		editor.destroy();
 	});
@@ -115,9 +121,13 @@ describe("change summaries — editor install", () => {
 		const first = editor.firstBlock()!.id;
 		const second = "second-block";
 		editor.apply([
-			{ type: "splice-text", blockId: first, from: 0,
+			{
+				type: "splice-text",
+				blockId: first,
+				from: 0,
 				to: 0,
-				insert: "First" },
+				insert: "First",
+			},
 			{
 				type: "insert-block",
 				blockId: second,
@@ -125,14 +135,24 @@ describe("change summaries — editor install", () => {
 				props: {},
 				position: { after: first },
 			},
-			{ type: "splice-text", blockId: second, from: 0,
+			{
+				type: "splice-text",
+				blockId: second,
+				from: 0,
 				to: 0,
-				insert: "Second" },
+				insert: "Second",
+			},
 		]);
 		editor.apply(
-			[{ type: "splice-text", blockId: second, from: 6,
-				to: 6,
-				insert: "!" }],
+			[
+				{
+					type: "splice-text",
+					blockId: second,
+					from: 6,
+					to: 6,
+					insert: "!",
+				},
+			],
 			{ origin: "user" },
 		);
 		expect(editor.getBlock(second)?.textContent()).toBe("Second!");
@@ -176,9 +196,13 @@ describe("change summaries — editor install", () => {
 		const first = editor.firstBlock()!.id;
 		const second = "second-block";
 		editor.apply([
-			{ type: "splice-text", blockId: first, from: 0,
+			{
+				type: "splice-text",
+				blockId: first,
+				from: 0,
 				to: 0,
-				insert: "First" },
+				insert: "First",
+			},
 			{
 				type: "insert-block",
 				blockId: second,
@@ -186,9 +210,13 @@ describe("change summaries — editor install", () => {
 				props: {},
 				position: { after: first },
 			},
-			{ type: "splice-text", blockId: second, from: 0,
+			{
+				type: "splice-text",
+				blockId: second,
+				from: 0,
 				to: 0,
-				insert: "Second" },
+				insert: "Second",
+			},
 		]);
 
 		const undo = editor.internals.adapter.createUndoManager(
@@ -196,9 +224,15 @@ describe("change summaries — editor install", () => {
 			{ captureTimeout: 0 },
 		);
 		editor.apply(
-			[{ type: "splice-text", blockId: second, from: 6,
-				to: 6,
-				insert: "!" }],
+			[
+				{
+					type: "splice-text",
+					blockId: second,
+					from: 6,
+					to: 6,
+					insert: "!",
+				},
+			],
 			{ origin: "user" },
 		);
 		undo.stopCapturing();
@@ -281,7 +315,11 @@ describe("change summaries — editor install", () => {
 	it("seeds the shadow index from an existing document", () => {
 		const adapter = yjsAdapter();
 		const document = adapter.createDocument();
-		const writer = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter, document });
+		const writer = createHeadlessEditor({
+			schema: defaultSchema,
+			crdt: adapter,
+			document,
+		});
 		const blockId = writer.firstBlock()!.id;
 		writer.apply([
 			{
@@ -293,7 +331,11 @@ describe("change summaries — editor install", () => {
 			},
 		]);
 
-		const reader = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter, document });
+		const reader = createHeadlessEditor({
+			schema: defaultSchema,
+			crdt: adapter,
+			document,
+		});
 		expect(reader.getBlock(blockId)?.textContent()).toBe("hello");
 
 		reader.apply([
@@ -308,9 +350,9 @@ describe("change summaries — editor install", () => {
 
 		const summary = reader.lastChangeSummary;
 		expect(summary).not.toBeNull();
-		expect(summary!.blockText.some((change) => change.blockId === blockId)).toBe(
-			true,
-		);
+		expect(
+			summary!.blockText.some((change) => change.blockId === blockId),
+		).toBe(true);
 		expect(reader.getBlock(blockId)?.textContent()).toBe("hello!");
 
 		writer.destroy();
@@ -319,7 +361,10 @@ describe("change summaries — editor install", () => {
 
 	it("reseeds the shadow index after loadDocument", async () => {
 		const adapter = yjsAdapter();
-		const writer = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter });
+		const writer = createHeadlessEditor({
+			schema: defaultSchema,
+			crdt: adapter,
+		});
 		const blockId = writer.firstBlock()!.id;
 		writer.apply([
 			{
@@ -334,7 +379,10 @@ describe("change summaries — editor install", () => {
 			adapter.encodeState(writer.internals.crdtDoc),
 		);
 
-		const reader = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter });
+		const reader = createHeadlessEditor({
+			schema: defaultSchema,
+			crdt: adapter,
+		});
 		reader.loadDocument(loaded);
 		await flushMicrotasks();
 
@@ -354,7 +402,9 @@ describe("change summaries — editor install", () => {
 		const summary = reader.lastChangeSummary;
 		expect(summary).not.toBeNull();
 		expect(
-			summary!.blockText.some((change) => change.blockId === loadedBlockId),
+			summary!.blockText.some(
+				(change) => change.blockId === loadedBlockId,
+			),
 		).toBe(true);
 		expect(reader.getBlock(loadedBlockId)?.textContent()).toBe("hello!");
 
@@ -388,9 +438,9 @@ describe("change summaries — editor install", () => {
 				type: "splice-text",
 				blockId: "host4-table",
 				cell: { row: 1, col: 0 },
-			from: 0,
-			to: 0,
-			insert: "Cell before",
+				from: 0,
+				to: 0,
+				insert: "Cell before",
 			},
 		]);
 		const insertSummary = editor.lastChangeSummary;
@@ -400,7 +450,11 @@ describe("change summaries — editor install", () => {
 			"host4-table",
 		);
 		expect(
-			editor.getBlock("host4-table")?.as("table")?.tableCell(1, 0)?.textContent(),
+			editor
+				.getBlock("host4-table")
+				?.as("table")
+				?.tableCell(1, 0)
+				?.textContent(),
 		).toBe("Cell before");
 
 		editor.apply([
@@ -408,9 +462,9 @@ describe("change summaries — editor install", () => {
 				type: "splice-text",
 				blockId: "host4-table",
 				cell: { row: 1, col: 0 },
-			from: 0,
-			to: 11,
-			insert: "",
+				from: 0,
+				to: 11,
+				insert: "",
 			},
 		]);
 		const deleteSummary = editor.lastChangeSummary;
@@ -420,7 +474,11 @@ describe("change summaries — editor install", () => {
 			"host4-table",
 		);
 		expect(
-			editor.getBlock("host4-table")?.as("table")?.tableCell(1, 0)?.textContent(),
+			editor
+				.getBlock("host4-table")
+				?.as("table")
+				?.tableCell(1, 0)
+				?.textContent(),
 		).toBe("");
 
 		editor.destroy();

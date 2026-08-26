@@ -435,10 +435,10 @@ describe("@input/pen-react AI primitives", () => {
 
 		await act(async () => {
 			const controllerAny = controller as any;
-			controllerAny?._recordSessionFastApplyMetrics(sessionId, {
+			controllerAny?._recordSessionCommitMetrics(sessionId, {
 				attempted: true,
 				succeeded: true,
-				executionPath: "native-fast-apply",
+				executionPath: "selection-replacement",
 			});
 			await Promise.resolve();
 		});

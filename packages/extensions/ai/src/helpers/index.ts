@@ -7,12 +7,9 @@ export {
 	readModelId,
 	resolveActiveBlockId,
 	resolveGenerationRequestMode,
-	resolveOrderedReviewItems,
 	resolvePromptTarget,
 	resolveSessionAnchor,
 	resolveSessionSelectionSnapshot,
-	sortReviewItemsForRemoval,
-	supportsStructuredIntent,
 } from "./types";
 export type {
 	AIInlineHistoryRestoreRequest,
@@ -51,22 +48,26 @@ export {
 	shouldReplaceInlineShortcutWaypointRepresentative,
 } from "./equality";
 export {
-	accumulateSessionFastApplyMetrics,
-	buildSessionExecutionPrompt,
 	canReuseBottomChatSessionOperation,
-	closeInlineSessionPrompt,
-	createDefaultSessionFastApplyMetrics,
-	resolveAcceptedInlineSelectionTarget,
 	resolveBlockIdForRequestedOperation,
-	resolveFullBlockTextSelection,
-	resolveLiveInlineSelectionTarget,
 	resolveLocalOperationContentFormat,
-	resolvePendingInlineSelectionTarget,
-	resolvePreviousGeneratedBlockIds,
-	resolveReplacementDeleteBlockIds,
 	resolveRequestedOperationConflict,
 	resolveRequestedOperationForSession,
 	resolveSelectionForRequestedOperation,
-	shouldReplacePreviousGeneratedBlocks,
 } from "./operations";
+export { resolveFullBlockTextSelection } from "./operationFactories";
+export {
+	accumulateSessionCommitMetrics,
+	buildSessionExecutionPrompt,
+	closeInlineSessionPrompt,
+	createDefaultSessionCommitMetrics,
+	resolvePreviousGeneratedBlockIds,
+	resolveReplacementDeleteBlockIds,
+	shouldReplacePreviousGeneratedBlocks,
+} from "./sessionExecution";
+export {
+	resolveAcceptedInlineSelectionTarget,
+	resolveLiveInlineSelectionTarget,
+	resolvePendingInlineSelectionTarget,
+} from "./inlineSelectionTargets";
 export { aiGroupedApplyOptions } from "./aiApply";

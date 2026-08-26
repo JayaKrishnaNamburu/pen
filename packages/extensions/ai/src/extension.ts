@@ -3,9 +3,7 @@ import {
 	aiControllerFacet,
 	aiInlineHistoryFacet,
 	aiReviewControllerFacet,
-	announceEditorA11y,
 	beforeApplyFacet,
-	undoMetadataControllerFacet,
 	createDecorationSet,
 	decorationsFacet,
 	keyBindingPriorityToPrecedence,
@@ -13,18 +11,12 @@ import {
 	ensureInlineCompletionController,
 	getInlineCompletionController,
 	getOpOriginType,
-	isCollapsed,
 } from "@input/pen-core";
 import type {
-	CommitEvent,
-	Decoration,
 	Editor,
 	Extension,
 	FacetProvider,
-	HistoryAppliedEvent,
 	KeyBinding,
-	ModelAdapter,
-	UndoHistoryMetadataController,
 } from "@input/pen-types";
 import {
 	AI_CONTROLLER_SLOT,
@@ -32,18 +24,6 @@ import {
 	AI_REVIEW_CONTROLLER_SLOT,
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
-import { AI_AGENTIC_MAX_STEPS_DEFAULT } from "./tools";
-import { defaultAICommands } from "./commands/defaultCommands";
-import { resolveCatalogCopy } from "./i18n/resolveCatalogCopy";
-import { AICommandRegistry } from "./commands/registry";
-import { AIInlineHistoryService, AIReviewService } from "./controllers";
-import {
-	isAIMutationPreference,
-	type AIContentFormat,
-	type AIMutationPreference,
-} from "./runtime/contracts";
-import { SuggestedAIOperationRunner } from "./runtime/suggestedOperationRunner";
-import { ExternalInlineTurnRegistry } from "./runtime/externalInlineTurnRegistry";
 import {
 	AI_SESSION_SUGGESTION_ORIGIN,
 	shouldBypassSuggestMode,
@@ -51,47 +31,14 @@ import {
 	transformOpsForSuggestMode,
 } from "./suggestions/suggestMode";
 import type {
-	AICommandBinding,
-	AICommandContext,
-	AICommandExecutionOptions,
-	AIContextualPromptRect,
 	AIController,
-	AIControllerState,
-	AIEditStreaming,
 	AIExtensionConfig,
-	AIExternalInlineTurnResult,
 	AIInlineCompletionController,
 	AIInlineHistoryController,
-	AIInlineHistoryDirection,
-	AIInlineHistorySnapshot,
 	AIReviewController,
-	AIStreamEvent,
-	AIStreamingReviewPreviewInput,
-	GenerationState,
 } from "./types";
-import { AIControllerSessionState } from "./controller/sessionState";
-import type { StreamingPreviewStatePatch } from "./controller/aiControllerMethodHost";
-import { reviewResolutionMethods } from "./controller/reviewResolutionMethods";
-import { decorationControllerMethods } from "./controller/decorationControllerMethods";
-import { generationRunnerMethods } from "./controller/generationRunnerMethods";
-import { suggestionControllerMethods } from "./controller/suggestionControllerMethods";
-import { commitSupportMethods } from "./controller/commitSupportMethods";
-import { operationCommitMethods } from "./controller/operationCommitMethods";
-import { bufferedBlockGenerationMethods } from "./controller/bufferedBlockGenerationMethods";
-import { fastApplySupportMethods } from "./controller/fastApplySupportMethods";
-import { workingSetMethods } from "./controller/workingSetMethods";
-import { workingSetValidationMethods } from "./controller/workingSetValidationMethods";
-import { inlineHistoryRecording } from "./controller/inlineHistoryRecording";
-import { inlineHistoryNavigation } from "./controller/inlineHistoryNavigation";
-import { inlineHistoryRestore } from "./controller/inlineHistoryRestore";
-import {
-	AI_UNDO_HISTORY_METADATA_KEY,
-	MAX_STREAM_EVENTS,
-	readModelId,
-	resolveActiveBlockId,
-	resolvePromptTarget,
-	resolveSelectionText,
-} from "./helpers";
+import { AIControllerImpl } from "./controller/aiController";
+import { readModelId } from "./helpers";
 
 export const AI_EXTENSION_NAME = "ai";
 
@@ -134,444 +81,12 @@ const AI_SHORTCUT_KEY_BINDINGS: readonly KeyBinding[] = [
 	},
 ];
 
-class AIControllerImpl extends AIControllerSessionState {
-	private readonly _registry = new AICommandRegistry();
-
-	private readonly _inlineCompletion: AIInlineCompletionController;
-
-	private readonly _streamEventListeners = new Set<() => void>();
-
-	private readonly _model: ModelAdapter | undefined;
-
-	private readonly _author: string;
-
-	private readonly _suggestedOperationRunner: SuggestedAIOperationRunner;
-
-	private readonly _maxAgenticSteps: number;
-
-	private readonly _allowedMutatingTools: readonly string[];
-
-	private readonly _confirmAITool: AIExtensionConfig["confirm"];
-
-	private readonly _suggestionPresentation: NonNullable<
-		AIExtensionConfig["suggestionPresentation"]
-	>;
-
-	private readonly _contentFormat: {
-		blockGeneration: AIContentFormat;
-		selectionRewrite: AIContentFormat;
-	};
-
-	private _mutationPreference: AIMutationPreference;
-
-	private readonly _editStreaming: AIEditStreaming | undefined;
-
-	private _streamEvents: readonly AIStreamEvent[] = [];
-
-	private _abortController: AbortController | null = null;
-
-	private _lastPrompt: string | null = null;
-
-	private _lastCommandId: string | null = null;
-
-	private _inlineHistory: AIInlineHistorySnapshot[] = [];
-
-	private _inlineHistoryIndex = -1;
-
-	private _externalInlineTurnRegistry = new ExternalInlineTurnRegistry();
-
-	private _queuedInlineHistoryShortcutDirections: AIInlineHistoryDirection[] =
-		[];
-
-	_streamingPreviewRaf: number | null = null;
-
-	_queuedStreamingPreview: {
-		inputs: readonly AIStreamingReviewPreviewInput[];
-		extra?: StreamingPreviewStatePatch;
-	} | null = null;
-
-	private _queuedInlineHistoryShortcutFlushScheduled = false;
-
-	private _handledUndoHistoryRequestId: number | null = null;
-
-	constructor(
-		editor: Editor,
-		config: AIExtensionConfig,
-		services: {
-			inlineCompletion: AIInlineCompletionController;
-		},
-	) {
-		super(editor, {
-			status: "idle",
-			activeGeneration: null,
-			sessions: [],
-			activeSessionId: null,
-			suggestMode: config.suggestMode ?? false,
-			mutationPreference: isAIMutationPreference(
-				config.mutationPreference,
-			)
-				? config.mutationPreference
-				: "suggestions",
-			ephemeralSuggestion: null,
-			streamingReviewPreviews: [],
-			commandMenuOpen: false,
-		});
-		this._inlineCompletion = services.inlineCompletion;
-		this._model = config.model;
-		this._author = config.author ?? "assistant";
-		this._suggestedOperationRunner = new SuggestedAIOperationRunner({
-			editor: this._editor,
-			author: this._author,
-			model: readModelId(this._model),
-			getSession: (sessionId) =>
-				this._state.sessions.find(
-					(session) => session.id === sessionId,
-				) ?? null,
-			getActiveGeneration: () => this._state.activeGeneration,
-		});
-		this._maxAgenticSteps =
-			config.maxAgenticSteps ?? AI_AGENTIC_MAX_STEPS_DEFAULT;
-		this._allowedMutatingTools = config.allowedMutatingTools ?? [];
-		this._confirmAITool = config.confirm;
-		this._suggestionPresentation =
-			config.suggestionPresentation ?? "track-changes";
-		this._contentFormat = {
-			blockGeneration: config.contentFormat?.blockGeneration ?? "text",
-			selectionRewrite: config.contentFormat?.selectionRewrite ?? "text",
-		};
-		this._mutationPreference = isAIMutationPreference(
-			config.mutationPreference,
-		)
-			? config.mutationPreference
-			: "suggestions";
-		this._editStreaming = config.editStreaming;
-		this._undoHistoryMetadata =
-			(this._editor.facet(
-				undoMetadataControllerFacet,
-			) as UndoHistoryMetadataController | null) ?? null;
-
-		for (const command of defaultAICommands) {
-			this._registry.register(command);
-		}
-		for (const command of config.commands ?? []) {
-			this._registry.register(command);
-		}
-
-		installControllerMethods(this);
-		this._syncSuggestionsFromDocument();
-
-		this._unsubscribeInlineCompletion = this._inlineCompletion.subscribe(
-			() => {
-				this._setState({
-					ephemeralSuggestion:
-						this._inlineCompletion.getState().visibleSuggestion,
-				});
-			},
-		);
-		this._unsubscribeHistoryApplied = this._editor.onHistoryApplied(
-			(event) => {
-				this._handleHistoryApplied(event);
-			},
-		);
-		this._unsubscribeUndoHistoryMetadata =
-			this._undoHistoryMetadata?.registerMetadataRestorer<AIInlineHistorySnapshot>(
-				AI_UNDO_HISTORY_METADATA_KEY,
-				(snapshot, context) => {
-					if (!snapshot) {
-						return;
-					}
-					this._handledUndoHistoryRequestId = context.requestId;
-					this._restoreInlineHistorySnapshotFromUndo(snapshot);
-				},
-			) ?? null;
-	}
-
-	getStreamEvents(): readonly AIStreamEvent[] {
-		return this._streamEvents;
-	}
-
-	subscribeStreamEvents(listener: () => void): () => void {
-		this._streamEventListeners.add(listener);
-		return () => {
-			this._streamEventListeners.delete(listener);
-		};
-	}
-
-	getCommands(): readonly AICommandBinding[] {
-		return this._registry.list(this.getCommandContext()).map((command) => ({
-			...command,
-			label: resolveCatalogCopy(this._editor, command.label),
-			description: command.description
-				? resolveCatalogCopy(this._editor, command.description)
-				: command.description,
-		}));
-	}
-
-	getCommandContext(): AICommandContext {
-		const selection = this._editor.selection;
-		const blockId = resolveActiveBlockId(selection);
-		return {
-			editor: this._editor,
-			selection,
-			selectedText:
-				selection?.type === "text"
-					? resolveSelectionText(this._editor, selection)
-					: "",
-			blockType: blockId
-				? (this._editor.getBlock(blockId)?.type ?? null)
-				: null,
-			blockId,
-		};
-	}
-
-	_setStreamEvents(nextEvents: readonly AIStreamEvent[]): void {
-		this._streamEvents = nextEvents;
-		this._emitStreamEvents();
-	}
-
-	_appendStreamEvent(event: AIStreamEvent): void {
-		const lastEvent = this._streamEvents[this._streamEvents.length - 1];
-		if (
-			lastEvent?.type === "status" &&
-			event.type === "status" &&
-			lastEvent.generationId === event.generationId &&
-			lastEvent.status === event.status
-		) {
-			return;
-		}
-		const nextEvents =
-			this._streamEvents.length >= MAX_STREAM_EVENTS
-				? [...this._streamEvents.slice(-(MAX_STREAM_EVENTS - 1)), event]
-				: [...this._streamEvents, event];
-		this._setStreamEvents(nextEvents);
-		if (event.type === "generation-start") {
-			announceEditorA11y(this._editor, "streamingStarted");
-		} else if (event.type === "generation-finish") {
-			announceEditorA11y(this._editor, "streamingFinished");
-		}
-	}
-
-	_emitStreamEvents(): void {
-		for (const listener of this._streamEventListeners) {
-			listener();
-		}
-	}
-
-	canUndoInlineHistory(): boolean {
-		return this._inlineHistoryIndex > 0;
-	}
-
-	canRedoInlineHistory(): boolean {
-		return (
-			this._inlineHistoryIndex >= 0 &&
-			this._inlineHistoryIndex < this._inlineHistory.length - 1
-		);
-	}
-
-	undoInlineHistory(): boolean {
-		return this.asHost()._navigateInlineHistory("undo");
-	}
-
-	redoInlineHistory(): boolean {
-		return this.asHost()._navigateInlineHistory("redo");
-	}
-
-	canHandleInlineHistoryShortcut(
-		direction: AIInlineHistoryDirection,
-	): boolean {
-		if (this._pendingInlineHistoryRestore) {
-			return true;
-		}
-		return this.asHost()._canHandleInlineHistoryShortcut(direction, {
-			shortcutOnly: true,
-		});
-	}
-
-	handleInlineHistoryShortcut(direction: AIInlineHistoryDirection): boolean {
-		if (this._pendingInlineHistoryRestore) {
-			this._queuedInlineHistoryShortcutDirections.push(direction);
-			return true;
-		}
-		return this.asHost()._navigateInlineHistory(direction, {
-			shortcutOnly: true,
-		});
-	}
-
-	async runCommand(
-		commandId: string,
-		options?: AICommandExecutionOptions,
-	): Promise<GenerationState> {
-		const ctx = this.getCommandContext();
-		const command = this._registry.resolve(commandId);
-		if (!command) {
-			throw new Error(`Unknown AI command "${commandId}"`);
-		}
-		if (command.guard && !command.guard(ctx)) {
-			throw new Error(
-				`AI command "${resolveCatalogCopy(this._editor, command.label)}" is not available in this context`,
-			);
-		}
-
-		const prompt = this._registry.resolvePrompt(command, ctx);
-		this._lastPrompt = prompt;
-		this._lastCommandId = command.id;
-
-		if (
-			command.target === "selection" &&
-			ctx.selection?.type === "text" &&
-			!isCollapsed(ctx.selection)
-		) {
-			return this.asHost()._runSelectionGeneration(
-				prompt,
-				ctx.selection,
-				command.id,
-				options?.maxSteps,
-			);
-		}
-
-		const targetBlockId =
-			options?.blockId ??
-			ctx.blockId ??
-			this._editor.lastBlock()?.id ??
-			this._editor.firstBlock()?.id;
-		if (!targetBlockId) {
-			throw new Error("Cannot run AI command without a target block");
-		}
-		return this.asHost()._runBlockGeneration(
-			prompt,
-			targetBlockId,
-			command.id,
-			options?.maxSteps,
-		);
-	}
-
-	async runPrompt(
-		prompt: string,
-		options?: AICommandExecutionOptions,
-	): Promise<GenerationState> {
-		this._lastPrompt = prompt;
-		this._lastCommandId = null;
-		const promptTarget = resolvePromptTarget(
-			this._editor.selection,
-			options?.target,
-		);
-		if (promptTarget === "selection") {
-			const selection = this._editor.selection;
-			if (selection?.type !== "text" || isCollapsed(selection)) {
-				throw new Error(
-					"Cannot run a selection prompt without selected text",
-				);
-			}
-			return this.asHost()._runSelectionGeneration(
-				prompt,
-				selection,
-				undefined,
-				options?.maxSteps,
-			);
-		}
-		if (promptTarget === "document") {
-			return this.asHost()._runDocumentGeneration(
-				prompt,
-				options?.blockId,
-				undefined,
-				options?.maxSteps,
-			);
-		}
-		const blockId =
-			options?.blockId ??
-			resolveActiveBlockId(this._editor.selection) ??
-			this._editor.lastBlock()?.id ??
-			this._editor.firstBlock()?.id;
-		if (!blockId) {
-			throw new Error("Cannot run AI prompt without a target block");
-		}
-		return this.asHost()._runBlockGeneration(
-			prompt,
-			blockId,
-			undefined,
-			options?.maxSteps,
-		);
-	}
-
-	async retryActiveGeneration(): Promise<GenerationState | null> {
-		const prompt = this._lastPrompt;
-		if (!prompt) return null;
-		this.asHost().rejectActiveGeneration();
-		const active = this._state.activeGeneration;
-		const blockId =
-			active?.blockId ??
-			resolveActiveBlockId(this._editor.selection) ??
-			this._editor.lastBlock()?.id ??
-			this._editor.firstBlock()?.id;
-		if (!blockId) return null;
-		if (active?.sessionId) {
-			const activeSession = this._state.sessions.find(
-				(session) => session.id === active.sessionId,
-			);
-			const retryTarget =
-				activeSession?.target.kind === "document"
-					? "document"
-					: (active?.target ?? "block");
-			return this.asHost().runSessionPrompt(active.sessionId, prompt, {
-				blockId: retryTarget === "document" ? null : blockId,
-				target: retryTarget,
-			});
-		}
-		if (this._lastCommandId) {
-			return this.runCommand(this._lastCommandId, { blockId });
-		}
-		return this.runPrompt(prompt, {
-			blockId,
-			target: active?.target ?? "block",
-		});
-	}
-}
-
-interface AIControllerExtensionSurface {
-	destroy(): void;
-	handleDocumentChange(events: readonly CommitEvent[]): void;
-	buildDecorations(): Decoration[];
-	canHandleInlineHistoryShortcut(
-		direction: AIInlineHistoryDirection,
-	): boolean;
-	handleInlineHistoryShortcut(direction: AIInlineHistoryDirection): boolean;
-}
-
-interface AIControllerImpl extends AIController, AIControllerExtensionSurface {
-	_setState(partial: Partial<AIControllerState>): void;
-	_syncSuggestionsFromDocument(): boolean;
-	_handleHistoryApplied(event: HistoryAppliedEvent): void;
-	_restoreInlineHistorySnapshotFromUndo(
-		snapshot: AIInlineHistorySnapshot,
-	): void;
-}
-
-function installControllerMethods(controller: AIControllerImpl): void {
-	Object.assign(
-		controller,
-		reviewResolutionMethods,
-		generationRunnerMethods,
-		decorationControllerMethods,
-		suggestionControllerMethods,
-		commitSupportMethods,
-		operationCommitMethods,
-		bufferedBlockGenerationMethods,
-		fastApplySupportMethods,
-		workingSetMethods,
-		workingSetValidationMethods,
-		inlineHistoryRecording,
-		inlineHistoryNavigation,
-		inlineHistoryRestore,
-	);
-}
-
 export function aiExtension(config: AIExtensionConfig = {}): Extension {
 	let unsubscribeTrackedOrigins: (() => void) | null = null;
 	let controller: AIControllerImpl | null = null;
 	let inlineCompletion: AIInlineCompletionController | null = null;
 	let releaseInlineCompletion: (() => void) | null = null;
-	let inlineHistory: AIInlineHistoryService | null = null;
-	let reviewController: AIReviewService | null = null;
+	let inlineHistory: AIInlineHistoryController | null = null;
 	let activeEditor: Editor | null = null;
 
 	return defineExtension({
@@ -627,7 +142,7 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 			controller = new AIControllerImpl(editor, config, {
 				inlineCompletion,
 			});
-			inlineHistory = new AIInlineHistoryService({
+			inlineHistory = {
 				canUndoInlineHistory: () =>
 					controller ? controller.canUndoInlineHistory() : false,
 				canRedoInlineHistory: () =>
@@ -644,22 +159,10 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 					controller ? controller.undoInlineHistory() : false,
 				redoInlineHistory: () =>
 					controller ? controller.redoInlineHistory() : false,
-			});
-			reviewController = new AIReviewService({
-				getSuggestions: () => controller?.getSuggestions() ?? [],
-				acceptSuggestion: (id) =>
-					controller?.acceptSuggestion(id) ?? false,
-				rejectSuggestion: (id) =>
-					controller?.rejectSuggestion(id) ?? false,
-				acceptAllSuggestions: () => controller?.acceptAllSuggestions(),
-				rejectAllSuggestions: () => controller?.rejectAllSuggestions(),
-			});
+			};
 			editor.internals.assignSlot(AI_CONTROLLER_SLOT, controller);
 			editor.internals.assignSlot(AI_INLINE_HISTORY_SLOT, inlineHistory);
-			editor.internals.assignSlot(
-				AI_REVIEW_CONTROLLER_SLOT,
-				reviewController,
-			);
+			editor.internals.assignSlot(AI_REVIEW_CONTROLLER_SLOT, controller);
 			unsubscribeTrackedOrigins =
 				editor.undoManager.registerTrackedOrigins([
 					AI_SESSION_SUGGESTION_ORIGIN,
@@ -680,7 +183,6 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 			inlineCompletion = null;
 			releaseInlineCompletion = null;
 			inlineHistory = null;
-			reviewController = null;
 			activeEditor = null;
 		},
 

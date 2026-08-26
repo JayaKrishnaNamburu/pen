@@ -27,7 +27,9 @@ function storedBlockText(ydoc: Y.Doc, blockId: string): string {
 
 function storedCellText(ydoc: Y.Doc, blockId: string): string {
 	const blockMap = (ydoc.getMap("blocks") as RawBlocksMap).get(blockId);
-	const table = blockMap?.get("tableContent") as Y.Array<Y.Map<unknown>> | undefined;
+	const table = blockMap?.get("tableContent") as
+		| Y.Array<Y.Map<unknown>>
+		| undefined;
 	const row = table?.get(0);
 	const cells = row?.get("cells") as Y.Array<Y.Map<unknown>> | undefined;
 	const cell = cells?.get(0);
@@ -48,7 +50,9 @@ function seedStamp2SentinelDocument() {
 		initBlockMap(blocks, "t1", "table", "table");
 		(blocks.get("p1")!.get("content") as Y.Text).insert(0, "\u200B");
 		(blocks.get("p2")!.get("content") as Y.Text).insert(0, "\u200B");
-		const table = blocks.get("t1")!.get("tableContent") as Y.Array<Y.Map<unknown>>;
+		const table = blocks.get("t1")!.get("tableContent") as Y.Array<
+			Y.Map<unknown>
+		>;
 		const row = table.get(0)!;
 		const cells = row.get("cells") as Y.Array<Y.Map<unknown>>;
 		(cells.get(0)!.get("content") as Y.Text).insert(0, "\u200B");
@@ -76,9 +80,10 @@ describe("empty blocks EM3", () => {
 		});
 
 		expect(readFormatStamp(editor.internals.crdtDoc).format).toBe(3);
-		expect(getDocumentLoadReport(editor.internals.crdtDoc)?.strippedSentinelCount).toBe(
-			3,
-		);
+		expect(
+			getDocumentLoadReport(editor.internals.crdtDoc)
+				?.strippedSentinelCount,
+		).toBe(3);
 		expect(editor.getBlock("p1")?.textContent()).toBe("");
 		expect(editor.getBlock("p2")?.textContent()).toBe("");
 		const ydoc = adapter.raw<Y.Doc>(editor.internals.crdtDoc);
@@ -96,12 +101,13 @@ describe("empty blocks EM3", () => {
 		});
 		expect(readFormatStamp(second.internals.crdtDoc).format).toBe(3);
 		expect(
-			getDocumentLoadReport(second.internals.crdtDoc)?.strippedSentinelCount ?? 0,
+			getDocumentLoadReport(second.internals.crdtDoc)
+				?.strippedSentinelCount ?? 0,
 		).toBe(0);
 		expect(second.getBlock("p1")?.textContent()).toBe("");
-		expect(storedBlockText(adapter.raw<Y.Doc>(second.internals.crdtDoc), "p1")).toBe(
-			"",
-		);
+		expect(
+			storedBlockText(adapter.raw<Y.Doc>(second.internals.crdtDoc), "p1"),
+		).toBe("");
 
 		editor.destroy();
 		second.destroy();

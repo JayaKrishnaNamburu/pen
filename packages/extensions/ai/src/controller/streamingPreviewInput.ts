@@ -1,7 +1,10 @@
 import type { DocumentRange, Editor } from "@input/pen-types";
 import { normalizeFlowMarkdownOutput } from "../runtime/flowMarkdown";
 import { toStreamingPreviewText } from "../runtime/streamingPreviewText";
-import type { AIStreamingReviewPreviewTarget } from "../types";
+import type {
+	AIStreamingReviewPreviewInput,
+	AIStreamingReviewPreviewTarget,
+} from "../types";
 
 /**
  * Display text for a markdown payload still arriving on the review surface.
@@ -13,6 +16,13 @@ import type { AIStreamingReviewPreviewTarget } from "../types";
  */
 export function markdownStreamingPreviewText(text: string): string {
 	return toStreamingPreviewText(normalizeFlowMarkdownOutput(text));
+}
+
+export function streamingPreviewDisplayText(
+	text: string,
+	format: "plain" | "markdown",
+): string {
+	return format === "markdown" ? markdownStreamingPreviewText(text) : text;
 }
 
 /**
@@ -91,8 +101,94 @@ export function resolveSelectionPreviewTarget(
 		start: { blockId: range.start.blockId, offset: range.start.offset },
 		end: { blockId: range.end.blockId, offset: range.end.offset },
 		blockIds: blockOrder
-			.slice(Math.min(startIndex, endIndex), Math.max(startIndex, endIndex) + 1)
+			.slice(
+				Math.min(startIndex, endIndex),
+				Math.max(startIndex, endIndex) + 1,
+			)
 			.filter((blockId) => editor.getBlock(blockId) != null),
+	};
+}
+
+export function markdownReviewPreviewInput(
+	editor: Editor,
+	input: {
+		sessionId: string;
+		turnId?: string;
+		blockId: string;
+		offset: number;
+		replaceTargetBlock: boolean;
+		replaceBlockIds?: readonly string[];
+		text: string;
+	},
+): AIStreamingReviewPreviewInput {
+	return {
+		sessionId: input.sessionId,
+		turnId: input.turnId,
+		target: resolveMarkdownPreviewTarget(editor, input),
+		text: markdownStreamingPreviewText(input.text),
+	};
+}
+
+export function selectionReviewPreviewInput(
+	editor: Editor,
+	input: {
+		sessionId: string;
+		turnId?: string;
+		range: Pick<DocumentRange, "start" | "end">;
+		text: string;
+		format: "plain" | "markdown";
+	},
+): AIStreamingReviewPreviewInput | null {
+	const target = resolveSelectionPreviewTarget(editor, input.range);
+	if (!target) {
+		return null;
+	}
+	return {
+		sessionId: input.sessionId,
+		turnId: input.turnId,
+		target,
+		text: streamingPreviewDisplayText(input.text, input.format),
+	};
+}
+
+/**
+ * Whether the streamed operation adds content rather than replacing it. An
+ * insert previewed as a replacement reads as the block being overwritten and
+ * then snapping back, which is worse than showing nothing.
+ */
+export function isInsertingEditOperation(operation: string | null): boolean {
+	return operation === "insert_blocks";
+}
+
+export function editDocumentReviewPreviewInput(
+	editor: Editor,
+	input: {
+		sessionId: string;
+		turnId?: string;
+		operationIndex: number;
+		blockId: string;
+		operation: string | null;
+		text: string;
+	},
+): AIStreamingReviewPreviewInput {
+	const blockLength = blockTextLength(editor, input.blockId);
+	return {
+		sessionId: input.sessionId,
+		turnId: input.turnId,
+		operationIndex: input.operationIndex,
+		target: isInsertingEditOperation(input.operation)
+			? {
+					kind: "insertion-point",
+					blockId: input.blockId,
+					offset: blockLength,
+				}
+			: {
+					kind: "text-range",
+					blockId: input.blockId,
+					from: 0,
+					to: blockLength,
+				},
+		text: input.text,
 	};
 }
 

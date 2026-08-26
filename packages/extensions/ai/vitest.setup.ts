@@ -33,7 +33,8 @@ function requestUrl(input: unknown): string {
 		if (typeof options.href === "string") {
 			return options.href;
 		}
-		const protocol = typeof options.protocol === "string" ? options.protocol : "";
+		const protocol =
+			typeof options.protocol === "string" ? options.protocol : "";
 		const host =
 			typeof options.host === "string"
 				? options.host
@@ -41,7 +42,9 @@ function requestUrl(input: unknown): string {
 					? options.hostname
 					: "";
 		const port =
-			host.includes(":") || options.port == null ? "" : `:${String(options.port)}`;
+			host.includes(":") || options.port == null
+				? ""
+				: `:${String(options.port)}`;
 		const path = typeof options.path === "string" ? options.path : "";
 		const joined = `${protocol}//${host}${port}${path}`;
 		if (joined !== "//") {

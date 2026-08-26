@@ -99,8 +99,7 @@ function isReclaimableEmptyBlock(editor: Editor, blockId: string): boolean {
 
 	return (
 		block.children.length === 0 &&
-		block.textContent({ resolved: true }).trim()
-			.length === 0
+		block.textContent({ resolved: true }).trim().length === 0
 	);
 }
 

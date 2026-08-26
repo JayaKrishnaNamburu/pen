@@ -1,11 +1,5 @@
-import type {
-	BlockSchema,
-	DiagnosticEvent,
-} from "@input/pen-types";
-import {
-	defineBlock,
-	prop,
-} from "@input/pen-core";
+import type { BlockSchema, DiagnosticEvent } from "@input/pen-types";
+import { defineBlock, prop } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";

@@ -38,6 +38,8 @@ One lifecycle module owns attach/teardown/listener bookkeeping for the EditConte
 
 `contentGestures.ts` (1,143 lines at adoption) splits into pointer-selection, drag, and region modules behind the existing attach entry. The offset bridge gains round-trip property tests over the fixture corpus, including atom-adjacent and grapheme-cluster cases.
 
+**Shipped 2026-08-26 (FE5 split only).** GATE 4.8 green: attacher 147 lines; `contentGesturesPointerSelection.ts` / `contentGesturesDrag.ts` / `contentGesturesRegion.ts` own the gestures. FE7 property tests remain this wave.
+
 - GATE 4.8 [script]: `node -e "const fs=require('fs');const p='packages/rendering/dom/src/field-editor/contentGestures.ts';const n=fs.existsSync(p)?fs.readFileSync(p,'utf8').split('\n').length:0;process.exit(n<400?0:1)"`
   expect: exit 0 — the entry file is a thin attach seam (under 400 lines) or renamed away entirely; the three gesture modules own the behavior.
 - GATE 4.9 [test]: `pnpm --filter @input/pen-dom test -- src/field-editor/__tests__/fe7.offsetRoundTrip.test.ts`

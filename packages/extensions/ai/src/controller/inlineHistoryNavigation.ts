@@ -5,7 +5,7 @@ import type {
 	AIInlineHistorySnapshot,
 } from "../types";
 import { rejectSuggestions } from "../suggestions/acceptReject";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIControllerImpl } from "./aiController";
 import type { AIInlineShortcutHistoryWaypoint } from "../helpers";
 import {
 	areInlineHistorySnapshotsEqual,
@@ -18,7 +18,7 @@ import {
 
 export const inlineHistoryNavigation = {
 	_resolveInlineHistoryTargetIndex(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		direction: AIInlineHistoryDirection,
 		options?: { shortcutOnly?: boolean },
 	): number {
@@ -50,7 +50,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_resolveShortcutInlineHistorySessionId(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		currentSnapshot: AIInlineHistorySnapshot | null,
 		direction: AIInlineHistoryDirection,
 	): string | null {
@@ -131,7 +131,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_buildInlineShortcutHistoryWaypoints(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		sessionId: string | null,
 	): AIInlineShortcutHistoryWaypoint[] {
 		const waypoints: AIInlineShortcutHistoryWaypoint[] = [];
@@ -180,7 +180,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_resolveCurrentInlineShortcutWaypointIndex(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		waypoints: readonly AIInlineShortcutHistoryWaypoint[],
 		sessionId: string | null,
 	): number {
@@ -224,7 +224,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_canHandleInlineHistoryShortcut(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		direction: AIInlineHistoryDirection,
 		options?: { shortcutOnly?: boolean },
 	): boolean {
@@ -245,7 +245,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_resolveExternalInlineTurnTransition(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		currentSnapshot: AIInlineHistorySnapshot | null,
 		targetSnapshot: AIInlineHistorySnapshot,
 		direction: AIInlineHistoryDirection,
@@ -269,20 +269,21 @@ export const inlineHistoryNavigation = {
 	},
 
 	_inlineHistorySnapshotHasTurn(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		snapshot: AIInlineHistorySnapshot,
 		sessionId: string,
 		turnId: string,
 	): boolean {
 		const session =
 			snapshot.sessions.find(
-				(item) => item.id === sessionId && item.surface === "inline-edit",
+				(item) =>
+					item.id === sessionId && item.surface === "inline-edit",
 			) ?? null;
 		return session?.turns.some((turn) => turn.id === turnId) === true;
 	},
 
 	_applyExternalInlineTurnTransition(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		result: AIExternalInlineTurnResult,
 		direction: AIInlineHistoryDirection,
 		targetSnapshot: AIInlineHistorySnapshot,
@@ -301,12 +302,16 @@ export const inlineHistoryNavigation = {
 				return false;
 			}
 		} else {
-			this._applySuggestedAIOps([...result.operations], result.sessionId, {
-				generationId: result.historyId,
-				origin: "system",
-				suggestionIds: result.suggestionIds,
-				turnId: result.turnId,
-			});
+			this._applySuggestedAIOps(
+				[...result.operations],
+				result.sessionId,
+				{
+					generationId: result.historyId,
+					origin: "system",
+					suggestionIds: result.suggestionIds,
+					turnId: result.turnId,
+				},
+			);
 		}
 		this._syncSuggestionsFromDocument();
 		this._applyInlineHistorySnapshot(targetSnapshot, {
@@ -317,7 +322,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_navigateInlineHistory(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		direction: AIInlineHistoryDirection,
 		options?: { shortcutOnly?: boolean },
 	): boolean {
@@ -415,7 +420,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_applyInlineHistorySnapshot(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		snapshot: AIInlineHistorySnapshot,
 		options?: { historyTraversal?: boolean },
 	): void {
@@ -455,7 +460,7 @@ export const inlineHistoryNavigation = {
 	},
 
 	_restoreInlineHistorySnapshotFromUndo(
-		this: AIControllerMethodHost,
+		this: AIControllerImpl,
 		snapshot: AIInlineHistorySnapshot,
 	): void {
 		const targetIndex = this._inlineHistory.findIndex(
