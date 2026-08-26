@@ -48,9 +48,9 @@ function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 			".github/workflows/release.yml must unset NODE_AUTH_TOKEN around changeset publish so OIDC is not shadowed",
 		);
 	}
-	if (!/version-script:/.test(workflow) || !/publish-script:/.test(workflow)) {
+	if (/changesets\/action@\S+ # v2/.test(workflow)) {
 		problems.push(
-			".github/workflows/release.yml must pass changesets/action v2 version-script and publish-script (not version/publish)",
+			".github/workflows/release.yml must stay on changesets/action v1 while @changesets/cli is 2.x",
 		);
 	}
 	if (!/fetch-tags:\s*true/.test(workflow) || !/fetch-depth:\s*0/.test(workflow)) {
@@ -194,15 +194,13 @@ function runSelfTests() {
 		throw new Error("self-test: missing npm 11 install must fail closed");
 	}
 
-	const v1ActionInputs = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nversion: pnpm version-packages\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
+	const actionV2 = provenanceWorkflowProblems(
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nuses: changesets/action@deadbeef # v2.1.1\nversion: pnpm version-packages\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
 		"changeset publish --provenance",
 	);
-	if (
-		!v1ActionInputs.some((problem) => problem.includes("version-script"))
-	) {
+	if (!actionV2.some((problem) => problem.includes("changesets/action v1"))) {
 		throw new Error(
-			"self-test: changesets/action v1 version/publish inputs must fail closed",
+			"self-test: changesets/action v2 while CLI is 2.x must fail closed",
 		);
 	}
 
@@ -264,7 +262,7 @@ function runSelfTests() {
 	}
 
 	console.log(
-		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, --provenance, NPM_TOKEN, npm 11, v1 action inputs, and a short fixed group fail closed)",
+		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, --provenance, NPM_TOKEN, npm 11, action v2, and a short fixed group fail closed)",
 	);
 }
 
