@@ -11,7 +11,7 @@ Provide transport-specific wiring around Pen protocols and sessions.
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- `directTransport()` and `DirectTransportOptions`. `toolRuntime` is required; construction throws without it.
+- `directTransport()` and `DirectTransportOptions`. `toolRuntime` is required.
 - Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries

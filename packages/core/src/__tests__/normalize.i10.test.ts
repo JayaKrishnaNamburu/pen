@@ -86,7 +86,7 @@ function setStoredProp(
 	);
 }
 
-describe("normalization in the commit transaction (Wave 2 I10)", () => {
+describe("normalization in the commit transaction (I10)", () => {
 	it("I10: normalize writes stay in the same commit summary as the user splice", () => {
 		const editor = createEditor();
 		const commits: CommitEvent[] = [];

@@ -13,6 +13,7 @@ export interface StreamingTarget {
 	beginStreaming(zoneId: string, blockId: string, origin?: OpOrigin): void;
 	appendDelta(delta: string): void;
 	endStreaming(status: "complete" | "cancelled" | "error"): void;
+	disableActiveWriter(onReadOnlyMutation: () => void): () => void;
 }
 
 const DEFAULT_STREAM_FLUSH_INTERVAL_MS = 50;
@@ -103,6 +104,25 @@ export class StreamingTargetImpl implements StreamingTarget {
 
 	appendDelta(delta: string): void {
 		this._writer?.append(delta);
+	}
+
+	disableActiveWriter(onReadOnlyMutation: () => void): () => void {
+		const writer = this._writer;
+		if (!writer) {
+			return () => {};
+		}
+		const originalAppend = writer.append.bind(writer);
+		const originalSplice = writer.splice.bind(writer);
+		writer.append = () => {
+			onReadOnlyMutation();
+		};
+		writer.splice = () => {
+			onReadOnlyMutation();
+		};
+		return () => {
+			writer.append = originalAppend;
+			writer.splice = originalSplice;
+		};
 	}
 
 	endStreaming(status: "complete" | "cancelled" | "error"): void {

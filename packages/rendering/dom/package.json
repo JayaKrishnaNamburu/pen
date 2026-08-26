@@ -517,7 +517,8 @@
         "types": "./dist/utils/pointerSelection.d.cts",
         "default": "./dist/utils/pointerSelection.cjs"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

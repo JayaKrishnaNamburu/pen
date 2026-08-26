@@ -11,7 +11,7 @@ import { aiExtension, getAIController } from "../index";
 import { deltaStreamExtension } from "../stream";
 
 /**
- * The wave-0 measurement's decisive criterion, now the only remaining channel.
+ * The original measurement's decisive criterion, now the only remaining channel.
  *
  * A wrong edit is the document changing into something the prompt did not ask
  * for — strictly worse than no edit. Off-contract assistant text must not

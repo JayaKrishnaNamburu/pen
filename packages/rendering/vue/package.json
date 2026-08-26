@@ -37,7 +37,8 @@
         "types": "./dist/plugin.d.cts",
         "default": "./dist/plugin.cjs"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

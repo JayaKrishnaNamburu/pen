@@ -1,10 +1,8 @@
 import type { FieldEditorTextChangeEvent } from "./crdt";
 import {
 	findEmptyBlockPlaceholder,
-	isEmptyBlockPlaceholder,
 } from "./emptyBlockPlaceholder";
 import { findLogicalDOMPoint } from "./inlineAtomDom";
-import { logicalLength } from "./offsetDomain";
 
 export type EditContextTextFormat = {
 	rangeStart: number;
@@ -66,40 +64,8 @@ export function buildEditContextCharacterBounds(
 export function findTextPosition(
 	container: HTMLElement,
 	charOffset: number,
-): { node: Node; offset: number } | null {
-	const walker = document.createTreeWalker(
-		container,
-		NodeFilter.SHOW_TEXT,
-		null,
-	);
-	let remaining = charOffset;
-	let textNode: Text | null;
-
-	while ((textNode = walker.nextNode() as Text | null)) {
-		const len = textNode.textContent?.length ?? 0;
-		if (remaining <= len) {
-			return { node: textNode, offset: remaining };
-		}
-		remaining -= len;
-	}
-
-	if (isEmptyBlockPlaceholder(container.lastChild)) {
-		return findLogicalDOMPoint(container, 0);
-	}
-
-	const last = container.lastChild;
-	if (last) {
-		return { node: last, offset: last.textContent?.length ?? 0 };
-	}
-	return { node: container, offset: 0 };
-}
-
-export function isLogicallyEmptyText(text: string): boolean {
-	return logicalLength(text) === 0;
-}
-
-export function toEditContextText(text: string): string {
-	return text;
+): { node: Node; offset: number } {
+	return findLogicalDOMPoint(container, Math.max(0, charOffset));
 }
 
 export function shouldReplaceEditContextText(
@@ -112,9 +78,6 @@ export function shouldReplaceEditContextText(
 			offset += entry.retain;
 			if (offset > editContextTextLength) return true;
 		} else if (typeof entry.insert === "string") {
-			if (logicalLength(entry.insert) === 0 && entry.insert.length > 0) {
-				return true;
-			}
 			if (offset > editContextTextLength) return true;
 			offset += entry.insert.length;
 		} else if (entry.delete != null) {
@@ -141,25 +104,15 @@ export function isNavigationSelectionKey(event: KeyboardEvent): boolean {
 }
 
 function getCharacterRect(element: HTMLElement, charOffset: number): DOMRect {
-	const walker = document.createTreeWalker(
-		element,
-		NodeFilter.SHOW_TEXT,
-		null,
-	);
-	let remaining = charOffset;
-	let textNode: Text | null;
-
-	while ((textNode = walker.nextNode() as Text | null)) {
-		const len = textNode.textContent?.length ?? 0;
-		if (remaining < len) {
-			const range = document.createRange();
-			range.setStart(textNode, remaining);
-			range.setEnd(textNode, remaining + 1);
-			return range.getBoundingClientRect();
-		}
-		remaining -= len;
+	const start = findLogicalDOMPoint(element, Math.max(0, charOffset));
+	const end = findLogicalDOMPoint(element, Math.max(0, charOffset + 1));
+	const range = document.createRange();
+	range.setStart(start.node, start.offset);
+	range.setEnd(end.node, end.offset);
+	const rect = range.getBoundingClientRect();
+	if (rect.width > 0 || rect.height > 0) {
+		return rect;
 	}
-
 	const placeholder = findEmptyBlockPlaceholder(element);
 	if (placeholder) {
 		return placeholder.getBoundingClientRect();

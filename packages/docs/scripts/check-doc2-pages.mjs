@@ -10,7 +10,7 @@ const appSource = existsSync(join(srcRoot, "App.tsx"))
 	: "";
 
 /**
- * DOC2 content contract (spec/rules/documentation.md, wave-d D.3).
+ * DOC2 content contract (spec/rules/documentation.md).
  *
  * Presence plus a banned phrase is too weak: a heading and one sentence
  * passes. A raw line-count minimum is worse — arbitrary, padded, and

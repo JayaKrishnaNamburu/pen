@@ -54,5 +54,5 @@ AI feature subpaths (`@input/pen-ai/suggestions`, `/autocomplete`, `/skills`, `/
 
 `packages/` currently has 27 `package.json` files (24 published, 3 private: `@input/pen-docs`, `@input/pen-conformance`, `@input/pen-eslint-plugin`). 25 of those have a matching current-state spec. These two workspace packages exist and have no `spec/packages/` file. That is intentional:
 
-- `@input/pen-conformance` (`packages/tooling/conformance`) — private Playwright / browser-real harness. Scenario names and host pins change with the wave work; a current-state spec would rot faster than it would help.
+- `@input/pen-conformance` (`packages/tooling/conformance`) — private Playwright / browser-real harness. Scenario names and host pins track the live suite; a current-state spec would rot faster than it would help.
 - `@input/pen-eslint-plugin` (`packages/tooling/eslint-plugin`) — private lint rules that enforce `spec/rules/` invariants mechanically. The rules _are_ the documentation.

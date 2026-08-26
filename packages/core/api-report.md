@@ -77,6 +77,7 @@
 - hasIndexedCellSelectionMetadata
 - hookPriorityToPrecedence
 - interpolateMessage
+- isBlockSelected
 - isCollapsed
 - isContinuousTextFlowCapability
 - isMultiBlock
@@ -115,7 +116,6 @@
 - resolveSchema
 - resolveSchemaA11y
 - resolveSelectionTargetBlockIds
-- resolveToolExecution
 - runMigrations
 - selectAdjacentInlineAtom
 - selectionToRange

@@ -4,7 +4,6 @@ import type {
 	DocumentOp,
 	Editor,
 	InlineDelta,
-	InlineInsert,
 	SpliceTextOp,
 	StructuralOriginTag,
 } from "@input/pen-types";
@@ -37,28 +36,6 @@ export function spliceDeleteOp(
 		to: offset + length,
 		insert: "",
 	};
-}
-
-function insertsFromDeltas(
-	deltas: readonly InlineDelta[],
-): InlineInsert | InlineInsert[] {
-	const inserts: InlineInsert[] = [];
-	for (const delta of deltas) {
-		if (typeof delta.insert === "string") {
-			if (delta.insert.length > 0) {
-				inserts.push(delta.insert);
-			}
-			continue;
-		}
-		inserts.push({
-			nodeType: delta.insert.type,
-			props: { ...delta.insert.props },
-		});
-	}
-	if (inserts.length === 1) {
-		return inserts[0]!;
-	}
-	return inserts;
 }
 
 function spliceInsertsFromDeltas(

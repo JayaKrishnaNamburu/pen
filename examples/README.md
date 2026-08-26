@@ -10,7 +10,7 @@ Three host apps live here. They are the supported examples:
 
 Each is a private Vite app, a pnpm workspace member, and covered by `.github/workflows/examples.yml`. The smoke job builds the app from workspace artifacts, opens it, clicks the empty paragraph, types a character, and presses Mod-Z. A page that only mounts is not a pass.
 
-Wave D also named `collaboration`, `ai`, `import-export`, and `rsc`. Those directories do not exist, and this tree does not scaffold them. A half-working app in each of those names would be a false promise: nothing is published, the interesting paths already have real homes, and an unrun example rots immediately.
+Earlier planning also named `collaboration`, `ai`, `import-export`, and `rsc`. Those directories do not exist, and this tree does not scaffold them. A half-working app in each of those names would be a false promise: nothing is published, the interesting paths already have real homes, and an unrun example rots immediately.
 
 | Named and missing | Where that path actually lives |
 | --- | --- |

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { formatCheckReport } from "../../src/checkReport";
 import { scenario } from "../../src/scenario";
 import type { GeometryLineBox } from "../../src/types";
-import { WAVE3_WRAP_BLOCK } from "../../src/wave3Geometry";
+import { G5_WRAP_BLOCK } from "../../src/g5Geometry";
 
 /**
  * A live ArrowDown, unlike `scenarios/g5-vertical-motion.spec.ts`, goes through
@@ -69,7 +69,7 @@ async function forceWrap(page: Page): Promise<void> {
 		inline.style.wordBreak = "break-all";
 		inline.style.overflowWrap = "anywhere";
 		inline.style.whiteSpace = "pre-wrap";
-	}, WAVE3_WRAP_BLOCK);
+	}, G5_WRAP_BLOCK);
 }
 
 function midpoint(line: GeometryLineBox): number {
@@ -120,17 +120,17 @@ scenario(
 scenario(
 	"G5: ArrowDown from the first wrapped line lands on the next line of the same block",
 	async (s, page) => {
-		await s.load("wave3-geometry");
+		await s.load("g5-geometry");
 		await forceWrap(page);
 		await s.geometry.invalidate();
 		await expect
 			.poll(
 				async () =>
-					(await s.geometry.lineBoxes(WAVE3_WRAP_BLOCK)).length,
+					(await s.geometry.lineBoxes(G5_WRAP_BLOCK)).length,
 			)
 			.toBeGreaterThanOrEqual(2);
 
-		const lines = await s.geometry.lineBoxes(WAVE3_WRAP_BLOCK);
+		const lines = await s.geometry.lineBoxes(G5_WRAP_BLOCK);
 		const firstLine = lines[0];
 		expect(
 			firstLine,
@@ -156,10 +156,10 @@ scenario(
 			after?.blockId,
 			formatCheckReport(
 				"G5: live ArrowDown stays inside the wrapped block",
-				after?.blockId === WAVE3_WRAP_BLOCK ? "passed" : "failed",
+				after?.blockId === G5_WRAP_BLOCK ? "passed" : "failed",
 				`focus ${JSON.stringify(before)} -> ${JSON.stringify(after)}`,
 			),
-		).toBe(WAVE3_WRAP_BLOCK);
+		).toBe(G5_WRAP_BLOCK);
 		expect(
 			after?.offset ?? -1,
 			formatCheckReport(

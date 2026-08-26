@@ -10,18 +10,21 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   prod-audit:
     name: Published production audit
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -157,6 +160,7 @@ jobs:
 
   no-install-scripts:
     name: No published install scripts
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -172,6 +176,7 @@ jobs:
 
   sec8-dynamic-code-lint:
     name: SEC8 dynamic-code lint configured
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -182,7 +187,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Assert Wave H.1 SEC8 rules stay error
+      - name: Assert SEC8 rules stay error
         run: |
           node --input-type=module <<'EOF'
           import { readFileSync } from "node:fs";
@@ -197,7 +202,7 @@ jobs:
 
           if (missing.length > 0) {
             console.error(
-              "SEC8: Wave H.1 configured core dynamic-code bans so Pen stays functional under script-src 'self'. They must remain \"error\":",
+              "SEC8: core dynamic-code bans keep Pen functional under script-src 'self'. They must remain \"error\":",
             );
             for (const rule of missing) console.error(`  missing ${rule}`);
             process.exit(1);
@@ -207,3 +212,22 @@ jobs:
             "SEC8: no-eval, no-new-func, and no-implied-eval remain error in eslint.config.mjs",
           );
           EOF
+
+  supply-chain:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: supply-chain
+    if: always()
+    needs: [prod-audit, no-install-scripts, sec8-dynamic-code-lint]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require every supply-chain job to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}

@@ -98,7 +98,7 @@ describe("nextNormalPosition", () => {
 			).toEqual({ blockId: "marks", offset: 3 });
 		});
 
-		it("N1 Wave5: emoji ZWJ family is one grapheme step", () => {
+		it("N1: emoji ZWJ family is one grapheme step", () => {
 			expect(
 				nextNormalPosition(
 					graphemeDoc,

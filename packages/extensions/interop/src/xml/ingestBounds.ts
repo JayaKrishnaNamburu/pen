@@ -1,25 +1,18 @@
-/**
- * Ingest envelope (IOP5 / SEC4). Same numbers as the HTML / markdown /
- * JSON importers — a local copy because the shared-constant extract is
- * out of this package's fence.
- *
- * XML cannot slice to a valid document, so an oversize source is refused
- * before parse. Parse work is then O(cap), not O(input). After parse,
- * the same node / depth / image caps truncate the block tree.
- */
-
 import type { PenBlockJSON, PenDocumentJSON } from "../json/export";
+import {
+	INGEST_MAX_IMAGE_COUNT,
+	INGEST_MAX_NESTING_DEPTH,
+	INGEST_MAX_NODE_COUNT,
+	INGEST_MAX_TEXT_SIZE,
+} from "../ingestBounds";
 
-export const INGEST_MAX_NESTING_DEPTH = 32;
-export const INGEST_MAX_NODE_COUNT = 10_000;
-export const INGEST_MAX_TEXT_SIZE = 1_048_576;
-export const INGEST_MAX_IMAGE_COUNT = 256;
-
-/**
- * Advisory IOP5 wall-clock ceiling. Not a unit-suite gate — the
- * cap-before-parse refusal is why a pathological paste finishes.
- */
-export const INGEST_TIME_BUDGET_MS = 1_000;
+export {
+	INGEST_MAX_IMAGE_COUNT,
+	INGEST_MAX_NESTING_DEPTH,
+	INGEST_MAX_NODE_COUNT,
+	INGEST_MAX_TEXT_SIZE,
+	INGEST_TIME_BUDGET_MS,
+} from "../ingestBounds";
 
 export type XmlIngestDropReason =
   | "depth-exceeded"

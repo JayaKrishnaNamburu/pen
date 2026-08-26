@@ -69,7 +69,7 @@ test("empty document accepts a first keystroke and undoes it with Mod-Z", async 
 	// inline element: with the cosmetic rule stripped the element falls back to
 	// `display: inline`, and an inline box holding only a `<br>` has an empty
 	// fragment, so its own rect is 0x0. EM6 measures the placeholder for the
-	// same reason. Before Wave 5 the sentinel put a text node in that box and
+	// same reason. The old sentinel put a text node in that box and
 	// inflated it, which is the only reason this used to read the element.
 	expect(before?.placeholderTag).toBe("BR");
 	expect(before?.placeholderHeight).toBeGreaterThan(0);

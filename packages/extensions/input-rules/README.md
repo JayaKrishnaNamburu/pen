@@ -74,7 +74,7 @@ Inline shortcuts:
 
 ## Facets and commands
 
-Contributes `pen.inputRules` providers (`PEN_INPUT_RULES_FACET_NAME`). It contributes no commands. Requires no other extensions. `defaultPreset()` does not install it.
+Contributes no facet providers and no commands. The extension publishes a rules engine on `inputRulesEngineFacet` and rewrites matching input from `onBeforeApply`. Requires no other extensions. `defaultPreset()` does not install it.
 
 ## Documentation
 

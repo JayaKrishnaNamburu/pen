@@ -1,16 +1,3 @@
-// ── Branded IDs ─────────────────────────────────────────────
-export {
-	type BlockId,
-	type AppId,
-	type ZoneId,
-	type DocId,
-	blockId,
-	appId,
-	zoneId,
-	docId,
-} from "./ids";
-
-// ── Utility ─────────────────────────────────────────────────
 export type { Unsubscribe, Spacing, BorderDef } from "./utility";
 
 // ── Collaboration ───────────────────────────────────────────
@@ -40,7 +27,7 @@ export type {
 export type { DocumentRange } from "./documentRange";
 
 // ── Layout ──────────────────────────────────────────────────
-export type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout";
+export type { LayoutSchema, LayoutProps } from "./layout";
 
 // ── Input ───────────────────────────────────────────────────
 export type {

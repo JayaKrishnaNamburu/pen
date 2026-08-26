@@ -49,7 +49,7 @@ Mutating `toolCalls` are default-deny. Set `allowedMutatingTools` to grant speci
 
 | Option                 | Default | Effect                                                         |
 | ---------------------- | ------- | -------------------------------------------------------------- |
-| `toolRuntime`          | none    | Required at runtime. `directTransport` throws if it is omitted |
+| `toolRuntime`          | none    | Required. In-process tool execution |
 | `editor`               | unset   | In-process editor handed to `ToolContext.editor`               |
 | `allowedMutatingTools` | `[]`    | Mutating tools the request may run. Default deny               |
 | `onError`              | unset   | Called with tool-execution errors                              |

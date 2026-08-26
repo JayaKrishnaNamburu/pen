@@ -22,15 +22,7 @@ The monorepo is layered; dependencies point strictly downward:
 
 ## Specs Are The Contract
 
-Pen has no separate contracts directory; the spec set is the source of truth:
-
-- `spec/` is the living current-state tree and the only home for durable rules. `spec/packages/` describes each package as it is today; `spec/rules/` carries the normative rule families; `spec/charter/` holds the cross-cutting architectural invariants; `spec/MIGRATION.md` is the host adoption guide.
-
-Rules for agents:
-
-- Before touching selection, input handling, the apply pipeline, extension wiring, rendering security, or packaging, read the matching `spec/rules/` document first — `selection.md`, `pipeline.md`, `anchors.md`, `dom.md`, `security.md`, `api.md`, and so on. Normative rules carry stable IDs (`A1`–`A6`, `S1`–`S6`, `SEC1`–`SEC9`, `AX1`–`AX8`, `API1`–`API10`, ...); cite them in PR descriptions and test names.
-- When implementation work proves a spec rule wrong or untestable, amend the spec in the same PR. Silent divergence between code and spec is not acceptable.
-- `spec/` is updated when shipped behavior changes.
+`spec/README.md` is the index. `spec/` describes shipped behavior only — no roadmap. Load the matching `spec/rules/` document and package spec before editing a surface. Normative rules carry stable IDs (`A1`, `S4`, `SEC1`, `API6`, …); cite them in PR descriptions and test names. When implementation proves a rule wrong or untestable, amend the spec in the same PR. Silent divergence is a defect.
 
 ## Core Principles
 
@@ -39,7 +31,7 @@ Rules for agents:
 - Keep Pen headless: core and extensions must work without a DOM (`createHeadlessEditor`). Only `@input/pen-dom` may touch browser globals.
 - Prefer non-fatal behavior in runtime paths: drop invalid input with a `diagnostic` event rather than throwing from hooks, observers, or extension code.
 - Normalization is incremental and idempotent; repeated passes must not produce new changes.
-- The `\u200B` empty-block sentinel is removed from storage (v3 Wave 5, 2026-08-24; `spec/rules/empty-blocks.md` EM1–EM8). Do not add new code that tests for it. The two-seam confinement in `spec/rules/selection.md` §2 was the interim v2 position and is retired (I11 → I14).
+- The `\u200B` empty-block sentinel is removed from storage (`spec/rules/empty-blocks.md` EM1–EM8). Do not add new code that tests for it. The two-seam confinement in `spec/rules/selection.md` §2 was the interim v2 position and is retired (I11 → I14).
 - Selection code is under redesign; do not add `requestAnimationFrame`/`setTimeout` retries, suppression flags, or intent counters to selection paths (`spec/rules/selection.md` S4). If a selection bug cannot be fixed without one, stop and surface it.
 - Follow `.cursor/rules/*.mdc` for import style (extensionless), extension resilience, and headless React primitive conventions.
 
@@ -70,7 +62,7 @@ For substantive changes run `pnpm build`, `pnpm typecheck`, and `pnpm test` befo
 
 ## Releases
 
-- Changesets drive versioning (`pnpm changeset`, `pnpm version-packages`, `pnpm release`). Any PR that changes a published package's behavior or API includes a changeset.
+- Changesets drive versioning (`pnpm changeset`, `pnpm version-packages`, `pnpm release`). Any PR that changes a published package's behavior or API includes a changeset. The train is `0.x`; breaking is `minor`, additive is `patch`, and `major` is rejected until 1.0. The first published train is `0.3.0`.
 - Published packages ship dual ESM/CJS with `exports` maps, `files`, and `sideEffects: false`; keep manifests consistent (`sync-package-metadata.mjs` exists for shared fields).
 
 ## Agent Skills And Reviewers

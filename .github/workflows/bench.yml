@@ -7,9 +7,12 @@ on:
       - master
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: bench-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   bench:
@@ -20,19 +23,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
         with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          turbo-cache-scope: bench
 
       - name: Build bench and its dependencies
         run: pnpm --filter @input/pen-bench... build

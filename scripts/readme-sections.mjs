@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * DOC4 per-package README section check (spec/rules/documentation.md,
- * Wave D step D.6).
+ * DOC4 per-package README section check (spec/rules/documentation.md).
  *
  * Every published package README must state: what it does and does not do;
  * install with required peers; a minimal working snippet; options with

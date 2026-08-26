@@ -106,13 +106,13 @@ test("bidi-mixed is mixed LTR/RTL by construction", () => {
 	assert.match(bidi, /Hello/);
 });
 
-test("wave3-geometry: empty is empty; g5-atoms is plain latin", () => {
+test("g5-geometry: empty is empty; g5-atoms is plain latin", () => {
 	const catalog = readFixture("catalog.ts");
-	const wave = sliceBetween(catalog, '"wave3-geometry": [', '"bidi-mixed"');
-	const empty = sliceBetween(wave, 'id: "g5-empty"', 'id: "g5-atoms"');
+	const geometry = sliceBetween(catalog, '"g5-geometry": [', '"bidi-mixed"');
+	const empty = sliceBetween(geometry, 'id: "g5-empty"', 'id: "g5-atoms"');
 	assert.deepEqual(contentLiterals(empty), ['""']);
 
-	const atoms = sliceBetween(wave, 'id: "g5-atoms"', 'id: "g5-tail"');
+	const atoms = sliceBetween(geometry, 'id: "g5-atoms"', 'id: "g5-tail"');
 	assert.deepEqual(contentLiterals(atoms), ['"LEFT WRAP ATOM LINE"']);
 });
 

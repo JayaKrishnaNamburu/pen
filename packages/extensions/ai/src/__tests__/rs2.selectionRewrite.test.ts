@@ -10,7 +10,7 @@ import { createDeferred } from "./extension.testUtils";
 
 /**
  * RS2 for the selection lane. Staging already went through the suggest
- * transform before this wave; what wave 2 removed is the bespoke
+ * transform beforehand; what the one-preview change removed is the bespoke
  * presentation — the ghost overlay standing in for an edit awaiting review.
  * RS1 keeps the ghost for autocomplete, whose job is a keystroke-accepted
  * completion, and gives every proposed edit to the review surface

@@ -25,7 +25,7 @@ const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 // Firefox projection fix deleted the two rAFs it had pinned: the assertions
 // describe the rule's behavior, not a tree state.
 // The pair is derived from a live waiver rather than hardcoded. Hardcoding it
-// reintroduced the same staleness one layer up: Wave 05's end-of-write signal
+// reintroduced the same staleness one layer up: the end-of-write signal
 // deleted `applySelectionUntilNextFrame`, and this suite — which exists to keep
 // the rule honest — went red for naming the construct that retired.
 const allowlistedEntry = allowlist.entries.find(
@@ -65,7 +65,7 @@ function outOfScopePaths() {
 }
 
 describe("no-selection-timers (S4)", () => {
-	it("treats the Wave 5.8 set as in scope and named non-selection files as out", () => {
+	it("treats the protected set as in scope and named non-selection files as out", () => {
 		expect(isSelectionModule(authorityPath)).toBe(true);
 		expect(
 			isSelectionModule(
@@ -126,11 +126,10 @@ describe("no-selection-timers (S4)", () => {
 		}
 	});
 
-	it("S4: every allowlist entry names file, symbol, kind, and a retiring wave", () => {
+	it("S4: every allowlist entry names file, symbol, kind, and a reason", () => {
 		expect(allowlist.entries).toEqual([]);
 		for (const entry of allowlist.entries) {
 			expect(missingAllowlistField(entry)).toBeNull();
-			expect(entry.reason).toMatch(/Wave \d+/);
 		}
 	});
 
@@ -168,7 +167,7 @@ describe("no-selection-timers (S4)", () => {
 			file: "packages/core/src/editor/selection.ts",
 			symbol: "ghostTimerThatDoesNotExist",
 			kind: "setTimeout",
-			reason: "Wave 99 stale entry for the liveness mutation",
+			reason: "stale entry for the liveness mutation",
 		};
 		const source = readFileSync(path.join(repoRoot, stale.file), "utf8");
 		expect(

@@ -43,8 +43,6 @@ import type {
 	SelectAllBehavior,
 } from "@input/pen-types";
 import {
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	COLLECT_KEY_BINDINGS_SLOT_KEY,
 	MUTATION_GROUP_METADATA_KEY,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	generateId,

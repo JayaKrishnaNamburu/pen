@@ -1,5 +1,5 @@
 {
-  "_comment": "SCH1 (spec/rules/dom.md, Wave 3 step 3.4): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a site that cannot move onto GeometryReader. Each entry needs file, enclosing symbol, and a reason that names why this site cannot move. Remove an entry in the same PR that deletes or reschedules the last call in that symbol.",
+  "_comment": "SCH1 (spec/rules/dom.md): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a site that cannot move onto GeometryReader. Each entry needs file, enclosing symbol, and a reason that names why this site cannot move. Remove an entry in the same PR that deletes or reschedules the last call in that symbol.",
   "entries": [
     {
       "file": "packages/rendering/dom/src/field-editor/contenteditableDomHelpers.ts",
@@ -19,42 +19,42 @@
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
       "symbol": "resolveBoundarySideFromPointer",
-      "reason": "Pointer-down boundary side is returned into the same click handler; Wave 5 deletes this module with the selection engine."
+      "reason": "Pointer-down boundary side is returned into the same click handler; the selection redesign deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
       "symbol": "getClosestBlockElementFromPoint",
-      "reason": "elementFromPoint plus nearest-block walk run inside the pointer hit-test that must return a node now; Wave 5 deletes this module."
+      "reason": "elementFromPoint plus nearest-block walk run inside the pointer hit-test that must return a node now; the selection redesign deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
       "symbol": "pointToEditorSelectionPoint",
-      "reason": "caretPositionFromPoint types and fallbacks feed a synchronous pointer-to-point API; Wave 5 deletes this module."
+      "reason": "caretPositionFromPoint types and fallbacks feed a synchronous pointer-to-point API; the selection redesign deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
       "symbol": "resolveInlineAtomPoint",
-      "reason": "elementFromPoint typeof guard inside the inline-atom pointer hit-test; Wave 5 deletes this module."
+      "reason": "elementFromPoint typeof guard inside the inline-atom pointer hit-test; the selection redesign deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
       "symbol": "getSelectionPointRect",
-      "reason": "Range.getBoundingClientRect type used by the selection-bridge caret helper; Wave 5 deletes this module."
+      "reason": "Range.getBoundingClientRect type used by the selection-bridge caret helper; the selection redesign deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
       "symbol": "getTextSelectionClientRects",
-      "reason": "Range.getClientRects type for multi-rect offset mapping consumed by GeometryReader until Wave 5 replaces the seam."
+      "reason": "Range.getClientRects type for multi-rect offset mapping consumed by GeometryReader until the selection redesign replaces the seam."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
       "symbol": "getCharacterRectAtOffset",
-      "reason": "Per-character Range.getBoundingClientRect for offset-from-point; Wave 5 deletes this module."
+      "reason": "Per-character Range.getBoundingClientRect for offset-from-point; the selection redesign deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
       "symbol": "getInlineCaretRectFromOffset",
-      "reason": "Empty-inline caret uses the inline host box inside the selection-bridge offset mapper; Wave 5 deletes this module."
+      "reason": "Empty-inline caret uses the inline host box inside the selection-bridge offset mapper; the selection redesign deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/geometry/geometryMeasure.ts",

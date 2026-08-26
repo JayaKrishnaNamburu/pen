@@ -14,6 +14,7 @@ import {
   type Position,
 } from "@input/pen-types";
 import { isSupportedPenDocumentVersion } from "./schema";
+import { INGEST_MAX_TEXT_SIZE } from "../import/ingestBounds";
 import type {
   PenBlockJSON,
   PenDocumentJSON,
@@ -74,8 +75,6 @@ export const jsonImporter: Importer<string | PenDocumentJSON, PendingBlock[]> = 
     return result;
   },
 };
-
-const INGEST_MAX_TEXT_SIZE = 1_048_576;
 
 export function parseJsonDocument(input: string | PenDocumentJSON): PenDocumentJSON {
   if (typeof input === "string" && input.length > INGEST_MAX_TEXT_SIZE) {

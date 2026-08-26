@@ -72,7 +72,7 @@ type BlockCacheEntry = {
 };
 
 /**
- * Standalone Wave 3.2 GeometryReader. Not wired to DomScheduler or overlays.
+ * Standalone GeometryReader. Not wired to DomScheduler or overlays.
  */
 export function createGeometryReader(
 	options: GeometryReaderOptions,

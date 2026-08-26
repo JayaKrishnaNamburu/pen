@@ -1,4 +1,4 @@
-# Hostile corpus (Wave S.0 / SEC1–SEC5)
+# Hostile corpus (SEC1–SEC5)
 
 Committed attacker inputs for paste, import, collaborative injection, and JSON ingest.
 Payloads call `window.__xssProbe()` when they execute. The harness installs that canary.

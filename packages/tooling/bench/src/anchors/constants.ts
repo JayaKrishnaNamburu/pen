@@ -6,7 +6,7 @@ export const PG1_BASELINE_FILENAME = "v3-anchor-budget.chromium.json";
 /** 10k-word fixture identity (`src/tenKWordFixture.ts`, seed `0x70656e33`). */
 export const PG1_TEN_K_SEED = 0x70656e33;
 export const PG1_TEN_K_SEED_HEX = "0x70656e33";
-export const PG1_TEN_K_FIXTURE_ID = "wave3-10k-words";
+export const PG1_TEN_K_FIXTURE_ID = "ten-k-words";
 export const PG1_TEN_K_GENERATOR =
 	"packages/tooling/conformance/src/tenKWordFixture.ts";
 export const PG1_TEN_K_WORD_COUNT = 10_200;

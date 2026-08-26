@@ -8,13 +8,13 @@ import { fileURLToPath } from "node:url";
  * A timer in this path has repeatedly been a missing attach or a wrong seam,
  * not an engine accommodation.
  *
- * Scope is a decision, not a guess. Wave 5.8 names the protected set
+ * Scope is a decision, not a guess. S4 names the protected set
  * (authority, reader, projector, focus, offsetDomain, transitions,
  * caretPositions) and asks for the module list in-config. Files whose
  * basename contains `selection` stay in as a fail-closed net so a new
  * `selectionReader.ts` cannot silently escape. Files that set cannot see
  * (focus, offsetDomain, caretPositions, the v1 backend/IME offenders) are
- * listed in `modules`. Files the wave may keep as non-selection live in
+ * listed in `modules`. Files that are legitimately not selection code live in
  * `outOfScope`, not in the allowlist — those mean different things.
  */
 
@@ -135,7 +135,7 @@ function listHasPath(list, relative) {
 /**
  * A file is a selection module when it is production code and either
  * (1) its basename contains `selection` (the fail-closed net for the
- * files Wave 05 will create under that name) or (2) it is on the
+ * files the selection redesign creates under that name) or (2) it is on the
  * explicit `modules` list (the decision for files that name cannot
  * see). `outOfScope` wins so a non-selection file can be named without
  * becoming an allowlist waiver.
@@ -257,7 +257,7 @@ export const noSelectionTimers = {
 			},
 		],
 		messages: {
-			timer: "`{{kind}}` in `{{symbol}}` ({{file}}) is banned (S4). A timer here is evidence of a missing attach or a wrong seam, not an engine accommodation. Delete it or add an allowlist entry that names the retiring wave (S4).",
+			timer: "`{{kind}}` in `{{symbol}}` ({{file}}) is banned (S4). A timer here is evidence of a missing attach or a wrong seam, not an engine accommodation. Delete it or add an allowlist entry with a reason (S4).",
 			incompleteAllowlist:
 				"S4 allowlist entry is missing `{{field}}`. Every entry must name file, symbol, kind, and a reason (S4).",
 			unusedAllowlist:

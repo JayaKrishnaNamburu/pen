@@ -45,7 +45,7 @@
 		},
 		{
 			"api": "Intl.Segmenter",
-			"fallback": "Code-point walks for graphemes; whitespace runs for words (packages/core/src/editor/textSegmentation.ts). Wave L (LOC4) owns this entry.",
+			"fallback": "Code-point walks for graphemes; whitespace runs for words (packages/core/src/editor/textSegmentation.ts). LOC4 owns this entry.",
 			"degradation": "Word ops degrade to whitespace runs; character ops degrade to code points, never to UTF-16 code units.",
 			"sites": [
 				{

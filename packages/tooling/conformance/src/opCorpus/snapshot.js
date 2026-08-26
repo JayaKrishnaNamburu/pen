@@ -68,34 +68,34 @@ export function encodeUpdateBytes(bytes) {
 }
 
 /**
- * Wave 5 (EM3) advanced the store-generation stamp from 2 to 3 and writes
- * the `strip-empty-block-sentinels` ledger on load of a stamp < 3 document.
+ * EM3 advanced the store-generation stamp from 2 to 3 and writes the
+ * `strip-empty-block-sentinels` ledger on load of a stamp < 3 document.
  * The corpus was recorded on stamp 2 with no ledger; re-recording is
- * forbidden — these fixtures are the only surviving evidence of pre-Wave-4
- * op behaviour.
+ * forbidden — these fixtures are the only surviving evidence of the
+ * earlier op behaviour.
  *
  * Only `penFormat.format` and `penMigrations` are excluded.
  * `documentProfile` and every other metadata key stay compared, so a
  * poisoned profile still fails by name.
  *
  * Each exclusion is paired with a positive assertion: live format is 3,
- * the recording is 2, live ledger contains the Wave 5 id, and the
+ * the recording is 2, live ledger contains the migration id, and the
  * recording has no ledger. If the migration silently stopped running, or
  * if the corpus were re-recorded onto stamp 3, this fails before the
  * exclusion can hide it.
  */
 export function assertCorpusSnapshot(actual, expected, label) {
-	assertWave5LoadDrift(actual?.metadata, expected?.metadata, label);
+	assertLoadMigrationDrift(actual?.metadata, expected?.metadata, label);
 	assert.deepEqual(
-		snapshotExcludingWave5LoadDrift(actual),
-		snapshotExcludingWave5LoadDrift(expected),
+		snapshotExcludingLoadMigrationDrift(actual),
+		snapshotExcludingLoadMigrationDrift(expected),
 		label,
 	);
 }
 
-const WAVE5_MIGRATION_ID = "strip-empty-block-sentinels";
+const STRIP_SENTINELS_MIGRATION_ID = "strip-empty-block-sentinels";
 
-function assertWave5LoadDrift(actualMeta, expectedMeta, label) {
+function assertLoadMigrationDrift(actualMeta, expectedMeta, label) {
 	const actualFormat = actualMeta?.penFormat?.format;
 	const expectedFormat = expectedMeta?.penFormat?.format;
 	assert.equal(
@@ -115,12 +115,12 @@ function assertWave5LoadDrift(actualMeta, expectedMeta, label) {
 	);
 	assert.deepEqual(
 		actualMeta?.penMigrations,
-		[WAVE5_MIGRATION_ID],
-		`${label}: live ledger is ${JSON.stringify(actualMeta?.penMigrations)}, not [${WAVE5_MIGRATION_ID}]`,
+		[STRIP_SENTINELS_MIGRATION_ID],
+		`${label}: live ledger is ${JSON.stringify(actualMeta?.penMigrations)}, not [${STRIP_SENTINELS_MIGRATION_ID}]`,
 	);
 }
 
-function snapshotExcludingWave5LoadDrift(snapshot) {
+function snapshotExcludingLoadMigrationDrift(snapshot) {
 	const metadata = snapshot?.metadata;
 	if (metadata == null || typeof metadata !== "object") {
 		return snapshot;
@@ -141,7 +141,7 @@ function snapshotExcludingWave5LoadDrift(snapshot) {
 }
 
 /**
- * Wave 5's no-op load migration writes one extra metadata item before
+ * The no-op load migration writes one extra metadata item before
  * setup, which shifts this client's historical DeleteSet from `02 07`
  * to `03 06`. Command structs stay byte-identical except some parent
  * clocks that tick `07` → `08`.
@@ -168,7 +168,7 @@ export function assertCorpusUpdateBytes(actualB64, expectedB64, label) {
 	}
 	assert.ok(
 		diffs.length > 0,
-		`${label}: Wave 5 delete-set drift vanished`,
+		`${label}: load-migration delete-set drift vanished`,
 	);
 	let dsIndex = -1;
 	for (let k = 0; k < diffs.length - 1; k++) {
@@ -188,7 +188,7 @@ export function assertCorpusUpdateBytes(actualB64, expectedB64, label) {
 	assert.notEqual(
 		dsIndex,
 		-1,
-		`${label}: missing Wave 5 delete-set shift 02 07 → 03 06`,
+		`${label}: missing load-migration delete-set shift 02 07 → 03 06`,
 	);
 	const rest = diffs.filter((_, k) => k !== dsIndex && k !== dsIndex + 1);
 	for (const d of rest) {

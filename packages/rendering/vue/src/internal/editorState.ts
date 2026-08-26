@@ -1,7 +1,7 @@
 import {
   affectedBlockIdsFromSummary,
   getNumberedListItemValue,
-  getSelectionBlockRange,
+  isBlockSelected as isBlockIdInSelection,
 } from "@input/pen-core";
 import { getExpandedBlockRole } from "@input/pen-dom/field-editor";
 import type {
@@ -167,25 +167,11 @@ export function isBlockSelected(
   selection: ReadonlySelectionState,
   blockId: string,
 ): boolean {
-  if (selection === null) {
-    return false;
-  }
-  switch (selection.type) {
-    case "block":
-      return selection.blockIds.includes(blockId);
-    case "text":
-      return getSelectionBlockRange(
-        editor.documentState.blockOrder,
-        selection,
-      ).includes(blockId);
-    case "cell":
-    case "app":
-      return false;
-    default: {
-      const _exhaustive: never = selection;
-      return _exhaustive;
-    }
-  }
+  return isBlockIdInSelection(
+    editor.documentState.blockOrder,
+    selection,
+    blockId,
+  );
 }
 
 export function resolveExpandedSurfaceRole(

@@ -273,7 +273,7 @@ function fingerprintsEqual(
 // behaviour: OB6 (2026-08-24) stopped document construction from consuming an
 // id, which shifted every absolute commit number down by one while leaving
 // every selection outcome byte-identical. Re-recording the corpus is forbidden
-// — it is the only surviving evidence of pre-Wave-4 authority behaviour, and a
+// — it is the only surviving evidence of the earlier authority behaviour, and a
 // re-record would compare the new world against itself — and a blanket offset
 // would make any future off-by-one permanently invisible.
 //

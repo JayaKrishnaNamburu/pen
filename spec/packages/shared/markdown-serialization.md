@@ -12,7 +12,6 @@ Provide shared lower-level helpers used by higher-level packages.
 
 - Export map: `.`
 - Owned here: `exportMarkdownForBlocks()`, `exportMarkdownRange()`
-- Re-exports from `@input/pen-core`: `buildTableChildren()`, `getNumberedListItemValue()`, `sortDeltaAttributes()`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -23,7 +22,7 @@ Provide shared lower-level helpers used by higher-level packages.
 
 ## Data Flow / Runtime Model
 
-This package still owns markdown serialization (`exportMarkdownForBlocks()`, `exportMarkdownRange()`). `buildTableChildren()`, `getNumberedListItemValue()`, and `sortDeltaAttributes()` are re-exports from `@input/pen-core`. The old `core → markdown-serialization` inversion is gone.
+This package still owns markdown serialization (`exportMarkdownForBlocks()`, `exportMarkdownRange()`). The old `core → markdown-serialization` inversion is gone.
 
 ## Integration Notes
 

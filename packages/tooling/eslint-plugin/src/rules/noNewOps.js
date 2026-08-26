@@ -1,5 +1,5 @@
 /**
- * Wave 4 / OP1: DocumentOp is closed at ten primitives and only shrinks.
+ * OP1: DocumentOp is closed at ten primitives and only shrinks.
  * An eleventh `| NameOp` member in `types/ops.ts` fails lint.
  */
 

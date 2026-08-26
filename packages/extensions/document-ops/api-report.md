@@ -46,7 +46,6 @@
 - BuildDocumentWriteOpsOptions
 - BuildDocumentWriteOpsResult
 - DOCUMENT_OP_TYPES
-- DOCUMENT_OPS_TOOL_RUNTIME_SLOT
 - DocumentWriteBlockInput
 - DocumentWriteFormat
 - INVALID_TOOL_PAYLOAD_CODE
@@ -56,7 +55,6 @@
 ### type
 
 - DocumentBlockSnapshot
-- DocumentOpsOptions
 - RetrievedDocumentSpan
 - RetrieveDocumentSpansInput
 - StructuredTargetInspection

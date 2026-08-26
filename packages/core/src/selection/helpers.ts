@@ -77,6 +77,14 @@ export function getSelectionBlockRange(
 	}
 }
 
+export function isBlockSelected(
+	blockOrder: readonly string[],
+	sel: ReadonlySelectionState,
+	blockId: string,
+): boolean {
+	return getSelectionBlockRange(blockOrder, sel).includes(blockId);
+}
+
 export function selectionToRange(
 	doc: PenDocument,
 	sel: ReadonlyTextSelection,

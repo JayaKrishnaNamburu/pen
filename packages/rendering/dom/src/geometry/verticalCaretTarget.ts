@@ -13,7 +13,7 @@ type GeometryReaderWithBlocks = GeometryReader & {
 };
 
 /**
- * G5: vertical caret motion. Wave 4's `pen.caretUp/Down` will call this via
+ * G5: vertical caret motion. `pen.caretUp/Down` call this via
  * `measureNow`. `goalX` persists on the resulting selection.
  */
 export function verticalCaretTarget(

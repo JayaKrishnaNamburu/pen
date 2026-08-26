@@ -57,7 +57,7 @@ A bare `createEditor()` has an empty schema. Unknown block types are dropped. `d
 | `./json`     | `jsonExporter`     | `jsonImporter` and `jsonDocumentImporter` |
 | `./xml`      | `xmlExporter`      | `xmlImporter`                             |
 
-Ingest-bound constants (`INGEST_MAX_*`) stay on the format subpath that owns them. They are not re-exported from the package root because HTML, Markdown, and JSON each ship a local copy.
+Ingest-bound constants (`INGEST_MAX_*`) live in `src/ingestBounds.ts` and are re-exported from each format subpath. They are not re-exported from the package root.
 
 ## What each format provides
 
@@ -68,7 +68,7 @@ Ingest-bound constants (`INGEST_MAX_*`) stay on the format subpath that owns the
 
 ## Ingest bounds (IOP5 / SEC4)
 
-The same envelope governs every ingest path. These constants are not configurable. They sit beside the published runtime envelope in `spec/rules/scale.md` SCALE1 (verified document size is a different number — ingest caps are what a single paste/import will accept). HTML, Markdown, JSON, and XML each keep a local copy so one document arriving by two routes has one limit.
+The same envelope governs every ingest path. These constants are not configurable. They sit beside the published runtime envelope in `spec/rules/scale.md` SCALE1 (verified document size is a different number — ingest caps are what a single paste/import will accept). HTML, Markdown, JSON, XML, and clipboard ingest all read the same numbers.
 
 | Constant                   |     Value | What it caps                                                                                                                                                                                                |
 | -------------------------- | --------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

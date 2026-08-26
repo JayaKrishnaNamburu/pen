@@ -35,7 +35,7 @@ type ScheduledJob = () => void;
  * owner; do not share an instance or its queues across editors.
  *
  * Verbatim contract: `read`, `write`, `measureNow`, `phase`.
- * Standalone Wave 3.1 module: not wired to editor.apply or React.
+ * Standalone module: not wired to editor.apply or React.
  */
 export class DomScheduler {
 	readonly rootId: string;
@@ -249,7 +249,7 @@ export class DomScheduler {
 	}
 
 	/**
-	 * Wave 3.3: overlay paints run after the projector (OV1). Empty
+	 * Overlay paints run after the projector (OV1). Empty
 	 * until overlays subscribe to flushes.
 	 */
 	private paintOverlays(): void {}

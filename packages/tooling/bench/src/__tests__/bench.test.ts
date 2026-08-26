@@ -221,7 +221,7 @@ describe("@input/pen-bench runner", () => {
 		expect(results[0]?.metrics).toMatchObject({ alignment: "substitute" });
 	});
 
-	it("defines all wave 6 benchmark suites", () => {
+	it("defines all benchmark suites", () => {
 		const suites = createBenchSuites();
 		const suiteNames = suites.map((suite) => suite.name);
 
@@ -386,7 +386,7 @@ describe("@input/pen-bench runner", () => {
 		const waiver: BenchWaiver = {
 			benchId: "extension.dispatch-observe-x5",
 			rationale: "Known regression under local instrumentation",
-			owner: "wave-6",
+			owner: "pen-bench",
 			issue: "https://example.com/issues/bench-1",
 			expiresOn: "2099-01-01",
 		};
@@ -422,7 +422,7 @@ describe("@input/pen-bench runner", () => {
 		const waiver: BenchWaiver = {
 			benchId: "extension.dispatch-observe-x5",
 			rationale: "Temporary exception",
-			owner: "wave-6",
+			owner: "pen-bench",
 			expiresOn: "2000-01-01",
 		};
 

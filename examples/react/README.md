@@ -18,25 +18,22 @@ pnpm dev -- --filter=@input/pen-example-react
 The post-publish consumer command, including peers, will be:
 
 ```bash
-pnpm add @input/pen-preset-default @input/pen-core @input/pen-react react react-dom yjs
+pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
 ```
 
-`react` and `react-dom` are peers of `@input/pen-react`. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs it.
+`react` and `react-dom` are peers of `@input/pen-react`. `yjs` and `y-protocols` are peers of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs both.
 
 ## Mount
 
 ```tsx
 "use client";
 
-import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { PenEditor } from "@input/pen-react";
-
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+import { PenEditor, useEditor } from "@input/pen-react";
 
 export function App() {
+  const editor = useEditor({ preset: defaultPreset() });
+
   return <PenEditor editor={editor} />;
 }
 ```
@@ -49,4 +46,4 @@ Pen ships no required stylesheet — the editor is functional unstyled, includin
 
 ## Run
 
-Requires Node 22+ and pnpm 9. The install commands above start Vite at `http://localhost:5173`.
+Requires Node 22+ and pnpm 10. The install commands above start Vite at `http://localhost:5173`.

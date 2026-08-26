@@ -229,7 +229,7 @@ describe("CH2 lint gate", () => {
 		).toHaveLength(1);
 	});
 
-	it("reports a seeded setTimeout in a Wave 5.8 module the basename matcher used to miss", async () => {
+	it("reports a seeded setTimeout in a protected module the basename matcher used to miss", async () => {
 		const eslint = new ESLint({
 			cwd: repoRoot,
 			overrideConfig: {

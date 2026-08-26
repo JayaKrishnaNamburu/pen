@@ -166,7 +166,7 @@ describe("GeometryReader G2 cache (injected measure)", () => {
 		expect(lineBoxes).toHaveBeenCalledTimes(3);
 	});
 
-	it("G3: injected lineBoxes stay single-run until Wave 6", () => {
+	it("G3: injected lineBoxes stay single-run", () => {
 		const root = document.createElement("div");
 		const boxes = [line(0, 16, 0, 8)];
 		const reader = createGeometryReader({

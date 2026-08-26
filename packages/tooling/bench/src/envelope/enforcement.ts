@@ -125,7 +125,7 @@ export const ENFORCEMENT_INVENTORY: readonly EnforcementRow[] = [
 		clockNote: "size is a count, not a timed envelope row",
 	},
 	{
-		id: "wave3-typing-budget.chromium",
+		id: "typing-budget.chromium",
 		subject: "Chromium typing budget (other package)",
 		unit: "n/a",
 		unitFailsOn: "none — @input/pen-conformance record-only scenario",

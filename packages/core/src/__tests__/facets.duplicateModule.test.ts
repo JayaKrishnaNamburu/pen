@@ -10,9 +10,9 @@ import {
 // test import. A same-name second object in one module does not reproduce
 // this; .of() and getProviderRecord already share that module's map.
 // Guards the facet registry against a duplicated @input/pen-core, the same
-// dedupe hazard Wave P's yjs two-copies line tracks.
+// dedupe hazard the yjs two-copies rule tracks.
 // @ts-expect-error API1 two-copies: a query import is a second module copy, not a resolvable path
-import * as facetCopy from "../facets/defineFacet?copy=lane70";
+import * as facetCopy from "../facets/defineFacet?copy=duplicate";
 import { createFacetRegistry } from "../facets/registry";
 
 const defineFacetCopy: typeof defineFacet = facetCopy.defineFacet;

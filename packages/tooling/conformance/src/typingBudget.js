@@ -1,10 +1,10 @@
 /**
- * Wave 3.5 record-only typing budget. Compares a run to the committed
- * baseline and formats drift. Never decides pass/fail on the numbers —
- * Wave 7 flips the counts to assertions. A 5% p95 move is quiet on
- * purpose; a count change is loud because counts are machine-independent.
+ * Record-only typing budget. Compares a run to the committed baseline and
+ * formats drift. Never decides pass/fail on the numbers — enforcing the
+ * counts is a later step. A 5% p95 move is quiet on purpose; a count
+ * change is loud because counts are machine-independent.
  *
- * Spec budgets stay at the wave-doc targets (read-phase p95 = 2ms). The
+ * Spec budgets stay at the spec targets (read-phase p95 = 2ms). The
  * committed Chromium recording is already 3.4ms, so versusSpec.blown is
  * true on purpose. Raising the budget to hide that would launder the
  * number; failing the tree on it would fail on a measurement that does
@@ -261,7 +261,7 @@ export function formatDriftReport(baseline, current) {
 	const header = [
 		"TYPING_BUDGET_DRIFT  record-only; this run does not fail on these numbers",
 		"quiet = time moved <50% (a 5% p95 move is quiet — reviewers will not see a git diff unless someone re-records)",
-		"loud  = a count moved, or a time moved ≥50%. Wave 7 can enforce the counts.",
+		"loud  = a count moved, or a time moved ≥50%. The counts can be enforced later.",
 	];
 	const fixtureLine =
 		baseline.fixture?.contentSha256 && current.fixture?.contentSha256

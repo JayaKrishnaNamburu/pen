@@ -64,98 +64,83 @@
 
 `./dist/html.d.ts`
 
-### function
+### value
 
 - admitProviderImageUrl
+- ALLOWED_DATA_PEN_ATTRS
 - applyHtmlImageSrcPolicy
+- DEFAULT_HTML_IMAGE_SRC_POLICY
+- htmlExporter
+- HtmlExportViewMode
+- HtmlImageSrcPolicy
+- htmlImporter
+- HtmlImporter
+- HtmlImportOptions
+- INGEST_FORBIDDEN_KEYS
+- INGEST_MAX_IMAGE_COUNT
+- INGEST_MAX_NESTING_DEPTH
+- INGEST_MAX_NODE_COUNT
+- INGEST_MAX_TEXT_SIZE
+- INGEST_TIME_BUDGET_MS
+- IngestDroppedByReason
+- IngestDropReason
+- IngestReport
 - isIngestibleImageSrc
 - parseHtmlToBlocks
 - parseHtmlWithReport
 - sanitizeHTML
 
-### value
-
-- ALLOWED_DATA_PEN_ATTRS
-- DEFAULT_HTML_IMAGE_SRC_POLICY
-- htmlExporter
-- htmlImporter
-- INGEST_FORBIDDEN_KEYS
-- INGEST_MAX_IMAGE_COUNT
-- INGEST_MAX_NESTING_DEPTH
-- INGEST_MAX_NODE_COUNT
-- INGEST_MAX_TEXT_SIZE
-- INGEST_TIME_BUDGET_MS
-
-### type
-
-- HtmlExportViewMode
-- HtmlImageSrcPolicy
-- HtmlImporter
-- HtmlImportOptions
-- IngestDroppedByReason
-- IngestDropReason
-- IngestReport
-
 ## ./markdown
 
 `./dist/markdown.d.ts`
 
-### function
+### value
 
 - exportMarkdownForBlocks
 - exportMarkdownRange
-- parseMarkdownToBlocks
-- parseMarkdownWithReport
-
-### value
-
 - INGEST_FORBIDDEN_KEYS
 - INGEST_MAX_IMAGE_COUNT
 - INGEST_MAX_NESTING_DEPTH
 - INGEST_MAX_NODE_COUNT
 - INGEST_MAX_TEXT_SIZE
 - INGEST_TIME_BUDGET_MS
+- IngestDroppedByReason
+- IngestDropReason
+- IngestReport
 - MarkdownExportConfig
 - markdownExporter
 - MarkdownExportRange
 - MarkdownExportViewMode
 - markdownImporter
-
-### type
-
-- IngestDroppedByReason
-- IngestDropReason
-- IngestReport
+- parseMarkdownToBlocks
+- parseMarkdownWithReport
 
 ## ./json
 
 `./dist/json.d.ts`
 
-### function
+### value
 
 - exportEditorToJson
 - exportEditorToText
 - exportPenDocumentToText
 - exportPlainText
-- parseJsonDocument
-- parseJsonToBlocks
-- parseJsonWithReport
-
-### guard
-
-- isSupportedPenDocumentVersion
-
-### value
-
 - INGEST_FORBIDDEN_KEYS
 - INGEST_MAX_IMAGE_COUNT
 - INGEST_MAX_NESTING_DEPTH
 - INGEST_MAX_NODE_COUNT
 - INGEST_MAX_TEXT_SIZE
 - INGEST_TIME_BUDGET_MS
+- IngestDroppedByReason
+- IngestDropReason
+- IngestReport
+- isSupportedPenDocumentVersion
 - jsonDocumentImporter
 - jsonExporter
 - jsonImporter
+- parseJsonDocument
+- parseJsonToBlocks
+- parseJsonWithReport
 - PEN_DOCUMENT_JSON_VERSION
 - PenBlockJSON
 - PenDocumentJSON
@@ -165,14 +150,8 @@
 - PenInlineTextSegmentJSON
 - PenJsonExportExtraOptions
 - PenMarkJSON
-- textExporter
-
-### type
-
-- IngestDroppedByReason
-- IngestDropReason
-- IngestReport
 - PenTextExportExtraOptions
+- textExporter
 
 ## ./xml
 

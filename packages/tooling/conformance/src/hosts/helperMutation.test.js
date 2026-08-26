@@ -124,7 +124,7 @@ test("scenarios call the bridge helper, not selection.isCollapsed", () => {
 		assert.doesNotMatch(
 			body,
 			/selection\.isCollapsed/,
-			`${rel} still reads the live/DTO property Wave 5.1 is removing`,
+			`${rel} still reads the live/DTO property the selection redesign is removing`,
 		);
 		assert.doesNotMatch(
 			body,
@@ -147,7 +147,7 @@ test("scenarios call the bridge helper, not selection.isCollapsed", () => {
 });
 
 test("sampleCaretPoints samples empty and mid offsets", async () => {
-	const { sampleCaretPoints } = await import("../wave3Geometry.ts");
+	const { sampleCaretPoints } = await import("../g5Geometry.ts");
 	const empty = sampleCaretPoints([{ id: "g5-empty", length: 0 }]);
 	assert.ok(empty.length > 0, "empty block produced no caret points");
 	assert.ok(empty.every((point) => point.offset === 0));
@@ -194,7 +194,7 @@ test("tenK generator is 10000 paragraph words plus a cell-text cohort", async ()
 	const baseline = JSON.parse(
 		readFileSync(
 			fileURLToPath(
-				new URL("../../baselines/wave3-typing-budget.chromium.json", import.meta.url),
+				new URL("../../baselines/typing-budget.chromium.json", import.meta.url),
 			),
 			"utf8",
 		),
@@ -217,7 +217,7 @@ test("tenK generator is 10000 paragraph words plus a cell-text cohort", async ()
 	assert.notEqual(
 		identity.contentSha256,
 		baseline.fixture.paragraphSha256,
-		"contentSha256 must include the cell cohort so Wave 0 cannot ignore it",
+		"contentSha256 must include the cell cohort so a run cannot ignore it",
 	);
 	assert.equal(baseline.fixture.cellWordCount, TEN_K_CELL_WORD_COUNT);
 	assert.equal(baseline.fixture.cellCount, TEN_K_CELL_COUNT);

@@ -3,11 +3,11 @@ import { fileURLToPath } from "node:url";
 import { formatDriftReport } from "./typingBudget.js";
 
 const BASELINE = fileURLToPath(
-	new URL("../baselines/wave3-typing-budget.chromium.json", import.meta.url),
+	new URL("../baselines/typing-budget.chromium.json", import.meta.url),
 );
 const LAST_RUN = fileURLToPath(
 	new URL(
-		"../test-results/wave3-typing-budget.chromium.json",
+		"../test-results/typing-budget.chromium.json",
 		import.meta.url,
 	),
 );

@@ -1,7 +1,7 @@
 import type { Editor } from "@input/pen-types";
 
 /**
- * Wave 0.1 reference corpus. Fixed before the channel is measured
+ * Reference corpus. Fixed before the channel is measured
  * (`spec/packages/extensions/ai.md`, the EC rules).
  */
 

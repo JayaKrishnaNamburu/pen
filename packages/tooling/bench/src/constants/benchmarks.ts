@@ -164,21 +164,6 @@ export const AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH: BenchMetadata = {
 	name: "ai markdown full replace table insert",
 };
 
-export const AI_FLOW_PATCH_TEXT_EDIT_BENCH: BenchMetadata = {
-	id: "ai.flow-patch-text-edit",
-	name: "ai flow patch compile text edit",
-};
-
-export const AI_FLOW_PATCH_ALIGNMENT_BENCH: BenchMetadata = {
-	id: "ai.flow-patch-alignment",
-	name: "ai flow patch alignment metrics",
-};
-
-export const AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH: BenchMetadata = {
-	id: "ai.flow-patch-scoped-replacement",
-	name: "ai flow patch scoped replacement metrics",
-};
-
 export const AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH: BenchMetadata = {
 	id: "ai.autocomplete-cancel-churn",
 	name: "ai autocomplete cancel churn",
@@ -293,9 +278,6 @@ export const BENCHMARK_METADATA: BenchMetadata[] = [
 	AI_READ_DOCUMENT_RANGE_20_BLOCKS_BENCH,
 	AI_RETRIEVE_DOCUMENT_SPANS_BENCH,
 	AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH,
-	AI_FLOW_PATCH_TEXT_EDIT_BENCH,
-	AI_FLOW_PATCH_ALIGNMENT_BENCH,
-	AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH,
 	AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH,
 	AI_AUTOCOMPLETE_REQUESTING_CANCEL_CHURN_BENCH,
 	AI_AUTOCOMPLETE_PROVIDER_BUDGET_BENCH,

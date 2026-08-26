@@ -17,26 +17,6 @@ function clampOffset(offset: number, length: number): number {
 	return Math.max(0, Math.min(Math.trunc(offset), length));
 }
 
-function logicalLength(text: Y.Text): number {
-	return text.length;
-}
-
-function toYjsIndex(text: Y.Text, logicalOffset: number): number {
-	const length = logicalLength(text);
-	if (length === 0) {
-		return 0;
-	}
-	return clampOffset(logicalOffset, length);
-}
-
-function fromYjsIndex(text: Y.Text, yjsIndex: number): number {
-	const length = logicalLength(text);
-	if (length === 0) {
-		return 0;
-	}
-	return clampOffset(yjsIndex, length);
-}
-
 function isDeletedType(type: object): boolean {
 	return (type as DeletedFlag)._item?.deleted === true;
 }
@@ -135,7 +115,7 @@ export function createRelativePosition(
 	const yjsAssoc = assoc === -1 ? -1 : 1;
 	const relative = Y.createRelativePositionFromTypeIndex(
 		text as never,
-		toYjsIndex(text, target.offset),
+		clampOffset(target.offset, text.length),
 		yjsAssoc,
 	);
 	return Y.encodeRelativePosition(relative);
@@ -164,7 +144,7 @@ export function resolveRelativePosition(
 		if (!(absolute.type instanceof Y.Text)) {
 			return null;
 		}
-		const offset = fromYjsIndex(absolute.type, absolute.index);
+		const offset = clampOffset(absolute.index, absolute.type.length);
 		return owner.cell
 			? { blockId: owner.blockId, offset, cell: owner.cell }
 			: { blockId: owner.blockId, offset };

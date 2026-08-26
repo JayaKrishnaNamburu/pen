@@ -201,7 +201,7 @@ describe("G3 attachBidiRunsToLines", () => {
 		]);
 	});
 
-	it("G3: omitted text keeps the Wave 3 single-run seam", () => {
+	it("G3: omitted text keeps the single-run seam", () => {
 		const [line] = attachBidiRunsToLines([seed(0, 11, rect(0, 0, 80, 16))]);
 		expect(line?.runs).toEqual([
 			{

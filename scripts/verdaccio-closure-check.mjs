@@ -55,7 +55,7 @@ export const DEFAULT_TOP_LEVEL = [
 ];
 
 const HOST_PEERS = ["react", "react-dom", "vue", "yjs", "y-protocols"];
-/** CS8 optional peers on @input/pen-react (wave-4 Step 4.4). */
+/** CS8 optional peers on @input/pen-react. */
 export const REACT_OPTIONAL_PEERS = [
 	"@input/pen-ai",
 	"@input/pen-history",
@@ -416,6 +416,18 @@ export function verdaccioConfigYaml() {
 	].join("\n");
 }
 
+function verdaccioUplinkUrl(yaml) {
+	const match = /^\s+url: (\S+)$/m.exec(yaml);
+	if (match == null) {
+		return null;
+	}
+	try {
+		return new URL(match[1]);
+	} catch {
+		return null;
+	}
+}
+
 export function localNpmrcContents(registryUrl) {
 	assertLocalRegistry(registryUrl);
 	const host = new URL(registryUrl).host;
@@ -614,8 +626,11 @@ export function runSelfTests() {
 		"self-test: packed-export inspection names the omitted file",
 	);
 
+	const uplink = verdaccioUplinkUrl(verdaccioConfigYaml());
 	assert(
-		verdaccioConfigYaml().includes("registry.npmjs.org/"),
+		uplink != null &&
+			uplink.protocol === "https:" &&
+			uplink.hostname === "registry.npmjs.org",
 		"self-test: verdaccio config keeps an uplink for public peers",
 	);
 	assert(

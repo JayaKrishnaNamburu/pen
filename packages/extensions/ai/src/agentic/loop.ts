@@ -225,7 +225,7 @@ export async function runAgenticLoop(
 		);
 		const stream = streamThroughEgress(
 			editor,
-			withToolChoice(model, toolChoice),
+			model,
 			{
 				feature,
 				messages,
@@ -244,6 +244,7 @@ export async function runAgenticLoop(
 				sessionId: options.sessionId,
 				turnId: options.turnId,
 				generationId,
+				toolChoice,
 			},
 		);
 		const pendingToolCalls: Array<{
@@ -733,19 +734,4 @@ function resolveEditChannelToolChoice(
 		return { type: "tool", name: AI_EDIT_DOCUMENT_TOOL_NAME };
 	}
 	return { type: "any" };
-}
-
-function withToolChoice(
-	model: ModelAdapter,
-	toolChoice: ModelToolChoice | undefined,
-): ModelAdapter {
-	if (toolChoice == null) {
-		return model;
-	}
-	return {
-		...model,
-		async *stream(options) {
-			yield* model.stream({ ...options, toolChoice });
-		},
-	};
 }

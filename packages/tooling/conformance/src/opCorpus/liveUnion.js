@@ -1,6 +1,6 @@
 /**
  * Live DocumentOp inventory. Reads packages/types/src/types/ops.ts and
- * extracts union members with the same tight pattern Wave 4 measures.
+ * extracts union members with the same tight pattern the corpus measures.
  * A hand-written list cannot fail when the union moves.
  */
 

@@ -28,7 +28,7 @@ import {
 } from "../src/typingBudget";
 
 /**
- * Wave 3.5 — record, do not enforce.
+ * Record, do not enforce.
  *
  * This file is named `.record.` so it is not mistaken for coverage. It
  * measures the spec's typing budgets on Chromium and writes a committed
@@ -41,11 +41,11 @@ const SESSION_HREF = "/src/session.ts";
 const GEOMETRY_HREF = "/src/geometry.ts";
 
 const BASELINE_PATH = fileURLToPath(
-	new URL("../baselines/wave3-typing-budget.chromium.json", import.meta.url),
+	new URL("../baselines/typing-budget.chromium.json", import.meta.url),
 );
 const LAST_RUN_PATH = fileURLToPath(
 	new URL(
-		"../test-results/wave3-typing-budget.chromium.json",
+		"../test-results/typing-budget.chromium.json",
 		import.meta.url,
 	),
 );
@@ -586,7 +586,7 @@ scenario(
 	async (s, page) => {
 		test.skip(
 			test.info().project.name !== "chromium",
-			"Wave 3.5 records Chromium only; WebKit/Firefox are a separate failure surface",
+			"this scenario records Chromium only; WebKit/Firefox are a separate failure surface",
 		);
 		test.setTimeout(120_000);
 

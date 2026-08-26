@@ -9,12 +9,6 @@
 - exportMarkdownForBlocks
 - exportMarkdownRange
 
-### value
-
-- buildTableChildren
-- getNumberedListItemValue
-- sortDeltaAttributes
-
 ### type
 
 - MarkdownExportConfig

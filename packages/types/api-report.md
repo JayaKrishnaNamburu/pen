@@ -6,11 +6,7 @@
 
 ### function
 
-- appId
-- blockId
-- docId
 - generateId
-- zoneId
 
 ### guard
 
@@ -26,7 +22,6 @@
 - AI_AUTOCOMPLETE_CONTROLLER_SLOT
 - AI_CONTROLLER_SLOT
 - AI_EGRESS_INVENTORY_CODE
-- AI_INLINE_COMPLETION_SLOT
 - AI_INLINE_HISTORY_SLOT
 - AI_REQUEST_REFUSED_CODE
 - AI_REVIEW_CONTROLLER_SLOT
@@ -87,7 +82,6 @@
 - AppDecoration
 - AppDeletePart
 - AppHandle
-- AppId
 - ApplyOptions
 - AppOp
 - AppPlacement
@@ -110,7 +104,6 @@
 - BlockDeletePart
 - BlockDisplay
 - BlockHandle
-- BlockId
 - BlockImportMatch
 - BlockInsertPart
 - BlockMovePart
@@ -157,7 +150,6 @@
 - DeleteBlockOp
 - Diagnostic
 - DiagnosticEvent
-- DocId
 - DocumentOp
 - DocumentProfile
 - DocumentRange
@@ -228,7 +220,6 @@
 - InteractionModel
 - KeyBinding
 - KeyBindingContext
-- LayoutChildProps
 - LayoutProps
 - LayoutSchema
 - LayoutUpdatePart
@@ -334,4 +325,3 @@
 - VersionEntry
 - VersionMetadata
 - XMLElement
-- ZoneId

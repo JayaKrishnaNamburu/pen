@@ -77,7 +77,8 @@
         "types": "./dist/search.d.cts",
         "default": "./dist/search.cjs"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

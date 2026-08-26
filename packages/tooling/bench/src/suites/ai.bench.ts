@@ -1,14 +1,7 @@
 import { getInlineCompletionController } from "@input/pen-core";
 import { buildDocumentWriteOps } from "@input/pen-document-ops";
-import {
-	buildBenchFlowPatchAlignmentExecution,
-	buildBenchFlowPatchScopedReplacementExecution,
-	buildBenchFlowPatchTextEditExecution,
-} from "../utils/flowPatchExecution";
 import type { BenchContext, BenchDefinition } from "../bench";
 import {
-	AI_FLOW_PATCH_ALIGNMENT_BENCH,
-	AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH,
 	AI_GET_CONTEXT_SUMMARY_200_BLOCKS_BENCH,
 	AI_GET_CURSOR_CONTEXT_BENCH,
 	AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH,
@@ -21,7 +14,6 @@ import {
 	AI_READ_DOCUMENT_RANGE_20_BLOCKS_BENCH,
 	AI_READ_DOCUMENT_SUMMARY_200_BLOCKS_BENCH,
 	AI_RETRIEVE_DOCUMENT_SPANS_BENCH,
-	AI_FLOW_PATCH_TEXT_EDIT_BENCH,
 } from "../constants/benchmarks";
 import { delayedTimerFloor, macrotaskYieldFloor } from "../harness/floor";
 import {
@@ -198,60 +190,6 @@ export const aiBenchmarks: BenchDefinition[] = [
 			});
 			b.end();
 			b.observe("writeOpCount", result.ops.length >= 1 ? 1 : 0, 1);
-		},
-	},
-	{
-		...AI_FLOW_PATCH_TEXT_EDIT_BENCH,
-		fn(b) {
-			const editor = createAIBenchEditor();
-
-			b.start();
-			const ops = buildBenchFlowPatchTextEditExecution(
-				editor,
-				AI_RANGE_START_BLOCK_ID,
-				"Benchmark block 90 updated for native patch compilation.",
-			);
-			b.end();
-			b.observe("opCount", ops.length, 1);
-		},
-	},
-	{
-		...AI_FLOW_PATCH_ALIGNMENT_BENCH,
-		fn(b) {
-			const editor = createAIBenchEditor();
-
-			b.start();
-			const result = buildBenchFlowPatchAlignmentExecution(editor);
-			b.end();
-			b.observe("opCount", result.ops.length, 2);
-			b.setMetrics({
-				executionPath: "selection-replacement",
-				preservedBlockCount: result.metrics.preservedBlockCount,
-				rewrittenBlockCount: result.metrics.rewrittenBlockCount,
-				unchangedBlockCount: result.metrics.unchangedBlockCount,
-				insertedBlockCount: result.metrics.insertedBlockCount,
-				deletedBlockCount: result.metrics.deletedBlockCount,
-				estimatedOperationCost: result.metrics.estimatedOperationCost,
-				opCount: result.ops.length,
-			});
-		},
-	},
-	{
-		...AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH,
-		fn(b) {
-			const editor = createAIBenchEditor();
-
-			b.start();
-			const result = buildBenchFlowPatchScopedReplacementExecution(editor);
-			b.end();
-			b.observe("opsCount", result.metrics.opsCount, 4);
-			b.setMetrics({
-				executionPath: result.metrics.kind,
-				opsCount: result.metrics.opsCount,
-				insertedBlockCount: result.metrics.insertedBlockCount,
-				deletedBlockCount: result.metrics.deletedBlockCount,
-				targetBlockCount: result.metrics.targetBlockCount,
-			});
 		},
 	},
 	{

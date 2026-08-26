@@ -9,10 +9,7 @@ export type IngestBoundRow = {
 };
 
 export const INGEST_BOUND_SOURCES: readonly string[] = [
-	"packages/extensions/interop/src/html/import/ingestBounds.ts",
-	"packages/extensions/interop/src/markdown/import/ingestBounds.ts",
-	"packages/extensions/interop/src/json/import/ingestBounds.ts",
-	"packages/extensions/interop/src/xml/ingestBounds.ts",
+	"packages/extensions/interop/src/ingestBounds.ts",
 	"packages/rendering/dom/src/utils/clipboardIngest.ts",
 ];
 

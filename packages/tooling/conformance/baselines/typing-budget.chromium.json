@@ -8,7 +8,7 @@
     "flushesPerFrame": 1
   },
   "fixture": {
-    "id": "wave3-10k-words",
+    "id": "ten-k-words",
     "generator": "packages/tooling/conformance/src/tenKWordFixture.ts",
     "algorithm": "lcg-numerical-recipes",
     "seed": 1885695539,

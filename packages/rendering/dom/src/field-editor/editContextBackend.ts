@@ -22,10 +22,8 @@ import {
 	applyEditContextTextFormats,
 	buildEditContextCharacterBounds,
 	findTextPosition,
-	isLogicallyEmptyText,
 	isNavigationSelectionKey,
 	shouldReplaceEditContextText,
-	toEditContextText,
 } from "./editContextDom";
 import type {
 	EditContext,
@@ -64,7 +62,7 @@ import type {
  * Where an EditContext selection write came from. A `text-update` write
  * carries offsets the IME already resolved against the text it just sent, so
  * they are used as given; any other caller's offsets are resolved against the
- * live text, which may still be logically empty.
+ * live text, which may still be empty.
  */
 export type EditContextSelectionOptions = {
 	source?: "text-update";
@@ -128,12 +126,9 @@ export class EditContextBackend {
 		}
 
 		const initialText = this.ytext.toString();
-		const initialEditContextText = toEditContextText(initialText);
-		const initialSelectionOffset = isLogicallyEmptyText(initialText)
-			? 0
-			: initialEditContextText.length;
+		const initialSelectionOffset = initialText.length;
 		this.editContext = new editContextConstructor({
-			text: initialEditContextText,
+			text: initialText,
 			selectionStart: initialSelectionOffset,
 			selectionEnd: initialSelectionOffset,
 		});
@@ -259,9 +254,7 @@ export class EditContextBackend {
 			return;
 		}
 
-		const len = isLogicallyEmptyText(this.ytext.toString())
-			? 0
-			: this.ytext.length;
+		const len = this.ytext.length;
 		this.editContext.updateSelection(len, len);
 		this.fieldEditor.setEditContextSelectionSnapshot(
 			blockId
@@ -442,7 +435,7 @@ export class EditContextBackend {
 		if (!this.editContext || !this.element || !this.ytext) {
 			return;
 		}
-		const nextText = toEditContextText(this.ytext.toString());
+		const nextText = this.ytext.toString();
 		this.editContext.updateText(0, this.editContext.text.length, nextText);
 		const clampedSelectionStart = Math.min(
 			this.editContext.selectionStart,
@@ -632,9 +625,7 @@ export class EditContextBackend {
 
 		return resolveEditContextTextUpdateRange({
 			...input,
-			isLogicallyEmpty: isLogicallyEmptyText(
-				this.ytext?.toString() ?? "",
-			),
+			isLogicallyEmpty: (this.ytext?.toString() ?? "") === "",
 			editorSelectionRange: this.resolveEditorSelectionRange(
 				input.blockId,
 			),
@@ -682,7 +673,7 @@ export class EditContextBackend {
 		options?: EditContextSelectionOptions,
 	): number {
 		return options?.source !== "text-update" &&
-			isLogicallyEmptyText(this.ytext?.toString() ?? "")
+			(this.ytext?.toString() ?? "") === ""
 			? 0
 			: offset;
 	}
@@ -936,7 +927,7 @@ export class EditContextBackend {
 			this.fieldEditor.clearBackendSelectionAuthority(
 				"edit-context-textupdate",
 			);
-			const nextText = toEditContextText(this.ytext?.toString?.() ?? "");
+			const nextText = this.ytext?.toString?.() ?? "";
 			this.editContext.updateText(
 				0,
 				this.editContext.text.length,
@@ -1014,7 +1005,7 @@ export class EditContextBackend {
 				this.editContext.text.length,
 			)
 		) {
-			const nextText = toEditContextText(this.ytext.toString());
+			const nextText = this.ytext.toString();
 			this.editContext.updateText(
 				0,
 				this.editContext.text.length,

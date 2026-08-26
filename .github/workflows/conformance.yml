@@ -10,9 +10,12 @@ on:
       - master
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: conformance-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   conformance-engine:
@@ -24,6 +27,10 @@ jobs:
     # conformance job on this workflow finishes the Playwright suite with
     # 0 failed. Playground e2e green is a different matrix (ci.yml) and
     # does not promote these jobs.
+    #
+    # A continue-on-error leg reports `success` to the aggregate job below,
+    # so a red webkit or firefox does not block. Dropping the flag here is
+    # the whole promotion; branch protection does not change.
     continue-on-error: ${{ matrix.engine != 'chromium' }}
 
     strategy:
@@ -35,19 +42,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
         with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          turbo-cache-scope: conformance
 
       - name: Build conformance and dependencies
         run: pnpm --filter @input/pen-conformance... build
@@ -68,3 +66,22 @@ jobs:
             packages/tooling/conformance/test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  conformance:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: conformance
+    if: always()
+    needs: [conformance-engine]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require the blocking engines to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}

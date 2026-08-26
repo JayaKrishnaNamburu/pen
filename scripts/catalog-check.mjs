@@ -13,7 +13,7 @@
  * catalog file before this gate will notice their members.
  *
  * Reserved prefixes are documented allowlist, not silent holes:
- * - `pen.a11y.*` — Wave X announcements
+ * - `pen.a11y.*` — accessibility announcements
  * - `pen.schema.*` / `pen.display.group.*` — resolved through schema helpers
  *
  * Fail-closed: a missing catalog file, zero catalog keys, or a walk

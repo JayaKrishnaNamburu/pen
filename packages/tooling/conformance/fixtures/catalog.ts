@@ -8,7 +8,7 @@ export type FixtureName =
 	| "empty"
 	| "deterministic"
 	| "windowed-large"
-	| "wave3-geometry"
+	| "g5-geometry"
 	| "bidi-mixed"
 	| "nested-toggle"
 	| "grapheme-clusters";
@@ -30,7 +30,7 @@ const FIXTURE_PRESENT = {
 	empty: true,
 	deterministic: true,
 	"windowed-large": true,
-	"wave3-geometry": true,
+	"g5-geometry": true,
 	"bidi-mixed": true,
 	"nested-toggle": true,
 	"grapheme-clusters": true,
@@ -91,7 +91,7 @@ export const LOCAL_FIXTURES: Record<
 		},
 	],
 	"windowed-large": windowedLargeBlocks(),
-	"wave3-geometry": [
+	"g5-geometry": [
 		{
 			id: "g5-wrap",
 			type: "paragraph",

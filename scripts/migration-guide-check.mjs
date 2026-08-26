@@ -16,7 +16,7 @@
  *
  * Does not catch (on purpose — a guess here becomes a deleted gate):
  *   - "Landed" / "Not-yet" / "this is dangerous" prose
- *   - whether an exported symbol is wired (Wave 4's helpers export
+ *   - whether an exported symbol is wired (the command helpers export
  *     today; `editor.dispatch` still does not exist)
  *   - method-on-interface names (`editor.facet`, `getCommands`)
  *   - option/field names (`allowedMutatingTools`, `extensions`)
@@ -49,8 +49,7 @@ const YJS_ADAPTER = "@input/pen-crdt-yjs";
 const MIN_EXPORT_CLAIMS = 8;
 
 const IDENT_RE = /`([A-Za-z_][A-Za-z0-9_]*)(?:\([^`]*\))?`/g;
-const PATH_RE =
-	/`((?:packages|scripts|spec(?:-v2)?|waves|core\/src)\/[A-Za-z0-9_./-]+)`/g;
+const PATH_RE = /`((?:packages|scripts|spec|core\/src)\/[A-Za-z0-9_./-]+)`/g;
 const SPEC_FILE_RE = /`(\d{2}-[a-z0-9-]+\.md)`/g;
 const ORIGIN_UNION_RE = /the union is `([^`]+)`/i;
 const YJS_VERSION_RE = /yjs@(\^?[0-9]+(?:\.[0-9]+)*)/;

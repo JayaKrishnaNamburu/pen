@@ -1,5 +1,5 @@
 {
-  "_comment": "API7 / P.8 (spec/rules/api.md, Wave P step P.8): published packages use workspace:^ and dist/index.mjs. Empty on purpose — a new workspace:* pin or dist/index.js export fails until it is converted or listed here with a reason.",
+  "_comment": "API7 (spec/rules/api.md): published packages use workspace:^ and dist/index.mjs. Empty on purpose — a new workspace:* pin or dist/index.js export fails until it is converted or listed here with a reason.",
   "workspaceStar": [],
   "jsArtifacts": []
 }

@@ -10,6 +10,24 @@ the repository are welcome.
 
 ```bash
 pnpm install
+pnpm verify
+```
+
+`pnpm verify` runs the same checks your pull request will meet, in the
+same order, and ends with a summary naming the GitHub check behind each
+failure. Prefer it over guessing which of the individual commands
+applies to your change. Useful flags:
+
+```bash
+pnpm verify --list          # print the plan without running it
+pnpm verify --bail          # stop at the first failure
+pnpm verify --only test     # run the steps whose id contains "test"
+```
+
+The individual commands are still there, and are quicker while you
+iterate:
+
+```bash
 pnpm lint
 pnpm build
 pnpm typecheck
@@ -22,14 +40,43 @@ script runs Prettier on an explicit docs/config path list
 `spec/**/*.md`, package READMEs). `packages/**/*.ts` is not on that
 list. ESLint owns TypeScript and JavaScript source style.
 
-If you are working on browser flows, run the end-to-end suite with:
+`pnpm verify` deliberately leaves out the two browser suites, because
+neither runs without Playwright binaries this repository will not
+install behind your back:
 
 ```bash
-pnpm test:e2e
+pnpm exec playwright install --with-deps chromium
+pnpm test:e2e                                          # drives playground/
+pnpm --filter @input/pen-conformance run test:chromium # browser conformance
 ```
 
-That script is `playwright test` from the repository root. It drives
-`playground/`.
+## What CI Runs
+
+A pull request lands on nine workflows. Each one ends in a single
+aggregate check named after the workflow, and that name is what branch
+protection requires — so a new matrix leg or a new gate blocks merges
+the moment it exists, with no repository-settings change.
+
+| Check          | What it protects                                                                     |
+| -------------- | ------------------------------------------------------------------------------------ |
+| `ci`           | Lint, build, API reports, typecheck, unit and integration tests, playground e2e      |
+| `static-gates` | The gate list in `scripts/gates.json`, plus doc refs and changeset coverage          |
+| `conformance`  | Real-browser selection, IME, geometry, and a11y conformance                          |
+| `examples`     | The React, Vue, and vanilla examples still build and mount against workspace sources |
+| `node-matrix`  | The tree builds and tests on Node 22, Node 26, and macOS                             |
+| `bench`        | CH8 performance budgets and the SCALE1 envelope                                      |
+| `docs`         | The docs site compiles and its samples typecheck                                     |
+| `supply-chain` | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
+| `CodeQL`       | Static security analysis                                                             |
+
+Two of these are staged rather than all-or-nothing. In `ci`, the
+Firefox e2e leg reports without blocking; in `conformance`, WebKit and
+Firefox do. Each is held on a named defect recorded in the workflow
+file — read the comment there before assuming a red leg is flake.
+
+Adding a static gate means adding an entry to `scripts/gates.json`. The
+CI matrix and `pnpm verify` both read that file, so the two cannot drift
+apart.
 
 ## Repository Shape
 
@@ -80,10 +127,31 @@ Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 A pull request that changes a published package's behavior or public surface
 must include a changeset. From the repository root, run `pnpm changeset`,
-select the published packages that changed, pick major, minor, or patch, and
+select the published packages that changed, pick **minor** or **patch**, and
 write a short user-facing summary. Commit the new file under `.changeset/`
 with the rest of the work. Private packages such as `@input/pen-docs` are
 ignored by versioning and do not need a changeset.
+
+While the train is `0.x`, do not pick `major`. Breaking changes are `minor`;
+additive changes are `patch`. `major` would publish `1.0.0` and end the 0.x
+policy by accident; `changeset-check` rejects it. Naming any package is
+enough to bump the whole train — they share one `fixed` group — but still
+name the packages you changed so each CHANGELOG gets a line.
+
+The unpublished placeholder in every manifest is `0.0.1`. The first
+`changeset version` stamps **0.3.0** (`scripts/stamp-first-train.mjs`),
+and that stamp only rewrites the mechanical `0.1.0` that a `minor` bump
+produces. The staged first-release changesets are already `minor`. A
+patch-only first bump would land at `0.0.2` and the stamp would fail
+rather than publish a surprise number. Later trains are whatever
+changesets computes from 0.3.0.
+
+The `changeset` gate enforces this: it names every published package whose
+`src/` changed and is not covered. If your branch really ships no behavior
+change — a comment, a rename, a test-only refactor — say so with
+`pnpm changeset --empty` rather than looking for a way around the gate. Its
+population is `src/` only, so a dependency bump inside a published manifest
+will not trip it. Call those out in the description by hand.
 
 A pull request that changes a published package's public surface must
 update that package's `api-report.md` (`node scripts/api-reports.mjs
@@ -99,12 +167,14 @@ every consumer and produces no diff at all. Call a shape change out in
 the PR description. A green `api-reports` run is not review of the
 shape.
 
-Release trains share one version across every published package. The release
-workflow runs `scripts/release-check.mjs` (version-sync, publint,
-are-the-types-wrong) and `scripts/size-limit.mjs` before
-`changeset publish --provenance`. Per-package `CHANGELOG.md` files are
-generated by `pnpm version-packages`. Each train also gets a `vX.Y.Z` git tag.
-None of that has run yet: there are no tags and no changelogs.
+Release trains share one version across every published package. The
+changesets `fixed` group is what produces that; `scripts/release-check.mjs`
+(version-sync, publint, are-the-types-wrong) and `scripts/size-limit.mjs`
+run before `changeset publish --provenance`. Publishing uses npm trusted
+publishing (OIDC from GitHub Actions) rather than a long-lived npm token.
+Per-package `CHANGELOG.md` files are generated by `pnpm version-packages`.
+Each train also gets a `vX.Y.Z` git tag. None of that has run yet: there
+are no tags and no changelogs.
 
 ## Pull Request Checklist
 

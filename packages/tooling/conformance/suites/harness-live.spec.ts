@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { NESTED_TOGGLE_CHILD_TEXT } from "../fixtures/catalog";
 import { scenario } from "../src/scenario";
-import { sampleCaretPoints } from "../src/wave3Geometry";
+import { sampleCaretPoints } from "../src/g5Geometry";
 
 scenario("harness: importHtml is live", async (s) => {
 	await s.load("empty");
@@ -74,9 +74,9 @@ scenario("harness: bidi-mixed is mixed by construction", async (s, page) => {
 });
 
 scenario(
-	"harness: wave3-geometry atoms block is plain text",
+	"harness: g5-geometry atoms block is plain text",
 	async (s, page) => {
-		await s.load("wave3-geometry");
+		await s.load("g5-geometry");
 		const snap = await page.evaluate(() =>
 			window.__penConformance.documentSnapshot(),
 		);

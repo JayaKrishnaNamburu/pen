@@ -40,7 +40,6 @@
 - runCRDTStateVectorContract
 - runExportContract
 - runHeadlessEditorContract
-- toYMap
 - visibleText
 
 ### value

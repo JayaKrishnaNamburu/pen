@@ -1,6 +1,6 @@
 # SCALE4 cache inventory
 
-Canonical list of hot-path caches for Wave F step F.4 (`spec/rules/scale.md` SCALE4). A cache is in this inventory when it persists across commits and is consulted on the apply / decoration / suggestion / presence path. Listener sets, schema registries, one-shot local `Map`s, and current UI state (search matches, the visible autocomplete suggestion) are not caches.
+Canonical list of hot-path caches (`spec/rules/scale.md` SCALE4). A cache is in this inventory when it persists across commits and is consulted on the apply / decoration / suggestion / presence path. Listener sets, schema registries, one-shot local `Map`s, and current UI state (search matches, the visible autocomplete suggestion) are not caches.
 
 SCALE4 accepts three bounds: a maximum entry count, a TTL, or a lifetime tied to a document / editor / DOM node (`WeakMap` or an index that only holds live document ids). A cache with none of those is **unbounded**.
 
@@ -50,7 +50,7 @@ SCALE4 names the AI suggestion caches and undo stacks. These live outside `@inpu
 | AI scheduler `dirtyBlocks` | `packages/extensions/ai-suggestions/src/scheduler.ts:29`. | **Unbounded** until consume / reset. | **Yes.** `scheduler.destroy()` → `reset()` `:48–51`. |
 | AI scheduler `lastRequestedAtByBlock` | `scheduler.ts:30`. Cooldown `DEFAULT_COOLDOWN_MS` (10s) gates *when* a block may be requested; it does not evict. | **Unbounded** until reset / destroy. | **Yes.** Same reset. |
 | Undo / redo stacks | `packages/crdt/yjs/src/undo.ts:15` (`DEFAULT_UNDO_MAX_DEPTH = 500`), trim `:36–39`. Also `packages/extensions/undo/src/undoExtension.ts:27`. | **Count-capped** at 500 (CH7). | **Yes.** `UndoManagerImpl.destroy()` (`undo/src/undoManager.ts:154–159`) tears down the CRDT undo manager. |
-| GeometryReader per-block cache | `packages/rendering/dom/src/geometry/geometryReader.ts:116`, `dispose()` `:285–289`, `clearCache()` `:320–323`. Standalone Wave 3.2; not wired to DomScheduler. Arrived after the first inventory pass. | **Reader-scoped.** No entry cap. Cleared on dispose, commit-id change, resize/font generation. | **Yes, on `dispose()`.** Sibling `blockCommitIds` (`:117`) is still not cleared. Not walked by `editor.destroy()`. |
+| GeometryReader per-block cache | `packages/rendering/dom/src/geometry/geometryReader.ts:116`, `dispose()` `:285–289`, `clearCache()` `:320–323`. Standalone; not wired to DomScheduler. Arrived after the first inventory pass. | **Reader-scoped.** No entry cap. Cleared on dispose, commit-id change, resize/font generation. | **Yes, on `dispose()`.** Sibling `blockCommitIds` (`:117`) is still not cleared. Not walked by `editor.destroy()`. |
 | `inlineAtomElementData` | `packages/rendering/dom/src/field-editor/inlineAtomDom.ts:22`. | **Weak-key** (`HTMLElement`). | Weak. |
 | Field-editor selection authority | `packages/rendering/dom/src/field-editor/selectionAuthority.ts:31–34`. | Count-bounded by the six-source enum. | Not walked by `editor.destroy()`. |
 | Yjs awareness wrappers | `packages/crdt/yjs/src/awareness.ts:7`, `:14`. | **Weak-key.** | Weak. |
@@ -83,7 +83,7 @@ Document-scoped indexes (decoration block index, `DocumentState` position/parent
 
 `destroyEditor` (`src/editor/editorApiHelpers.ts`) deactivates extensions, tears down observation, releases the session, clears `_blockRevisions`, replaces `_decorations` / `_blockIndex`, nulls `_pendingSummary` / `_lastChangeSummary`, calls `DocumentStateImpl.clear()`, deletes the `undo:manager` slot, and overrides `undoManagerFacet` to `null` (then `refreshUndoManager` so the public handle is `NOOP_UNDO`). The undo extension already `destroy()`s its manager on deactivate; it leaves the slot *and* the facet override pointing at that instance — `getSlot("undo:manager")` is a facet adapter, so dropping only the map key unmasks the leftover. Core clears both. It does not clear `_slots` as a whole, other `_facetRegistry` memos, `_unknownBlockTypesReported`, or the module-level `segmenters` map. It also does not detach `_crdtDoc` / `_doc` / `_facetRegistry` / `_pipeline` / `_extensions` / `_documentSession`. A host that keeps the `Editor` handle therefore keeps the Y.Doc `StructStore`. AI suggestion maps *are* cleared from `AISuggestionsControllerImpl.destroy` when that extension deactivates. Public pins: `packages/tooling/bench/src/soak/destroyRetainsNothing.test.ts`.
 
-### Nightly 400-iteration leftover (Lane 83)
+### Nightly 400-iteration leftover
 
 The four public maps above are released; `destroyRetainsNothing.test.ts` is green. The nightly soak still failed at **1.159×** (quiet-machine repeats **1.162 / 1.158**) against the 1.13 bound. That overshoot is **one retainer class**, not several caches, and it is **stable, not load noise**.
 

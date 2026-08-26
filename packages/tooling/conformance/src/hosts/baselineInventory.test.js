@@ -22,8 +22,8 @@ function readPackage(rel) {
 	return readFileSync(new URL(`../../${rel}`, import.meta.url), "utf8");
 }
 
-test("wave3 typing-budget baseline is record-only on the numbers", () => {
-	const baseline = JSON.parse(readPackage("baselines/wave3-typing-budget.chromium.json"));
+test("typing-budget baseline is record-only on the numbers", () => {
+	const baseline = JSON.parse(readPackage("baselines/typing-budget.chromium.json"));
 	const recordSpec = readPackage("scenarios/sch-typing-budget.record.spec.ts");
 	const reporter = readPackage("src/reportTypingBudget.js");
 	const formatter = readPackage("src/typingBudget.js");
@@ -47,7 +47,7 @@ test("wave3 typing-budget baseline is record-only on the numbers", () => {
 	assert.match(reporter, /process\.exit\(0\)/);
 });
 
-test("wave3 fixture identity is the only enforced baseline field", () => {
+test("fixture identity is the only enforced baseline field", () => {
 	const recordSpec = readPackage("scenarios/sch-typing-budget.record.spec.ts");
 	assert.match(
 		recordSpec,
@@ -85,7 +85,7 @@ test("reportTypingBudget exits 1 when the last-run file is missing", () => {
 	);
 	const lastRun = fileURLToPath(
 		new URL(
-			"../../test-results/wave3-typing-budget.chromium.json",
+			"../../test-results/typing-budget.chromium.json",
 			import.meta.url,
 		),
 	);
@@ -115,11 +115,11 @@ test("reportTypingBudget stays exit 0 when last-run exists and the spec is blown
 	);
 	const lastRun = fileURLToPath(
 		new URL(
-			"../../test-results/wave3-typing-budget.chromium.json",
+			"../../test-results/typing-budget.chromium.json",
 			import.meta.url,
 		),
 	);
-	const baseline = readPackage("baselines/wave3-typing-budget.chromium.json");
+	const baseline = readPackage("baselines/typing-budget.chromium.json");
 	const hadLastRun = existsSync(lastRun);
 	const previous = hadLastRun ? readFileSync(lastRun, "utf8") : null;
 	mkdirSync(dirname(lastRun), { recursive: true });
@@ -152,14 +152,14 @@ test("reportTypingBudget stays exit 0 when last-run exists and the spec is blown
  * blocking here — Chromium read-phase p95 is already blown (3.4 vs 2).
  *
  * | Surface | Field | Status | Why |
- * | wave3-typing-budget.chromium.json | fixture.contentSha256 | ENFORCED | record spec expect() |
- * | wave3-typing-budget.chromium.json | schemaVersion | ENFORCED | record spec expect() |
- * | wave3-typing-budget.chromium.json | summary.* / versusSpec.* | RECORD-ONLY (deliberate) | comments + blown banner |
+ * | typing-budget.chromium.json | fixture.contentSha256 | ENFORCED | record spec expect() |
+ * | typing-budget.chromium.json | schemaVersion | ENFORCED | record spec expect() |
+ * | typing-budget.chromium.json | summary.* / versusSpec.* | RECORD-ONLY (deliberate) | comments + blown banner |
  * | reportTypingBudget.js | last-run missing | ENFORCED | TYPING_BUDGET_MISSING / exit 1 |
  */
 test("enforced-vs-decorative baseline table is complete for this package", () => {
 	const baseline = JSON.parse(
-		readPackage("baselines/wave3-typing-budget.chromium.json"),
+		readPackage("baselines/typing-budget.chromium.json"),
 	);
 	const recordSpec = readPackage("scenarios/sch-typing-budget.record.spec.ts");
 	const reporter = readPackage("src/reportTypingBudget.js");

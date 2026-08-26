@@ -1,4 +1,4 @@
-# Built-in command catalog (Wave 4.2)
+# Built-in command catalog
 
 Frozen names from `spec/rules/commands.md`. Step 4.2 moved caret (except verticals), text, structure, table, and history handlers into this directory. `installEditorCommandRegistry` wires `createCommandRegistry` + `builtinCommandHandlers` onto `createEditor`.
 
@@ -12,7 +12,7 @@ Owner:
 
 Keymap: `defaultKeymap.ts` is the K2 platform table, including bindings for the two unmoved vertical caret commands. `resolveDirectedBinding` is the K1 / M2 rtl swap (arrow + word only; table stays logical). Unbound by default: `pen.caretBlockStart`, `pen.caretBlockEnd` (callers dispatch them; no key). `pen.convertBlock`, the four structure commands, and `table.escapeGrid` are also unbound.
 
-Related inventories (not this file): `@input/pen-shortcuts` `KEYMAP-INVENTORY.md` (4.3 / 4.4 key → name). `textSegmentation.ts` is the shared Segmenter module.
+Related (not this file): `textSegmentation.ts` is the shared Segmenter module.
 
 ## Caret (`caret.ts`)
 

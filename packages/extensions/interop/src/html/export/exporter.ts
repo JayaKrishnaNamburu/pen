@@ -1,12 +1,11 @@
-import { urlPolicy, type UrlContext } from "@input/pen-core";
-import {
-	type BlockHandle,
-	type Editor,
-	type Exporter,
-	type ExportOptions,
-	type TableCellHandle,
+import { sortDeltaAttributes, urlPolicy, type UrlContext } from "@input/pen-core";
+import type {
+	BlockHandle,
+	Editor,
+	Exporter,
+	ExportOptions,
+	TableCellHandle,
 } from "@input/pen-types";
-import { sortDeltaAttributes } from "@input/pen-markdown-serialization";
 import type { MarkupAttributeValue } from "./serializeMarkup";
 import {
 	serializeMarkupCloseTag,

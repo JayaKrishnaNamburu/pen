@@ -26,8 +26,6 @@ import {
 
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
 
-// sentinel-storage: empty-block caret target in Y.Text. Not a logical character.
-
 function embedRecordFromAtom(atom: {
 	nodeType: string;
 	props: Record<string, unknown>;

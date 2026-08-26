@@ -49,10 +49,7 @@ function insertHello(editor: Editor): string {
 		],
 		{ origin: "user" },
 	);
-	return editor
-		.getBlock(blockId)!
-		.textContent()
-		.replace(/\u200B/g, "");
+	return editor.getBlock(blockId)!.textContent();
 }
 
 describe("mountEditor pen.ariaReadOnly vs readonly prop", () => {

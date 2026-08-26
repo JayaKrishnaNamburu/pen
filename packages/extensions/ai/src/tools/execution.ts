@@ -273,6 +273,8 @@ type StreamingTargetHandle = {
 	) => void;
 	appendDelta?: (delta: string) => void;
 	endStreaming?: (status: "complete" | "cancelled" | "error") => void;
+	disableActiveWriter?: (onReadOnlyMutation: () => void) => () => void;
+	_writer?: TextStreamWriter;
 };
 
 function guardEditorWrites(
@@ -405,10 +407,8 @@ function patchStreamingTarget(
 			streaming.beginStreaming = originalBegin;
 		});
 	}
-	// Entry-point patches miss the TextStreamWriter gen-start parked on
-	// the slot (`_writer.append` / prototype.appendDelta → _writer).
 	restores.push(
-		disableLiveSlotWriters(streaming, options.onReadOnlyMutation),
+		disableParkedStreamWriter(streaming, options.onReadOnlyMutation),
 	);
 	return () => {
 		for (const restore of restores.reverse()) {
@@ -417,39 +417,22 @@ function patchStreamingTarget(
 	};
 }
 
-function disableLiveSlotWriters(
-	host: object,
+function disableParkedStreamWriter(
+	streaming: StreamingTargetHandle,
 	onReadOnlyMutation: () => void,
 ): () => void {
-	const restores: Array<() => void> = [];
-	for (const key of Object.getOwnPropertyNames(host)) {
-		let value: unknown;
-		try {
-			value = (host as Record<string, unknown>)[key];
-		} catch {
-			continue;
-		}
-		if (!isLiveTextStreamWriter(value)) {
-			continue;
-		}
-		restores.push(disableTextStreamWriter(value, onReadOnlyMutation));
+	if (typeof streaming.disableActiveWriter === "function") {
+		return streaming.disableActiveWriter(onReadOnlyMutation);
 	}
-	return () => {
-		for (const restore of restores.reverse()) {
-			restore();
-		}
-	};
-}
-
-function isLiveTextStreamWriter(value: unknown): value is TextStreamWriter {
-	if (value == null || typeof value !== "object") {
-		return false;
-	}
-	const writer = value as TextStreamWriter;
-	return (
+	const writer = streaming._writer;
+	if (
+		writer &&
 		typeof writer.append === "function" &&
 		typeof writer.splice === "function"
-	);
+	) {
+		return disableTextStreamWriter(writer, onReadOnlyMutation);
+	}
+	return () => {};
 }
 
 function disableTextStreamWriter(

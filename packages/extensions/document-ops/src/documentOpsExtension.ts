@@ -16,11 +16,7 @@ import { moveBlockTool } from "./tools/moveBlock";
 import { editDocumentTool } from "./tools/editDocument";
 import { DOCUMENT_OPS_TOOL_RUNTIME_SLOT } from "./constants/toolServer";
 
-export interface DocumentOpsOptions {
-	enableGenerationZones?: boolean;
-}
-
-export function documentOpsExtension(_options?: DocumentOpsOptions): Extension {
+export function documentOpsExtension(): Extension {
 	let toolRuntime: ToolRuntimeImpl | null = null;
 	let activeEditor: Editor | null = null;
 

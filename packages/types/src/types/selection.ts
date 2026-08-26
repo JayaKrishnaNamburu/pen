@@ -20,7 +20,7 @@ export interface TextSelection {
 	anchor: Point;
 	focus: Point;
 	/**
-	 * Written by SelectionAuthority (Wave 5.3). Absent on v1 manager
+	 * Written by SelectionAuthority. Absent on v1 manager
 	 * objects; readers default to `"downstream"`.
 	 */
 	readonly affinity?: Affinity;

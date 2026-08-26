@@ -36,7 +36,7 @@ export function createStripEmptyBlockZwspMigration(): DocumentMigration {
 					source: "schema",
 					message: `Stripped ${ops.length} lone empty-block sentinel(s).`,
 					remediation:
-						"Stamp-2 empty blocks stored a caret sentinel. Wave 5 stores the empty string.",
+						"Stamp-2 empty blocks stored a caret sentinel. Stamp 3 stores the empty string.",
 				});
 			}
 		},

@@ -75,7 +75,7 @@ describe("CH health-gate claims", () => {
 		expect(hits).toEqual([]);
 	});
 
-	it("CH9: flake allowlist names test, issue, and owning wave", () => {
+	it("CH9: flake allowlist names test, issue, and reason", () => {
 		const allowlist = JSON.parse(
 			readFileSync(path.join(repoRoot, "scripts/flake-allowlist.json"), "utf8"),
 		);
@@ -85,17 +85,23 @@ describe("CH health-gate claims", () => {
 		const describesEntry = (entry) =>
 			Boolean(entry.name) &&
 			Boolean(entry.issue) &&
-			String(entry.wave ?? "").length > 0;
+			String(entry.reason ?? "").length > 0;
 
 		// An empty quarantine is the goal state, so the loop below proves nothing
 		// once it is reached. The fixtures keep the check honest at zero entries.
-		expect(describesEntry({ name: "t", issue: "F39", wave: "0" })).toBe(true);
+		expect(
+			describesEntry({
+				name: "t",
+				issue: "F39",
+				reason: "geometry assertion belongs in the conformance suite",
+			}),
+		).toBe(true);
 		expect(describesEntry({ name: "t", issue: "F39" })).toBe(false);
 
 		for (const entry of allowlist.tests) {
 			expect(entry.name?.length).toBeGreaterThan(0);
 			expect(entry.issue?.length).toBeGreaterThan(0);
-			expect(String(entry.wave).length).toBeGreaterThan(0);
+			expect(String(entry.reason).length).toBeGreaterThan(0);
 		}
 	});
 });

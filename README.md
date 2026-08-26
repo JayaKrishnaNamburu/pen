@@ -15,139 +15,162 @@
 
 Pen is an MIT-licensed SDK. Packages are intended for the public npm registry.
 
-The first release train has not been published (every package is `0.0.1`). Until it is, `pnpm add @input/pen-*` 404s on the public registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts. The commands below are the post-publish install path.
+The first release train has not been published. Every package is still the unpublished placeholder `0.0.1`; the first `changeset version` stamps **0.3.0**. Until that lands, `pnpm add @input/pen-*` 404s on the public registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts. The commands below are the post-publish install path.
 
-Versioning is `0.x`; v3 ships as 0.3. The policy lives in [`spec/rules/api.md`](spec/rules/api.md) (API7).
+Versioning is a single `0.x` train; v3 ships as 0.3. The policy lives in [`spec/rules/api.md`](spec/rules/api.md) (API7).
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
+pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
 ```
 
-`react` and `react-dom` are peers of `@input/pen-react`. `yjs` and `y-protocols` are peers of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs both — including non-collaborative ones, since the document model is a Yjs document and the adapter imports awareness. `yjs` is a peer rather than a dependency so that exactly one copy is resolved; the adapter asserts that at document creation and fails loudly if a second copy is present. Package managers that auto-install peers will add them for you, but naming them explicitly is what pins the versions you get.
+`react` and `react-dom` are peers of `@input/pen-react`. `@input/pen-preset-default` brings in `@input/pen-core`, which depends on `@input/pen-crdt-yjs`; `yjs` and `y-protocols` are that adapter's peers, so every Pen install needs both — including non-collaborative ones, since the document model is a Yjs document and the adapter imports awareness. `yjs` is a peer rather than a dependency so that exactly one copy is resolved; the adapter asserts that at document creation and fails loudly if a second copy is present. Package managers that auto-install peers will add them for you, but naming them explicitly is what pins the versions you get. Add `@input/pen-core` to the list when you import from it directly, as the vanilla-DOM install below does.
 
-## What Pen Is
+## Why Pen
 
-Pen is a package-first editor toolkit built around a headless runtime, schema-driven document model, and explicit extension composition. The core editor owns document state, selection, normalization, and mutation authority, while renderer packages bind that runtime to React or Vue.
+**You own the UI.** Pen ships no required stylesheet and no built-in chrome. Toolbars, slash menus, and AI panels are your markup over Pen's state. Start with one component, or compose the `Pen.*` primitives and keep every pixel.
+
+**One write path.** A keystroke, a paste, an AI rewrite, and a remote peer all become `DocumentOp[]` and go through `editor.apply(ops, { origin })`. There is no second way to change a document, so undo, review, and history read one stream instead of guessing.
+
+**AI is a writer, not a plugin.** Origins record who wrote each change, so a model can stream into the document, land as tracked suggestions, and be accepted or rejected per change — with the same undo stack a human gets.
+
+**Collaborative by construction.** The document is a Yjs CRDT from the first keystroke. Multiplayer adds presence and a transport; it does not change the document model.
+
+**Runs without a DOM.** The same runtime works in Node, so agents, servers, and pipelines edit documents through the API the editor uses.
 
 ## Quick Start
 
-The smallest recommended setup uses the core runtime, the default preset, and the React renderer. Bare `createEditor()` installs no schema and no extensions. Without `preset: defaultPreset()`, `editor.undoManager` is an inert stub and Mod-Z does nothing, silently.
+Every host follows the same two steps: build an editor with `defaultPreset()`, then mount it. The preset supplies the default schema, undo, and formatting shortcuts. Bare `createEditor()` installs no schema and no extensions — `editor.undoManager` becomes an inert stub and Mod-Z does nothing, silently.
+
+### React
+
+```bash
+pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
+```
 
 ```tsx
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
-import { PenEditor } from "@input/pen-react";
+"use client";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor, useEditor } from "@input/pen-react";
 
 export function App() {
+  const editor = useEditor({ preset: defaultPreset() });
+
   return <PenEditor editor={editor} />;
 }
 ```
 
-`PenEditor` is the fastest path. The editor is functional unstyled, including on an empty document — no extra CSS is required to land a click or the first keystroke. If you want to own the shell, layout, and controls, use the compound primitives directly.
+`useEditor` owns the editor's lifetime: one editor per component instance, destroyed on unmount, rebuilt across a StrictMode remount. Reach for `createEditor` directly when something outside React owns the editor — a store, a route loader, or a collaboration session — and pass the instance in as `useEditor(editor)`, which borrows it without destroying it.
 
-## Examples
+`@input/pen-react` is a client module and its entry points carry `"use client"`. In Next.js App Router, call `useEditor` from a Client Component; `@input/pen-core` stays importable from server code.
 
-Minimal Vite apps for each host live at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each starts with `@input/pen-preset-default`; `@input/pen-core` is the assembly point if you skip the preset.
-
-Each example is a pnpm workspace member, so `pnpm --filter @input/pen-example-react dev` resolves from a fresh clone, and all three are covered by a CI job that mounts the editor and types into it.
-
-## Headless UI Examples
-
-Pen keeps runtime state and document mutation in the editor. Your app can subscribe to that state and render any UI system around it.
-
-### Editor Example
-
-This example keeps Pen headless where it matters while still giving you a batteries-included editor surface in React.
+### Vue
 
 ```bash
-pnpm add @input/pen-ai @input/pen-input-rules @input/pen-search @input/pen-shortcuts
+pnpm add @input/pen-preset-default @input/pen-vue vue yjs y-protocols
 ```
 
-Those commands 404 until the first publish. From a clone, the same packages resolve as workspace members after `pnpm install` and `pnpm build`.
+```vue
+<script setup lang="ts">
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor, useEditor } from "@input/pen-vue";
 
-```tsx
+const editor = useEditor({ preset: defaultPreset() });
+</script>
+
+<template>
+  <PenEditor :editor="editor" />
+</template>
+```
+
+The composable mirrors the React hook: it destroys the editor it created when the component scope is disposed, and returns an editor you pass in untouched.
+
+Vue has no `"use client"` directive. Mount `PenEditor` in the browser, not during SSR.
+
+### Vanilla DOM
+
+```bash
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-dom yjs y-protocols
+```
+
+```ts
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { inputRulesExtension } from "@input/pen-input-rules";
-import { searchExtension, getSearchController } from "@input/pen-search";
-import { Pen } from "@input/pen-react";
+import { mountEditor } from "@input/pen-dom";
 
 const editor = createEditor({
   preset: defaultPreset(),
-  extensions: [inputRulesExtension(), searchExtension()],
 });
 
-export function App() {
-  return (
-    <Pen.Editor.Root editor={editor}>
-      <section className="editor-shell">
-        <header className="editor-toolbar">
-          <button
-            type="button"
-            onClick={() => getSearchController(editor)?.toggleOpen()}
-          >
-            Search
-          </button>
-        </header>
-
-        <Pen.Search.Root editor={editor}>
-          <Pen.Search.Input />
-          <Pen.Search.Results />
-          <Pen.Search.Previous>Previous</Pen.Search.Previous>
-          <Pen.Search.Next>Next</Pen.Search.Next>
-        </Pen.Search.Root>
-
-        <Pen.Editor.Content />
-      </section>
-    </Pen.Editor.Root>
-  );
+const root = document.querySelector("#app");
+if (!(root instanceof HTMLElement)) {
+  throw new Error("Missing #app");
 }
+
+mountEditor(editor, root);
 ```
 
-You can stop at `PenEditor`, compose `Pen.*` primitives, or replace the UI entirely with your own controls.
+`mountEditor` assembles the same field editor, root shell, and inline surfaces that the React and Vue bindings use. Construct it in the browser, not during SSR.
 
-### Bring Your Own Toolbar
+**Styling.** The editor is functional unstyled, including on an empty document — clicks land and the first keystroke works with no CSS at all. Design tokens live in the `STYLING.md` that ships inside `@input/pen-react`.
 
-`useToolbar(editor)` exposes formatting state, and `@input/pen-shortcuts` gives you reusable formatting commands. That lets you render your own toolbar shell without giving up Pen's selection-aware behavior.
+## The Document Model
 
-```tsx
+Three ideas cover most of Pen.
+
+**Blocks** are the document unit, and addressing is block-scoped: `{ blockId, offset }`. **Ops** are the mutation currency — ten variants, including `splice-text`, `format-text`, `insert-block`, and `move-block`. **Origins** label the author of a change, which is how undo, suggestions, and attribution stay correct.
+
+```ts
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { toggleInlineMark } from "@input/pen-shortcuts";
-import { Pen, useToolbar } from "@input/pen-react";
+import { generateId } from "@input/pen-types";
 
 const editor = createEditor({
   preset: defaultPreset(),
 });
 
-function FormattingToolbar() {
+const blockId = generateId();
+
+editor.apply(
+  [
+    {
+      type: "insert-block",
+      blockId,
+      blockType: "paragraph",
+      props: {},
+      position: "last",
+    },
+    {
+      type: "splice-text",
+      blockId,
+      from: 0,
+      to: 0,
+      insert: "Every change is an op.",
+    },
+  ],
+  { origin: "user" },
+);
+
+editor.on("commit", (event) => {
+  console.log(event.origin.type, event.summary.affectedBlockIds);
+});
+```
+
+One `apply` call is one commit: validated, normalized, and reported as a single `commit` event with a change summary. Read the result back through `editor.documentState`, `editor.getBlock(id)`, or an exporter.
+
+## Build Your Own UI
+
+Pen keeps state in the editor and hands you the pieces to render it. `useToolbar` reports what the current selection can do, and `@input/pen-shortcuts` provides the formatting commands behind the keyboard shortcuts — so your toolbar and Mod-B stay in agreement for free.
+
+```tsx
+import { type Editor, useToolbar } from "@input/pen-react";
+import { toggleInlineMark } from "@input/pen-shortcuts";
+
+export function Toolbar({ editor }: { editor: Editor }) {
   const toolbar = useToolbar(editor);
-  const currentBlockId =
-    editor.selection?.type === "text" ? editor.selection.anchor.blockId : null;
-
-  function handleHeading() {
-    if (!currentBlockId) {
-      return;
-    }
-
-    editor.apply(
-      [
-        {
-          type: "set-props",
-          blockId: currentBlockId,
-          props: { type: "heading" },
-        },
-      ],
-      { origin: "user" },
-    );
-  }
 
   return (
-    <div className="toolbar">
+    <div role="toolbar">
       <button
         type="button"
         disabled={!toolbar.canBold}
@@ -164,169 +187,162 @@ function FormattingToolbar() {
       >
         Italic
       </button>
-      <button type="button" disabled={!currentBlockId} onClick={handleHeading}>
-        Heading
-      </button>
-      <span>Block: {toolbar.blockType ?? "paragraph"}</span>
+      <span>{toolbar.blockType ?? "paragraph"}</span>
     </div>
-  );
-}
-
-export function App() {
-  return (
-    <Pen.Editor.Root editor={editor}>
-      <FormattingToolbar />
-      <Pen.Editor.Content />
-    </Pen.Editor.Root>
   );
 }
 ```
 
-### Bring Your Own AI UI
+When you want structure without styling, `@input/pen-react` also ships unstyled compound primitives — `Pen.Editor.*`, `Pen.Toolbar.*`, `Pen.SlashMenu.*`, `Pen.Search.*`, `Pen.AI.*`, `Pen.Multiplayer.*` — plus hooks such as `useSearch`, `useSelection`, `useSlashMenu`, and `useHistory`. Use `PenEditor` to ship today and drop down to primitives when the design demands it.
 
-`@input/pen-ai` owns sessions, generation state, and suggest-mode behavior. In React, you can wire that state into your own chat panel, action bar, or review surface.
+## AI Co-Authoring
 
-```tsx
-import { useState } from "react";
+`aiExtension` needs one thing from you: a `ModelAdapter` that streams events. Pen bundles no provider SDK and holds no API keys, so the model call stays in your infrastructure.
+
+```ts
+import { aiExtension } from "@input/pen-ai";
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { aiExtension } from "@input/pen-ai";
-import { Pen, useAI, useAIActions, useAISessions } from "@input/pen-react";
+import type { ModelAdapter } from "@input/pen-types";
+
+const model: ModelAdapter = {
+  async *stream({ messages, signal }) {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ messages }),
+      signal,
+    });
+
+    if (!response.body) {
+      throw new Error("No response body");
+    }
+
+    const reader = response.body
+      .pipeThrough(new TextDecoderStream())
+      .getReader();
+
+    let chunk = await reader.read();
+    while (!chunk.done) {
+      yield { type: "text-delta", delta: chunk.value };
+      chunk = await reader.read();
+    }
+
+    yield { type: "done" };
+  },
+};
+
+const editor = createEditor({
+  preset: defaultPreset(),
+  extensions: [aiExtension({ model })],
+});
+```
+
+By default AI edits land as tracked suggestions for a review UI; `mutationPreference: "direct"` applies them immediately. Because AI writes carry an `ai` origin through the same pipeline as human edits, a rewrite is reviewable, undoable, and attributable without a parallel code path. Subpaths cover the rest: `@input/pen-ai/suggestions` for proactive suggestions, `@input/pen-ai/autocomplete` for inline completion, `@input/pen-ai/tools` for document tool calls, and `@input/pen-ai/stream` for streaming protocol handling.
+
+## Collaboration
+
+The document is already a CRDT, so collaboration is presence plus a network provider. `multiplayerExtension` owns peers, remote cursors, and selections.
+
+```ts
+import { createEditor } from "@input/pen-core";
+import { multiplayerExtension } from "@input/pen-multiplayer";
+import { defaultPreset } from "@input/pen-preset-default";
 
 const editor = createEditor({
   preset: defaultPreset(),
   extensions: [
-    aiExtension({
-      model: {
-        async *stream() {
-          yield {
-            type: "text-delta" as const,
-            delta: "Here is a clearer version of the selected text.",
-          };
-          yield { type: "done" as const };
-        },
-      },
+    multiplayerExtension({
+      user: { id: "ada", name: "Ada Lovelace", color: "#8D30FF" },
     }),
   ],
 });
+```
 
-function AIPanel() {
-  const [prompt, setPrompt] = useState("Rewrite the selection to be clearer.");
-  const ai = useAI(editor);
-  const sessions = useAISessions(editor);
-  const actions = useAIActions(editor);
-  const latestSession = sessions[sessions.length - 1] ?? null;
+Pen ships no server. To go over the wire, pass a `sessionFactory` that wraps your provider — `createYjsProviderSession` from `@input/pen-crdt-yjs` adapts anything with connect, disconnect, and status callbacks. `playground/src/collaboration/session.ts` is a complete `y-websocket` implementation.
 
-  async function handleSubmit() {
-    const session = actions.startSession({
-      surface: "bottom-chat",
-      target: "selection",
-    });
+## Import And Export
 
-    if (!session) {
-      return;
-    }
+`@input/pen-interop` moves documents in and out as HTML, Markdown, JSON, or XML. JSON is the canonical machine-readable format; XML exists for interoperability.
 
-    await actions.runSessionPrompt(session.id, prompt, {
-      target: "selection",
-    });
-  }
+```ts
+import { createEditor } from "@input/pen-core";
+import {
+  markdownExporter,
+  markdownImporter,
+} from "@input/pen-interop/markdown";
+import { defaultPreset } from "@input/pen-preset-default";
 
-  return (
-    <aside className="ai-panel">
-      <textarea
-        value={prompt}
-        onChange={(event) => setPrompt(event.target.value)}
-      />
-      <div className="ai-actions">
-        <button
-          type="button"
-          disabled={prompt.length === 0 || ai.status !== "idle"}
-          onClick={() => void handleSubmit()}
-        >
-          Ask AI
-        </button>
-        <button type="button" onClick={() => actions.openCommandMenu()}>
-          Commands
-        </button>
-      </div>
-      <p>Status: {ai.status}</p>
-      <p>
-        Latest session:{" "}
-        {latestSession
-          ? `${latestSession.status} with ${latestSession.turns.length} turn(s)`
-          : "none"}
-      </p>
-    </aside>
-  );
-}
+const editor = createEditor({
+  preset: defaultPreset(),
+});
 
-export function App() {
-  return (
-    <Pen.Editor.Root editor={editor}>
-      <AIPanel />
-      <Pen.Editor.Content />
-    </Pen.Editor.Root>
-  );
+markdownImporter.import("# Title\n\nHello **world**.", editor, {
+  replace: true,
+});
+
+const markdown = markdownExporter.export(editor);
+```
+
+Importers report what they dropped rather than failing silently, and HTML input is sanitized on the way in.
+
+## Without A DOM
+
+`createHeadlessEditor` gives you the full runtime with no browser globals — the same ops, schema, and normalization your UI runs, in Node.
+
+```ts
+import { createHeadlessEditor } from "@input/pen-core";
+import { exportPlainText } from "@input/pen-interop/json";
+import { defaultPreset } from "@input/pen-preset-default";
+
+export async function summarize(): Promise<string> {
+  const editor = createHeadlessEditor({
+    preset: defaultPreset(),
+  });
+
+  await editor.whenReady();
+  const text = exportPlainText(editor);
+  await editor.destroy();
+
+  return text;
 }
 ```
 
-If you want less custom UI code, `@input/pen-react` also ships `Pen.Toolbar.*` and `Pen.AI.*` primitives on top of the same runtime.
+This is the path for server-side generation, agent workflows, migrations, and tests — most of Pen's own suite exercises the runtime with no DOM at all.
 
-## Recommended Packages
+## Packages
 
-- `@input/pen-core`: create editors and access the headless runtime
-- `@input/pen-types`: contracts and shared type-level helpers
-- `@input/pen-schema-default`: default blocks and inline definitions
-- `@input/pen-preset-default`: standard runtime composition for most adopters
-- `@input/pen-react`: primary documented renderer surface
-- `@input/pen-crdt-yjs`: Yjs adapter for collaborative setups
+Install `@input/pen-preset-default` and a renderer — the preset brings `@input/pen-core` and the default schema with it — then add the rest when you need them. Every published package commits an `api-report.md` next to its source as the signatures of record.
 
-## Optional Capabilities
-
-### Rendering
-
-- `@input/pen-vue`: shipped Vue renderer proof built on the shared DOM engine
-- `@input/pen-dom`: shared DOM field-editor engine and low-level DOM helpers
-
-### Editing And Extensions
-
-- `@input/pen-search`: document search and replacement primitives
-- `@input/pen-input-rules`: opt-in markdown shortcut typing
-- `@input/pen-undo`: undo and redo with origin tagging
-- `@input/pen-shortcuts`: headless keyboard shortcut extension
-- `@input/pen-history`: snapshot history and attribution primitives
-- `@input/pen-document-ops`: document tool and generation-zone helpers
-
-### AI
-
-- `@input/pen-ai`: AI extension, suggest mode, and track changes. Subpaths: `./suggestions`, `./autocomplete`, `./tools`, `./skills`, `./stream`
-
-### Collaboration And Transport
-
-- `@input/pen-multiplayer`: multiplayer presence and sync primitives
-- `@input/pen-transport-direct`: in-process transport
-- `@input/pen-transport-sse`: Server-Sent Events transport
-
-### Import And Export
-
-- `@input/pen-interop`: HTML, Markdown, JSON, and XML import and export (`./html`, `./markdown`, `./json`, `./xml`)
+| Package                                                   | What it does                                                                |
+| --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `@input/pen-core`                                         | Editor runtime: apply pipeline, selection, normalization, extension manager |
+| `@input/pen-preset-default`                               | Batteries-included assembly of schema, undo, shortcuts, and streaming       |
+| `@input/pen-schema-default`                               | Default block and inline definitions                                        |
+| `@input/pen-crdt-yjs`                                     | Yjs document adapter                                                        |
+| `@input/pen-types`                                        | Shared contracts; installed with core rather than alone                     |
+| `@input/pen-react`                                        | React primitives, hooks, and renderers — the documented renderer surface    |
+| `@input/pen-vue`                                          | Vue bindings over the shared DOM engine                                     |
+| `@input/pen-dom`                                          | Framework-free DOM field-editor engine                                      |
+| `@input/pen-ai`                                           | AI sessions, suggestions, autocomplete, tools, and streaming                |
+| `@input/pen-multiplayer`                                  | Presence, remote cursors, and remote selections                             |
+| `@input/pen-interop`                                      | HTML, Markdown, JSON, and XML import and export                             |
+| `@input/pen-search`                                       | Search and replace primitives                                               |
+| `@input/pen-input-rules`                                  | Markdown shortcuts while typing                                             |
+| `@input/pen-shortcuts`                                    | Keyboard shortcuts and formatting commands                                  |
+| `@input/pen-undo`                                         | Undo and redo with origin tagging                                           |
+| `@input/pen-history`                                      | Snapshot history and per-character attribution                              |
+| `@input/pen-document-ops`                                 | Block CRUD and generation-zone tools                                        |
+| `@input/pen-transport-direct`, `@input/pen-transport-sse` | In-process and Server-Sent Events transports for AI streams                 |
+| `@input/pen-test`, `@input/pen-bench`                     | Headless test utilities and benchmarks                                      |
 
 ## Architecture
 
-Pen keeps one block-native document model and one canonical mutation path.
+Pen is layered, and dependencies point strictly downward: contracts, then the CRDT adapter, then the core runtime, then schema, rendering, and extensions. `editor.apply(...)` is the runtime authority boundary for document writes, extensions compose behavior without replacing it, and renderer packages stay separate from the core.
 
-- `editor.apply(...)` is the runtime authority boundary for document writes.
-- `DocumentOp[]` is the mutation currency shared across runtime features.
-- Extensions compose optional behavior without replacing the editor authority boundary.
-- Renderer packages stay separate from the core runtime.
-- JSON is the canonical machine-readable format. XML exists for interoperability.
+The current-state specs in [`spec/README.md`](spec/README.md) are the contract — per-package descriptions in `spec/packages/`, normative rules with stable IDs in `spec/rules/`, and architectural invariants in `spec/charter/`.
 
-For the full current-state package and architecture specs, see [spec/README.md](spec/README.md).
-
-## Browser and Node Support
-
-This table is the canonical HOST3 runtime floor. Wave D's docs content set should link here rather than restating the numbers.
+## Browser And Node Support
 
 | Runtime         | Minimum | Input backend                                                                           |
 | --------------- | ------- | --------------------------------------------------------------------------------------- |
@@ -335,29 +351,25 @@ This table is the canonical HOST3 runtime floor. Wave D's docs content set shoul
 | Firefox         | 92      | contenteditable                                                                         |
 | Safari / WebKit | 15.4    | contenteditable                                                                         |
 
-Expanded field-editor mode and table-cell editing always use contenteditable, even when EditContext is present (`fieldEditorImpl.ts` backend selection).
+Expanded field-editor mode and table-cell editing always use contenteditable, even when EditContext is present. APIs newer than this floor — EditContext, `structuredClone`, `ResizeObserver`, `color-mix()`, `crypto.randomUUID` — are feature-detected with a documented fallback and do not raise the minimum. Published packages declare `engines.node: ">=22"`, and CI verifies both declared endpoints (Node 22 and current Node 26) plus one non-Linux runner in [`.github/workflows/node-matrix.yml`](.github/workflows/node-matrix.yml). Raising the floor is a minor-version change; lowering it is never silent. The reasoning is in [`spec/rules/host.md`](spec/rules/host.md) (HOST3, HOST4).
 
-**How the floor was chosen (HOST3 / HOST4).** Node is `>=22` because every current workflow (`ci.yml`, `release.yml`, `docs.yml`) pins `setup-node` to 22. HOST4's Node-reachable bare APIs are older (`Object.hasOwn` 16.9.0, `Array.prototype.at` 16.6.0) and E.5 marks both as trivially replaceable; declaring 16.9.0 would be an unverified range (API7). The browser floor is the newest bare HOST4 API, not a round "last two versions" cut: `Object.hasOwn` (Chrome 93, Firefox 92, Safari 15.4) sits above `Array.prototype.at` (92 / 90 / 15.4) and `replaceChildren` (86 / 78 / 14). APIs newer than that floor — EditContext, `structuredClone`, `ResizeObserver`, `color-mix()`, `crypto.randomUUID` — are feature-detected with a documented fallback (HOST4) and do not raise the minimum. Raising the floor is a minor-version change; lowering it is never silent.
+## Docs, Examples, And Playground
 
-Published packages declare the Node floor as `engines.node: ">=22"`. CI verifies the declared endpoints (22 and current Node 26) plus one non-Linux runner in [`.github/workflows/node-matrix.yml`](.github/workflows/node-matrix.yml).
-
-## Repository Resources
-
-- `packages/docs`: repository docs app for the current public Pen surface
-- `.github/workflows/docs.yml`: GitHub Pages deployment for the docs app (Pages is enabled on this repository)
-- `playground`: the reference app — editor, AI agent, document inspector, optional collaboration — and the host for `pnpm test:e2e`
+- **[Documentation](https://input-systems.github.io/pen/)** — getting started per host, core concepts, selection, extensions, commands, collaboration, AI, import and export, security, and accessibility.
+- **Examples** — minimal Vite apps at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each is a workspace member consuming the built packages, so `pnpm build` once and then `pnpm --filter @input/pen-example-react dev`. CI mounts each one and types into it — a drifted quickstart fails the build.
+- **Playground** — the reference app: editor, AI agent, document inspector, and optional live collaboration. Run `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
 
 ## Development
 
 ```bash
 pnpm install
-pnpm lint
 pnpm build
 pnpm test
 pnpm typecheck
+pnpm lint
 ```
 
-`pnpm lint` runs Prettier on an explicit docs/config path list, then ESLint. TypeScript source is not in the Prettier list; ESLint owns source style. See `CONTRIBUTING.md`.
+Prefer scoped runs while iterating: `pnpm --filter @input/pen-core test`. Browser coverage is `pnpm test:e2e`. Any change to a published package needs a changeset (`pnpm changeset`). [`CONTRIBUTING.md`](CONTRIBUTING.md) has the full loop, including which gates run in CI.
 
 ## Community
 

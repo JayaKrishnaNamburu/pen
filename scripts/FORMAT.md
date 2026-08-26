@@ -15,7 +15,7 @@ This is deliberate:
   published packages define a format script. `turbo.json` does not
   mention Prettier.
 
-Do not add source globs to `FORMAT_PATHS` while waves are in flight.
+Do not add source globs to `FORMAT_PATHS` while large refactors are in flight.
 A first-time Prettier pass across ~38 packages is a review-killing
 diff, not a quality win. Sequence that reformat for a quiet tree.
 

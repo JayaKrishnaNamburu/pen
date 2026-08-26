@@ -3,7 +3,7 @@ import { loadavg } from "node:os";
 import { caretCacheHolds } from "../../harness/src/geometryCompare";
 import { formatCheckReport } from "../../src/checkReport";
 import { scenario } from "../../src/scenario";
-import { sampleCaretPoints } from "../../src/wave3Geometry";
+import { sampleCaretPoints } from "../../src/g5Geometry";
 
 function logLoad(label: string): number[] {
 	const loads = loadavg();

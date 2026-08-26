@@ -7,7 +7,7 @@ import { rules } from "../index.js";
 
 // Derived, not hardcoded: the unusedAllowlist case needs a waiver that is
 // actually in the allowlist, so naming one directly makes this suite go red
-// whenever a waiver retires — which is exactly what Wave 05 did to
+// whenever a waiver retires — which is exactly what happened to
 // `applySelectionUntilNextFrame`.
 const selectionTimersAllowlist = JSON.parse(
 	readFileSync(
@@ -252,7 +252,7 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 		);
 	});
 
-	it("no-selection-timers errors by name on a Wave 5.8 module the basename matcher used to miss", () => {
+	it("no-selection-timers errors by name on a protected module the basename matcher used to miss", () => {
 		expectRuleErrors(
 			tsTester,
 			"no-selection-timers",

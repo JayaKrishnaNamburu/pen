@@ -4,21 +4,8 @@ import {
   exportMarkdownForBlocks,
   exportMarkdownRange,
 } from "../markdownSerialization";
-import { getNumberedListItemValue } from "../orderedList";
 
 describe("@input/pen-markdown-serialization", () => {
-  it("derives numbered list values from prior siblings at the same indent", () => {
-    const firstItem = createNumberedListBlock("b1", null, { start: 3 });
-    const secondItem = createNumberedListBlock("b2", firstItem);
-    const nestedItem = createNumberedListBlock("b3", secondItem, { indent: 1 });
-    const thirdItem = createNumberedListBlock("b4", nestedItem);
-
-    expect(getNumberedListItemValue(firstItem)).toBe(3);
-    expect(getNumberedListItemValue(secondItem)).toBe(4);
-    expect(getNumberedListItemValue(nestedItem)).toBe(1);
-    expect(getNumberedListItemValue(thirdItem)).toBe(5);
-  });
-
   it("EM1: empty block serializes to empty markdown text, not a ZWSP", () => {
     const handle = createTextBlock("b1", "paragraph", "");
     const markdown = exportMarkdownForBlocks(
@@ -116,23 +103,6 @@ describe("@input/pen-markdown-serialization", () => {
     expect(markdown).not.toMatch(/\|\s*\u200B\s*\|/);
   });
 });
-
-function createNumberedListBlock(
-  id: string,
-  prev: BlockHandle | null,
-  props: Record<string, unknown> = {},
-) : BlockHandle {
-  const handle = {
-    id,
-    type: "numberedListItem",
-    props,
-    prev,
-    as(capability: string) {
-      return capability === "table" && handle.type === "table" ? handle : null;
-    },
-  };
-  return handle as unknown as BlockHandle;
-}
 
 function createTextBlock(
   id: string,

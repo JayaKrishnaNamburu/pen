@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
 	createTextSelection,
 	getSelectionBlockRange,
+	isBlockSelected,
 	isCollapsed,
 	isMultiBlock,
 	selectionToRange,
@@ -92,6 +93,20 @@ describe("selection helpers", () => {
 		expect(
 			getSelectionBlockRange([], { type: "app", appId: "a1" }),
 		).toEqual([]);
+		expect(
+			isBlockSelected(["a", "b", "c"], spanned, "b"),
+		).toBe(true);
+		expect(
+			isBlockSelected(["a", "b", "c"], spanned, "z"),
+		).toBe(false);
+		expect(
+			isBlockSelected(["table"], {
+				type: "cell",
+				blockId: "table",
+				anchor: { row: 0, col: 0 },
+				head: { row: 0, col: 0 },
+			}, "table"),
+		).toBe(true);
 		expect(() =>
 			getSelectionBlockRange(doc as unknown as PenDocument, spanned),
 		).toThrow("must not walk blockOrder");

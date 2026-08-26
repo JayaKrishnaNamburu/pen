@@ -1,54 +1,88 @@
 # Pen Specs
 
-This spec set describes Pen as it exists in the monorepo today. It is package-centric and current-state oriented rather than roadmap-driven.
+`spec/` is the current-state index of this repository for agents. It describes shipped behavior only. There is no roadmap, no wave plan, and no future-work list here. When shipped behavior changes, the matching spec changes in the same PR. Silent divergence between code and spec is a defect.
 
-## How To Read This
+Read this file first. Then load only the `rules/` and `packages/` documents that match the surface you are touching.
 
-Start with the charter docs if you want the durable architectural rules:
+## Layout
 
-- `charter/architecture.md`
-- `charter/document-model.md`
-- `charter/mutation-pipeline.md`
-- `charter/package-map.md`
+- `charter/` — cross-cutting architectural invariants.
+- `rules/` — normative families with stable rule IDs (`A1`, `S4`, `SEC1`, `API6`, …). Cite those IDs in PR descriptions and test names.
+- `packages/` — one current-state spec per workspace package that has one. Mirrors the package tree, not a milestone.
+- `MIGRATION.md` — host adoption guide (what a host assembling from this repo adopts). Not an agent index; useful so deleted APIs are not revived.
 
-Then read package specs by layer:
+Two workspace packages have no `spec/packages/` file on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. See `charter/package-map.md`.
 
-- Runtime authority: `packages/core.md`, `packages/types.md`
-- Rendering: `packages/rendering/dom.md`, `packages/rendering/react.md`, `packages/rendering/vue.md`
-- Editing and extensions: `packages/extensions/search.md`, `packages/extensions/undo.md`, `packages/extensions/history.md`, `packages/extensions/multiplayer.md`
-- AI and tooling: `packages/extensions/ai.md`, `packages/extensions/document-ops.md`, `packages/shared/content-ops.md`
-- Import/export: `packages/extensions/interop.md`, `packages/shared/markdown-serialization.md`
-- Transports: `packages/transports/direct.md`, `packages/transports/sse.md`
+## Charter
 
-## Structure
+- `charter/architecture.md` — layering, runtime authority, host vs library
+- `charter/document-model.md` — blocks, read model, empty storage, nested traversal
+- `charter/mutation-pipeline.md` — `DocumentOp[]`, `editor.apply`, streaming, intent
+- `charter/package-map.md` — workspace layout and spec path for every specified package
 
-- `charter/` contains cross-cutting architectural invariants.
-- `packages/` mirrors the workspace package and app layout.
-- Package specs stay close to real package boundaries instead of grouping work by milestone or wave.
-- `roadmap/` contains explicit forward-looking plans that have not yet been folded into package specs.
+## Rules — load before editing the matching surface
 
-## Core Conventions
+| Surface | Document | Families |
+| --- | --- | --- |
+| Write path, ops, streaming, origins | `rules/pipeline.md` | ST, OP, PR, OPB |
+| Selection, caret, IME, projection | `rules/selection.md` | A, N, R, P, O, T, C, S |
+| Anchors and position survival | `rules/anchors.md` | AN, AS |
+| Empty-block storage | `rules/empty-blocks.md` | EM |
+| Change summaries, origin intent | `rules/observation.md` | OB, INT |
+| Facets, slots, extension seams | `rules/facets.md` | R, SM |
+| Commands, keymaps, beforeinput | `rules/commands.md` | D, K, B |
+| DOM scheduler, field editors, geometry, overlays, bidi | `rules/dom.md` | SCH, FE, G, OV, DIR, BR, M, RI |
+| Cross-cutting invariants | `rules/architecture.md` | I |
+| Public API, packaging, DAG, surface | `rules/api.md` | API, SF, CS |
+| Security, URLs, HTML, clipboard | `rules/security.md` | SEC |
+| Accessibility | `rules/accessibility.md` | AX |
+| AI boundary, edit channel, review surface | `rules/ai.md` | AIB, UC, RS |
+| Collaboration | `rules/collaboration.md` | COL |
+| Import/export, assets | `rules/interop.md` | IOP |
+| Localization, catalogs | `rules/localization.md` | LOC |
+| Durability, schema evolution | `rules/durability.md` | DUR |
+| Scale envelope, benches | `rules/scale.md` | SCALE, PG |
+| Tests, conformance, flake | `rules/reliability.md` | CH |
+| Host integration, browser/Node floor | `rules/host.md` | HOST, HB |
+| Docs site, READMEs, examples | `rules/documentation.md` | DOC |
 
-- Runtime authority lives with `@input/pen-core` and the `Editor` API.
+Also load the matching `packages/*.md` for any package whose source you are editing.
+
+## Packages
+
+Runtime authority: `packages/core.md`, `packages/types.md`, `packages/crdt/yjs.md`
+
+Rendering: `packages/rendering/dom.md`, `packages/rendering/react.md`, `packages/rendering/vue.md`
+
+Schema and preset: `packages/schema/default.md`, `packages/presets/default.md`
+
+Extensions: `packages/extensions/ai.md`, `packages/extensions/document-ops.md`, `packages/extensions/history.md`, `packages/extensions/input-rules.md`, `packages/extensions/interop.md`, `packages/extensions/multiplayer.md`, `packages/extensions/search.md`, `packages/extensions/shortcuts.md`, `packages/extensions/undo.md`
+
+Shared: `packages/shared/content-ops.md`, `packages/shared/markdown-serialization.md`
+
+Transports: `packages/transports/direct.md`, `packages/transports/sse.md`
+
+Tooling: `packages/tooling/test.md`, `packages/tooling/bench.md`, `packages/tooling/assets-memory.md`
+
+Workspace apps: `packages/docs.md`, `packages/playground.md`
+
+AI subpaths (`@input/pen-ai/suggestions`, `/autocomplete`, `/skills`, `/tools`, `/stream`) live in `packages/extensions/ai.md`. Interop format subpaths (`/html`, `/markdown`, `/json`, `/xml`) live in `packages/extensions/interop.md`.
+
+## Conventions
+
+- Runtime authority is `@input/pen-core` and the `Editor` API.
 - `DocumentOp[]` is a closed ten-member union. Durable writes go through `editor.apply(...)`.
 - Positions that must survive commits are `editor.anchors`. Change summaries describe what a commit touched; they do not map positions across commits.
 - Empty text-capable storage is `""`. The renderer empty-block placeholder is a `<br data-pen-empty="">` and is not stored.
 - `@input/pen-types` is the shared contract layer, not a hidden runtime layer.
 - Renderer packages bind to the editor runtime but do not own document truth.
-- JSON is the canonical machine-readable format. XML is an interoperability surface layered on top of that model. Both live on `@input/pen-interop`.
+- JSON is the canonical machine-readable format. XML is an interoperability surface on top of that model. Both live on `@input/pen-interop`.
 - React is the primary documented renderer. Vue is a shipped renderer proof built on the shared DOM engine.
-- Private apps such as `@input/pen-docs` and `@input/pen-playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
-- `playground/` is the reference app and the host for `pnpm test:e2e`. The former kitchen-sink app is deleted.
-- Two workspace packages have no current-state spec on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. `packages/` has 27 package.json files (24 published, 3 private); 25 have a matching spec. See `charter/package-map.md`.
-- `pen.ariaReadOnly` (the facet) only sets `aria-readonly`. The renderer `readonly` prop is what declines typing. That split is shipped and unresolved; package specs describe it, they do not pick a winner.
+- `playground/` is the reference app and the host for `pnpm test:e2e`. Private apps (`@input/pen-docs`, `@input/pen-playground`) are specified because they are in the workspace; they are not publishable runtime packages.
+
+## Shipped ambiguities
+
+These are current behavior, not bugs to close in passing:
+
+- `pen.ariaReadOnly` (the facet) only sets `aria-readonly`. The renderer `readonly` prop is what declines typing. Package specs describe the split; they do not pick a winner.
 - The command registry and catalog are settled: dispatch keeps the D/K/B rules. Selection bridging inside `@input/pen-dom` is the one part of the surface still unsettled; package specs that mention that bridging mark it as such.
-
-## What Changed
-
-- Historical design trees and planning notes were removed. The rules that still govern shipped code were folded into the documents here.
-- Specs now describe the workspace as shipped today.
-- The highest-value packages now have deeper runtime notes, boundaries, and architecture diagrams rather than just metadata summaries.
-
-## Roadmap Specs
-
-- `roadmap/headless-collaboration-ai-waves.md`: generic Pen primitives for CRDT state barriers, structured mutation groups, headless server editors, export hooks, field adapters, and deterministic fixtures.

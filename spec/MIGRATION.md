@@ -1004,7 +1004,7 @@ The root `turbo.json` `lint` task is gone; every package answers `pnpm --filter 
 
 ## four one-shot scripts with aliases and references
 
-The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `migrate-imports-v3.mjs`, `gate-mutation.mjs`, `check-instruments.mjs`, `health-gates.mjs`, `console-inventory.mjs`, `engines-inventory.mjs`, `skip-hygiene.mjs`, `renderer-inventory.mjs`, `f22-dead-bindings.mjs`, `above-floor-api-allowlist.mjs`, `instrument-paths.mjs`, `pen-stream-request-no-editor.mjs`, `coverage-rules.mjs`, `no-pen-deep-imports.mjs`, `no-unscheduled-measure.mjs`, `no-bidi-override.mjs`, `no-json-stringify-signatures.mjs`, and `no-selection-state-properties.mjs` retire the same way: duplicates of lint or `ch-gates`, always-green inventories, meta-gates, spent one-shots, and greps that moved into `@input/pen-eslint-plugin`. `verdaccio-closure-check.mjs` stays. `v3-gates.mjs` and `wave-deletions-migration-check.mjs` were removed when the v5 train's wave files were deleted — both read a train's `waves/*.md` as their only input, so neither has a population to check without one. A future train reintroduces them. Hosts never imported any of these.
+The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `migrate-imports-v3.mjs`, `gate-mutation.mjs`, `check-instruments.mjs`, `health-gates.mjs`, `console-inventory.mjs`, `engines-inventory.mjs`, `skip-hygiene.mjs`, `renderer-inventory.mjs`, `f22-dead-bindings.mjs`, `above-floor-api-allowlist.mjs`, `instrument-paths.mjs`, `pen-stream-request-no-editor.mjs`, `coverage-rules.mjs`, `no-pen-deep-imports.mjs`, `no-unscheduled-measure.mjs`, `no-bidi-override.mjs`, `no-json-stringify-signatures.mjs`, and `no-selection-state-properties.mjs` retire the same way: duplicates of lint or `ch-gates`, always-green inventories, meta-gates, spent one-shots, and greps that moved into `@input/pen-eslint-plugin`. `verdaccio-closure-check.mjs` stays. `v3-gates.mjs` and `wave-deletions-migration-check.mjs` were removed with the planning documents they read as their only input, so neither has a population to check any more. Hosts never imported any of these.
 
 ---
 
@@ -1108,25 +1108,25 @@ One capability is removed rather than replaced: previews of a partially-arrived 
 
 ## `AIApplyStrategy` and `AI_APPLY_STRATEGIES`
 
-**Shipped 2026-08-26 (v5 wave 3, UC5).** The strategy vocabulary is gone. Durable edits arrive as `edit_document` tool calls (`editsArriveAsToolCalls` on the route); streaming generation is selected by `target` and `contentFormat`. Hosts that passed `applyStrategy` pass a mutation preference (`suggestions` | `direct`) instead.
+**Shipped 2026-08-26 (UC5).** The strategy vocabulary is gone. Durable edits arrive as `edit_document` tool calls (`editsArriveAsToolCalls` on the route); streaming generation is selected by `target` and `contentFormat`. Hosts that passed `applyStrategy` pass a mutation preference (`suggestions` | `direct`) instead.
 
 ---
 
 ## `ephemeral-preview`, `AI_BLOCK_CLASSES`, `app-structured`, `AI_TRANSPORT_KINDS`, and `"staged_review"`
 
-**Shipped 2026-08-26 (v5 wave 3, UC5).** Four declared members no input produces, plus the two vocabularies that only named app-block routes. Hosts switching on these have a compile error; there is no replacement member.
+**Shipped 2026-08-26 (UC5).** Four declared members no input produces, plus the two vocabularies that only named app-block routes. Hosts switching on these have a compile error; there is no replacement member.
 
 ---
 
 ## `getBlockRevision`
 
-**Shipped 2026-08-26 (v5 wave 3, UC4).** The per-block revision counter left AI edit gating and tool payloads. Working-set view fingerprints are what a mutating tool consults. Hosts that echoed a revision from a tool payload read the fingerprint instead.
+**Shipped 2026-08-26 (UC4).** The per-block revision counter left AI edit gating and tool payloads. Working-set view fingerprints are what a mutating tool consults. Hosts that echoed a revision from a tool payload read the fingerprint instead.
 
 ---
 
 ## `FastApplyDebugState` → `CommitDebugState`, `FastApplyFallbackMetrics` → `CommitFallbackMetrics`, `AISessionFastApplyMetrics` → `AISessionCommitMetrics`, `AIDebugLogFastApplyMetrics` → `AIDebugLogCommitMetrics`, `debug.fastApply` → `debug.commit`, `metrics.fastApply` → `metrics.commit`, `nativeFastApplyCount` → `selectionReplacementCount`, `native-fast-apply` → `selection-replacement`, `controller/fastApplySupportMethods.ts` → `markdownCommitMethods.ts`, and `ai-markdown-fast-apply` → `ai-markdown-commit`
 
-**Shipped 2026-08-26 (v5 wave 3, UC5).** These carried the name of the XML channel deleted in wave 1. They are renamed, not removed — the behavior is unchanged. The new name is `commit`, which is what this codebase calls turning generated text into document ops.
+**Shipped 2026-08-26 (UC5).** These carried the name of the earlier XML channel. They are renamed, not removed — the behavior is unchanged. The new name is `commit`, which is what this codebase calls turning generated text into document ops.
 
 | Before                                  | After                       |
 | --------------------------------------- | --------------------------- |

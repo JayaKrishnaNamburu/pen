@@ -1,5 +1,5 @@
 /**
- * Records the Wave 4 Step 4.1 update-equality corpus from the live v2
+ * Records the update-equality corpus from the live v2
  * implementation. Run once; the committed JSON is the oracle. The test
  * never calls this.
  */

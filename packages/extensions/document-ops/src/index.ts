@@ -1,8 +1,6 @@
 export { documentOpsExtension } from "./documentOpsExtension";
-export type { DocumentOpsOptions } from "./documentOpsExtension";
 
 // Low-level entrypoints for the default document tool runtime.
-export { DOCUMENT_OPS_TOOL_RUNTIME_SLOT } from "./constants/toolServer";
 export { getDocumentToolRuntime } from "./utils/toolServer";
 export { assertToolCanUseBlockType } from "./utils/blockTypePolicy";
 

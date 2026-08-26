@@ -7,9 +7,9 @@ import tseslint from "typescript-eslint";
 const require = createRequire(import.meta.url);
 const selectionTimers = require("./packages/tooling/eslint-plugin/src/rules/no-selection-timers-allowlist.json");
 
-// CH2 (spec/rules/reliability.md): this config is the host the waves mount
-// their invariants on. It starts permissive on purpose — rules that would demand mass
-// edits are warnings until the wave that owns the cleanup lands, so the error set stays
+// CH2 (spec/rules/reliability.md): this config is where the repo's structural
+// invariants are enforced. It is permissive on purpose — a rule that would demand mass
+// edits lands as a warning until the cleanup it implies is done, so the error set stays
 // meaningful and the gate stays green.
 
 export default tseslint.config(
@@ -35,11 +35,11 @@ export default tseslint.config(
 		rules: {
 			"pen/no-html-injection-sinks": "error",
 
-			// S4 / Wave 5.8: selection paths get no timers. Scope is the in-config
+			// S4: selection paths get no timers. Scope is the in-config
 			// module list (focus, offsetDomain, caretPositions, v1 backend/IME
 			// offenders) plus a basename-contains-`selection` fail-closed net so a
 			// new selectionReader.ts cannot silently escape. sessionReconciler is
-			// outOfScope — a Wave 03 flush coalescer, not a selection module.
+			// outOfScope — a flush coalescer, not a selection module.
 			// Do not add a `files:` glob; the rule self-scopes from this list.
 			"pen/no-selection-timers": [
 				"error",
@@ -159,11 +159,9 @@ export default tseslint.config(
 		// onto scheduler.read / scheduler.write; a frame wait that is a selection
 		// retry in disguise is deleted under S4 rather than migrated.
 		//
-		// This was previously a grep stated in the rule and run by the v5 train's
-		// wave runner, which no CI job executed — FIELD-EDITOR-TEARDOWN.md claimed
-		// a CI gate that did not exist. Lint is the right home: the invariant is
-		// "do not call this function in these files", and `pnpm lint` already runs
-		// on every PR.
+		// Lint is the right home for this: the invariant is "do not call this
+		// function in these files", and `pnpm lint` already runs on every PR. It
+		// was previously stated as a grep that no CI job actually executed.
 		//
 		// The member-expression selector is what makes it hold: the scheduler's own
 		// call is `globalThis.requestAnimationFrame`, so a bare-identifier ban
@@ -280,13 +278,12 @@ export default tseslint.config(
 		},
 	},
 	{
-		// Wave 7.1: v1 Extension.keyBindings / inputRules / decorations move to
-		// facet providers. Error on packages that never declared them (or already
+		// v1 Extension.keyBindings / inputRules / decorations move to facet
+		// providers. Error on packages that never declared them (or already
 		// migrated) so they cannot regress. The remaining decorations riders stay
 		// warn: collectDecorations still iterates Extension.decorations, so moving
 		// them to decorationsFacet.of() would drop them from getDecorations()
-		// until that collector reads the facet. Promoting those to error is what
-		// Wave 7.1 waits on.
+		// until that collector reads the facet.
 		// Same recursive `**/src` as HOST4 — a two-level pair misses
 		// packages/tooling/conformance/harness/src.
 		files: ["packages/**/src/**/*.{ts,tsx}"],
@@ -314,15 +311,15 @@ export default tseslint.config(
 		},
 	},
 	{
-		// Deliberately permissive baseline. Each entry names the wave that owns the cleanup and
-		// earns its promotion to "error"; promoting one before that only creates noise.
+		// Deliberately permissive baseline. Each entry names the cleanup that earns its
+		// promotion to "error"; promoting one before that only creates noise.
 		rules: {
-			// Wave H step H.2 (CH1): `@ts-nocheck` is gone. Remaining `@ts-expect-error`
+			// CH1: `@ts-nocheck` is gone. Remaining `@ts-expect-error`
 			// sites must keep an adjacent tracked-issue description.
 			"@typescript-eslint/ban-ts-comment": "error",
 			"@typescript-eslint/no-explicit-any": "warn",
-			// Concentrated in the mechanically split `PartN` files and their test counterparts
-			// (Wave H steps H.2/H.3); the count is the burn-down metric for that work.
+			// Concentrated in the mechanically split `PartN` files and their test
+			// counterparts; the count is the metric for that cleanup.
 			"@typescript-eslint/no-unused-vars": [
 				"warn",
 				{
@@ -331,7 +328,7 @@ export default tseslint.config(
 					caughtErrors: "none",
 				},
 			],
-			// Wave H step H.6 (F21) reviews these: each is a value computed and then discarded, or
+			// F21 reviews these: each is a value computed and then discarded, or
 			// an expression evaluated for no effect — bug-shaped, but each needs intent to resolve.
 			"no-useless-assignment": "warn",
 			"@typescript-eslint/no-unused-expressions": "warn",
@@ -339,13 +336,13 @@ export default tseslint.config(
 			// them to `const` would make dead logic look deliberate. Stay warn until the
 			// remaining unused-binding debt is gone — do not promote with ban-ts-comment.
 			"prefer-const": "warn",
-			// Wave P (API5) decomposes the handle/interface merging these flag.
+			// API5 decomposes the handle/interface merging these flag.
 			"@typescript-eslint/no-unsafe-declaration-merging": "warn",
 			"@typescript-eslint/no-this-alias": "warn",
 			"@typescript-eslint/no-empty-object-type": "warn",
 			"@typescript-eslint/no-unsafe-function-type": "warn",
 			"@typescript-eslint/no-require-imports": "warn",
-			// Wave H step H.6 sweeps silent catches; until then an empty catch is a warning, not a stop.
+			// Silent catches are swept separately; until then an empty catch is a warning, not a stop.
 			"no-empty": ["warn", { allowEmptyCatch: true }],
 		},
 	},

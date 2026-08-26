@@ -25,7 +25,6 @@ export interface RichTextShortcutsOptions {
 	onToggleLink?: (editor: Parameters<typeof setInlineMark>[0]) => boolean;
 }
 
-// wave-4 named-command map: ../KEYMAP-INVENTORY.md
 const DEFAULT_BINDINGS: Record<ShortcutMark, readonly string[]> = {
 	bold: ["Mod-b"], // pen.toggleMark { mark: "bold" }
 	italic: ["Mod-i"], // pen.toggleMark { mark: "italic" }

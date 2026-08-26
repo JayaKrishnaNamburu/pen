@@ -124,7 +124,7 @@ export function useFocusController(editor: Editor): PenFocusController {
 			getFieldEditor()?.blur();
 		},
 		waitForAttachment: async (blockId) => {
-			const fieldEditor = await waitForFieldEditor(getFieldEditor);
+			const fieldEditor = getFieldEditor();
 			return fieldEditor?.waitForAttachment(blockId) ?? false;
 		},
 	};
@@ -141,7 +141,7 @@ async function focusRange(
 		passive?: boolean;
 	},
 ): Promise<boolean> {
-	const fieldEditor = await waitForFieldEditor(getFieldEditor);
+	const fieldEditor = getFieldEditor();
 	if (!fieldEditor) {
 		return false;
 	}
@@ -158,19 +158,6 @@ async function focusRange(
 	);
 }
 
-async function waitForFieldEditor(
-	getFieldEditor: () => FieldEditorSession | null,
-): Promise<FieldEditorSession | null> {
-	for (let attempt = 0; attempt < 5; attempt += 1) {
-		const fieldEditor = getFieldEditor();
-		if (fieldEditor) {
-			return fieldEditor;
-		}
-		await nextFrame();
-	}
-	return null;
-}
-
 function resolveFocusOffset(
 	editor: Editor,
 	blockId: string,
@@ -183,14 +170,4 @@ function resolveFocusOffset(
 		return 0;
 	}
 	return editor.getBlock(blockId)?.length() ?? 0;
-}
-
-function nextFrame(): Promise<void> {
-	return new Promise((resolve) => {
-		if (typeof requestAnimationFrame === "function") {
-			requestAnimationFrame(() => resolve());
-			return;
-		}
-		setTimeout(resolve, 0);
-	});
 }

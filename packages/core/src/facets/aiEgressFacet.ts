@@ -8,6 +8,7 @@ import {
 	type ModelAdapter,
 	type ModelRequestedOperation,
 	type ModelStreamEvent,
+	type ModelToolChoice,
 } from "@input/pen-types";
 
 import { defineExtension } from "../schema/defineExtension";
@@ -57,6 +58,12 @@ export function filterAIRequest(
 	return next;
 }
 
+/**
+ * The one door to a `ModelAdapter` (AIB1). `extras` carries every request field
+ * that is not filterable content, so a caller needing one of them forwards it
+ * here rather than wrapping the adapter — a wrapper would set that field after
+ * the filter ran, and would be a second call site the filter does not govern.
+ */
 export async function* streamThroughEgress(
 	editor: Editor,
 	model: ModelAdapter,
@@ -68,6 +75,7 @@ export async function* streamThroughEgress(
 		sessionId?: string;
 		turnId?: string;
 		generationId?: string;
+		toolChoice?: ModelToolChoice;
 	} = {},
 ): AsyncIterable<ModelStreamEvent> {
 	const filtered = filterAIRequest(editor, context);
@@ -83,6 +91,7 @@ export async function* streamThroughEgress(
 		sessionId: extras.sessionId,
 		turnId: extras.turnId,
 		generationId: extras.generationId,
+		toolChoice: extras.toolChoice,
 		...({ context: filtered } as object),
 	} as Parameters<ModelAdapter["stream"]>[0]);
 }

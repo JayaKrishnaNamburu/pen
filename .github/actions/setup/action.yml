@@ -1,0 +1,62 @@
+# Shared toolchain step for every workflow in this repository.
+#
+# Before this existed the pnpm version, the Node version, and the install
+# flags were copy-pasted into fourteen workflows. A bump that missed one
+# file produced a single job resolving a different dependency tree, which
+# is the worst kind of CI failure: real, reproducible only on CI, and
+# attributed to whatever code happened to be in the pull request.
+#
+# Callers still run their own `actions/checkout`, because some jobs need
+# `fetch-depth: 0` and most do not.
+
+name: Set up Pen toolchain
+description: pnpm, Node, a frozen workspace install, and the Turborepo cache.
+
+inputs:
+  node-version:
+    description: >-
+      Node major to run on. Defaults to the version every published
+      package declares in engines.node. node-matrix.yml overrides it to
+      prove the tree still builds on the next Node.
+    required: false
+    default: "22"
+  turbo-cache-scope:
+    description: >-
+      Lane name for the Turborepo local cache. Empty (the default) skips
+      the cache entirely, which is correct for gates that never invoke
+      turbo. Jobs that build pass a stable lane so parallel jobs do not
+      contend over one key. Turbo re-hashes its inputs on restore, so a
+      stale lane costs a rebuild and cannot produce a wrong result.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up pnpm
+      # Deliberately no `version:`. pnpm/action-setup reads packageManager
+      # from the root package.json, so the pin has exactly one home and
+      # `corepack`, CI, and a contributor's laptop cannot disagree.
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+    - name: Set up Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: Install dependencies
+      shell: bash
+      # --frozen-lockfile is the gate that makes a fork's dependency change
+      # visible: an edited package.json without the matching lockfile entry
+      # fails here rather than silently resolving a different tree.
+      run: pnpm install --frozen-lockfile
+
+    - name: Restore Turborepo cache
+      if: inputs.turbo-cache-scope != ''
+      uses: actions/cache@v4
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-node${{ inputs.node-version }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-node${{ inputs.node-version }}-${{ inputs.turbo-cache-scope }}-

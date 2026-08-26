@@ -5,7 +5,6 @@ import type {
 	Position,
 	ToolContext,
 } from "@input/pen-types";
-import { resolveToolExecution } from "@input/pen-core";
 import {
 	createAIToolTurn,
 	isAIToolCallDenied,
@@ -112,8 +111,7 @@ export function createSSEHandler(
 									toolCall.input,
 									context,
 								);
-								const resolved =
-									await resolveToolExecution(result);
+								const resolved = await result;
 								if (isAsyncIterable(resolved)) {
 									for await (const part of resolved) {
 										send(part as PenStreamPart);

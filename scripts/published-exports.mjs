@@ -2,9 +2,10 @@
 /**
  * API4 published-exports check (spec/rules/api.md).
  *
- * Every published package must export `.`. Extra keys fail unless listed in
- * scripts/published-exports-allowlist.json with a reason. Unmarked keys and
- * stale allowlist entries fail. This script does not rewrite package.json.
+ * Every published package must export `.` and `./package.json`. Extra keys
+ * fail unless listed in scripts/published-exports-allowlist.json with a
+ * reason. Unmarked keys and stale allowlist entries fail. This script does
+ * not rewrite package.json.
  */
 
 import fs from "node:fs/promises";
@@ -25,6 +26,8 @@ const IGNORE_DIR_NAMES = new Set([
 	"test-results",
 ]);
 
+const REQUIRED_EXPORT_KEYS = [".", "./package.json"];
+const REQUIRED_EXPORT_KEY_SET = new Set(REQUIRED_EXPORT_KEYS);
 const REASON_RE = /P\.4|P\.6|E\.3|T\.1|API4|first-class|subpath|escape hatch/i;
 
 export function exportKey(entry) {
@@ -58,11 +61,11 @@ export function parseAllowlist(raw) {
 			typeof entry?.reason !== "string" ||
 			entry.package.length === 0 ||
 			entry.key.length === 0 ||
-			entry.key === "." ||
+			REQUIRED_EXPORT_KEY_SET.has(entry.key) ||
 			entry.reason.trim().length === 0
 		) {
 			throw new Error(
-				`published-exports-allowlist.json entries[${index}] needs package, a non-root key, and a non-empty reason`,
+				`published-exports-allowlist.json entries[${index}] needs package, a non-required key, and a non-empty reason`,
 			);
 		}
 		if (!REASON_RE.test(entry.reason)) {
@@ -81,13 +84,17 @@ export function parseAllowlist(raw) {
 export function evaluatePublishedExports({ packages, allowlist }) {
 	const extras = [];
 	const missingRoot = [];
+	const missingPackageJson = [];
 	for (const pkg of packages) {
 		const keys = pkg.keys ?? publishedExportKeys(pkg.packageJson ?? {});
 		if (!keys.includes(".")) {
 			missingRoot.push(pkg.name);
 		}
+		if (!keys.includes("./package.json")) {
+			missingPackageJson.push(pkg.name);
+		}
 		for (const key of keys) {
-			if (key !== ".") {
+			if (!REQUIRED_EXPORT_KEY_SET.has(key)) {
 				extras.push({ package: pkg.name, key });
 			}
 		}
@@ -102,12 +109,13 @@ export function evaluatePublishedExports({ packages, allowlist }) {
 		.map((hit) => ({ ...hit, reason: allowByKey.get(exportKey(hit)).reason }));
 	const stale = allowlist.filter((entry) => !extraKeys.has(exportKey(entry)));
 
-	return { extras, missingRoot, unexpected, allowed, stale };
+	return { extras, missingRoot, missingPackageJson, unexpected, allowed, stale };
 }
 
 export function hasFailures(result) {
 	return (
 		result.missingRoot.length > 0 ||
+		(result.missingPackageJson?.length ?? 0) > 0 ||
 		result.unexpected.length > 0 ||
 		result.stale.length > 0
 	);
@@ -118,6 +126,7 @@ export function formatReport(result) {
 	lines.push("");
 	lines.push(`extra keys     ${result.extras.length}  (allowlisted ${result.allowed.length})`);
 	lines.push(`missing root   ${result.missingRoot.length}`);
+	lines.push(`missing pkgjson ${result.missingPackageJson.length}`);
 	if (result.unexpected.length > 0) {
 		lines.push("");
 		lines.push("unmarked extra keys:");
@@ -139,9 +148,18 @@ export function formatReport(result) {
 			lines.push(`  ${name}`);
 		}
 	}
+	if (result.missingPackageJson.length > 0) {
+		lines.push("");
+		lines.push("missing `./package.json` export:");
+		for (const name of result.missingPackageJson) {
+			lines.push(`  ${name}`);
+		}
+	}
 	if (!hasFailures(result)) {
 		lines.push("");
-		lines.push("OK: every published package exports `.`; extra keys match the allowlist.");
+		lines.push(
+			"OK: every published package exports `.` and `./package.json`; extra keys match the allowlist.",
+		);
 	}
 	return lines.join("\n");
 }
@@ -158,8 +176,8 @@ export function runSelfTests() {
 	});
 	const matching = evaluatePublishedExports({
 		packages: [
-			{ name: "@input/pen-core", keys: ["."] },
-			{ name: "@input/pen-react", keys: [".", "./ai"] },
+			{ name: "@input/pen-core", keys: [".", "./package.json"] },
+			{ name: "@input/pen-react", keys: [".", "./package.json", "./ai"] },
 		],
 		allowlist,
 	});
@@ -169,8 +187,11 @@ export function runSelfTests() {
 
 	const unmarked = evaluatePublishedExports({
 		packages: [
-			{ name: "@input/pen-core", keys: ["."] },
-			{ name: "@input/pen-react", keys: [".", "./ai", "./secret"] },
+			{ name: "@input/pen-core", keys: [".", "./package.json"] },
+			{
+				name: "@input/pen-react",
+				keys: [".", "./package.json", "./ai", "./secret"],
+			},
 		],
 		allowlist,
 	});
@@ -183,7 +204,7 @@ export function runSelfTests() {
 	}
 
 	const stale = evaluatePublishedExports({
-		packages: [{ name: "@input/pen-core", keys: ["."] }],
+		packages: [{ name: "@input/pen-core", keys: [".", "./package.json"] }],
 		allowlist,
 	});
 	if (!stale.stale.some((entry) => entry.key === "./ai")) {
@@ -196,6 +217,14 @@ export function runSelfTests() {
 	});
 	if (!noRoot.missingRoot.includes("@input/pen-core")) {
 		throw new Error("self-test: missing `.` must fail");
+	}
+
+	const noPackageJson = evaluatePublishedExports({
+		packages: [{ name: "@input/pen-core", keys: ["."] }],
+		allowlist: [],
+	});
+	if (!noPackageJson.missingPackageJson.includes("@input/pen-core")) {
+		throw new Error("self-test: missing `./package.json` must fail");
 	}
 }
 

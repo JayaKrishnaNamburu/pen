@@ -23,7 +23,7 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	});
 }
 
-describe("commit pipeline phases (Wave 2.1)", () => {
+describe("commit pipeline phases", () => {
 	it("records the eight named phases in order for a local apply", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

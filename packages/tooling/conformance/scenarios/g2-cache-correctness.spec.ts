@@ -4,10 +4,10 @@ import { LOCAL_FIXTURES } from "../fixtures/catalog";
 import { caretCacheHolds } from "../harness/src/geometryCompare";
 import { scenario } from "../src/scenario";
 import type { GeometryBlockInfo, GeometryCaretCompareResult } from "../src/types";
-import { sampleCaretPoints, WAVE3_TAIL_BLOCK } from "../src/wave3Geometry";
+import { sampleCaretPoints, G5_TAIL_BLOCK } from "../src/g5Geometry";
 
-const WAVE3_TAIL_TEXT =
-	LOCAL_FIXTURES["wave3-geometry"].find((block) => block.id === WAVE3_TAIL_BLOCK)
+const G5_TAIL_TEXT =
+	LOCAL_FIXTURES["g5-geometry"].find((block) => block.id === G5_TAIL_BLOCK)
 		?.content ?? "";
 
 type CommitStep = {
@@ -159,10 +159,10 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 	{
 		name: "split-block the tail paragraph",
 		ops: (blocks) => {
-			const tail = blocks.find((entry) => entry.id === WAVE3_TAIL_BLOCK);
+			const tail = blocks.find((entry) => entry.id === G5_TAIL_BLOCK);
 			if (!tail || tail.length < 4) return [];
 			const offset = 5;
-			const tailText = WAVE3_TAIL_TEXT.slice(offset);
+			const tailText = G5_TAIL_TEXT.slice(offset);
 			return [
 				{
 					type: "insert-block",
@@ -217,7 +217,7 @@ function formatCacheFailure(
 scenario(
 	"G2 SCH1: after any commit sequence caretRect equals a from-scratch measurement",
 	async (s, page) => {
-		await s.load("wave3-geometry");
+		await s.load("g5-geometry");
 
 		const failures: string[] = [];
 

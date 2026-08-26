@@ -7,10 +7,10 @@ type PageGeometryReader = GeometryReader & {
 };
 
 /**
- * Wave 6.3 browser checkpoint (08-bidi.md §3 / Tests):
+ * Browser checkpoint (BR1, `spec/rules/dom.md`):
  * mixed-direction rangeRects must be disjoint per-run boxes that match
  * Range.getClientRects() on the equivalent native DOM range, within 1px,
- * on chromium, webkit, and firefox. Vectors are the 6.2 BR1 strings.
+ * on chromium, webkit, and firefox. Vectors are the BR1 strings.
  *
  * WebKit getClientRects for a range that starts at an RTL→LTR boundary
  * also emits a zero-width ghost at the RTL run's visual left. Unioning

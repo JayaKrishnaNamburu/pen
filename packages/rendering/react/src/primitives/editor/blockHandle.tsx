@@ -9,9 +9,9 @@ import { composeRefs } from "../../utils/composeRefs";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { buildMoveBlockOps } from "./blockDragSession";
 
-/** Wave 4 command name (`spec/rules/commands.md`). Menu items dispatch this even when the command is not wired. */
+/** Command name (`spec/rules/commands.md`). Menu items dispatch this even when the command is not wired. */
 export const PEN_MOVE_BLOCK_UP = "pen.moveBlockUp";
-/** Wave 4 command name (`spec/rules/commands.md`). Menu items dispatch this even when the command is not wired. */
+/** Command name (`spec/rules/commands.md`). Menu items dispatch this even when the command is not wired. */
 export const PEN_MOVE_BLOCK_DOWN = "pen.moveBlockDown";
 
 export type BlockHandleMoveCommand =
@@ -31,8 +31,8 @@ export interface BlockHandleProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 	/**
 	 * AX3: invoked by the handle menu Move up / Move down items.
-	 * Named for `pen.moveBlockUp` / `pen.moveBlockDown`. Wave 4 command
-	 * wiring is not required — if omitted, the primitive applies a `move-block` op.
+	 * Named for `pen.moveBlockUp` / `pen.moveBlockDown`. Command wiring is
+	 * not required — if omitted, the primitive applies a `move-block` op.
 	 */
 	onMoveBlock?: (command: BlockHandleMoveCommand, blockId: string) => void;
 }

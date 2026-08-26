@@ -1,3 +1,8 @@
+# Consumer-shaped smoke tests. Each example is a pnpm workspace member that
+# builds against workspace sources, so these catch the integration break a
+# package's own tests cannot see: a broken exports map, a missing peer, a
+# renderer that only mounts under the playground's setup.
+
 name: Examples
 
 on:
@@ -6,6 +11,13 @@ on:
       - main
       - master
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: examples-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   smoke:
@@ -22,19 +34,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
         with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          turbo-cache-scope: example-${{ matrix.example }}
 
       - name: Build example from workspace artifacts
         run: pnpm --filter @input/pen-example-${{ matrix.example }}... run build
@@ -57,3 +60,22 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  examples:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: examples
+    if: always()
+    needs: [smoke]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require every example to have smoked clean
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}

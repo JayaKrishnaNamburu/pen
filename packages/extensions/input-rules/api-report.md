@@ -16,10 +16,8 @@
 - InputRule
 - InputRuleContext
 - InputRuleHandler
-- PEN_INPUT_RULES_FACET_NAME
 
 ### type
 
 - InlineInputRule
-- InputRuleFacetProvider
 - InputRulesConfig

@@ -44,7 +44,7 @@ export {
 } from "./twoPeerInspect";
 // simulateKeypress / simulateTyping stay off the barrel. Hosts call
 // those methods on the TestEditor returned by createTestEditor.
-export { resetTestIdCounter, toYMap } from "./helpers";
+export { resetTestIdCounter } from "./helpers";
 export {
 	DEFAULT_PEN_ROOTS,
 	PenFixtureError,

@@ -2,7 +2,6 @@ import type { Editor } from "@input/pen-types";
 import { measureWithRoot } from "../geometry/rootGeometry";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import type { FieldEditorDelta } from "./crdt";
-import { isEmptyBlockPlaceholder } from "./emptyBlockPlaceholder";
 import { findLogicalDOMPoint } from "./inlineAtomDom";
 import { domPointToOffset, getSelectionOffsets } from "./selectionBridge";
 
@@ -79,7 +78,6 @@ export function setSelectionOffsets(
 
 	const startPoint = resolveDomPointForOffset(element, startOffset);
 	const endPoint = resolveDomPointForOffset(element, endOffset);
-	if (!startPoint || !endPoint) return;
 
 	const intendedRange =
 		startPoint.node !== endPoint.node ||
@@ -151,45 +149,8 @@ export function setSelectionOffsets(
 function resolveDomPointForOffset(
 	element: HTMLElement,
 	targetOffset: number,
-): { node: Node; offset: number } | null {
-	if (isEmptyBlockPlaceholder(element.lastChild) && targetOffset <= 0) {
-		return findLogicalDOMPoint(element, 0);
-	}
-
-	const walker = element.ownerDocument.createTreeWalker(
-		element,
-		NodeFilter.SHOW_TEXT,
-		null,
-	);
-	let remaining = Math.max(0, targetOffset);
-	let textNode = walker.nextNode() as Text | null;
-
-	while (textNode) {
-		const length = textNode.textContent?.length ?? 0;
-		if (remaining <= length) {
-			return { node: textNode, offset: remaining };
-		}
-		remaining -= length;
-		textNode = walker.nextNode() as Text | null;
-	}
-
-	if (isEmptyBlockPlaceholder(element.lastChild)) {
-		return findLogicalDOMPoint(element, 0);
-	}
-
-	if (element.lastChild) {
-		if (element.lastChild.nodeType === Node.TEXT_NODE) {
-			const textLength = element.lastChild.textContent?.length ?? 0;
-			return {
-				node: element.lastChild,
-				offset: textLength,
-			};
-		}
-		const childCount = element.lastChild.childNodes.length;
-		return { node: element.lastChild, offset: childCount };
-	}
-
-	return { node: element, offset: 0 };
+): { node: Node; offset: number } {
+	return findLogicalDOMPoint(element, Math.max(0, targetOffset));
 }
 
 export function rebaseTextDiffOps(

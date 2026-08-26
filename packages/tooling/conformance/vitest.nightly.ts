@@ -53,7 +53,7 @@ console.log(
 export default defineConfig({
 	root: repoRoot,
 	test: {
-		name: "wave0-properties",
+		name: "nightly-properties",
 		include,
 		// unknownContent: DUR3 unknown-block passthrough (80 cases).
 		// commitEvent: I1 one commit per state change (2000 steps).

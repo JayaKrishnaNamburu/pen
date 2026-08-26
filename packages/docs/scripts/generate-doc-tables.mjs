@@ -857,41 +857,8 @@ function collectPasteCorpusRows() {
 
 const INGEST_BOUND_FILES = [
 	{
-		id: "html",
-		path: "packages/extensions/interop/src/html/import/ingestBounds.ts",
-		names: {
-			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
-			INGEST_MAX_NODE_COUNT: "maxNodeCount",
-			INGEST_MAX_TEXT_SIZE: "maxTextSize",
-			INGEST_MAX_IMAGE_COUNT: "maxImageCount",
-			INGEST_TIME_BUDGET_MS: "timeBudgetMs",
-		},
-	},
-	{
-		id: "markdown",
-		path: "packages/extensions/interop/src/markdown/import/ingestBounds.ts",
-		names: {
-			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
-			INGEST_MAX_NODE_COUNT: "maxNodeCount",
-			INGEST_MAX_TEXT_SIZE: "maxTextSize",
-			INGEST_MAX_IMAGE_COUNT: "maxImageCount",
-			INGEST_TIME_BUDGET_MS: "timeBudgetMs",
-		},
-	},
-	{
-		id: "json",
-		path: "packages/extensions/interop/src/json/import/ingestBounds.ts",
-		names: {
-			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
-			INGEST_MAX_NODE_COUNT: "maxNodeCount",
-			INGEST_MAX_TEXT_SIZE: "maxTextSize",
-			INGEST_MAX_IMAGE_COUNT: "maxImageCount",
-			INGEST_TIME_BUDGET_MS: "timeBudgetMs",
-		},
-	},
-	{
-		id: "xml",
-		path: "packages/extensions/interop/src/xml/ingestBounds.ts",
+		id: "interop",
+		path: "packages/extensions/interop/src/ingestBounds.ts",
 		names: {
 			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
 			INGEST_MAX_NODE_COUNT: "maxNodeCount",

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * DOC3 public-symbol TSDoc coverage (spec/rules/documentation.md,
- * Wave D step D.5).
+ * DOC3 public-symbol TSDoc coverage (spec/rules/documentation.md).
  *
  * Input is the committed `api-report.md` each published package already
  * keeps for API4 — same list the generated reference will consume. A
@@ -87,111 +86,14 @@ const SKIP_DIR_NAMES = new Set([
 /**
  * Ratchet. May only decrease. Hard DOC3 gate at 0.
  *
- * Re-recorded 2026-08-21. The barrel-only inventory on this tree was
- * 1934 public / 138 documented / 1796 undocumented, matching the
- * previous pin. This write is not that pin moving. It includes
- * `@input/pen-dom` `./field-editor/*`: 76 `.d.ts` files matched by
- * `./dist/field-editor/*.d.ts`, 97 `^export` statements, 282 unique
- * classifyExports names, 232 of them absent from every non-glob
- * surface, 212 of those 232 without TSDoc. 1796 + 212 = 2008.
+ * Lower this in the same change that shrinks the undocumented count: a drop
+ * without lowering fails as stale, and raising it fails outright.
  *
- * The rise is the advertised host surface becoming visible, not a
- * documentation regression. `getSelectionPointRect` is the type case:
- * host-reachable only through this glob, previously uncounted.
- * A later drop from 2008 toward 1796 after un-expanding the glob
- * would be a scope hole, not progress.
- *
- * Earlier the same day the barrel-only ratchet moved 1858 → 1852 →
- * 1796 as lanes added TSDoc. Those drops were progress and were
- * re-recorded; this write is the expansion on top of that 1796.
- *
- * Expanded again 2026-08-24, 1930 → 1956, for the same reason and
- * with the same caveat. The `./field-editor/*` glob then matched 80
- * `.d.ts` files, not 76. Regenerating `packages/rendering/dom/api-report.md`
- * from a fresh `.d.ts` admitted four members the committed report had
- * never listed: `commandDispatch`, `selectionMapping`, `selectionReader`,
- * and a leftover helper later replaced in source. All four were tracked
- * at HEAD and already host-reachable through the glob, so no API widened
- * that write — the report caught up to a surface that was already published.
- *
- * Those 26 were NOT documented away, and that is deliberate. The
- * previous expansion was closed by writing TSDoc; here the members are
- * internal implementation, and one of the four was already on a Wave 05
- * delete list. Giving it host-facing prose would advertise a module
- * scheduled for removal.
- *
- * Closed 2026-08-24 by enumerating the 18 importer-backed
- * `./field-editor/<name>` subpaths (plus the curated barrel). Dist
- * `field-editor/*.d.ts` went 80 → 19. 61 modules left the published
- * surface, including the four the report had just admitted and the
- * rest of the Wave 05 delete list that had no published-path importer.
- * Undocumented 1956 → 1806. That drop is the glob close, not TSDoc
- * and not an un-expand-without-enumeration scope hole. A later drop
- * toward 1796 that removed one of the 18 without migrating its
- * importers would be a build break, not progress.
- *
- * 1806 → 1797 the same day, and this one is a record correction rather
- * than a surface change. Adding `registerVerticalCaretMeasure` to
- * pen-dom's barrel (hosts must register a vertical caret measure, and
- * both bindings could not reach it) required regenerating all 35 api
- * reports, which also reconciled six packages whose committed reports
- * had drifted behind their `.d.ts` — core, types, ai-tools, search,
- * content-ops and bench. This count reads the committed reports, so
- * the drop is the reports catching up, and `glob surfaces expanded`
- * stayed 0 throughout. The published surface did not move: the 18
- * enumerated subpaths plus the bare `./field-editor` barrel cover all
- * 19 dist `.d.ts` files exactly.
- *
- * 1797 → 1796 on 2026-08-24, where two opposing moves nearly cancel. Wave
- * 6 merged twelve packages into `@input/pen-ai` and `@input/pen-interop`,
- * so this count now reads 24 committed reports instead of 35. No symbol
- * left the published surface — each moved to a feature or format subpath
- * of a survivor, and a symbol reachable through several subpaths counts
- * once. Against that, waves 5 and X added seven public symbols:
- * `STRIP_EMPTY_BLOCK_ZWSP_ID`, `createStripEmptyBlockZwspMigration` and
- * `isLoneEmptyBlockZwsp` (core), `recordDocumentLoadMigration` (crdt-yjs),
- * and `ReducedMotionListener` / `ReducedMotionSignal` /
- * `createReducedMotionSignal` (pen-dom). The net is one fewer symbol, not
- * a TSDoc pass.
- *
- * Lowered 1796 → 1775 on 2026-08-25 after the scaffolding and structure waves. Also not a
- * TSDoc pass: the 21 are public symbols the waves deleted — `SelectionState`'s
- * computed fields (DL5), the content-ops re-export shims (DL13), the v1 slot
- * and event adapters (DL2–DL4), `DocumentCommitEvent`, and pen-dom's
- * `./types/paste` subpath (CS9). The ratchet is a maximum, so it is lowered in
- * the same change that shrinks the surface.
- *
- * Lowered 1775 → 1761 on 2026-08-26 by wave 2's structured-preview deletion
- * (the v5 train's one-preview wave; RS1). Again not a TSDoc pass:
- * 11 are the deleted producer-less preview surface — `pen-ai`'s
- * `GenerationStructuredPreviewState` / `StructuredPreviewPatchOperation` and
- * `pen-react`'s four `AIStructuredTargetPreview*` / `AIStructuredPreview*`
- * types plus its four preview hooks — and 3 are content-ops' plan-record
- * helpers (`normalizePlanRecord`, `normalizePlanSteps`, `PlanRecord`) that
- * the same dead-plan cleanup un-exported.
- *
- * Lowered 1761 → 1726 on 2026-08-26 at the close of waves 3 and 4. Three moves,
- * none of them a TSDoc pass:
- *
- * - Wave 3's planner-lane deletion took 36 public symbols out of `pen-ai`
- *   (the v5 train's routing-and-loop wave, UC3/UC5): the `DocumentMutationPlan` /
- *   `StructuralReviewItem` types, the `PlanValidation*` family, the block
- *   adapter and structured-intent prompt functions, and the five closed
- *   vocabularies UC5 folded away, `AI_APPLY_STRATEGIES` among them. Against
- *   that, waves 2c and 3 added 8 undocumented ones — the review-surface
- *   constants and the `FastApply` → `Commit` metric renames, which were
- *   undocumented under their old names too, so the renames are neutral.
- * - `EditContextSelectionOptions` gained the TSDoc it should have had: it is
- *   public only because `./field-editor/editContextBackend` is a published
- *   subpath, and a host reading that signature needs to know a `text-update`
- *   write is the one that trusts the offsets it was handed.
- * - `pen-dom` stopped re-exporting `REVIEW_SURFACE_CLASSES`,
- *   `REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES` and
- *   `REVIEW_SURFACE_CUSTOM_PROPERTIES`. RS4 is "one styling contract, exported
- *   once", and the re-export was a second import path for names that are
- *   documented in `@input/pen-types`. No host used it; every real consumer
- *   already imported from the contract layer. `PEN_REVIEW_STYLESHEET` stays in
- *   `pen-dom`, where the CSS belongs.
+ * A drop is only progress when the measured surface stayed the same size.
+ * Narrowing a declared glob, un-exporting a subpath, or reverting to a
+ * barrel-only inventory lowers the count by hiding host-reachable symbols —
+ * that is a scope hole, not a documentation gain. Deleting a public symbol
+ * or writing TSDoc is the legitimate way down.
  */
 export const MAX_UNDOCUMENTED = 1726;
 

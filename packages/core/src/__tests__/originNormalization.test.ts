@@ -31,7 +31,7 @@ type TestRawDocLike = {
 	};
 };
 
-describe("origin normalization (Wave 2.3)", () => {
+describe("origin normalization", () => {
 	it("2.3 / COL1: remote update with a provider-custom origin tag arrives as a collaborator-typed commit with source: remote", () => {
 		const editor = createEditor();
 		const adapter = editor.internals.adapter;

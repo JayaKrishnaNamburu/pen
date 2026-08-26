@@ -8,7 +8,6 @@ import type {
 	ToolRuntime,
 	Unsubscribe,
 } from "@input/pen-types";
-import { resolveToolExecution } from "@input/pen-core";
 import {
 	createAIToolTurn,
 	isAIToolCallDenied,
@@ -17,7 +16,7 @@ import {
 import { generateId, isAsyncIterable } from "@input/pen-types";
 
 export interface DirectTransportOptions {
-	toolRuntime?: ToolRuntime;
+	toolRuntime: ToolRuntime;
 	/**
 	 * In-process editor for tool context. Direct never reads an editor
 	 * off `PenStreamRequest` — that field is not on the wire type (AIB2).
@@ -32,9 +31,6 @@ export interface DirectTransportOptions {
 
 export function directTransport(options: DirectTransportOptions): PenTransport {
 	const { toolRuntime, editor, onError, allowedMutatingTools = [] } = options;
-	if (!toolRuntime) {
-		throw new Error("directTransport requires a tool runtime");
-	}
 	const activeControllers = new Set<AbortController>();
 
 	const transport: PenTransport = {
@@ -78,7 +74,7 @@ export function directTransport(options: DirectTransportOptions): PenTransport {
 							context,
 						);
 
-						const resolved = await resolveToolExecution(result);
+						const resolved = await result;
 						if (isAsyncIterable(resolved)) {
 							yield* iterateUntilAborted(resolved, signal);
 							const closed = opened.close();

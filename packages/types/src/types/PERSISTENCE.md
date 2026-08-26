@@ -1,6 +1,6 @@
 # PenPersistence disposition
 
-Wave V leftover (API10 / DUR6). Every `PenPersistence` member is either called by Pen or marked host-implemented. None are unused.
+API10 / DUR6. Every `PenPersistence` member is either called by Pen or marked host-implemented. None are unused.
 
 **Implemented** means Pen has a runtime caller. The host still supplies the storage. **Host-implemented** means Pen never calls the member. Test doubles in `@input/pen-history` and `@input/pen-react` implement the full interface; they are not a Pen persistence implementation.
 

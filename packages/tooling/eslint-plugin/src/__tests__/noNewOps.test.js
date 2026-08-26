@@ -39,7 +39,7 @@ export type DocumentOp =
 	| ExtraOp;
 `;
 
-describe("no-new-ops (Wave 4 / OP1)", () => {
+describe("no-new-ops (OP1)", () => {
 	it("allows the ten-member DocumentOp union and fails an eleventh", () => {
 		ruleTester.run("no-new-ops", noNewOps, {
 			valid: [

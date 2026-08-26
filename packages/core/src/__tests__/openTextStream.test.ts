@@ -57,7 +57,7 @@ type TestRawDocLike = {
 	};
 };
 
-describe("editor.openTextStream (Wave 2.4)", () => {
+describe("editor.openTextStream", () => {
 	it("ST1: each flush is one commit with source stream", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

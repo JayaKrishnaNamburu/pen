@@ -109,7 +109,7 @@ function expectedSource(action: Action): CommitEvent["source"] {
 	}
 }
 
-describe("@input/pen-undo commit event one-event property (Wave 2)", () => {
+describe("@input/pen-undo commit event one-event property", () => {
 	it("I1: random apply/remote/undo/redo/stream-flush sequences emit one commit per state change", async () => {
 		const editor = createCoreEditor({
 			schema: defaultSchema,

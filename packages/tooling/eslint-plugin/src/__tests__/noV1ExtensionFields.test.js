@@ -9,7 +9,7 @@ const ruleTester = new RuleTester({
 	},
 });
 
-describe("no-v1-extension-fields (Wave 7.1)", () => {
+describe("no-v1-extension-fields", () => {
 	it("flags v1 fields on extension objects and leaves the grep false positives alone", () => {
 		ruleTester.run("no-v1-extension-fields", noV1ExtensionFields, {
 			valid: [

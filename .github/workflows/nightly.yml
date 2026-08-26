@@ -1,16 +1,12 @@
-# Wave 0.6 nightly. New file so this does not race H.7 / H.8 / E.4 edits to
-# ci.yml.
+# Nightly property-based fuzz run.
 #
 # Logs a seed every run and passes PEN_FUZZ_SEED into fuzz:nightly, which runs
 # every workspace *.properties.test.ts suite (I2/I3, DUR3, I1) at nightly
-# scale plus any packages/**/*an-fuzz*.test.ts file (v3 GATE 1.7 slot).
-# Browser fuzz is Wave 5 onward.
+# scale plus any packages/**/*an-fuzz*.test.ts file. Browser fuzz is not
+# part of this job.
 #
-# Schedule only fires from the default branch. This file is on the train
-# branch; the cron fires after the Wave 0 / Wave 6 release PR merges to
-# main. That merge is owner-gated. The next scheduled run after merge is
-# the TR7 observation (green, or failures triaged). `workflow_dispatch`
-# can run on any branch and is not that proof.
+# The schedule only fires from the default branch. `workflow_dispatch` can
+# run on any branch and is not a substitute for a scheduled green run.
 
 name: Nightly
 
@@ -18,6 +14,9 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: nightly-${{ github.ref }}
@@ -50,22 +49,9 @@ jobs:
             echo "Handover: @input/pen-conformance is not in this checkout; fuzz:nightly would consume PEN_FUZZ_SEED=${{ steps.seed.outputs.seed }}."
           fi
 
-      - name: Set up pnpm
+      - name: Set up Pen toolchain
         if: ${{ steps.conformance.outputs.present == 'true' }}
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        if: ${{ steps.conformance.outputs.present == 'true' }}
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        if: ${{ steps.conformance.outputs.present == 'true' }}
-        run: pnpm install --frozen-lockfile
+        uses: ./.github/actions/setup
 
       - name: Run nightly property fuzz
         if: ${{ steps.conformance.outputs.present == 'true' }}

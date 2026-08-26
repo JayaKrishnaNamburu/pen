@@ -7,28 +7,27 @@ React renderer, primitives, and hooks for Pen.
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom yjs
+pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
 ```
 
-`react` and `react-dom` are peers of this package. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
+`react` and `react-dom` are peers of this package. `yjs` and `y-protocols` are peers of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on. Add `@input/pen-core` explicitly when you import from it directly.
 
 ## Quick Start
 
 ```tsx
-import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { PenEditor } from "@input/pen-react";
-
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+import { PenEditor, useEditor } from "@input/pen-react";
 
 export function App() {
+  const editor = useEditor({ preset: defaultPreset() });
+
   return <PenEditor editor={editor} />;
 }
 ```
 
 `PenEditor` requires `editor`. This package does not ship a stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke. The custom-property surface is listed in `STYLING.md`, which ships inside this package.
+
+`useEditor` owns what it creates: one editor per component instance, destroyed on unmount, and rebuilt when StrictMode remounts the component. Passing an existing editor — `useEditor(editor)` — borrows it instead, leaving destruction to whoever created it.
 
 `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `document-ops`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack.
 

@@ -305,9 +305,8 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 				text: block.textContent(),
 			})),
 		).toEqual(before);
-		// Nothing landed, so the turn must not carry an "applied" receipt: Wave 0
-		// counts these, and a channel that reports a write it did not make is
-		// unmeasurable.
+		// Nothing landed, so the turn must not carry an "applied" receipt: a
+		// channel that reports a write it did not make is unmeasurable.
 		expect(generation.mutationReceipt?.status).toBe("noop");
 		expect(controller.getSuggestions()).toHaveLength(0);
 
@@ -333,7 +332,7 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 					// renamed with our internal vocabulary. It is not a Pen symbol: it
 					// is the tag a model trained on the *old* released contract will
 					// emit, and it is the only string this regression is about. A
-					// wave-3 rename swept it to `pen-commit` — a tag no released
+					// rename swept it to `pen-commit` — a tag no released
 					// version ever accepted — which left the test asserting that an
 					// invented string is inert. GATE 1.4 / GATE 2.1 grep for this
 					// literal precisely so that a rename cannot quietly empty the

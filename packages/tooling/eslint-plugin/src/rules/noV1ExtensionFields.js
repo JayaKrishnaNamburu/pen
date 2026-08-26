@@ -247,7 +247,7 @@ export const noV1ExtensionFields = {
 		docs: {
 			description:
 				"Ban v1 Extension keyBindings/inputRules/decorations; use facet providers",
-			specRule: "Wave 7.1",
+			specRule: "spec/rules/facets.md",
 		},
 		schema: [],
 		messages: {

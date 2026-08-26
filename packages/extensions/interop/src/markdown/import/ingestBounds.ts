@@ -1,51 +1,20 @@
 import type { ImportResult, Editor } from "@input/pen-types";
 import type { PendingBlock } from "@input/pen-core";
+import {
+	INGEST_MAX_IMAGE_COUNT,
+	INGEST_MAX_NESTING_DEPTH,
+	INGEST_MAX_NODE_COUNT,
+	INGEST_MAX_TEXT_SIZE,
+} from "../../ingestBounds";
 
-/**
- * Ingest envelope (IOP5 / SEC4). Same numbers on every ingest path — not
- * per-format values. Documented here and in the package README alongside
- * `spec/rules/scale.md` SCALE1 (verified document size) so a host
- * can tell paste/import caps from the published runtime envelope.
- *
- * SEC4: depth 32, 10k nodes. IOP5 adds total text size and image count.
- * Exceeding a cap truncates at a block boundary (`import-truncated`).
- */
-
-/** Maximum block-tree depth, including the top-level block. List `indent` uses the same cap (0-based). */
-export const INGEST_MAX_NESTING_DEPTH = 32;
-
-/** Maximum nodes (blocks, including table rows/cells) accepted in one ingest. */
-export const INGEST_MAX_NODE_COUNT = 10_000;
-
-/**
- * Maximum imported plain text, in UTF-16 code units. Also the pre-parse cap
- * on the raw markdown source so a pathological 40MB file degrades instead of
- * hanging the tab.
- */
-export const INGEST_MAX_TEXT_SIZE = 1_048_576;
-
-/** Maximum image blocks accepted in one ingest. */
-export const INGEST_MAX_IMAGE_COUNT = 256;
-
-/**
- * Advisory IOP5 wall-clock ceiling for one markdown ingest, including
- * markdown paste (`markdownImporter.parse` / `import`). Same number as
- * `CLIPBOARD_INGEST_TIME_BUDGET_MS`.
- *
- * Not a unit-suite gate — the suite pins the cardinality caps and the
- * cap-before-parse ordering, which is why a pathological paste finishes.
- * `capRawMarkdownSource` slices to `INGEST_MAX_TEXT_SIZE` before parse,
- * so a 40MB paste is O(cap) work, not O(input). The parse step refuses a
- * longer source. Record timing in `@input/pen-bench` if the clock
- * itself needs a home.
- */
-export const INGEST_TIME_BUDGET_MS = 1_000;
-
-export const INGEST_FORBIDDEN_KEYS = [
-	"__proto__",
-	"constructor",
-	"prototype",
-] as const;
+export {
+	INGEST_FORBIDDEN_KEYS,
+	INGEST_MAX_IMAGE_COUNT,
+	INGEST_MAX_NESTING_DEPTH,
+	INGEST_MAX_NODE_COUNT,
+	INGEST_MAX_TEXT_SIZE,
+	INGEST_TIME_BUDGET_MS,
+} from "../../ingestBounds";
 
 export type IngestDropReason =
 	| "unknown-block-type"

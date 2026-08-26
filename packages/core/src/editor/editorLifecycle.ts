@@ -8,8 +8,6 @@ import type {
 	DiagnosticEvent,
 	PenDocument,
 	PipelinePhase,
-	SchemaRegistry,
-	Awareness,
 	DocumentSession,
 	DocumentScope,
 	DocumentScopeReplacementEvent,
@@ -35,15 +33,12 @@ import type {
 	ChangeSummary,
 } from "@input/pen-types";
 import {
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	COLLECT_KEY_BINDINGS_SLOT_KEY,
 	MUTATION_GROUP_METADATA_KEY,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	generateId,
 } from "@input/pen-types";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
-import { keymapFacet } from "../facets/coreFacets";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { filterOpsForDocumentProfile } from "./profilePolicy";
 import type { CRDTUnknownMap } from "./crdtShapes";
@@ -189,14 +184,6 @@ export function refreshCoreSlots(editor: EditorImplRuntime): void {
 	const self = editor as EditorImplRuntime;
 	self._engine.setOnDiagnostic((event: DiagnosticEvent) =>
 		self._emitter.emit("diagnostic", event),
-	);
-	self._slots.set("core:engine", self._engine);
-	self._slots.set(
-		AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-		() => self._extensionLifecycle,
-	);
-	self._slots.set(COLLECT_KEY_BINDINGS_SLOT_KEY, (registry: SchemaRegistry) =>
-		self._extensions.collectKeyBindings(registry, self.facet(keymapFacet)),
 	);
 }
 

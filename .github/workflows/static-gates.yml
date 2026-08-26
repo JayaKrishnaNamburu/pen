@@ -1,9 +1,16 @@
 # Static analysis gates. One job per gate so a failure names itself.
 #
-# Every gate here is a fast, dependency-light check over the source tree
-# or the published manifests. Anything that needs a build lives in ci.yml;
-# anything that needs a browser lives in conformance.yml or ci.yml's e2e
-# matrix.
+# The gate list lives in scripts/gates.json, not in this file. The matrix
+# below is built from it and `pnpm verify` runs the same list locally, so a
+# gate cannot exist on CI and be missing from the command contributors are
+# told to run. Each entry carries its own description; that text is printed
+# by the job, which is why the per-gate comments that used to live here are
+# gone rather than lost.
+#
+# Every gate here is fast and dependency-light: source tree or published
+# manifests only. Anything that needs a build lives in ci.yml or in the
+# doc-refs job below; anything that needs a browser lives in conformance.yml
+# or in the ci.yml e2e matrix.
 
 name: Static gates
 
@@ -14,105 +21,71 @@ on:
       - master
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: static-gates-${{ github.ref }}
+  # Superseded pull-request runs are cancelled; pushes to a release branch
+  # are not, so every commit on main keeps a complete result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  static-gates:
-    name: ${{ matrix.gate }}
+  gate-list:
+    name: gate-list
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    outputs:
+      gates: ${{ steps.read.outputs.gates }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Read scripts/gates.json
+        id: read
+        # Heredoc delimiters rather than `echo "gates=$(...)"`: gate
+        # descriptions contain backticks and quotes, which a double-quoted
+        # echo would hand to the shell.
+        run: |
+          jq -e 'length > 0' scripts/gates.json > /dev/null
+          {
+            echo "gates<<GATES_EOF"
+            jq -c . scripts/gates.json
+            echo "GATES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+  static-gate:
+    name: ${{ matrix.gate.id }}
+    needs: gate-list
     timeout-minutes: 10
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Code health: ts-nocheck, empty skips, `this: any`, runtime
-          # console calls, orphan packages.
-          - gate: ch-gates
-            command: pnpm ch-gates
-          # The model adapter exposes one door (.stream()); only the egress
-          # facet may call it.
-          - gate: ai-egress-one-door
-            command: node scripts/ai-egress-one-door.mjs
-          # TSDoc coverage ratchet: the undocumented count may only decrease.
-          # Switch to --strict once the count reaches zero.
-          - gate: api-docs-coverage
-            command: pnpm api-docs-coverage
-          # Every capability-matrix cell that claims a surface must name a
-          # path that exists outside the playground.
-          - gate: capability-matrix
-            command: pnpm capability-matrix
-          # The license positioning stays accurate: no stray source-available
-          # or commercial wording outside the decision record.
-          - gate: positioning-check
-            command: node scripts/positioning-check.mjs
-          # Conformance mirrors stay assignable both ways to the production
-          # type they name.
-          - gate: conformance-mirror-drift
-            command: node scripts/conformance-mirror-drift.mjs
-          # CATALOG.md and the core command registry must agree.
-          - gate: command-catalog-check
-            command: node scripts/command-catalog-check.mjs
-          # Every diagnostic code has a message catalog entry.
-          - gate: catalog-check
-            command: node scripts/catalog-check.mjs
-          # Published manifests match what sync-package-metadata would write
-          # (repository.url, engines.node, files, publishConfig, LICENSE.md).
-          - gate: package-metadata
-            command: node scripts/sync-package-metadata.mjs --check
-          # Generated envelope table must match baselines/envelope.json.
-          # Table diff only; timing lives in bench.yml.
-          - gate: bench-envelope-drift
-            command: node scripts/bench-envelope-drift.mjs
-          # npm provenance preconditions. Zero tags prints UNEXERCISED
-          # rather than failing.
-          - gate: provenance-preconditions
-            command: node scripts/release-check.mjs --provenance-preconditions
-          # MIGRATION.md must stay mechanically true: export claims, origin
-          # union, yjs peer, named paths, and any fenced samples typecheck.
-          - gate: migration-guide-check
-            command: node scripts/migration-guide-check.mjs
-          # Published package dependency layers follow the types -> crdt ->
-          # core -> extensions DAG.
-          - gate: dag-check
-            command: node scripts/dag-check.mjs
-          # Installing @input/pen-core must not pull extensions, renderers,
-          # or presets.
-          - gate: core-clean-install
-            command: node scripts/core-clean-install.mjs
-          # Every published package exports "."; extra keys need a reason.
-          - gate: published-exports
-            command: node scripts/published-exports.mjs
-          # No workspace:* pins or dist re-exports in published manifests.
-          - gate: workspace-pins
-            command: node scripts/workspace-pins.mjs
-          # Each published package README carries the required sections.
-          - gate: readme-sections
-            command: node scripts/readme-sections.mjs
-          # The generated envelope table must match its fixture metadata.
-          - gate: envelope-table
-            command: |
-              node scripts/envelope-table.mjs
-              git diff --exit-code -- packages/tooling/test/ENVELOPE.md
+        gate: ${{ fromJSON(needs.gate-list.outputs.gates) }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run ${{ matrix.gate }}
-        run: ${{ matrix.command }}
+      - name: Run ${{ matrix.gate.id }}
+        env:
+          # Through the environment, never interpolated into the script
+          # body: `${{ }}` inside `run:` is textual substitution, and these
+          # values come from a file a fork controls.
+          GATE_COMMAND: ${{ matrix.gate.command }}
+          GATE_DESCRIPTION: ${{ matrix.gate.description }}
+        run: |
+          echo "$GATE_DESCRIPTION"
+          echo "\$ $GATE_COMMAND"
+          echo
+          eval "$GATE_COMMAND"
 
   doc-refs:
     name: doc-refs
@@ -123,22 +96,57 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
         with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          turbo-cache-scope: doc-refs
 
       - name: Build packages
         run: pnpm build
 
       - name: Check documentation refs
         run: pnpm doc-refs
+
+  changeset:
+    name: changeset
+    # Pull requests only: the check compares the branch against its base, and
+    # a push to main has no base to compare against.
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          # changeset-check diffs against the merge base, which a depth-1
+          # checkout does not contain.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check changeset coverage
+        run: node scripts/changeset-check.mjs
+
+  static-gates:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: static-gates
+    if: always()
+    needs: [gate-list, static-gate, doc-refs, changeset]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require every gate to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}
+          allow-skipped: changeset

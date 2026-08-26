@@ -6,11 +6,11 @@ import type {
 	GeometryVerticalMotion,
 } from "../src/types";
 import {
-	WAVE3_ATOMS_BLOCK,
-	WAVE3_EMPTY_BLOCK,
-	WAVE3_TAIL_BLOCK,
-	WAVE3_WRAP_BLOCK,
-} from "../src/wave3Geometry";
+	G5_ATOMS_BLOCK,
+	G5_EMPTY_BLOCK,
+	G5_TAIL_BLOCK,
+	G5_WRAP_BLOCK,
+} from "../src/g5Geometry";
 
 async function forceWrap(page: Page): Promise<void> {
 	await page.evaluate(() => {
@@ -76,21 +76,21 @@ function assertDeterministic(result: GeometryVerticalMotion): void {
 scenario(
 	"G5: vertical motion across wrapped lines, empty blocks, atoms, and block boundaries lands on identical offsets",
 	async (s, page) => {
-		await s.load("wave3-geometry");
+		await s.load("g5-geometry");
 		await forceWrap(page);
 		await s.geometry.invalidate();
 
 		await expect
 			.poll(
 				async () =>
-					(await s.geometry.lineBoxes(WAVE3_WRAP_BLOCK)).length,
+					(await s.geometry.lineBoxes(G5_WRAP_BLOCK)).length,
 			)
 			.toBeGreaterThanOrEqual(2);
 
 		await s.apply([
 			{
 				type: "splice-text",
-				blockId: WAVE3_ATOMS_BLOCK,
+				blockId: G5_ATOMS_BLOCK,
 				from: 5,
 				to: 5,
 				insert: {
@@ -105,18 +105,18 @@ scenario(
 		await expect
 			.poll(
 				async () =>
-					(await s.geometry.lineBoxes(WAVE3_ATOMS_BLOCK)).length,
+					(await s.geometry.lineBoxes(G5_ATOMS_BLOCK)).length,
 			)
 			.toBeGreaterThanOrEqual(2);
 
-		const wrapLines = await s.geometry.lineBoxes(WAVE3_WRAP_BLOCK);
+		const wrapLines = await s.geometry.lineBoxes(G5_WRAP_BLOCK);
 		const firstWrap = wrapLines[0];
 		expect(
 			firstWrap,
 			"G5 wrapped lines: expected at least one line box",
 		).toBeTruthy();
 		const wrapFrom: GeometryPoint = {
-			blockId: WAVE3_WRAP_BLOCK,
+			blockId: G5_WRAP_BLOCK,
 			offset: midpoint(firstWrap!),
 		};
 
@@ -130,7 +130,7 @@ scenario(
 			wrapLines,
 			wrapped.first!.point.offset,
 		);
-		expect.soft(wrapped.first!.point.blockId).toBe(WAVE3_WRAP_BLOCK);
+		expect.soft(wrapped.first!.point.blockId).toBe(G5_WRAP_BLOCK);
 		expect
 			.soft(
 				wrappedLanding,
@@ -145,13 +145,13 @@ scenario(
 		const empty = await s.geometry.verticalMotion({
 			situation: "empty-block",
 			from: {
-				blockId: WAVE3_WRAP_BLOCK,
+				blockId: G5_WRAP_BLOCK,
 				offset: lastWrap?.endOffset ?? wrapFrom.offset,
 			},
 			direction: "down",
 		});
 		assertDeterministic(empty);
-		expect.soft(empty.first!.point.blockId).toBe(WAVE3_EMPTY_BLOCK);
+		expect.soft(empty.first!.point.blockId).toBe(G5_EMPTY_BLOCK);
 		expect
 			.soft(
 				empty.first!.point.offset,
@@ -159,19 +159,19 @@ scenario(
 			)
 			.toBe(0);
 
-		const atomLines = await s.geometry.lineBoxes(WAVE3_ATOMS_BLOCK);
+		const atomLines = await s.geometry.lineBoxes(G5_ATOMS_BLOCK);
 		const firstAtomLine = atomLines[0];
 		expect(firstAtomLine, "G5 atoms: expected a line box").toBeTruthy();
 		const atoms = await s.geometry.verticalMotion({
 			situation: "atoms",
 			from: {
-				blockId: WAVE3_ATOMS_BLOCK,
+				blockId: G5_ATOMS_BLOCK,
 				offset: midpoint(firstAtomLine!),
 			},
 			direction: "down",
 		});
 		assertDeterministic(atoms);
-		expect.soft(atoms.first!.point.blockId).toBe(WAVE3_ATOMS_BLOCK);
+		expect.soft(atoms.first!.point.blockId).toBe(G5_ATOMS_BLOCK);
 		const atomLanding = lineContaining(
 			atomLines,
 			atoms.first!.point.offset,
@@ -184,13 +184,13 @@ scenario(
 		const boundary = await s.geometry.verticalMotion({
 			situation: "block-boundaries",
 			from: {
-				blockId: WAVE3_ATOMS_BLOCK,
+				blockId: G5_ATOMS_BLOCK,
 				offset: lastAtomLine?.endOffset ?? 0,
 			},
 			direction: "down",
 		});
 		assertDeterministic(boundary);
-		expect.soft(boundary.first!.point.blockId).toBe(WAVE3_TAIL_BLOCK);
+		expect.soft(boundary.first!.point.blockId).toBe(G5_TAIL_BLOCK);
 
 		const digest = {
 			wrapped: wrapped.first!.point,
@@ -211,7 +211,7 @@ scenario(
 				await s.geometry.verticalMotion({
 					situation: "empty-block",
 					from: {
-						blockId: WAVE3_WRAP_BLOCK,
+						blockId: G5_WRAP_BLOCK,
 						offset: lastWrap?.endOffset ?? wrapFrom.offset,
 					},
 					direction: "down",
@@ -222,7 +222,7 @@ scenario(
 				await s.geometry.verticalMotion({
 					situation: "atoms",
 					from: {
-						blockId: WAVE3_ATOMS_BLOCK,
+						blockId: G5_ATOMS_BLOCK,
 						offset: midpoint(firstAtomLine!),
 					},
 					direction: "down",
@@ -233,7 +233,7 @@ scenario(
 				await s.geometry.verticalMotion({
 					situation: "block-boundaries",
 					from: {
-						blockId: WAVE3_ATOMS_BLOCK,
+						blockId: G5_ATOMS_BLOCK,
 						offset: lastAtomLine?.endOffset ?? 0,
 					},
 					direction: "down",

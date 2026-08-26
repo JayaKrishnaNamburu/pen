@@ -380,7 +380,7 @@ test("Playwright-only helpers stay imported by a named scenario", () => {
 	assert.match(geometry, /tallyCaretCompares/);
 });
 
-test("authorityCompare is the Wave 1 trace replay, not the old DOM helper", () => {
+test("authorityCompare is the trace replay, not the old DOM helper", () => {
 	const harnessDir = fileURLToPath(new URL("../../harness/src/", import.meta.url));
 	const replayPath = `${harnessDir}authorityCompare.ts`;
 	const domPath = `${harnessDir}domAuthorityCompare.ts`;

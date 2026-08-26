@@ -4,7 +4,7 @@ Committed JSON snapshots of notable document shapes. The standing assertion is:
 
 load snapshot → rebuild via the test harness → `normalizeAll` → re-export → semantic equality.
 
-These are **JSON export snapshots**, not Yjs binaries. Wave V.7 starts here so the corpus does not depend on `loadYjsDocument` (binary load + repair) or on non-deterministic table-cell UUIDs. `exportEditorToJson` uses stable synthetic cell ids (`cell-0-0`).
+These are **JSON export snapshots**, not Yjs binaries. The corpus starts here so it does not depend on `loadYjsDocument` (binary load + repair) or on non-deterministic table-cell UUIDs. `exportEditorToJson` uses stable synthetic cell ids (`cell-0-0`).
 
 ## Fixtures
 

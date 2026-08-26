@@ -1,13 +1,16 @@
 # CH9 (spec/rules/reliability.md): the suite must give the same
 # answer twice. Ten runs on an unchanged tree, scheduled — not per PR.
 # Failures are quarantined via scripts/flake-allowlist.json (test, issue,
-# owning wave). A gate that passes on a second attempt is not a gate.
+# reason). A gate that passes on a second attempt is not a gate.
 name: Flake
 
 on:
   schedule:
     - cron: "0 4 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   flake:
@@ -20,19 +23,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
 
       - name: Build packages
         run: pnpm build
@@ -43,7 +35,7 @@ jobs:
           node -e '
             const allowlist = require("./scripts/flake-allowlist.json");
             for (const entry of allowlist.tests) {
-              console.log(`- ${entry.name}  issue=${entry.issue}  wave=${entry.wave}`);
+              console.log(`- ${entry.name}  issue=${entry.issue}  reason=${entry.reason}`);
             }
           '
 
@@ -141,7 +133,7 @@ jobs:
                 (item) => name === item.name || name.includes(item.name),
               );
               console.log(
-                `  quarantined: ${name}  issue=${entry?.issue ?? "?"}  wave=${entry?.wave ?? "?"}`,
+                `  quarantined: ${name}  issue=${entry?.issue ?? "?"}  reason=${entry?.reason ?? "?"}`,
               );
             }
             for (const name of unexpected) {

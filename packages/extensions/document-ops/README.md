@@ -124,7 +124,7 @@ applyValidatedOps(editor, payloads, { origin: "ai" });
 
 ## Options
 
-`documentOpsExtension()` accepts `DocumentOpsOptions` with `enableGenerationZones`. The factory does not read that field. Treat the extension as taking no effective options.
+`documentOpsExtension()` takes no options.
 
 ## Facets and commands
 

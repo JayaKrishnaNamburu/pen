@@ -11,7 +11,7 @@ import type { Editor } from "@input/pen-types";
  *
  * Stored on a symbol of the editor instance so registry dispatch proxies
  * (which forward `get` to the source) still see the same seam. `goalX` is
- * here because v1 `SelectionState` has no field for it; Wave 5 adds it.
+ * here because v1 `SelectionState` has no field for it.
  * No rAF / timeout / retry — S4.
  */
 

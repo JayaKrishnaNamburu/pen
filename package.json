@@ -2,7 +2,7 @@
   "name": "pen",
   "private": true,
   "license": "MIT",
-  "packageManager": "pnpm@9.15.9",
+  "packageManager": "pnpm@10.16.1",
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
@@ -14,7 +14,10 @@
     "lint:format": "node scripts/lint-format.mjs",
     "lint:eslint": "eslint .",
     "lint": "pnpm lint:format && pnpm lint:eslint",
-    "version-packages": "changeset version",
+    "verify": "node scripts/verify.mjs",
+    "changeset-check": "node scripts/changeset-check.mjs",
+    "workflow-integrity": "node scripts/workflow-integrity.mjs",
+    "version-packages": "changeset version && node scripts/stamp-first-train.mjs",
     "release": "changeset publish --provenance",
     "release-check": "node scripts/release-check.mjs",
     "size-limit": "node scripts/size-limit.mjs",
@@ -72,6 +75,7 @@
     "turbo": "^2.4.4",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.67.0",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.7",
+    "yaml": "^2.9.0"
   }
 }

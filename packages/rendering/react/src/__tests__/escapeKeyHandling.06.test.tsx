@@ -323,7 +323,7 @@ describe("@input/pen-react escape key handling", () => {
 		// text blocks becomes a multi-block TextSelection while it is open
 		// (spec/rules/selection.md §4.2 step 5). This assertion used to expect the
 		// single-block range to survive until mouseup, which was v1's
-		// _pointerSelectionDepth deferral — deleted in Wave 05 PR 7.
+		// _pointerSelectionDepth deferral — since deleted.
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },

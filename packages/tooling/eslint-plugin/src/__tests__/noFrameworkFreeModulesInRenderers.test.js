@@ -65,7 +65,7 @@ describe("no-framework-free-modules-in-renderers (API6)", () => {
 						filename: "packages/core/src/utils/math.ts",
 					},
 					{
-						code: "/* API6: Wave T T.1 owns clipboard */\nexport function serialize() { return \"\"; }\n",
+						code: "/* API6: clipboard relocation */\nexport function serialize() { return \"\"; }\n",
 						filename: reactFile,
 					},
 					{
@@ -76,7 +76,7 @@ describe("no-framework-free-modules-in-renderers (API6)", () => {
 								allowlist: [
 									{
 										file: "packages/rendering/react/src/utils/clipboardSerialization.ts",
-										reason: "Wave T step T.1 owns clipboard relocation",
+										reason: "API6 clipboard relocation",
 									},
 								],
 							},

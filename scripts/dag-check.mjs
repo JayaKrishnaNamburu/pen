@@ -372,7 +372,7 @@ export function runSelfTests() {
 		{
 			from: "@input/pen-core",
 			to: "@input/pen-delta-stream",
-			reason: "Wave 2: fixture",
+			reason: "fixture",
 		},
 	];
 

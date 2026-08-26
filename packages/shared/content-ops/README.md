@@ -2,7 +2,7 @@
 
 `@input/pen-content-ops` is a shared library for turning imported or authored content into `DocumentOp`s. Hosts do not install it alone — install `@input/pen-preset-default`, or `@input/pen-core` plus the import / document-ops extensions that consume this package.
 
-This is the live workspace package at `packages/shared/content-ops`. It is not the deleted `packages/extensions/content-ops` husk (Wave H.5 / CH6). Core owns `blocksToOps` and the profile-policy helpers; import those from `@input/pen-core`. This package is the parse/write layer on top.
+This is the live workspace package at `packages/shared/content-ops`. It is not the deleted `packages/extensions/content-ops` husk (CH6). Core owns `blocksToOps` and the profile-policy helpers; import those from `@input/pen-core`. This package is the parse/write layer on top.
 
 ## Install
 

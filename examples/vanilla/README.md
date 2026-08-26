@@ -50,4 +50,4 @@ Client-only mount: `@input/pen-dom` is a browser module — construct `FieldEdit
 
 ## Run
 
-Requires Node 22+ and pnpm 9. The install commands above start Vite at `http://localhost:5173`.
+Requires Node 22+ and pnpm 10. The install commands above start Vite at `http://localhost:5173`.

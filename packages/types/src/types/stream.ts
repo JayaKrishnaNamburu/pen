@@ -167,7 +167,7 @@ export interface DonePart {
 
 // ── Stream Request ──────────────────────────────────────────
 
-/** Frozen protocol version for stream handshake (AIB5). Runtime enforcement is Wave M. */
+/** Frozen protocol version for stream handshake (AIB5). */
 export const PEN_STREAM_PROTOCOL_VERSION = 1;
 
 /**

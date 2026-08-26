@@ -1,5 +1,5 @@
 /**
- * Wave 4 GATE 4.5 — update-equality corpus.
+ * Update-equality corpus.
  *
  * Today: replay each committed v2 fixture through the live apply path and
  * compare against the bytes/snapshot on disk. After the primitive rewrite
@@ -370,7 +370,7 @@ test("mislabelled fixture fails coverage by name", () => {
 	}
 });
 
-test("exact-match updateBytes fail because Wave 5 delete-set drift must stay visible", () => {
+test("exact-match updateBytes fail because load-migration delete-set drift must stay visible", () => {
 	const file = join(corpusDir, "insert-text.json");
 	const original = readFileSync(file, "utf8");
 	try {
@@ -388,7 +388,7 @@ test("exact-match updateBytes fail because Wave 5 delete-set drift must stay vis
 		writeFileSync(file, `${JSON.stringify(fixture, null, "\t")}\n`);
 		assert.throws(
 			() => replayFixtureFile(file),
-			/op-equality update-bytes mismatch: insert-text: Wave 5 delete-set drift vanished/,
+			/op-equality update-bytes mismatch: insert-text: load-migration delete-set drift vanished/,
 		);
 	} finally {
 		writeFileSync(file, original);

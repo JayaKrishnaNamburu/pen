@@ -1,15 +1,10 @@
 {
-  "_comment": "API4 (spec/rules/api.md): extra public exports keys besides `.`. Each entry needs package, key, and a reason. Remove an entry in the same PR that deletes the export.",
+  "_comment": "API4 (spec/rules/api.md): extra public exports keys besides `.` and `./package.json`. Each entry needs package, key, and a reason. Remove an entry in the same PR that deletes the export.",
   "entries": [
     {
       "package": "@input/pen-ai",
       "key": "./autocomplete",
       "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-autocomplete package, not a src/dist escape hatch."
-    },
-    {
-      "package": "@input/pen-ai",
-      "key": "./package.json",
-      "reason": "SF4 requires each merged manifest to export every subpath including ./package.json, so tooling can read the manifest under exports encapsulation."
     },
     {
       "package": "@input/pen-ai",
@@ -290,11 +285,6 @@
       "package": "@input/pen-interop",
       "key": "./markdown",
       "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-import-markdown and @input/pen-export-markdown packages, not a src/dist escape hatch."
-    },
-    {
-      "package": "@input/pen-interop",
-      "key": "./package.json",
-      "reason": "SF4 requires each merged manifest to export every subpath including ./package.json, so tooling can read the manifest under exports encapsulation."
     },
     {
       "package": "@input/pen-interop",

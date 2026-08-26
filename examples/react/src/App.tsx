@@ -1,13 +1,10 @@
 "use client";
 
-import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { PenEditor } from "@input/pen-react";
-
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+import { PenEditor, useEditor } from "@input/pen-react";
 
 export function App() {
+  const editor = useEditor({ preset: defaultPreset() });
+
   return <PenEditor editor={editor} />;
 }

@@ -153,7 +153,7 @@ function resolveKey(
 }
 
 describe("bidi motion semantics M2/M5/M6", () => {
-	it("Wave 5 entry gate: caretRight writes affinity onto live editor.selection", () => {
+	it("caretRight writes affinity onto live editor.selection", () => {
 		const { editor } = createMixedEditor(MIXED_RTL_FIRST);
 		const before = liveText(editor);
 		expect(Object.hasOwn(before, "affinity")).toBe(true);

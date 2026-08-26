@@ -1,9 +1,9 @@
 import type { GeometryBlockInfo, GeometryPointRef } from "./types";
 
-export const WAVE3_WRAP_BLOCK = "g5-wrap";
-export const WAVE3_EMPTY_BLOCK = "g5-empty";
-export const WAVE3_ATOMS_BLOCK = "g5-atoms";
-export const WAVE3_TAIL_BLOCK = "g5-tail";
+export const G5_WRAP_BLOCK = "g5-wrap";
+export const G5_EMPTY_BLOCK = "g5-empty";
+export const G5_ATOMS_BLOCK = "g5-atoms";
+export const G5_TAIL_BLOCK = "g5-tail";
 export const REMOTE_CARET_COUNT = 8;
 
 export function sampleCaretPoints(

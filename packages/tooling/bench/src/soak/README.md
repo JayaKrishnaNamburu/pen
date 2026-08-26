@@ -10,7 +10,7 @@ Headless only. Each iteration applies user inserts, undo/redo, and (on a schedul
 
 ## Heap bound
 
-`TEARDOWN_HEAP_MULTIPLE` is 1.13 and stays there. The 1.159 nightly miss was the soak frame still rooting destroyed session + two-peer editors (yjs `Doc.destroy()` leaves `StructStore` intact; Pen creates those docs with `gc: false`). Retainer paths and the facet-registry check live in `CACHE-INVENTORY.md` (Lane 83 leftover). After sampling in child frames, quiet-machine `--expose-gc` runs measured 1.049 / 1.045 / 1.049 at 24 and 1.080 / 1.077 / 1.073 at 400. Session heap still grows monotonically; that trend is not gated.
+`TEARDOWN_HEAP_MULTIPLE` is 1.13 and stays there. The 1.159 nightly miss was the soak frame still rooting destroyed session + two-peer editors (yjs `Doc.destroy()` leaves `StructStore` intact; Pen creates those docs with `gc: false`). Retainer paths and the facet-registry check live in `CACHE-INVENTORY.md`. After sampling in child frames, quiet-machine `--expose-gc` runs measured 1.049 / 1.045 / 1.049 at 24 and 1.080 / 1.077 / 1.073 at 400. Session heap still grows monotonically; that trend is not gated.
 
 `inspectRetainers.mjs` writes heap snapshots and prints retainer paths. It is not a gate.
 

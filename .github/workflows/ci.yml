@@ -7,10 +7,21 @@ on:
       - master
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Superseded pull-request runs are cancelled; pushes to a release branch
+  # are not, so every commit on main keeps a complete result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
+      contents: read
       pull-requests: read
     outputs:
       e2e: ${{ steps.filter.outputs.e2e }}
@@ -21,7 +32,7 @@ jobs:
 
       - name: Detect e2e-relevant changes
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           # GA11 population. Walked dependencies + peerDependencies of
           # the Playwright host (@input/pen-playground —
@@ -41,6 +52,7 @@ jobs:
           filters: |
             e2e:
               - '.github/workflows/ci.yml'
+              - '.github/actions/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
@@ -65,19 +77,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
         with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          turbo-cache-scope: validate
 
       - name: Lint repository surfaces
         run: pnpm lint
@@ -102,9 +105,8 @@ jobs:
 
   e2e:
     # Check names are e2e-chromium / e2e-webkit / e2e-firefox (this `name:`).
-    # Branch protection must require e2e-chromium and e2e-webkit — not the
-    # retired job name `e2e`. firefox stays continue-on-error until S1/S2
-    # range projection lands. That rename is a GitHub settings change.
+    # Branch protection requires the aggregate `ci` job below rather than
+    # these names, so promoting an engine no longer needs a settings change.
     name: e2e-${{ matrix.engine }}
     needs: changes
     if: ${{ needs.changes.outputs.e2e == 'true' }}
@@ -128,6 +130,10 @@ jobs:
     # not a proposal. Promote firefox when that projection lands; do not
     # promote it by widening a tolerance or skipping the spec.
     #
+    # A continue-on-error leg reports `success` to the aggregate job, so
+    # firefox red does not block. Dropping the flag here is the whole
+    # promotion.
+    #
     # this staging is now DECOUPLED from the conformance matrix, which was not
     # clean in the round that produced these numbers. promote the two matrices
     # separately and on their own evidence.
@@ -142,19 +148,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
 
       - name: Install Playwright ${{ matrix.engine }}
         run: pnpm exec playwright install --with-deps ${{ matrix.engine }}
@@ -172,3 +167,25 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  ci:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: ci
+    if: always()
+    needs: [changes, validate, e2e]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require validation and e2e to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}
+          # e2e is skipped by design when the path filter above finds no
+          # change inside the Playwright host's dependency closure.
+          allow-skipped: e2e

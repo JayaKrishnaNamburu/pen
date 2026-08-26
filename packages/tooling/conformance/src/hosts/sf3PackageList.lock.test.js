@@ -1,5 +1,5 @@
 /**
- * SF3 closed package list (spec/rules/api.md, Wave 6).
+ * SF3 closed package list (spec/rules/api.md).
  *
  * After the SF1/SF2 merges the workspace package list (named manifests
  * under packages/, private included) must equal the closed no-merge list

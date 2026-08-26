@@ -204,7 +204,7 @@ describe("@input/pen-test harness", () => {
     });
   });
 
-  describe("Wave 3 test input helpers", () => {
+  describe("test input helpers", () => {
     it("simulateTyping inserts text into the current text selection", () => {
       const editor = createTestEditor({
         blocks: [{ id: "p1", type: "paragraph", content: "Hello" }],

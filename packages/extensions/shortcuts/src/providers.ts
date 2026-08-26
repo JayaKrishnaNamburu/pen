@@ -8,15 +8,6 @@ import type { FacetProvider, KeyBinding } from "@input/pen-types";
 export const PEN_KEYMAP_FACET_NAME = "pen.keymap" as const;
 
 /**
- * A facet provider that contributes key bindings to the shared keymap.
- * Narrows {@link FacetProvider} to the keymap facet so a provider built
- * for another facet cannot be passed where bindings are expected.
- */
-export interface ShortcutKeymapProvider extends FacetProvider {
-	readonly facetName: typeof PEN_KEYMAP_FACET_NAME;
-}
-
-/**
  * Wrap key bindings as keymap facet providers, one provider per
  * binding, so an extension can hand them to `facets` directly. A
  * binding's `priority` becomes its precedence; bindings without one

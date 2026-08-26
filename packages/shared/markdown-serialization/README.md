@@ -2,7 +2,7 @@
 
 `@input/pen-markdown-serialization` is not a package to install alone. Install `@input/pen-interop` and import `markdownExporter` from `@input/pen-interop/markdown`, which is the host-facing markdown exporter and runs URL admission on the serialized output.
 
-This package owns the shared markdown serializer used by that exporter and by a few other Pen packages. It does not create an editor, apply ops, or admit URLs. `getNumberedListItemValue` and `sortDeltaAttributes` are re-exported from `@input/pen-core`.
+This package owns the shared markdown serializer used by that exporter and by a few other Pen packages. It does not create an editor, apply ops, or admit URLs.
 
 ## Install
 

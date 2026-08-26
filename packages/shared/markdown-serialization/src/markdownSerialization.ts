@@ -1,8 +1,10 @@
 import type { BlockHandle, Editor, TableCellHandle } from "@input/pen-types";
-import { buildTableChildren } from "./exporterUtils";
+import {
+	buildTableChildren,
+	getNumberedListItemValue,
+	sortDeltaAttributes,
+} from "@input/pen-core";
 import { groupListItems } from "./listGrouper";
-import { getNumberedListItemValue } from "./orderedList";
-import { sortDeltaAttributes } from "./sortDeltaAttributes";
 
 export interface MarkdownExportRange {
   startBlockId?: string | null;
@@ -277,11 +279,7 @@ function escapeHTML(text: string): string {
 }
 
 function listAllBlockHandles(editor: Editor): BlockHandle[] {
-  const allBlocks = editor.documentState?.allBlocks?.();
-  if (allBlocks) {
-    return Array.from(allBlocks);
-  }
-  return Array.from(editor.blocks());
+  return Array.from(editor.documentState.allBlocks());
 }
 
 function readResolvedText(

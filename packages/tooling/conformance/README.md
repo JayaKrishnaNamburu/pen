@@ -85,4 +85,4 @@ Residual, deliberately not fixed here: the speculative apply uses `origin: "user
 
 Keeping the block-type guard matters beyond tidiness: `handleTableCellKey` still returns `false` for arrows so native cell caret motion is not `preventDefault`ed, and a later change that dropped the guard and routed _every_ document-level arrow through the keymap would eat cell caret motion.
 
-`window.__penConformance.isCollapsed()` is the official `@input/pen-core` helper over the live editor selection. Do not read a live `selection.isCollapsed` property; Wave 5.1 is removing it. The serialized DTO field is a snapshot computed at serialize time, not that live property.
+`window.__penConformance.isCollapsed()` is the official `@input/pen-core` helper over the live editor selection. Do not read a live `selection.isCollapsed` property; the selection redesign is removing it. The serialized DTO field is a snapshot computed at serialize time, not that live property.

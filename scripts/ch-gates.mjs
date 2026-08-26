@@ -24,7 +24,6 @@ const TEST_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs"]);
 
 const TRACKED_ISSUE_RE =
 	/#\d+\b|[A-Z][A-Z0-9]+-\d+\b|\bF\d{1,3}\b|\b(?:A|N|P|R|SM|D|K|B|ST|T|C|O|S|SCH|G|OV|DIR|BR|M|RI|I|SEC|AX|API|CH|HOST|LOC|DOC|DUR|COL|AIB|IOP|SCALE)\d{1,2}\b|https?:\/\/github\.com\/[^\s)]+\/issues\/\d+/;
-const WAVE_RE = /\b(?:wave\s*[-:]?\s*[0-9a-z]+|[0-9A-Z]\.\d+)\b/i;
 
 const SKIP_CALL_RE =
 	/\b(?:describe|it|test)(?:\.describe)?\.(skip|todo|skipIf)\s*\(/g;
@@ -306,7 +305,7 @@ async function runCh3() {
 		`population: ${testFiles.length} files (packages+playground+internal tests)`,
 		...(violations.length === 0
 			? [
-					"no skipped/todo tests missing a body or a tracked-issue + wave comment",
+					"no skipped/todo tests missing a body or a tracked-issue comment",
 				]
 			: violations.map((hit) => `FAIL ${hit}`)),
 	];
@@ -590,8 +589,8 @@ function isConsoleAllowed(rel) {
 	const base = path.posix.basename(rel);
 	// Vitest config and setup modules run in the runner process, not in an editor
 	// session. CH5's rationale is that runtime console calls should go through the
-	// diagnostic channel (H.4); a test-runner config has no editor to emit one.
-	// Wave 0 also requires the fuzz seed to reach the nightly job log.
+	// diagnostic channel; a test-runner config has no editor to emit one.
+	// The fuzz seed also has to reach the nightly job log.
 	if (/^vitest\..*\.tsx?$/i.test(base)) {
 		return true;
 	}
@@ -645,9 +644,6 @@ function findSkipViolations(source, rel) {
 		}
 		if (!TRACKED_ISSUE_RE.test(comment)) {
 			missing.push("no tracked-issue comment");
-		}
-		if (!WAVE_RE.test(comment)) {
-			missing.push("no restoring-wave comment");
 		}
 		if (missing.length > 0) {
 			violations.push(

@@ -335,6 +335,31 @@ function runSelfTest() {
 			"self-test: walker must skip node_modules and dist (write mode has already stamped a Vite prebundle)",
 		);
 	}
+
+	const withExports = buildPublicPackageManifest(
+		{
+			...matching,
+			exports: {
+				".": {
+					import: {
+						types: "./dist/index.d.ts",
+						default: "./dist/index.mjs",
+					},
+					require: {
+						types: "./dist/index.d.cts",
+						default: "./dist/index.cjs",
+					},
+				},
+			},
+		},
+		"packages/fixture",
+		{ hasReadme: false },
+	);
+	if (withExports.exports?.["./package.json"] !== "./package.json") {
+		throw new Error(
+			"self-test: every exports map must include ./package.json",
+		);
+	}
 }
 
 function buildPublicPackageManifest(packageJson, packageDirectory, options) {
@@ -344,7 +369,7 @@ function buildPublicPackageManifest(packageJson, packageDirectory, options) {
 		access: "public",
 		registry: "https://registry.npmjs.org/",
 	};
-	const exports = normalizeExports(packageJson.exports);
+	const exports = ensurePackageJsonExport(normalizeExports(packageJson.exports));
 	const types = resolveRootTypesPath(packageJson, exports);
 
 	const ordered = {};
@@ -470,6 +495,20 @@ function normalizeExports(exportsField) {
 			normalizeExportValue(exportValue),
 		]),
 	);
+}
+
+function ensurePackageJsonExport(exportsField) {
+	if (
+		!exportsField ||
+		typeof exportsField !== "object" ||
+		Array.isArray(exportsField)
+	) {
+		return exportsField;
+	}
+	return {
+		...exportsField,
+		"./package.json": "./package.json",
+	};
 }
 
 function normalizeExportValue(exportValue) {

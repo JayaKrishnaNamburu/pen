@@ -8,4 +8,4 @@ Pen does not window blocks. Windowing is a host concern (`spec/rules/scale.md` S
 - **Remount does nothing.** The host must not rehydrate, replay, or patch the remounted block. Reconciliation is idempotent.
 - **`selection-target-unmounted` is a future diagnostic.** When selection targets an unmounted block, the scheduler's projection retry is the current recovery. The warning is specified (`spec/rules/reliability.md`) and is not emitted yet.
 
-A windowed conformance fixture is deferred to Wave 0.1.
+A windowed conformance fixture is still outstanding.

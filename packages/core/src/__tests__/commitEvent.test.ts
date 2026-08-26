@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { resolveCommitSource, toStructuredOrigin } from "../editor/commitEvent";
 
-describe("commitEvent helpers (Wave 2.2)", () => {
+describe("commitEvent helpers", () => {
 	it("toStructuredOrigin wraps string origins", () => {
 		expect(toStructuredOrigin("user")).toEqual({ type: "user" });
 		expect(toStructuredOrigin({ type: "ai", requestId: "r1" })).toEqual({

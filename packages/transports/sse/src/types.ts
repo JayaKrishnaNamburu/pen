@@ -29,5 +29,4 @@ export interface SSEServerOptions {
 	onRequest?: (request: PenStreamRequest) => void;
 	onError?: (error: unknown) => void;
 	pingInterval?: number;
-	keepAliveComment?: boolean;
 }

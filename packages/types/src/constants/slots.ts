@@ -12,8 +12,8 @@
  * published `.d.ts` (`stripInternal`) while every in-repo consumer
  * still imports them from the root barrel. `package.json` exports only
  * `.` (no internal subpath), so hiding them in this package alone
- * breaks typecheck. Keep them public until Wave P lands an internal
- * entry or the consumers write facets directly.
+ * breaks typecheck. Keep them public until this package gains an
+ * internal entry or the consumers write facets directly.
  */
 
 export const FIELD_EDITOR_SLOT_KEY = "field-editor";
@@ -26,8 +26,6 @@ export const UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY =
 	"undo:history-metadata-controller";
 export const INLINE_COMPLETION_SLOT = "ai:inline-completion";
 export const AI_CONTROLLER_SLOT = "ai:controller";
-/** Alias of `INLINE_COMPLETION_SLOT`. Prefer the unsuffixed name. */
-export const AI_INLINE_COMPLETION_SLOT = INLINE_COMPLETION_SLOT;
 export const AI_INLINE_HISTORY_SLOT = "ai:inline-history";
 export const AI_REVIEW_CONTROLLER_SLOT = "ai:review";
 export const AI_AUTOCOMPLETE_CONTROLLER_SLOT = "ai-autocomplete:controller";

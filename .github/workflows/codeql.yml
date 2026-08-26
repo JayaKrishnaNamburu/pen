@@ -12,9 +12,17 @@ on:
   schedule:
     - cron: "17 5 * * 1"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: Analyze JavaScript and TypeScript
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
       security-events: write

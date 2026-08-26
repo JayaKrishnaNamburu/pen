@@ -6,7 +6,7 @@
 
 ## Public Role
 
-This package used to sit _under_ core (core imported it) and later re-exported the moved helpers. That dual path is gone (Wave 3 DL13): content-ops depends on `@input/pen-core` and hosts import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
+This package used to sit _under_ core (core imported it) and later re-exported the moved helpers. That dual path is gone (DL13): content-ops depends on `@input/pen-core` and hosts import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
 
 ## Key Exports / Entrypoints
 

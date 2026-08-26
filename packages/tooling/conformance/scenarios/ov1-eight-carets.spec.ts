@@ -1,7 +1,7 @@
 import { expect, test, type CDPSession, type Page } from "@playwright/test";
 import { scenario } from "../src/scenario";
 import type { GeometryEightCaretItem, GeometryPoint } from "../src/types";
-import { REMOTE_CARET_COUNT } from "../src/wave3Geometry";
+import { REMOTE_CARET_COUNT } from "../src/g5Geometry";
 
 type ChromeMetric = { name: string; value: number };
 

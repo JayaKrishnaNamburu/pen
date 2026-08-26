@@ -64,6 +64,7 @@ export { getEditorSelectionRecord } from "./editor/selectionRecord";
 export {
 	createTextSelection,
 	getSelectionBlockRange,
+	isBlockSelected,
 	isCollapsed,
 	isMultiBlock,
 	selectionToRange,
@@ -116,14 +117,14 @@ export type {
 	ProfilePolicyViolation,
 } from "./editor/profilePolicy";
 
-// Importer utilities (used by Wave 4 importers)
+// Importer utilities (used by the interop importers)
 export { blocksToOps } from "./importerUtils";
 export type {
 	PendingBlock,
 	ImportOptions as ImporterOptions,
 } from "./importerUtils";
 
-// Exporter utilities (shared by Wave 4 exporters)
+// Exporter utilities (shared by the interop exporters)
 export { buildTableChildren } from "./exporterUtils";
 
 // Document migrations (DUR4)
@@ -290,10 +291,7 @@ export {
 	getOpOriginGroupId,
 	getOpOriginType,
 } from "./editor/origin";
-export {
-	collectToolExecutionOutput,
-	resolveToolExecution,
-} from "./editor/toolExecution";
+export { collectToolExecutionOutput } from "./editor/toolExecution";
 export {
 	delegatesToGridEditing,
 	hasFieldEditorSurface,

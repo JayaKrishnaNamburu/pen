@@ -2,14 +2,14 @@ import { createHash } from "node:crypto";
 import type { DocumentOp } from "@input/pen-types";
 
 /**
- * Wave 3.5 10k-word fixture plus a table-cell cohort. Deterministic:
+ * 10k-word fixture plus a table-cell cohort. Deterministic:
  * Numerical Recipes LCG with a fixed seed walks a 32-word lexicon.
  * Paragraphs keep seed `TEN_K_SEED`; cells use `TEN_K_CELL_SEED` so the
  * 20×500 walk stays bit-identical. `contentSha256` covers paragraphs and
  * cells. A reviewer comparing two baselines can tell a generator change
  * (hash moves) from a scheduler change (hash stable, numbers move).
  */
-export const TEN_K_FIXTURE_ID = "wave3-10k-words";
+export const TEN_K_FIXTURE_ID = "ten-k-words";
 const TEN_K_SEED = 0x70656e33;
 export const TEN_K_PARAGRAPH_COUNT = 20;
 const TEN_K_WORDS_PER_PARAGRAPH = 500;

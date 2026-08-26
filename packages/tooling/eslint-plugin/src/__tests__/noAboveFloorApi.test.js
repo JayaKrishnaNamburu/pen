@@ -170,14 +170,14 @@ describe("no-above-floor-api (HOST4)", () => {
 		expect(
 			sitePath({
 				path: "packages/core/src/bare.ts",
-				reason: "Wave L LOC4: fixture asserts the fallback path",
+				reason: "LOC4: fixture asserts the fallback path",
 			}),
 		).toBe("packages/core/src/bare.ts");
 		expect(missingSiteField("packages/core/src/bare.ts")).toBeNull();
 		expect(
 			missingSiteField({
 				path: "packages/core/src/bare.ts",
-				reason: "Wave L LOC4: fixture asserts the fallback path",
+				reason: "LOC4: fixture asserts the fallback path",
 			}),
 		).toBeNull();
 		expect(missingSiteField({ path: "packages/core/src/bare.ts" })).toBe(
@@ -218,7 +218,7 @@ describe("no-above-floor-api (HOST4)", () => {
 										{
 											path: siteFile,
 											reason:
-												"Wave L: Node test asserts the documented fallback, not production clone",
+												"LOC4: Node test asserts the documented fallback, not production clone",
 										},
 									],
 								},

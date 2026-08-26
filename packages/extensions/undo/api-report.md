@@ -11,7 +11,6 @@
 ### value
 
 - DEFAULT_UNDO_MAX_DEPTH
-- HISTORY_ORIGIN_TAG
 
 ### type
 

@@ -45,8 +45,6 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 	let unsub: (() => void) | null = null;
 	const produced = new WeakSet<DocumentOp[]>();
 
-	// Wave 1.3: Extension.inputRules → pen.inputRules via inputRulesToProviders.
-	// This extension keeps engine registration; Wave 7 deletes the v1 field.
 	return {
 		name: INPUT_RULES_EXTENSION_NAME,
 		version: "0.0.0",

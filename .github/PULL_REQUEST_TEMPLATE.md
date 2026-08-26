@@ -8,6 +8,7 @@
 
 ## Checklist
 
+- [ ] `pnpm verify` passes locally (runs the same gates CI does, minus the browser suites)
 - [ ] Changeset (`pnpm changeset`) if a published package's behavior or public API changed
 - [ ] Spec rule IDs listed above; tests that claim those IDs include the ID in the test name
 - [ ] No new slots (`*_SLOT` / `setSlot` outside the adapter)

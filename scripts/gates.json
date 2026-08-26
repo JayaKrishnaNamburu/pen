@@ -1,0 +1,107 @@
+[
+  {
+    "id": "workflow-integrity",
+    "command": "node scripts/workflow-integrity.mjs",
+    "description": "Every pull-request workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, and pins third-party actions."
+  },
+  {
+    "id": "ch-gates",
+    "command": "pnpm ch-gates",
+    "description": "Code health: ts-nocheck, empty skips, `this: any`, runtime console calls, orphan packages."
+  },
+  {
+    "id": "ai-egress-one-door",
+    "command": "node scripts/ai-egress-one-door.mjs",
+    "description": "The model adapter exposes one door (.stream()); only the egress facet may call it."
+  },
+  {
+    "id": "api-docs-coverage",
+    "command": "pnpm api-docs-coverage",
+    "description": "TSDoc coverage ratchet: the undocumented count may only decrease. Switch to --strict once it reaches zero."
+  },
+  {
+    "id": "capability-matrix",
+    "command": "pnpm capability-matrix",
+    "description": "Every capability-matrix cell that claims a surface must name a path that exists outside the playground."
+  },
+  {
+    "id": "positioning-check",
+    "command": "node scripts/positioning-check.mjs",
+    "description": "License positioning stays accurate: no stray source-available or commercial wording outside the decision record."
+  },
+  {
+    "id": "conformance-mirror-drift",
+    "command": "node scripts/conformance-mirror-drift.mjs",
+    "description": "Conformance mirrors stay assignable both ways to the production type they name."
+  },
+  {
+    "id": "command-catalog-check",
+    "command": "node scripts/command-catalog-check.mjs",
+    "description": "CATALOG.md and the core command registry must agree."
+  },
+  {
+    "id": "catalog-check",
+    "command": "node scripts/catalog-check.mjs",
+    "description": "Every diagnostic code has a message catalog entry."
+  },
+  {
+    "id": "package-metadata",
+    "command": "node scripts/sync-package-metadata.mjs --check",
+    "description": "Published manifests match what sync-package-metadata would write (repository.url, engines.node, files, publishConfig, ./package.json export, LICENSE.md)."
+  },
+  {
+    "id": "bench-envelope-drift",
+    "command": "node scripts/bench-envelope-drift.mjs",
+    "description": "Generated envelope table must match baselines/envelope.json. Table diff only; timing lives in bench.yml."
+  },
+  {
+    "id": "version-sync",
+    "command": "node scripts/release-check.mjs --version-sync",
+    "description": "Published packages share one train version and the changesets fixed group lists all of them."
+  },
+  {
+    "id": "stamp-first-train",
+    "command": "node scripts/stamp-first-train.mjs --self-test",
+    "description": "The first-train stamp (0.0.1 + minor → 0.3.0) fails closed on mixed or surprise versions."
+  },
+  {
+    "id": "provenance-preconditions",
+    "command": "node scripts/release-check.mjs --provenance-preconditions",
+    "description": "npm trusted-publishing and provenance preconditions. Zero tags prints UNEXERCISED rather than failing."
+  },
+  {
+    "id": "migration-guide-check",
+    "command": "node scripts/migration-guide-check.mjs",
+    "description": "MIGRATION.md stays mechanically true: export claims, origin union, yjs peer, named paths, fenced samples."
+  },
+  {
+    "id": "dag-check",
+    "command": "node scripts/dag-check.mjs",
+    "description": "Published package dependency layers follow the types -> crdt -> core -> extensions DAG."
+  },
+  {
+    "id": "core-clean-install",
+    "command": "node scripts/core-clean-install.mjs",
+    "description": "Installing @input/pen-core must not pull extensions, renderers, or presets."
+  },
+  {
+    "id": "published-exports",
+    "command": "node scripts/published-exports.mjs",
+    "description": "Every published package exports \".\" and \"./package.json\"; extra keys need a reason."
+  },
+  {
+    "id": "workspace-pins",
+    "command": "node scripts/workspace-pins.mjs",
+    "description": "No workspace:* pins or dist re-exports in published manifests."
+  },
+  {
+    "id": "readme-sections",
+    "command": "node scripts/readme-sections.mjs",
+    "description": "Each published package README carries the required sections."
+  },
+  {
+    "id": "envelope-table",
+    "command": "node scripts/envelope-table.mjs && git diff --exit-code -- packages/tooling/test/ENVELOPE.md",
+    "description": "The generated envelope table must match its fixture metadata."
+  }
+]

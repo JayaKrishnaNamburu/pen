@@ -64,7 +64,6 @@ export function measureCaretRect(
 	}
 
 	const offset = clampOffset(point.offset, length);
-	// wave-5: swap to offsetDomain.ts
 	const domPoint = findLogicalDOMPoint(inlineEl, offset);
 	const atomHost = findAtomHost(domPoint.node);
 	if (atomHost) {
@@ -161,7 +160,6 @@ export function characterRect(
 	inlineEl: HTMLElement,
 	charOffset: number,
 ): Rect | null {
-	// wave-5: swap to offsetDomain.ts
 	const start = findLogicalDOMPoint(inlineEl, charOffset);
 	const end = findLogicalDOMPoint(inlineEl, charOffset + 1);
 	const atomHost = findAtomHost(start.node) ?? findAtomHost(end.node);
