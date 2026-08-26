@@ -22,29 +22,29 @@ Two workspace packages have no `spec/packages/` file on purpose: `@input/pen-con
 
 ## Rules — load before editing the matching surface
 
-| Surface | Document | Families |
-| --- | --- | --- |
-| Write path, ops, streaming, origins | `rules/pipeline.md` | ST, OP, PR, OPB |
-| Selection, caret, IME, projection | `rules/selection.md` | A, N, R, P, O, T, C, S |
-| Anchors and position survival | `rules/anchors.md` | AN, AS |
-| Empty-block storage | `rules/empty-blocks.md` | EM |
-| Change summaries, origin intent | `rules/observation.md` | OB, INT |
-| Facets, slots, extension seams | `rules/facets.md` | R, SM |
-| Commands, keymaps, beforeinput | `rules/commands.md` | D, K, B |
-| DOM scheduler, field editors, geometry, overlays, bidi | `rules/dom.md` | SCH, FE, G, OV, DIR, BR, M, RI |
-| Cross-cutting invariants | `rules/architecture.md` | I |
-| Public API, packaging, DAG, surface | `rules/api.md` | API, SF, CS |
-| Security, URLs, HTML, clipboard | `rules/security.md` | SEC |
-| Accessibility | `rules/accessibility.md` | AX |
-| AI boundary, edit channel, review surface | `rules/ai.md` | AIB, UC, RS |
-| Collaboration | `rules/collaboration.md` | COL |
-| Import/export, assets | `rules/interop.md` | IOP |
-| Localization, catalogs | `rules/localization.md` | LOC |
-| Durability, schema evolution | `rules/durability.md` | DUR |
-| Scale envelope, benches | `rules/scale.md` | SCALE, PG |
-| Tests, conformance, flake | `rules/reliability.md` | CH |
-| Host integration, browser/Node floor | `rules/host.md` | HOST, HB |
-| Docs site, READMEs, examples | `rules/documentation.md` | DOC |
+| Surface                                                | Document                 | Families                       |
+| ------------------------------------------------------ | ------------------------ | ------------------------------ |
+| Write path, ops, streaming, origins                    | `rules/pipeline.md`      | ST, OP, PR, OPB                |
+| Selection, caret, IME, projection                      | `rules/selection.md`     | A, N, R, P, O, T, C, S         |
+| Anchors and position survival                          | `rules/anchors.md`       | AN, AS                         |
+| Empty-block storage                                    | `rules/empty-blocks.md`  | EM                             |
+| Change summaries, origin intent                        | `rules/observation.md`   | OB, INT                        |
+| Facets, slots, extension seams                         | `rules/facets.md`        | R, SM                          |
+| Commands, keymaps, beforeinput                         | `rules/commands.md`      | D, K, B                        |
+| DOM scheduler, field editors, geometry, overlays, bidi | `rules/dom.md`           | SCH, FE, G, OV, DIR, BR, M, RI |
+| Cross-cutting invariants                               | `rules/architecture.md`  | I                              |
+| Public API, packaging, DAG, surface                    | `rules/api.md`           | API, SF, CS                    |
+| Security, URLs, HTML, clipboard                        | `rules/security.md`      | SEC                            |
+| Accessibility                                          | `rules/accessibility.md` | AX                             |
+| AI boundary, edit channel, review surface              | `rules/ai.md`            | AIB, UC, RS                    |
+| Collaboration                                          | `rules/collaboration.md` | COL                            |
+| Import/export, assets                                  | `rules/interop.md`       | IOP                            |
+| Localization, catalogs                                 | `rules/localization.md`  | LOC                            |
+| Durability, schema evolution                           | `rules/durability.md`    | DUR                            |
+| Scale envelope, benches                                | `rules/scale.md`         | SCALE, PG                      |
+| Tests, conformance, flake                              | `rules/reliability.md`   | CH                             |
+| Host integration, browser/Node floor                   | `rules/host.md`          | HOST, HB                       |
+| Docs site, READMEs, examples                           | `rules/documentation.md` | DOC                            |
 
 Also load the matching `packages/*.md` for any package whose source you are editing.
 

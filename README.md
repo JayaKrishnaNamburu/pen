@@ -13,17 +13,7 @@
 
 # Pen
 
-Pen is an MIT-licensed SDK. Packages are intended for the public npm registry.
-
-The first release train has not been published. Every package is still the unpublished placeholder `0.0.1`; the first `changeset version` stamps **0.3.0**. Until that lands, `pnpm add @input/pen-*` 404s on the public registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts. The commands below are the post-publish install path.
-
-Versioning is a single `0.x` train; v3 ships as 0.3. The policy lives in [`spec/rules/api.md`](spec/rules/api.md) (API7).
-
-```bash
-pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
-```
-
-`react` and `react-dom` are peers of `@input/pen-react`. `@input/pen-preset-default` brings in `@input/pen-core`, which depends on `@input/pen-crdt-yjs`; `yjs` and `y-protocols` are that adapter's peers, so every Pen install needs both — including non-collaborative ones, since the document model is a Yjs document and the adapter imports awareness. `yjs` is a peer rather than a dependency so that exactly one copy is resolved; the adapter asserts that at document creation and fails loudly if a second copy is present. Package managers that auto-install peers will add them for you, but naming them explicitly is what pins the versions you get. Add `@input/pen-core` to the list when you import from it directly, as the vanilla-DOM install below does.
+Pen is a block-native rich text editor SDK for applications where people and AI write in the same document. The runtime is headless — it owns the document, selection, and history, and renders nothing you did not ask for — and the document is a Yjs CRDT from the first keystroke.
 
 ## Why Pen
 
@@ -39,7 +29,9 @@ pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protoc
 
 ## Quick Start
 
-Every host follows the same two steps: build an editor with `defaultPreset()`, then mount it. The preset supplies the default schema, undo, and formatting shortcuts. Bare `createEditor()` installs no schema and no extensions — `editor.undoManager` becomes an inert stub and Mod-Z does nothing, silently.
+Pen has not shipped its first release train: every package is still the placeholder `0.0.1`, the first `changeset version` stamps **0.3.0**, and until that lands `pnpm add @input/pen-*` 404s on the public npm registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts — the commands below are the post-publish path. Versioning is a single `0.x` train (v3 ships as 0.3); the policy lives in [`spec/rules/api.md`](spec/rules/api.md) (API7).
+
+Every host follows the same two steps: build an editor with `defaultPreset()`, then mount it. The preset supplies the default schema, undo, and formatting shortcuts.
 
 ### React
 
@@ -111,6 +103,12 @@ mountEditor(editor, root);
 ```
 
 `mountEditor` assembles the same field editor, root shell, and inline surfaces that the React and Vue bindings use. Construct it in the browser, not during SSR.
+
+Pass `defaultPreset()` — or an explicit `extensions` list — whenever you call `createEditor` yourself, as every example below does. A bare `createEditor()` installs no schema and no extensions, which leaves `editor.undoManager` an inert stub and Mod-Z doing nothing, silently.
+
+**Peer dependencies.** `react` and `react-dom`, or `vue`, are peers of the binding you install. `yjs` and `y-protocols` are peers of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs both — including non-collaborative ones, since the document model is a Yjs document and the adapter imports awareness. `yjs` is a peer rather than a dependency so that exactly one copy is resolved; the adapter asserts that at document creation and fails loudly if a second copy is present. Package managers that auto-install peers will add them for you, but naming them explicitly is what pins the versions you get.
+
+**Direct imports.** Sections below import `@input/pen-core`, `@input/pen-types`, and `@input/pen-shortcuts` on top of a feature package each. All three arrive transitively with the preset, so the code resolves without them in your manifest — but list whatever you import directly, because a phantom dependency breaks as soon as the tree shifts underneath it.
 
 **Styling.** The editor is functional unstyled, including on an empty document — clicks land and the first keystroke works with no CSS at all. Design tokens live in the `STYLING.md` that ships inside `@input/pen-react`.
 
@@ -320,7 +318,7 @@ Install `@input/pen-preset-default` and a renderer — the preset brings `@input
 | `@input/pen-preset-default`                               | Batteries-included assembly of schema, undo, shortcuts, and streaming       |
 | `@input/pen-schema-default`                               | Default block and inline definitions                                        |
 | `@input/pen-crdt-yjs`                                     | Yjs document adapter                                                        |
-| `@input/pen-types`                                        | Shared contracts; installed with core rather than alone                     |
+| `@input/pen-types`                                        | Shared contracts: types, constants, and helpers such as `generateId`        |
 | `@input/pen-react`                                        | React primitives, hooks, and renderers — the documented renderer surface    |
 | `@input/pen-vue`                                          | Vue bindings over the shared DOM engine                                     |
 | `@input/pen-dom`                                          | Framework-free DOM field-editor engine                                      |

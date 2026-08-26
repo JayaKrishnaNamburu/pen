@@ -48,6 +48,11 @@ function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 			".github/workflows/release.yml must unset NODE_AUTH_TOKEN around changeset publish so OIDC is not shadowed",
 		);
 	}
+	if (!/fetch-tags:\s*true/.test(workflow) || !/fetch-depth:\s*0/.test(workflow)) {
+		problems.push(
+			".github/workflows/release.yml must fetch tags (fetch-depth: 0 and fetch-tags: true) so stamp-first-train can see a v* train tag",
+		);
+	}
 	if (
 		typeof rootReleaseScript !== "string" ||
 		!rootReleaseScript.includes("--provenance")
@@ -119,7 +124,7 @@ function versionSyncGroups(packages) {
 
 function runSelfTests() {
 	const healthyWorkflow =
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\n";
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n";
 	const healthy = provenanceWorkflowProblems(
 		healthyWorkflow,
 		"changeset publish --provenance",
@@ -131,7 +136,7 @@ function runSelfTests() {
 	}
 
 	const missingToken = provenanceWorkflowProblems(
-		"env:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\n",
+		"env:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
 		"changeset publish --provenance",
 	);
 	if (!missingToken.some((problem) => problem.includes("id-token: write"))) {
@@ -139,7 +144,7 @@ function runSelfTests() {
 	}
 
 	const missingEnv = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\n",
+		"permissions:\n  id-token: write\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
 		"changeset publish --provenance",
 	);
 	if (
@@ -168,8 +173,16 @@ function runSelfTests() {
 		throw new Error("self-test: NPM_TOKEN in the workflow must fail closed");
 	}
 
+	const missingTags = provenanceWorkflowProblems(
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\n",
+		"changeset publish --provenance",
+	);
+	if (!missingTags.some((problem) => problem.includes("fetch tags"))) {
+		throw new Error("self-test: a checkout without tags must fail closed");
+	}
+
 	const missingNpmCli = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.0.0\npublish: env -u NODE_AUTH_TOKEN pnpm release\n",
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.0.0\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
 		"changeset publish --provenance",
 	);
 	if (!missingNpmCli.some((problem) => problem.includes("npm CLI"))) {
