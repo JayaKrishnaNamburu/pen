@@ -48,9 +48,14 @@ function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 			".github/workflows/release.yml must unset NODE_AUTH_TOKEN around changeset publish so OIDC is not shadowed",
 		);
 	}
-	if (/changesets\/action@\S+ # v2/.test(workflow)) {
+	if (!/version-script:/.test(workflow) || !/publish-script:/.test(workflow)) {
 		problems.push(
-			".github/workflows/release.yml must stay on changesets/action v1 while @changesets/cli is 2.x",
+			".github/workflows/release.yml must pass changesets/action v2 version-script and publish-script",
+		);
+	}
+	if (/changesets\/action@\S+ # v1/.test(workflow)) {
+		problems.push(
+			".github/workflows/release.yml must use changesets/action v2 with @changesets/cli 3",
 		);
 	}
 	if (!/fetch-tags:\s*true/.test(workflow) || !/fetch-depth:\s*0/.test(workflow)) {
@@ -194,13 +199,21 @@ function runSelfTests() {
 		throw new Error("self-test: missing npm 11 install must fail closed");
 	}
 
-	const actionV2 = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nuses: changesets/action@deadbeef # v2.1.1\nversion: pnpm version-packages\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
+	const actionV1 = provenanceWorkflowProblems(
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nuses: changesets/action@deadbeef # v1.9.0\nversion-script: pnpm version-packages\npublish-script: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
 		"changeset publish --provenance",
 	);
-	if (!actionV2.some((problem) => problem.includes("changesets/action v1"))) {
+	if (!actionV1.some((problem) => problem.includes("changesets/action v2"))) {
+		throw new Error("self-test: changesets/action v1 must fail closed");
+	}
+
+	const v1Inputs = provenanceWorkflowProblems(
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nversion: pnpm version-packages\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
+		"changeset publish --provenance",
+	);
+	if (!v1Inputs.some((problem) => problem.includes("version-script"))) {
 		throw new Error(
-			"self-test: changesets/action v2 while CLI is 2.x must fail closed",
+			"self-test: changesets/action v1 version/publish inputs must fail closed",
 		);
 	}
 
@@ -262,7 +275,7 @@ function runSelfTests() {
 	}
 
 	console.log(
-		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, --provenance, NPM_TOKEN, npm 11, action v2, and a short fixed group fail closed)",
+		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, --provenance, NPM_TOKEN, npm 11, action v1, and a short fixed group fail closed)",
 	);
 }
 
@@ -336,6 +349,12 @@ async function checkProvenancePreconditions(packages) {
 		workflow,
 		rootPackage.scripts?.release,
 	);
+	const cliSpec = rootPackage.devDependencies?.["@changesets/cli"];
+	if (typeof cliSpec !== "string" || !/^[\^~]?3(\.|$)/.test(cliSpec)) {
+		problems.push(
+			'root package.json must depend on @changesets/cli 3.x (changesets/action v2 requires it)',
+		);
+	}
 
 	const urls = new Set();
 	for (const pkg of packages) {

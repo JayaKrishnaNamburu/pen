@@ -85,15 +85,14 @@ jobs:
 
       - name: Create release pull request or publish
         id: changesets
-        # SHA-pinned, not `@v1`: that tag is a mutable branch, and this step
-        # holds the provenance id-token. Stay on action v1 while
-        # @changesets/cli is 2.x — action v2 requires CLI v3.
+        # SHA-pinned, not `@v2`: that tag is a mutable branch, and this step
+        # holds the provenance id-token. Action v2 needs @changesets/cli 3.
         # No NPM_TOKEN: trusted publishing uses OIDC. Unset NODE_AUTH_TOKEN
         # in case the action exports an empty one that would shadow OIDC.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          version: pnpm version-packages
-          publish: env -u NODE_AUTH_TOKEN pnpm release
+          version-script: pnpm version-packages
+          publish-script: env -u NODE_AUTH_TOKEN pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
