@@ -82,10 +82,19 @@ export const SCHEMA_RESOLVE_X10000_BENCH: BenchMetadata = {
 	targetMs: 10,
 };
 
+// Re-baselined 200 -> 500 under CH8, which asks that a budget the CI runner
+// cannot meet reliably be re-recorded with the number written down rather than
+// left permanently red. Measurements behind the move: 49.86ms idle on an
+// Apple Silicon laptop, and on ubuntu-latest 117.78ms on one run against
+// 272.25ms and 277.69ms on two others — a 2.4x spread across the same commit
+// range, which straddled the old target and made the gate report the runner
+// rather than the diff. This is the heaviest bench in the set and the only one
+// that moved; the 1ms and 10ms critical targets stay green on the same runner.
+// 500 clears the worst observed run by ~1.8x and still fails a 2x regression.
 export const SCHEMA_NORMALIZE_500_BLOCK_DOCUMENT_BENCH: BenchMetadata = {
 	id: "schema.normalize-500-block-document",
 	name: "normalize 500-block document",
-	targetMs: 200,
+	targetMs: 500,
 	critical: true,
 };
 
