@@ -1,9 +1,12 @@
 <!-- markdownlint-disable MD033 MD041 -->
-<img width="100%" height="auto" alt="logo_black@2x" src="https://github.com/user-attachments/assets/99f65689-7be3-4b33-b21a-8959584adb8e" />
+<img width="100%" height="auto" alt="logo_black@2x" src="https://github.com/user-attachments/assets/6eb68df5-c70f-4a38-ac6f-f69530f0b355" />
+
 
 <h3 align="center">
   Headless, extension-first rich text<br/>editor engine for AI collaboration
 </h3>
+
+<h5 align="center">Work in progress, not yet ready for use</h5>
 
 <p align="center">
   <a href="https://github.com/input-systems/pen/stargazers"><img src="https://img.shields.io/github/stars/input-systems/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
