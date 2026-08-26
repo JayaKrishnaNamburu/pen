@@ -227,20 +227,15 @@ function yText(
 describe("an-fuzz AN1–AN5 AN14", () => {
 	it(
 		"AN1-AN5: repaired anchors match the v2 cross-block oracle after every generated step",
-		// 120_000 was timing out on CI in both `Lint, types and tests` and every
-		// Node leg, while the same seed finishes in 11.6s here. The gap is
-		// contention, not the assertion: `pnpm test` runs every package's suite
-		// at once, and under that load the same run measures 42.8s locally — a
-		// 3.7x factor before ubuntu-latest adds the ~2.4x it costs the benches.
-		// 42.8 x 2.4 lands at ~103s, which is why a 120s budget failed for the
-		// machine rather than for the tree, with vitest reporting worker
-		// starvation (`Timeout calling "onTaskUpdate"`) alongside it.
-		//
-		// 300_000 clears the contended estimate by ~3x and still catches a hang:
-		// real work here is under a minute. CH9 measures the half-budget rule on
-		// an idle machine, where 11.6s against 150s leaves an order of magnitude.
+		// 120_000 timed out on CI (11.6s idle, 42.8s under a local `pnpm test`,
+		// ~200s on ubuntu-latest). 300_000 is the test budget. It is not the
+		// worker budget: vitest's birpc default is 60s, and this loop is
+		// synchronous CPU work, so the worker cannot ack `onTaskUpdate` until
+		// the loop ends. On CI that is past 60s, every assertion has already
+		// passed, and vitest still exits 1 with an unhandled RPC error.
+		// Yielding every 100 ops lets birpc flush without cutting OP_COUNT.
 		{ timeout: 300_000 },
-		() => {
+		async () => {
 			const rng = new Rng(SEED);
 			const editor = createEditor();
 			const adapter = editor.internals.adapter;
@@ -321,6 +316,9 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 			};
 
 			for (let i = 1; i <= OP_COUNT; i++) {
+				if (i % 100 === 0) {
+					await Promise.resolve();
+				}
 				if (Number.isFinite(FORCE_FAIL_AT) && i === FORCE_FAIL_AT) {
 					throw new Error(
 						`forced fuzz failure at op ${i} seed=${SEED} raw=${SEED_INFO.raw}`,
