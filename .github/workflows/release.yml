@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           # stamp-first-train no-ops once a v* tag exists. Depth-1 without
           # tags would look like "no train yet" on every later cut and fail
@@ -89,7 +89,7 @@ jobs:
         # holds the provenance id-token. No NPM_TOKEN: trusted publishing
         # uses OIDC. Unset NODE_AUTH_TOKEN in case the action exports an
         # empty one that would shadow the OIDC exchange.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
           version: pnpm version-packages
           publish: env -u NODE_AUTH_TOKEN pnpm release
