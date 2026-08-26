@@ -6,6 +6,7 @@
 </h3>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@input/pen-core"><img src="https://img.shields.io/npm/v/@input/pen-core?style=flat&color=00C2FF" alt="npm version" /></a>
   <a href="https://github.com/input-systems/pen/stargazers"><img src="https://img.shields.io/github/stars/input-systems/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-FF2B6E" alt="license" /></a>
 </p>

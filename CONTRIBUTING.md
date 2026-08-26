@@ -2,9 +2,7 @@
 
 Thanks for your interest in improving Pen.
 
-Pen is an MIT-licensed SDK, copyright Input B.V. How packages are
-published is stated in the [root README](README.md). Contributions to
-the repository are welcome.
+Pen is an MIT-licensed SDK, copyright Input B.V. Contributions to the repository are welcome.
 
 ## Local Setup
 
