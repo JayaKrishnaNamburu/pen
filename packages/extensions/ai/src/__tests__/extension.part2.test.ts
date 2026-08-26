@@ -24,7 +24,7 @@ import {
 } from "./extension.testUtils";
 
 describe("aiExtension", () => {
-	it("keeps document-targeted bottom-chat rewrites off selection-fast even with a live selection", async () => {
+	it("keeps document-targeted bottom-chat rewrites off selection-rewrite even with a live selection", async () => {
 		let requestMode: string | undefined;
 		let operationKind: string | undefined;
 		const editor = createEditor({
@@ -74,7 +74,7 @@ describe("aiExtension", () => {
 		});
 		await controller.runSessionPrompt(session.id, "Rewrite this");
 
-		expect(requestMode).toBe("selection-fast");
+		expect(requestMode).toBe("selection-rewrite");
 		expect(operationKind).toBe("rewrite-selection");
 	});
 
@@ -130,7 +130,7 @@ describe("aiExtension", () => {
 			"Rewrite this",
 		);
 
-		expect(requestMode).toBe("selection-fast");
+		expect(requestMode).toBe("selection-rewrite");
 		expect(operationKind).toBe("rewrite-selection");
 		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
 		const turnId =

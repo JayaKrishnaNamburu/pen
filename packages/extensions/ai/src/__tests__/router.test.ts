@@ -21,9 +21,6 @@ describe("ai request router", () => {
 		expect(route.mutationMode).toBe("direct-stream");
 		expect(route.editsArriveAsToolCalls).toBe(false);
 		expect(route.targetKind).toBe("block");
-		expect(route.blockClass).toBe("flow");
-		expect(route.adapterId).toBe("flow-markdown");
-		expect(route.transportKind).toBe("flow-text");
 		expect(route.confidence).toBeGreaterThan(0.8);
 	});
 
@@ -48,7 +45,6 @@ describe("ai request router", () => {
 		expect(refinedRoute.editsArriveAsToolCalls).toBe(true);
 		expect(refinedRoute.targetKind).toBe("table");
 		expect(refinedRoute.contentFormat).toBe("markdown");
-		expect(refinedRoute.adapterId).toBe("flow-markdown");
 		expect(refinedRoute.confidence).toBeLessThan(initialRoute.confidence);
 	});
 
@@ -101,9 +97,6 @@ describe("ai request router", () => {
 		expect(route.targetKind).toBe("table");
 		expect(route.editsArriveAsToolCalls).toBe(true);
 		expect(route.contentFormat).toBe("markdown");
-		expect(route.blockClass).toBe("flow");
-		expect(route.adapterId).toBe("flow-markdown");
-		expect(route.transportKind).toBe("flow-text");
 		expect(route.allowToolUse).toBe(true);
 	});
 
@@ -124,9 +117,6 @@ describe("ai request router", () => {
 		expect(route.mutationMode).toBe("streaming-suggestions");
 		expect(route.editsArriveAsToolCalls).toBe(true);
 		expect(route.contentFormat).toBe("markdown");
-		expect(route.blockClass).toBe("flow");
-		expect(route.adapterId).toBe("flow-markdown");
-		expect(route.transportKind).toBe("flow-text");
 		expect(route.shouldStreamDirectly).toBe(false);
 	});
 

@@ -40,7 +40,6 @@ const INSTRUMENTS = [
 	{ script: "above-floor-api-allowlist" },
 	{ script: "pen-stream-request-no-editor" },
 	{ script: "readme-sections" },
-	{ script: "wave-deletions-migration-check" },
 	{ script: "doc-refs", needsDist: true },
 	{ script: "migration-guide-check", needsDist: true },
 	{ script: "api-docs-coverage", needsDist: true },

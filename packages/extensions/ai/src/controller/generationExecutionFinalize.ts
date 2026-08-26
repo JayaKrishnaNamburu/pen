@@ -9,6 +9,7 @@ import {
 	resolveSessionSelectionSnapshot,
 } from "../helpers";
 import type { GenerationExecutionState } from "./generationExecutionState";
+import type { GenerationStreamingSink } from "./streamingSink";
 import {
 	calledEditTool,
 	editToolAccountedForEdit,
@@ -16,20 +17,89 @@ import {
 	isUnappliedEdit,
 } from "./unappliedEdit";
 
-/**
- * Whether the assistant text stream may become a durable document mutation.
- *
- * On the tool channel it may not: the edit arrives as an `edit_document` call,
- * and text is the model talking (`spec/packages/extensions/ai.md` EC1). The
- * commit paths below cannot infer this themselves — `_commitBufferedBlockGeneration`
- * reads markdown it was handed and builds insert ops, so a model that answers
- * with prose instead of calling the tool gets that prose appended to the
- * document as a second copy. EC6 names this the worst failure mode available to
- * a document editor: "could not understand the edit" must never become "write
- * this text into the document".
- */
-function textCanCommitMutation(editsArriveAsToolCalls: boolean): boolean {
-	return !editsArriveAsToolCalls;
+function commitBufferedText(
+	controller: AIControllerImpl,
+	state: GenerationExecutionState,
+	sink: Extract<
+		GenerationStreamingSink,
+		{ kind: "review-preview" } | { kind: "buffered-commit" }
+	>,
+): void {
+	const {
+		target,
+		route,
+		context,
+		seedGeneration,
+		contentFormat,
+		workingSet,
+		shouldReplaceMarkdownTarget,
+	} = state;
+	if (state.currentText.length === 0) {
+		return;
+	}
+	if (sink.kind === "review-preview") {
+		controller.clearStreamingReviewPreview(
+			context?.sessionId ?? seedGeneration.id,
+		);
+		if (sink.source === "selection" && target.type === "selection") {
+			state.currentMutationReceipt = controller._commitSelectionRewrite(
+				target.selection,
+				state.currentText,
+				route.mutationMode,
+				context?.sessionId,
+			);
+			return;
+		}
+	}
+	if (target.type !== "block") {
+		return;
+	}
+	state.currentMutationReceipt = controller._commitBufferedBlockGeneration(
+		target.blockId,
+		state.currentText,
+		route.mutationMode,
+		contentFormat,
+		context?.sessionId,
+		{
+			insertionOffset: target.offset,
+			workingSet,
+			replaceTargetBlock: shouldReplaceMarkdownTarget,
+			replaceBlockIds: context?.replaceBlockIds,
+		},
+	);
+	controller._inlineCompletion.dismissSuggestion();
+}
+
+function closeStreamingSink(
+	controller: AIControllerImpl,
+	state: GenerationExecutionState,
+): void {
+	const { streamingSink, selectionSourceText } = state;
+	switch (streamingSink.kind) {
+		case "direct-write":
+			return;
+		case "suggestion-splice":
+			if (state.currentText.length > 0) {
+				controller._recordCommitDebug({
+					attempted: true,
+					succeeded: true,
+					executionPath: "selection-replacement",
+					contextChars: selectionSourceText.length,
+					diffChars: state.currentText.length,
+				});
+			}
+			return;
+		case "review-preview":
+		case "buffered-commit":
+			commitBufferedText(controller, state, streamingSink);
+			return;
+		case "none":
+			return;
+		default: {
+			const exhaustive: never = streamingSink;
+			return exhaustive;
+		}
+	}
 }
 
 export function finalizeGenerationExecution(
@@ -42,75 +112,15 @@ export function finalizeGenerationExecution(
 		streamingSink,
 		route,
 		context,
-		selectionSourceText,
 		seedGeneration,
 		contentFormat,
-		workingSet,
 		blockId,
 		requestedOperation,
 		sessionTurnId,
 		commandId,
 		baselineSuggestionIds,
-		shouldReplaceMarkdownTarget,
 	} = state;
-	const textCommitsMutation = textCanCommitMutation(
-		route.editsArriveAsToolCalls,
-	);
-	if (
-		textCommitsMutation &&
-		target.type === "selection" &&
-		state.currentText.length > 0 &&
-		streamingSink.kind !== "suggestion-splice"
-	) {
-		controller.clearStreamingReviewPreview(
-			context?.sessionId ?? seedGeneration.id,
-		);
-		state.currentMutationReceipt = controller._commitSelectionRewrite(
-			target.selection,
-			state.currentText,
-			route.mutationMode,
-			context?.sessionId,
-		);
-	} else if (
-		target.type === "selection" &&
-		state.currentText.length > 0 &&
-		streamingSink.kind === "suggestion-splice"
-	) {
-		controller._recordCommitDebug({
-			attempted: true,
-			succeeded: true,
-			executionPath: "selection-replacement",
-			contextChars: selectionSourceText.length,
-			diffChars: state.currentText.length,
-		});
-	} else if (
-		textCommitsMutation &&
-		target.type === "block" &&
-		state.currentText.length > 0 &&
-		streamingSink.kind !== "direct-write" &&
-		streamingSink.kind !== "suggestion-splice"
-	) {
-		if (streamingSink.kind === "review-preview") {
-			controller.clearStreamingReviewPreview(
-				context?.sessionId ?? seedGeneration.id,
-			);
-		}
-		state.currentMutationReceipt =
-			controller._commitBufferedBlockGeneration(
-				target.blockId,
-				state.currentText,
-				route.mutationMode,
-				contentFormat,
-				context?.sessionId,
-				{
-					insertionOffset: target.offset,
-					workingSet,
-					replaceTargetBlock: shouldReplaceMarkdownTarget,
-					replaceBlockIds: context?.replaceBlockIds,
-				},
-			);
-		controller._inlineCompletion.dismissSuggestion();
-	}
+	closeStreamingSink(controller, state);
 
 	const suggestionIds = controller
 		.getSuggestions()
@@ -120,11 +130,9 @@ export function finalizeGenerationExecution(
 		state.currentMutationReceipt = controller._buildFallbackMutationReceipt(
 			{
 				committedText:
-					textCommitsMutation && state.currentText.trim().length > 0,
+					streamingSink.kind !== "none" &&
+					state.currentText.trim().length > 0,
 				suggestionIds,
-				adapterId: route.adapterId,
-				blockClass: route.blockClass,
-				transportKind: route.transportKind,
 			},
 		);
 	}
@@ -160,9 +168,6 @@ export function finalizeGenerationExecution(
 		contentFormat,
 		editsArriveAsToolCalls: route.editsArriveAsToolCalls,
 		targetKind: route.targetKind,
-		blockClass: route.blockClass,
-		adapterId: route.adapterId,
-		transportKind: route.transportKind,
 		mutationReceipt: state.currentMutationReceipt,
 		debug: resolvedDebug,
 	};

@@ -3,9 +3,9 @@ import { editorSelectionToDOM } from "./selectionBridge";
 import {
 	getPasteImporters,
 	handlePaste,
-	handleCopy,
-	handleCut,
 } from "./clipboard";
+import { BackendAttachment } from "./backendAttachment";
+import { bindBackendTransferEvents } from "./backendTransferEvents";
 import type { FieldEditorInputController } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
 import {
@@ -40,6 +40,7 @@ import { mapBeforeInput } from "./beforeinputMap";
  */
 export class ExpandedContentEditableBackend {
 	private element: HTMLElement | null = null;
+	private readonly attachment = new BackendAttachment();
 	private editor: Editor;
 	private fieldEditor: FieldEditorInputController;
 
@@ -54,16 +55,21 @@ export class ExpandedContentEditableBackend {
 		element.tabIndex = -1;
 		this.fieldEditor.resetBackendSelectionAuthority();
 
-		element.addEventListener("beforeinput", this.handleBeforeInput);
-		element.addEventListener("keydown", this.handleKeyDown);
-		element.addEventListener("copy", this.handleCopyEvent);
-		element.addEventListener("cut", this.handleCutEvent);
-		element.addEventListener("dragstart", this.handleDragStart);
-		element.addEventListener("drop", this.handleDrop);
-		element.ownerDocument?.addEventListener(
-			"selectionchange",
-			this.handleSelectionChange,
+		this.attachment.listen(element, "beforeinput", this.handleBeforeInput);
+		this.attachment.listen(element, "keydown", this.handleKeyDown);
+		bindBackendTransferEvents(
+			this.attachment,
+			element,
+			this.editor,
+			this.fieldEditor,
 		);
+		if (element.ownerDocument) {
+			this.attachment.listenDocument(
+				element.ownerDocument,
+				"selectionchange",
+				this.handleSelectionChange,
+			);
+		}
 
 		const selection = this.editor.selection;
 		if (selection?.type === "text") {
@@ -100,20 +106,8 @@ export class ExpandedContentEditableBackend {
 			// island inside a wider editing host.
 			this.element.removeAttribute("contenteditable");
 			this.element.removeAttribute("tabindex");
-			this.element.removeEventListener(
-				"beforeinput",
-				this.handleBeforeInput,
-			);
-			this.element.removeEventListener("keydown", this.handleKeyDown);
-			this.element.removeEventListener("copy", this.handleCopyEvent);
-			this.element.removeEventListener("cut", this.handleCutEvent);
-			this.element.removeEventListener("dragstart", this.handleDragStart);
-			this.element.removeEventListener("drop", this.handleDrop);
-			this.element.ownerDocument?.removeEventListener(
-				"selectionchange",
-				this.handleSelectionChange,
-			);
 		}
+		this.attachment.release();
 
 		this.element = null;
 	}
@@ -416,28 +410,6 @@ export class ExpandedContentEditableBackend {
 		}
 	};
 
-	private handleCopyEvent = (event: ClipboardEvent): void => {
-		event.preventDefault();
-		handleCopy(this.editor, event);
-	};
-
-	private handleCutEvent = (event: ClipboardEvent): void => {
-		event.preventDefault();
-		handleCut(this.editor, event);
-	};
-
-	private handleDragStart = (event: DragEvent): void => {
-		// Native text dragging inside the shared expanded host conflicts with
-		// cross-block selection extension and can cause the browser to move/remove
-		// the selected DOM range. Pen does not support drag-move semantics here.
-		this.fieldEditor.notifyGestureEvent?.("dragstart");
-		event.preventDefault();
-	};
-
-	private handleDrop = (event: DragEvent): void => {
-		this.fieldEditor.notifyGestureEvent?.("drop-completed");
-		event.preventDefault();
-	};
 }
 
 function getBlockText(

@@ -4,19 +4,11 @@ import type {
 	AIMutationReceiptEvidence,
 	AIMutationReceiptStatus,
 } from "../types";
-import type {
-	AIBlockAdapterId,
-	AIBlockClass,
-	AITransportKind,
-} from "./contracts";
 import { generateId } from "@input/pen-types";
 
 export interface BuildMutationReceiptInput {
 	status: AIMutationReceiptStatus;
 	ops?: readonly DocumentOp[];
-	adapterId: AIBlockAdapterId;
-	blockClass: AIBlockClass;
-	transportKind: AITransportKind;
 	issues?: readonly string[];
 }
 
@@ -26,21 +18,13 @@ export function buildMutationReceipt(
 	return {
 		id: generateId(),
 		status: input.status,
-		evidence: buildMutationEvidence(
-			input.ops ?? [],
-			input.adapterId,
-			input.blockClass,
-			input.transportKind,
-		),
+		evidence: buildMutationEvidence(input.ops ?? []),
 		issues: [...(input.issues ?? [])],
 	};
 }
 
 function buildMutationEvidence(
 	ops: readonly DocumentOp[],
-	adapterId: AIBlockAdapterId,
-	blockClass: AIBlockClass,
-	transportKind: AITransportKind,
 ): AIMutationReceiptEvidence {
 	const affectedBlockIds = new Set<string>();
 	const createdBlockIds = new Set<string>();
@@ -60,9 +44,6 @@ function buildMutationEvidence(
 		opsCount: ops.length,
 		affectedBlockIds: [...affectedBlockIds],
 		createdBlockIds: [...createdBlockIds],
-		adapterId,
-		blockClass,
-		transportKind,
 	};
 }
 

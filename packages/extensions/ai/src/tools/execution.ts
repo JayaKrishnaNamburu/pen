@@ -11,6 +11,7 @@ import type {
 	ToolContext,
 } from "@input/pen-types";
 import type { AIMutationMode } from "../runtime/contracts";
+import { stagesAsSuggestions } from "../runtime/mutationPolicy";
 import { applySuggestedAIOperations } from "../suggestions/applySuggestedAIOperations";
 import {
 	AIToolBudgetError,
@@ -41,14 +42,6 @@ export function bindAIToolMutationMode(
 	};
 }
 
-function isSuggestionMutationMode(mode: AIMutationMode | undefined): boolean {
-	return (
-		mode === "persistent-suggestions" ||
-		mode === "streaming-suggestions" ||
-		mode === "staged-review"
-	);
-}
-
 /**
  * Applies ops the way a tool call would under the turn's posture: staged when
  * the bound mutation mode makes the turn's writes proposals, durable when it
@@ -68,7 +61,7 @@ export function applyAIOpsForBoundMutationMode(
 	if (ops.length === 0) {
 		return;
 	}
-	if (!isSuggestionMutationMode(toolApplyMutationModes.get(editor))) {
+	if (!stagesAsSuggestions(toolApplyMutationModes.get(editor))) {
 		editor.apply(ops, options);
 		return;
 	}
@@ -497,7 +490,7 @@ function applyToolOps(
 	applyOptions: ApplyOptions | undefined,
 ): void {
 	if (
-		!isSuggestionMutationMode(toolApplyMutationModes.get(editor)) ||
+		!stagesAsSuggestions(toolApplyMutationModes.get(editor)) ||
 		ops.length === 0
 	) {
 		originalApply(ops, applyOptions);

@@ -4,21 +4,23 @@
 
 ## What it assembles
 
-`defaultPreset()` with no options (or with every flag left on) resolves to this stack, in order:
+`defaultPreset()` with no options (or with every flag left on) resolves to this stack, in order. The Option column is the `DefaultPresetOptions` flag that installs that row; each flag defaults on, and `false` omits the extension.
 
-| Extension name        | Package                   |
-| --------------------- | ------------------------- |
-| `document-ops`        | `@input/pen-document-ops` |
-| `delta-stream`        | `@input/pen-ai/stream`    |
-| `undo`                | `@input/pen-undo`         |
-| `rich-text-shortcuts` | `@input/pen-shortcuts`    |
-| `html-clipboard`      | `@input/pen-interop/html` |
+| Extension name        | Package                   | Option          |
+| --------------------- | ------------------------- | --------------- |
+| `document-ops`        | `@input/pen-document-ops` | `documentOps`   |
+| `delta-stream`        | `@input/pen-ai/stream`    | `deltaStream`   |
+| `undo`                | `@input/pen-undo`         | `undo`          |
+| `rich-text-shortcuts` | `@input/pen-shortcuts`    | `shortcuts`     |
+| `html-clipboard`      | `@input/pen-interop/html` | `htmlClipboard` |
 
-`resolve()` also returns `schema: createDefaultSchema()` from `@input/pen-schema-default`. `createEditor({ preset: defaultPreset() })` therefore installs the default blocks. `createEditor()` with no schema and no preset does not.
+`resolve()` also returns `schema: createDefaultSchema()` from `@input/pen-schema-default` — that package's default block and inline set, with unknown-block passthrough. This preset does not pass options into the factory (`createDefaultSchema()` takes none) and does not extend the registry. `createEditor({ preset: defaultPreset() })` therefore installs the default blocks. `createEditor()` with no schema and no preset does not.
 
 A bare `createEditor({ schema })` (no preset) installs no extensions. The four that used to come from core's no-preset fallback — `document-ops`, `undo`, `rich-text-shortcuts`, and `delta-stream` — are gone. Dependents of the first three fail loudly. Undo fails silently: `canUndo()` is false, Mod-Z is dead, and nothing throws. This preset is the batteries-included path: Mod-B / Mod-I, undo / Mod-Z, and `aiExtension()`'s `delta-stream` dependency all require it (or an explicit `extensions` entry).
 
 This package does not assemble a renderer, AI, search, history, input-rules, or multiplayer. It does contribute the default HTML paste importer through `clipboardFacet` (`html-clipboard`). A host on bare `createEditor()` plus a renderer does not get HTML paste unless they supply `importers.html`.
+
+The capability matrix (`packages/docs/CAPABILITY-MATRIX.md`) is per surface, not per preset. A host diffs this battery list against that matrix: this preset supplies undo (`undo`) and HTML paste (`html-clipboard`), and the `delta-stream` writer that streaming preview depends on. It does not supply AI review UI, autocomplete, search, history, input-rules, multiplayer, overlays, or field editors — those stay the extension or binding the matrix cell names.
 
 ## Install
 
@@ -63,12 +65,13 @@ const editor = createEditor({
 
 ### Options
 
-| Option        | Default   | Effect                                                                                                  |
-| ------------- | --------- | ------------------------------------------------------------------------------------------------------- |
-| `documentOps` | on        | `false` omits `documentOpsExtension()`                                                                  |
-| `deltaStream` | on        | `false` omits `deltaStreamExtension()`; an object is passed through as `DeltaStreamOptions`             |
-| `undo`        | on        | `false` omits `undoExtension()`                                                                         |
-| `shortcuts`   | on (`{}`) | `false` omits `richTextShortcutsExtension()`; an object is passed through as `RichTextShortcutsOptions` |
+| Option          | Default   | Effect                                                                                                  |
+| --------------- | --------- | ------------------------------------------------------------------------------------------------------- |
+| `documentOps`   | on        | `false` omits `documentOpsExtension()`                                                                  |
+| `deltaStream`   | on        | `false` omits `deltaStreamExtension()`; an object is passed through as `DeltaStreamOptions`             |
+| `undo`          | on        | `false` omits `undoExtension()`                                                                         |
+| `shortcuts`     | on (`{}`) | `false` omits `richTextShortcutsExtension()`; an object is passed through as `RichTextShortcutsOptions` |
+| `htmlClipboard` | on        | `false` omits `htmlClipboardExtension()`                                                                |
 
 The public exports are `defaultPreset` and `DefaultPresetOptions`.
 

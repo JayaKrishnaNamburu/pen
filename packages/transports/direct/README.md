@@ -1,6 +1,8 @@
 # `@input/pen-transport-direct`
 
-**Grade: development-only.** This is a single-process, in-process only, no-network transport for tests and demos. It never opens a socket and cannot reach a runtime in another process. It is non-resumable: there is no stream history and nothing to reconnect. Do not ship it.
+**Grade: development-only.** Support status: experimental. This is a single-process, in-process only, no-network transport for tests and demos. It never opens a socket and cannot reach a runtime in another process. It is non-resumable: there is no stream history and nothing to reconnect. Do not ship it.
+
+A host can rely on `directTransport({ toolRuntime, editor }).stream(request)` running `toolCalls` in-process against the construction-time runtime and editor and yielding `PenStreamPart`s until `done`. A host cannot rely on a socket, resume, `reconnect`, or `onConnectionChange`.
 
 ## Install
 

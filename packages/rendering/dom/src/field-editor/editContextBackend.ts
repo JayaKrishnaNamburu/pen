@@ -1,6 +1,8 @@
 import { isCollapsed } from "@input/pen-core";
 import type { Editor, InlineDecoration } from "@input/pen-types";
 import type { FieldEditorInputController } from "./controller";
+import { BackendAttachment } from "./backendAttachment";
+import { bindBackendTransferEvents } from "./backendTransferEvents";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import {
@@ -41,16 +43,12 @@ import {
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
 import {
 	buildInlineDecorationsRenderSignature,
+	inlineDecorationsForBlock,
 	inlineDecorationsRequireFullReconcile,
 } from "../utils/inlineDecorations";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
-import {
-	getPasteImporters,
-	handleCopy,
-	handleCut,
-	handleClipboardPaste,
-} from "./clipboard";
+import { getPasteImporters, handleClipboardPaste } from "./clipboard";
 import { applyListInputRule } from "./commands";
 import { isFieldEditorTextEditingKey } from "../utils/textEntryTarget";
 import { applyInlineInputRule } from "./inlineInputRules";
@@ -62,6 +60,12 @@ import type {
 	FieldEditorTextLike,
 } from "./crdt";
 
+/**
+ * Where an EditContext selection write came from. A `text-update` write
+ * carries offsets the IME already resolved against the text it just sent, so
+ * they are used as given; any other caller's offsets are resolved against the
+ * live text, which may still be logically empty.
+ */
 export type EditContextSelectionOptions = {
 	source?: "text-update";
 };
@@ -80,7 +84,7 @@ export class EditContextBackend {
 	protected element: HTMLElement | null = null;
 	protected ytext: FieldEditorTextLike | null = null;
 	protected observer: FieldEditorObserver | null = null;
-	protected unsubscribeDecorationsChange: (() => void) | null = null;
+	protected readonly attachment = new BackendAttachment();
 	protected inlineDecorationsSignature: readonly InlineDecoration[] | null =
 		null;
 	protected editor: Editor;
@@ -96,14 +100,14 @@ export class EditContextBackend {
 		this.deferredRemoteDeltas = [];
 		this.clearPendingTextUpdate();
 		this._activateEditContext(element, ytext);
-		element.addEventListener("keydown", this.handleCompositionCancelKey);
-	}
-
-	deactivate(): void {
-		this.element?.removeEventListener(
+		this.attachment.listen(
+			element,
 			"keydown",
 			this.handleCompositionCancelKey,
 		);
+	}
+
+	deactivate(): void {
 		this.isComposing = false;
 		this.deferredRemoteDeltas = [];
 		this.clearPendingTextUpdate();
@@ -140,35 +144,53 @@ export class EditContextBackend {
 			element as HTMLElement & { editContext: EditContext | null }
 		).editContext = ec;
 
-		element.addEventListener("keydown", this.handleKeyDown);
-		element.addEventListener("copy", this.handleCopyEvent);
-		element.addEventListener("cut", this.handleCutEvent);
-		element.addEventListener("paste", this.handlePasteEvent);
-		element.addEventListener("dragstart", this.handleDragStart);
-		element.addEventListener("drop", this.handleDrop);
-		element.addEventListener("pointerdown", this.handlePointerDown);
-		element.addEventListener("contextmenu", this.handleContextMenu);
-		element.addEventListener(
+		this.attachment.listen(element, "keydown", this.handleKeyDown);
+		this.attachment.listen(element, "paste", this.handlePasteEvent);
+		bindBackendTransferEvents(
+			this.attachment,
+			element,
+			this.editor,
+			this.fieldEditor,
+		);
+		this.attachment.listen(element, "pointerdown", this.handlePointerDown);
+		this.attachment.listen(element, "contextmenu", this.handleContextMenu);
+		this.attachment.listen(
+			element,
 			"compositionstart",
 			this.handleCompositionStart,
 		);
-		element.addEventListener("compositionend", this.handleCompositionEnd);
-		ec.addEventListener("textupdate", this.handleTextUpdate);
-		ec.addEventListener("textformatupdate", this.handleTextFormatUpdate);
-		ec.addEventListener(
+		this.attachment.listen(
+			element,
+			"compositionend",
+			this.handleCompositionEnd,
+		);
+		this.attachment.listenEditContext(
+			ec,
+			"textupdate",
+			this.handleTextUpdate,
+		);
+		this.attachment.listenEditContext(
+			ec,
+			"textformatupdate",
+			this.handleTextFormatUpdate,
+		);
+		this.attachment.listenEditContext(
+			ec,
 			"characterboundsupdate",
 			this.handleCharacterBoundsUpdate,
 		);
-		element.ownerDocument?.addEventListener(
-			"selectionchange",
-			this.handleSelectionChange,
-		);
+		if (element.ownerDocument) {
+			this.attachment.listenDocument(
+				element.ownerDocument,
+				"selectionchange",
+				this.handleSelectionChange,
+			);
+		}
 
 		this.observer = (event) => this.handleYTextChange(event);
-		this.ytext.observe(this.observer);
-		this.unsubscribeDecorationsChange = this.editor.on(
-			"decorationsChange",
-			this.handleDecorationsChange,
+		this.attachment.observeText(this.ytext, this.observer);
+		this.attachment.subscribe(
+			this.editor.on("decorationsChange", this.handleDecorationsChange),
 		);
 		this.inlineDecorationsSignature = this.getInlineDecorationsSignature();
 
@@ -189,52 +211,11 @@ export class EditContextBackend {
 	}
 
 	private _deactivateEditContext(): void {
-		if (this.editContext) {
-			this.editContext.removeEventListener(
-				"textupdate",
-				this.handleTextUpdate,
-			);
-			this.editContext.removeEventListener(
-				"textformatupdate",
-				this.handleTextFormatUpdate,
-			);
-			this.editContext.removeEventListener(
-				"characterboundsupdate",
-				this.handleCharacterBoundsUpdate,
-			);
-		}
-		if (this.observer && this.ytext) {
-			this.ytext.unobserve(this.observer);
-		}
-		this.unsubscribeDecorationsChange?.();
-		this.unsubscribeDecorationsChange = null;
+		this.attachment.release();
 		if (this.element) {
-			this.element.removeEventListener("keydown", this.handleKeyDown);
-			this.element.removeEventListener("copy", this.handleCopyEvent);
-			this.element.removeEventListener("cut", this.handleCutEvent);
-			this.element.removeEventListener("paste", this.handlePasteEvent);
-			this.element.removeEventListener("dragstart", this.handleDragStart);
-			this.element.removeEventListener("drop", this.handleDrop);
-			this.element.removeEventListener(
-				"pointerdown",
-				this.handlePointerDown,
-			);
-			this.element.removeEventListener(
-				"contextmenu",
-				this.handleContextMenu,
-			);
-			this.element.removeEventListener(
-				"compositionstart",
-				this.handleCompositionStart,
-			);
-			this.element.removeEventListener(
-				"compositionend",
-				this.handleCompositionEnd,
-			);
-			this.element.ownerDocument?.removeEventListener(
-				"selectionchange",
-				this.handleSelectionChange,
-			);
+			// After the EditContext listeners are gone, so the browser cannot
+			// deliver a textupdate against a context this backend no longer
+			// owns.
 			(
 				this.element as HTMLElement & {
 					editContext: EditContext | null;
@@ -1170,17 +1151,10 @@ export class EditContextBackend {
 	}
 
 	protected getInlineDecorationsForBlock(): readonly InlineDecoration[] {
-		const blockId = this.fieldEditor.focusBlockId;
-		if (!blockId) {
-			return [];
-		}
-		return this.editor
-			.getDecorations()
-			.forBlock(blockId)
-			.filter(
-				(decoration): decoration is InlineDecoration =>
-					decoration.type === "inline",
-			);
+		return inlineDecorationsForBlock(
+			this.editor,
+			this.fieldEditor.focusBlockId,
+		);
 	}
 
 	protected getInlineDecorationsSignature(): readonly InlineDecoration[] {
@@ -1318,16 +1292,6 @@ export class EditContextBackend {
 		return null;
 	}
 
-	protected handleCopyEvent = (event: ClipboardEvent): void => {
-		event.preventDefault();
-		handleCopy(this.editor, event);
-	};
-
-	protected handleCutEvent = (event: ClipboardEvent): void => {
-		event.preventDefault();
-		handleCut(this.editor, event);
-	};
-
 	protected handlePasteEvent = (event: ClipboardEvent): void => {
 		event.preventDefault();
 		handleClipboardPaste(
@@ -1336,16 +1300,6 @@ export class EditContextBackend {
 			this.fieldEditor,
 			getPasteImporters(this.editor),
 		);
-	};
-
-	protected handleDragStart = (event: DragEvent): void => {
-		this.fieldEditor.notifyGestureEvent?.("dragstart");
-		event.preventDefault();
-	};
-
-	protected handleDrop = (event: DragEvent): void => {
-		this.fieldEditor.notifyGestureEvent?.("drop-completed");
-		event.preventDefault();
 	};
 
 	protected handlePointerDown = (): void => {

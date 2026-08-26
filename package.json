@@ -22,9 +22,7 @@
     "size-limit": "node scripts/size-limit.mjs",
     "ch-gates": "node scripts/ch-gates.mjs",
     "instrument-paths": "node scripts/instrument-paths.mjs",
-    "v3-gates": "node scripts/v3-gates.mjs",
     "migrate-imports-v3": "node scripts/migrate-imports-v3.mjs",
-    "wave-deletions-migration-check": "node scripts/wave-deletions-migration-check.mjs",
     "migration-guide-check": "node scripts/migration-guide-check.mjs",
     "verdaccio-closure-check": "node scripts/verdaccio-closure-check.mjs",
     "dag-check": "node scripts/dag-check.mjs",
@@ -42,6 +40,7 @@
     "workspace-pins": "node scripts/workspace-pins.mjs",
     "readme-sections": "node scripts/readme-sections.mjs",
     "api-docs-coverage": "node scripts/api-docs-coverage.mjs",
+    "capability-matrix": "node scripts/check-capability-matrix.mjs",
     "above-floor-api-allowlist": "node scripts/above-floor-api-allowlist.mjs",
     "no-selection-state-properties": "node scripts/no-selection-state-properties.mjs",
     "clean": "turbo run clean && rm -rf node_modules"

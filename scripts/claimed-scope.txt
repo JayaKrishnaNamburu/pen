@@ -331,15 +331,23 @@ OPB6
 # the rule prescribes).
 #
 # HELD BACK — TR1-TR8, GA1-GA21, RC1-RC7, DL1-DL14, and the other CS
-# rules. These are carried by wave gates, not test names: a deletion's
-# evidence is a grep at a stated population, and the runner
-# (scripts/v3-gates.mjs over the executing train's waves/*.md) is what fails when one
-# comes back. Listing them here would fail the run for having no
-# claiming test, and renaming a test to contain "DL3" would be the
-# name-is-not-coverage defect this file rejects everywhere else. They
-# are not gated-scope rows either: gated-scope wants one script wired
-# into one workflow, and a wave gate is a line in a markdown file read
-# by a runner. Reported-not-failed is the honest posture for them.
+# rules. These were carried by wave gates rather than test names: a
+# deletion's evidence is a grep at a stated population, and the wave
+# runner was what failed when one came back. Listing them here would fail
+# the run for having no claiming test, and renaming a test to contain
+# "DL3" would be the name-is-not-coverage defect this file rejects
+# everywhere else. They are not gated-scope rows either: gated-scope wants
+# one script wired into one workflow, and a wave gate is a line in a
+# markdown file read by a runner.
+#
+# Updated 2026-08-26, and the update makes the posture worse rather than
+# better: the runner (scripts/v3-gates.mjs) and every wave file were
+# deleted with the v5 train, so the mechanism this holdback pointed at no
+# longer exists. These rules are now guarded by nothing automated. That is
+# stated rather than papered over — a holdback whose stated reason has been
+# deleted is worse than an unclaimed rule, because it reads as covered.
+# Whoever next touches a deletion rule in this set either writes it a
+# claiming test or reintroduces a runner with the next train.
 CS6
 CS10
 
@@ -369,3 +377,97 @@ EC15
 EC17
 EC18
 EC19
+
+# v5 unification train (2026-08-26), at train close. Appended only where a
+# named test's assertion fails when the rule is violated; each was watched
+# failing on purpose during its wave.
+#   UC3 — uc3.planReachability (no adapter can reach the structured
+#         transport) and uc3.barrel (the planner vocabulary is not exported)
+#   UC4 — uc4.staleness (a mutating tool consults view fingerprints; no
+#         per-block revision counter survives in pen-ai)
+#   UC5 — uc5.routerProperty (every union member in contracts.ts has a
+#         production consumer; the deleted names are absent from the barrel)
+#   UC6 — uc6.loopBoundary (the loop forces the mutating tool when an edit
+#         is owed and does not own session state)
+#   UC7 — uc7.mounts (the in-editor loop mounts reads plus exactly one
+#         mutating tool)
+#   UC8 — uc8.questionIntent (a question opens no review session and stages
+#         no suggestion)
+#   RS1 — rs1.surfaceInventory (each lane yields only the three surfaces)
+#   RS2 — rs2.blockGeneration and rs2.selectionRewrite (both lanes render
+#         through the review surface, not a bespoke stack)
+#   RS3 — rs3.postureTotality (every reviewable state has a posture) and
+#         rs3.unappliedEditReport (an unapplied edit is reported at session
+#         end)
+#   RS4 — rs4.stylingContract (one vocabulary, one sheet, no second export
+#         path)
+#   FE1 — fe1.spineTeardown (a detach releases every listener, observer and
+#         subscription; red-proofed by dropping one release from the
+#         attachment and watching the outstanding listener be named)
+#   FE4 — fe4.commitFeed (commits reach the scheduler on the shared seam,
+#         not only under the vanilla mount)
+#   FE7 — fe7.offsetRoundTrip (model→DOM→model identity across the fixture
+#         corpus, inline atoms and grapheme clusters included)
+#
+# HELD BACK, with the reason per rule. None of these is missing test work
+# that a rename would fix.
+#   UC1, UC2 — claimed below by uc1.channel and uc2.noTextMutation. The
+#     earlier holdback (substance already claimed under EC1-EC19) was wrong
+#     once those files existed: UC1 names the absent channel option, UC2
+#     names the silent-refusal diagnostic, neither of which EC covers.
+#   UC9, HB2 — process and standing rules ("one coordinated release", "keep"
+#     bindings thin"). No assertion can fail them; HB2's evidence was the
+#     re-measurement recorded in the v5 train's baseline, now in git only.
+#   RS5, RS6 — carried by the corpus harness behind the interop corpus
+#     checks, which do not name them. Same gate/claim split as OPB2's
+#     second half.
+#   FE2, FE5, FE8 — deletion and structure rules whose evidence is a grep at
+#     a stated population (the gesture split; the doc rewrite). These ran as
+#     wave gates, and the wave runner was deleted with the v5 train, so they
+#     are now unguarded — same correction as the TR/GA/RC/DL holdback above,
+#     and the same obligation on whoever next touches them.
+#   FE3 — was in that list and is no longer. Its grep ("no raf outside
+#     scheduler.ts") became a no-restricted-syntax rule in eslint.config.mjs,
+#     so it is a gated-scope row rather than a holdback. It is the worked
+#     example for the three above: a population grep that CI can run every PR
+#     belongs in lint, not in a wave file.
+#   FE6 — claimed, but by a Playwright scenario
+#     (conformance scenarios/fe6-cell-parity.spec.ts), which is a
+#     separate population from this file's Vitest test names — the same
+#     split recorded for the conformance suite in the wave-0 baseline.
+#   HB7 — GATE 5.9 is an inline `node -e` grep over api-report.md, so it has
+#     no gate file for gated-scope.txt to fingerprint.
+#   HB3 — "examples and docs build under CI" is carried by `turbo run build`
+#     in ci.yml and by examples.yml / docs.yml. There is no gate script for
+#     gated-scope.txt to fingerprint (the gate is the build itself), and no
+#     assertion can fail the rule. Note while adjudicating: the examples
+#     have tsconfigs but no `typecheck` script, and `vite build` does not run
+#     tsc, so HB3's "typecheck where configured" reaches docs only.
+# HB1 and HB5 moved to gated-scope.txt: one script, one workflow, watched
+# failing.
+#
+# Appended with waves 5's host work, both red-proofed and reported:
+#   HB4 — hb4.batteries (the preset's resolved extension list equals the
+#         list parsed out of its README at test time, so the declaration
+#         cannot drift; dropping the html-clipboard row failed with the
+#         extension present and the declaration one short)
+#   HB6 — hb6.hostIntegration in both transport packages (each transport is
+#         driven through PenTransport.stream into processStream the way a
+#         host consumes it; omitting the tool-output send failed both)
+HB4
+HB6
+UC1
+UC2
+UC3
+UC4
+UC5
+UC6
+UC7
+UC8
+RS1
+RS2
+RS3
+RS4
+FE1
+FE4
+FE7

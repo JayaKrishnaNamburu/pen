@@ -2,20 +2,13 @@ import { isCollapsed } from "@input/pen-core";
 import type { SelectionState } from "@input/pen-types";
 import type { AISurface } from "../types";
 import type {
-	AIBlockAdapterId,
-	AIBlockClass,
 	AIContentFormat,
 	AIMutationMode,
 	AIMutationPreference,
 	AIRouteLane,
 	AITargetKind,
-	AITransportKind,
 	PromptIntent,
 } from "./contracts";
-import {
-	resolveBlockAdapter,
-	resolveBlockAdapterContentFormat,
-} from "./blockAdapters";
 import {
 	resolveMutationMode,
 	shouldStreamDirectAIOutput,
@@ -41,9 +34,6 @@ export interface RequestRouterDecision {
 	contentFormat: AIContentFormat;
 	editsArriveAsToolCalls: boolean;
 	targetKind: AITargetKind;
-	blockClass: AIBlockClass;
-	adapterId: AIBlockAdapterId;
-	transportKind: AITransportKind;
 	suggestMode: boolean;
 	surface?: AISurface;
 	mutationPreference?: AIMutationPreference;
@@ -168,19 +158,10 @@ export function routeAIRequest(
 		surface: input.surface,
 		activeBlockType: input.blockType,
 	});
-	const adapter = resolveBlockAdapter({
-		targetKind,
-		target: input.target,
-		activeBlockType: input.blockType,
-		surface: input.surface,
-		mutationMode,
-	});
-	const resolvedContentFormat = resolveBlockAdapterContentFormat({
-		adapter,
+	const resolvedContentFormat = resolveGenerationContentFormat({
 		target: input.target,
 		targetKind,
 		surface: input.surface,
-		mutationMode,
 		fallback: input.contentFormat,
 	});
 
@@ -191,9 +172,6 @@ export function routeAIRequest(
 		contentFormat: resolvedContentFormat,
 		editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 		targetKind,
-		blockClass: adapter.blockClass,
-		adapterId: adapter.id,
-		transportKind: adapter.transportKind,
 		suggestMode: input.suggestMode,
 		surface: input.surface,
 		mutationPreference: input.mutationPreference,
@@ -259,19 +237,10 @@ export function refineRouteWithNavigator(
 		surface: decision.surface,
 		activeBlockType: input.activeBlockType ?? null,
 	});
-	const adapter = resolveBlockAdapter({
-		targetKind,
-		target: decision.target,
-		activeBlockType: input.activeBlockType ?? null,
-		surface: decision.surface,
-		mutationMode,
-	});
-	const contentFormat = resolveBlockAdapterContentFormat({
-		adapter,
+	const contentFormat = resolveGenerationContentFormat({
 		target: decision.target,
 		targetKind,
 		surface: decision.surface,
-		mutationMode,
 		fallback: decision.contentFormat,
 	});
 
@@ -280,9 +249,6 @@ export function refineRouteWithNavigator(
 			...decision,
 			confidence,
 			targetKind,
-			blockClass: adapter.blockClass,
-			adapterId: adapter.id,
-			transportKind: adapter.transportKind,
 			contentFormat,
 			mutationMode,
 			editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
@@ -301,9 +267,6 @@ export function refineRouteWithNavigator(
 		contentFormat,
 		editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 		targetKind,
-		blockClass: adapter.blockClass,
-		adapterId: adapter.id,
-		transportKind: adapter.transportKind,
 		allowToolUse: lane === "tool-loop" || lane === "review",
 		useCursorContext: lane === "cursor-context",
 		useDocumentSummary: lane === "tool-loop" || lane === "review",
@@ -343,6 +306,25 @@ export function classifyPromptIntent(prompt: string): PromptIntent {
 		return "local-edit";
 	}
 	return "unknown";
+}
+
+function resolveGenerationContentFormat(input: {
+	target: "selection" | "block";
+	targetKind: AITargetKind;
+	surface?: AISurface;
+	fallback: AIContentFormat;
+}): AIContentFormat {
+	if (input.target === "selection") {
+		return input.fallback;
+	}
+	if (
+		input.targetKind === "table" ||
+		input.fallback === "markdown" ||
+		input.surface === "bottom-chat"
+	) {
+		return "markdown";
+	}
+	return input.fallback;
 }
 
 function isStructuralBlockType(blockType: string | null): boolean {

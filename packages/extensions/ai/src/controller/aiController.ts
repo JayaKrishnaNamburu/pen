@@ -850,9 +850,6 @@ export class AIControllerImpl
 	_buildFallbackMutationReceipt(input: {
 		committedText: boolean;
 		suggestionIds: readonly string[];
-		adapterId: NonNullable<GenerationState["adapterId"]>;
-		blockClass: NonNullable<GenerationState["blockClass"]>;
-		transportKind: NonNullable<GenerationState["transportKind"]>;
 	}): AIMutationReceipt {
 		return workingSetMethods._buildFallbackMutationReceipt.call(
 			this,

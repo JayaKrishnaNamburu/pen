@@ -21,7 +21,6 @@ function createRewriteSelectionOperation(
 	const range = selectionToRange(editor.internals.doc, selection);
 	return {
 		kind: "rewrite-selection",
-		applyPolicy: "selection-replace",
 		promptIntent,
 		target: {
 			kind: "selection",
@@ -66,7 +65,6 @@ export function createRewriteSelectionOperationFromResolvedTarget(
 	}
 	return {
 		kind: "rewrite-selection",
-		applyPolicy: "selection-replace",
 		promptIntent,
 		target: {
 			kind: "scoped-range",
@@ -95,7 +93,6 @@ export function createRewriteBlockOperation(
 	const block = editor.getBlock(blockId);
 	return {
 		kind: "rewrite-block",
-		applyPolicy: "block-replace",
 		promptIntent,
 		target: {
 			kind: "block",
@@ -119,7 +116,6 @@ export function createContinueBlockOperation(
 	const block = editor.getBlock(blockId);
 	return {
 		kind: "continue-block",
-		applyPolicy: "block-continue",
 		promptIntent,
 		target: {
 			kind: "block",
@@ -151,7 +147,6 @@ export function createDocumentTransformOperation(
 ): AIRequestedOperation {
 	return {
 		kind: "document-transform",
-		applyPolicy: "document-review",
 		promptIntent,
 		target: {
 			kind: "document",

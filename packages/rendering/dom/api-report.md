@@ -76,9 +76,6 @@
 - PenFocusReason
 - PenFocusRequest
 - resolveSelectAllBehavior
-- REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES
-- REVIEW_SURFACE_CLASSES
-- REVIEW_SURFACE_CUSTOM_PROPERTIES
 - UrlContext
 - urlPolicy
 - UrlPolicy
@@ -277,6 +274,10 @@ _no exports_
 ### class
 
 - EditContextBackend
+
+### type
+
+- EditContextSelectionOptions
 
 ## ./field-editor/expandedContentEditableBackend
 
@@ -676,6 +677,7 @@ _no exports_
 - areRenderedTextDeltasEqual
 - buildInlineDecorationsRenderSignature
 - filterVisibleInlineDecorationDeltas
+- inlineDecorationsForBlock
 - inlineDecorationsRequireFullReconcile
 - retainRenderedTextDeltas
 

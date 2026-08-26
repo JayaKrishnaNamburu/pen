@@ -65,6 +65,16 @@ export const PenExample = defineComponent({
 });
 ```
 
+## Capabilities
+
+The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. Vue's column, in short:
+
+- `supported`: single-block fields, expanded (multi-block) fields, table-cell editing, document mutation, paste import (the HTML importer is wired by default), the review-surface styling contract.
+- `bring-your-own-ui`: AI review, streaming preview, autocomplete, multiplayer, search, undo, history, input rules, overlays. The state and behavior reach Vue — AI decorations paint through `useDecorations` like any other decoration — and this package ships no components for them.
+- `not-supported`: nothing. Every capability reaches Vue.
+
+That second list is not a to-do list. Pen's capabilities live in `@input/pen-core`, `@input/pen-dom`, and the extensions; React ships more chrome over the same state, and Vue reaching React's component count is not a goal.
+
 ## Notes
 
 - Client-only mount: Vue has no `"use client"` directive, so this package does not emit one — mount `PenEditor` in the browser.

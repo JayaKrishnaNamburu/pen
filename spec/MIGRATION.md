@@ -1004,7 +1004,7 @@ The root `turbo.json` `lint` task is gone; every package answers `pnpm --filter 
 
 ## four one-shot scripts with aliases and references
 
-The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `v3-gates.mjs`, `gate-mutation.mjs`, `verdaccio-closure-check.mjs`, and `wave-deletions-migration-check.mjs` stay. Hosts never imported these.
+The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `gate-mutation.mjs` and `verdaccio-closure-check.mjs` stay. `v3-gates.mjs` and `wave-deletions-migration-check.mjs` were removed when the v5 train's wave files were deleted — both read a train's `waves/*.md` as their only input, so neither has a population to check without one. A future train reintroduces them. Hosts never imported any of these.
 
 ---
 
@@ -1090,7 +1090,19 @@ One capability is removed rather than replaced: previews of a partially-arrived 
 
 ## `planValidation`
 
-**Not yet shipped.** UC3 deletes the plan schema validator once the plan executor is extracted for review resolution. Internal to `@input/pen-ai`; no host imported it.
+**Shipped 2026-08-26.** UC3 deletes the plan schema validator. Internal to `@input/pen-ai`; no host imported it.
+
+---
+
+## `planExecutor` and `planState`
+
+**Shipped 2026-08-26.** The plan-to-ops compiler. Deleted rather than extracted: its consumers were gated on a `planState` no producer wrote. Internal to `@input/pen-ai`; no host imported them.
+
+---
+
+## `reviewArtifacts`, `StructuralReviewItem`, `StructuralReviewComparisonRow`, `acceptReviewItem(s)`, `rejectReviewItem(s)`, `reviewItems`, `reviewItemIds`, and `pendingReviewItemIds`
+
+**Shipped 2026-08-26.** The structural-review-item surface. A plan was their only producer, so they became a second review presentation that could never be shown. Hosts that rendered review items or called `acceptReviewItem` / `rejectReviewItem` use the suggestion review surface instead (RS1–RS4).
 
 ---
 
@@ -1100,69 +1112,90 @@ One capability is removed rather than replaced: previews of a partially-arrived 
 
 ---
 
+## `ephemeral-preview`, `AI_BLOCK_CLASSES`, `app-structured`, `AI_TRANSPORT_KINDS`, and `"staged_review"`
+
+**Shipped 2026-08-26 (v5 wave 3, UC5).** Four declared members no input produces, plus the two vocabularies that only named app-block routes. Hosts switching on these have a compile error; there is no replacement member.
+
+---
+
 ## `getBlockRevision`
 
 **Shipped 2026-08-26 (v5 wave 3, UC4).** The per-block revision counter left AI edit gating and tool payloads. Working-set view fingerprints are what a mutating tool consults. Hosts that echoed a revision from a tool payload read the fingerprint instead.
 
 ---
 
-## The `fastApply` debug and metrics names
+## `FastApplyDebugState` → `CommitDebugState`, `FastApplyFallbackMetrics` → `CommitFallbackMetrics`, `AISessionFastApplyMetrics` → `AISessionCommitMetrics`, `AIDebugLogFastApplyMetrics` → `AIDebugLogCommitMetrics`, `debug.fastApply` → `debug.commit`, `metrics.fastApply` → `metrics.commit`, `nativeFastApplyCount` → `selectionReplacementCount`, `native-fast-apply` → `selection-replacement`, `controller/fastApplySupportMethods.ts` → `markdownCommitMethods.ts`, and `ai-markdown-fast-apply` → `ai-markdown-commit`
 
-**Shipped 2026-08-26 (v5 wave 3, UC5).** These carried the name of the XML channel deleted in wave 1. They are renamed, not removed — the behavior is unchanged, and the new name is `commit`, which is what this codebase calls turning generated text into document ops.
+**Shipped 2026-08-26 (v5 wave 3, UC5).** These carried the name of the XML channel deleted in wave 1. They are renamed, not removed — the behavior is unchanged. The new name is `commit`, which is what this codebase calls turning generated text into document ops.
 
-| Before                       | After                       |
-| ---------------------------- | --------------------------- |
-| `FastApplyDebugState`        | `CommitDebugState`          |
-| `FastApplyFallbackMetrics`   | `CommitFallbackMetrics`     |
-| `AISessionFastApplyMetrics`  | `AISessionCommitMetrics`    |
-| `AIDebugLogFastApplyMetrics` | `AIDebugLogCommitMetrics`   |
-| `AISessionMetrics.fastApply` | `AISessionMetrics.commit`   |
-| generation debug `fastApply` | generation debug `commit`   |
-| `nativeFastApplyCount`       | `selectionReplacementCount` |
-| `"native-fast-apply"`        | `"selection-replacement"`   |
+| Before                                  | After                       |
+| --------------------------------------- | --------------------------- |
+| `FastApplyDebugState`                   | `CommitDebugState`          |
+| `FastApplyFallbackMetrics`              | `CommitFallbackMetrics`     |
+| `AISessionFastApplyMetrics`             | `AISessionCommitMetrics`    |
+| `AIDebugLogFastApplyMetrics`            | `AIDebugLogCommitMetrics`   |
+| `debug.fastApply`                       | `debug.commit`              |
+| `metrics.fastApply`                     | `metrics.commit`            |
+| `nativeFastApplyCount`                  | `selectionReplacementCount` |
+| `native-fast-apply`                     | `selection-replacement`     |
+| `controller/fastApplySupportMethods.ts` | `markdownCommitMethods.ts`  |
+| `ai-markdown-fast-apply`                | `ai-markdown-commit`        |
+| `ai-markdown-fast-apply-verify`         | `ai-markdown-commit-verify` |
 
-`CommitDebugState` also drops `confidence`, `verificationFailureReason`, and `untouchedBlockMutationCount`. No code wrote them, so a host reading them was reading `undefined`.
+A host filtering commit telemetry on the old surface strings sees no events rather than an error.
 
-Two of these are **wire-visible**: the document-write telemetry surfaces `ai-markdown-fast-apply` and `ai-markdown-fast-apply-verify` are now `ai-markdown-commit` and `ai-markdown-commit-verify`. A host filtering commit telemetry on the old surface strings sees no events rather than an error, so update the strings even though nothing fails to compile.
+---
+
+## `confidence`, `verificationFailureReason`, and `untouchedBlockMutationCount`
+
+**Shipped 2026-08-26.** Writer-less fields on the commit debug state. The last two were the XML channel's diff-verification telemetry. No code wrote them, so a host reading them was reading `undefined`.
 
 ---
 
 ## `useAIStructuredPreview.ts`, `structuredTargetPreview.tsx`, and `utils/structuredPreview.ts`
 
-**Not yet shipped.** With UC3's text-parsed plan door closed, this surface has no reachable producer, so RS1 deletes it rather than migrating it. Hosts that mounted `Pen.AI.StructuredTargetPreview` or called `useAIStructuredPreview` render staged suggestions through the review surface instead.
+**Shipped 2026-08-26.** With UC3's text-parsed plan door closed, this surface had no reachable producer, so RS1 deleted it rather than migrating it. Hosts that mounted `Pen.AI.StructuredTargetPreview` or called `useAIStructuredPreview` render staged suggestions through the review surface instead.
 
 ---
 
 ## `data-structured-preview-*` attributes
 
-**Not yet shipped.** The progress attributes hosts could read off the structured-preview surface, removed with it. Hosts that styled or asserted on `data-structured-preview-count`, `-state`, or `-patch-count` should target the review surface's attributes.
+**Shipped 2026-08-26.** The progress attributes hosts could read off the structured-preview surface, removed with it. Hosts that styled or asserted on `data-structured-preview-count`, `-state`, or `-patch-count` should target the review surface's attributes.
 
 ---
 
 ## the selection-rewrite decoration stack
 
-**Not yet shipped.** RS2 stages selection rewrites through the suggest-mode interceptor and renders them as review-surface suggestions. Hosts that styled the bespoke rewrite decoration classes restyle against the review class vocabulary that RS4 exports.
+**Shipped 2026-08-26.** RS2 stages selection rewrites through the suggest-mode interceptor and renders them as review-surface suggestions. Hosts that styled the bespoke rewrite decoration classes restyle against the review class vocabulary that RS4 exports — `REVIEW_SURFACE_CLASSES` and `REVIEW_SURFACE_CUSTOM_PROPERTIES` from `@input/pen-types`, with the default rules available as `PEN_REVIEW_STYLESHEET` from `@input/pen-dom`. Those names are exported from exactly one place each: RS4 removed the duplicate re-exports that `@input/pen-dom` also carried, so a host importing the class constants from `@input/pen-dom` moves that import to `@input/pen-types`.
 
 ---
 
 ## the four unscheduled next-paint callbacks outside the scheduler
 
-**Not yet shipped.** FE3 adjudicates each one: real next-paint work moves onto a scheduler-owned callback, and any site that is a selection retry in disguise is dropped under the S4 fence. Internal to `@input/pen-dom`; hosts observe only that selection settles without a frame's delay.
+**Shipped 2026-08-26.** FE3 adjudicated each one. Two were selection retries in disguise — both placed the caret after `insert-block`, which the selection projection controller already does — and were dropped under the S4 fence. The other two were real next-paint work and moved onto the scheduler's own phases: the multi-click measurement to `scheduler.read`, the drag-preview coalescer to `scheduler.write`. Internal to `@input/pen-dom`; hosts observe only that selection settles without a frame's delay.
 
 ---
 
 ## the harness-fed typing-budget mode
 
-**Not yet shipped.** FE4 puts `DomScheduler.acceptCommit` on the production apply path, so the conformance scenario measures that path instead of a harness-fed one. Affects `@input/pen-conformance` consumers only.
+**Shipped 2026-08-26.** FE4 put `DomScheduler.acceptCommit` on the production apply path, so the conformance scenario measures that path instead of a harness-fed one. The wiring lives in `FieldEditorImpl` rather than `mountEditor`, which is what makes it true for every host — the React and Vue bindings do not go through `mountEditor`, so a commit feed placed there fed the vanilla host only, and the React-based conformance harness recorded zero commits. The harness now reads the production `getRootGeometry(root)` instead of constructing its own scheduler, and the harness-fed mode is retired. Affects `@input/pen-conformance` consumers only. Measured cost of moving onto the production path: `readPhaseP95Ms` 3.4 → 3.2, i.e. none.
 
 ---
 
 ## undemonstrable capability matrix cells
 
-**Not yet shipped.** HB1 deletes any matrix cell claiming support that no test exercises. A host reading the matrix as a feature list will see fewer claimed cells, and every remaining one has a test behind it.
+**Shipped 2026-08-26, and nothing was deleted** — this heading's premise was wrong. There was no capability matrix to prune; HB1 created one, at `packages/docs/CAPABILITY-MATRIX.md`, checked by `scripts/check-capability-matrix.mjs` in CI. So a host does not see fewer claimed cells than before, because there were no claimed cells before.
+
+What a host does get is a claim it can check: every `supported` cell names a test or example path that exercises the capability **on that surface**, and the checker fails if a named path does not exist. Two rule changes came out of writing it, both of which a host should know about. The vocabulary has four statuses, not three — `bring-your-own-ui` was added for capabilities that work through the core API but ship no binding-specific component, which is the honest description of much of what React and Vue expose and was previously forced into either `supported` or `not-supported`. And HB5's demand for a demo outside the playground was relaxed to a test-or-example path, because the demo-app reading of it was unmeetable and a binding test is stronger evidence than a demo nobody runs. Each binding README mirrors its own column.
 
 ---
 
 ## transport packages without a host integration test
 
-**Not yet shipped.** HB6 requires each transport to document its tier and carry one host-driven integration test, or be deleted under the inventory rule. Hosts depending on a transport that cannot produce one lose that package in the 0.5 release.
+**Shipped 2026-08-26. No package was deleted, and no host loses a dependency** — read this entry if you saw the earlier warning that you might.
+
+Both transports produced the required host-driven test, so both stay. `hb6.hostIntegration.test.ts` in each package drives `PenTransport.stream` into `processStream`, which is the seam a host actually uses; the SSE package needed a new one, because its existing tests either mocked `fetch` with hand-written frames or called `createSSEHandler` without the transport.
+
+The tiers are now stated, and they are lower than a host might assume. `@input/pen-transport-direct` is **experimental**: in-process only, no socket, no resume, `connected` is always `true` and `onConnectionChange` never fires. `@input/pen-transport-sse` is **reference**: it illustrates the protocol with a single-process in-memory handler, and `GET` with `Last-Event-ID` returns 405, so it is explicitly not resumable. Neither is production-supported. If you are running either one behind real traffic, that is the finding to act on.
+
+Two caveats stated rather than hidden. Each README declares its tier twice, in two vocabularies, because HB6 (`reference | supported | experimental`) and the older COL6 docs gate (`reference | production | development-only`) demand different words for the same fact; that is a spec collision to resolve, not a design. And no application in the Pen repository imports either transport — the tests are their only in-tree consumers — so neither is exercised by a host-shaped app, only by a host-shaped test.

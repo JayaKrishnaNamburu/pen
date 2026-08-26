@@ -31,10 +31,12 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 // `spec` is the current-state tree and the home of every durable
 // normative rule (spec/rules/*.md, plus package docs that carry their
-// own families). `spec-v5` is the executing train. Adopting or
-// retiring a train is a one-line edit here; a listed root that does
-// not exist on disk is skipped rather than failing.
-const SPEC_ROOTS = ["spec", "spec-v5"];
+// own families). A train under execution is added as a second root and
+// removed when it lands — adopting or retiring one is a one-line edit
+// here, and a listed root that does not exist on disk is skipped rather
+// than failing. No train is executing: v5's UC/RS/FE/HB families were
+// folded into spec/rules on 2026-08-26 and keep their IDs there.
+const SPEC_ROOTS = ["spec"];
 const DEFAULT_CLAIMED_SCOPE = path.join("scripts", "claimed-scope.txt");
 const DEFAULT_GATED_SCOPE = path.join("scripts", "gated-scope.txt");
 const WORKFLOW_DIR = ".github/workflows/";
@@ -358,9 +360,14 @@ function toPosix(repoRoot, filePath) {
 	return path.relative(repoRoot, filePath).split(path.sep).join("/");
 }
 
-export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
+export async function collectSpecIds(
+	repoRoot,
+	idRegex,
+	isRuleId,
+	specRoots = SPEC_ROOTS,
+) {
 	const files = [];
-	for (const specDir of SPEC_ROOTS) {
+	for (const specDir of specRoots) {
 		files.push(
 			...(await walkFiles(path.join(repoRoot, specDir), (filePath) =>
 				filePath.endsWith(".md"),
@@ -381,9 +388,9 @@ export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
 	return { ids, locations, fileCount: files.length };
 }
 
-export async function collectDefinedPrefixes(repoRoot) {
+export async function collectDefinedPrefixes(repoRoot, specRoots = SPEC_ROOTS) {
 	const byRoot = new Map();
-	for (const specDir of SPEC_ROOTS) {
+	for (const specDir of specRoots) {
 		const prefixes = new Set();
 		const files = await walkFiles(
 			path.join(repoRoot, specDir),
@@ -426,8 +433,8 @@ export async function collectTestClaims(
 	idRegex,
 	isRuleId,
 ) {
-	const searchRoots = ["packages", "playground", "internal", "scripts"].map((dir) =>
-		path.join(repoRoot, dir),
+	const searchRoots = ["packages", "playground", "internal", "scripts"].map(
+		(dir) => path.join(repoRoot, dir),
 	);
 	const files = [];
 	for (const root of searchRoots) {
@@ -628,8 +635,12 @@ async function runCoverage(
 	repoRoot,
 	claimedScopeRel,
 	gatedScopeRel = DEFAULT_GATED_SCOPE,
+	// Self-tests pass their own roots. Reading the module constant made the
+	// multi-root tests depend on production configuration, so retiring the v5
+	// train broke six of them for no reason connected to what they check.
+	specRoots = SPEC_ROOTS,
 ) {
-	const definedByRoot = await collectDefinedPrefixes(repoRoot);
+	const definedByRoot = await collectDefinedPrefixes(repoRoot, specRoots);
 	const prefixes = derivedPrefixes(definedByRoot);
 	assertPrefixesDerived(prefixes);
 	const idRegex = ruleIdRegex(prefixes);
@@ -649,6 +660,7 @@ async function runCoverage(
 		repoRoot,
 		idRegex,
 		isRuleId,
+		specRoots,
 	);
 	if (specFileCount === 0) {
 		throw new Error(
@@ -713,6 +725,19 @@ const SECOND_TEST_PATH = "packages/core/src/__tests__/second.test.ts";
 
 function cover(root) {
 	return runCoverage(root, "claimed-scope.txt", "gated-scope.txt");
+}
+
+// A train's rule documents sit in a second root beside `spec` while it
+// executes. No train is executing, so the multi-root behaviour is only
+// reachable from here; the fixtures name the root themselves rather than
+// borrowing whatever production happens to be configured with.
+const TRAIN_ROOT = "spec-train";
+
+function coverWithTrain(root) {
+	return runCoverage(root, "claimed-scope.txt", "gated-scope.txt", [
+		"spec",
+		TRAIN_ROOT,
+	]);
 }
 
 function expect(condition, message) {
@@ -836,7 +861,7 @@ async function selfTestGatedScope() {
 async function selfTestSecondRootIsOptional() {
 	const root = await makeTree("roots", {
 		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
-		"spec-v5/01-anchors.md":
+		[`${TRAIN_ROOT}/01-anchors.md`]:
 			"- AN1. Resolution is total.\n- AS2. Repair then resolve.\n",
 		"claimed-scope.txt": "I2\n",
 		"gated-scope.txt": "",
@@ -845,9 +870,10 @@ async function selfTestSecondRootIsOptional() {
 		),
 	});
 
-	const withTrain = await cover(root);
+	const withTrain = await coverWithTrain(root);
 	expect(
-		withTrain.unlisted.includes("AN1") && withTrain.unlisted.includes("AS2"),
+		withTrain.unlisted.includes("AN1") &&
+			withTrain.unlisted.includes("AS2"),
 		`train families AN/AS must be inventoried, got ${withTrain.unlisted.join(",")}`,
 	);
 	expect(
@@ -855,8 +881,11 @@ async function selfTestSecondRootIsOptional() {
 		"collision must stay silent when only one root defines a family",
 	);
 
-	await fs.rm(path.join(root, "spec-v5"), { recursive: true, force: true });
-	const withoutTrain = await cover(root);
+	await fs.rm(path.join(root, TRAIN_ROOT), {
+		recursive: true,
+		force: true,
+	});
+	const withoutTrain = await coverWithTrain(root);
 	expect(
 		withoutTrain.claimedUnclaimed.length === 0,
 		"an absent train root must not break the current-state inventory",
@@ -866,7 +895,11 @@ async function selfTestSecondRootIsOptional() {
 		"an absent train root must not invent AN/AS IDs",
 	);
 
-	const emptyIds = await collectSpecIds(root, ruleIdRegex(["NOPE"]), () => false);
+	const emptyIds = await collectSpecIds(
+		root,
+		ruleIdRegex(["NOPE"]),
+		() => false,
+	);
 	expect(
 		emptyIds.ids.size === 0,
 		`rejecting predicate must yield zero IDs, got ${[...emptyIds.ids]}`,
@@ -902,7 +935,8 @@ async function selfTestSecondRootIsOptional() {
 async function selfTestInForceFamily() {
 	const root = await makeTree("inforce", {
 		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
-		"spec-v5/02-observation.md": "- OB2. One builder, one code path.\n",
+		[`${TRAIN_ROOT}/02-observation.md`]:
+			"- OB2. One builder, one code path.\n",
 		"claimed-scope.txt": "I2\n",
 		"gated-scope.txt": "",
 		[TEST_PATH]: namedTest(
@@ -910,7 +944,7 @@ async function selfTestInForceFamily() {
 		),
 	});
 
-	const unclaimed = await cover(root);
+	const unclaimed = await coverWithTrain(root);
 	expect(
 		unclaimed.claimedUnclaimed.includes("OB2"),
 		`in-force OB2 must be unclaimed, got ${unclaimed.claimedUnclaimed.join(",")}`,
@@ -919,7 +953,7 @@ async function selfTestInForceFamily() {
 	await writeFiles(root, {
 		[SECOND_TEST_PATH]: namedTest("OB2 keeps one builder path"),
 	});
-	const claimed = await cover(root);
+	const claimed = await coverWithTrain(root);
 	expect(
 		!claimed.claimedUnclaimed.includes("OB2"),
 		"OB2 must leave claimedUnclaimed once named",
@@ -934,14 +968,14 @@ async function selfTestInForceFamily() {
 async function selfTestCollision() {
 	const root = await makeTree("collision", {
 		"spec/rules/commands.md": "- D1. Handlers run in facet order.\n",
-		"spec-v5/00-concept.md":
+		[`${TRAIN_ROOT}/00-concept.md`]:
 			"- D1 — The mapping algebra duplicates CRDT position identity.\n",
 		"claimed-scope.txt": "D1\n",
 		"gated-scope.txt": "",
 		[TEST_PATH]: namedTest("D1 tries handlers in facet order"),
 	});
 
-	const both = await cover(root);
+	const both = await coverWithTrain(root);
 	expect(
 		both.collisions.includes("D"),
 		`collision must fire when both roots define D, got ${both.collisions.join(",")}`,
@@ -953,9 +987,10 @@ async function selfTestCollision() {
 	);
 
 	await writeFiles(root, {
-		"spec-v5/00-concept.md": "- OB1. Effect plus the two repair recipes.\n",
+		[`${TRAIN_ROOT}/00-concept.md`]:
+			"- OB1. Effect plus the two repair recipes.\n",
 	});
-	const single = await cover(root);
+	const single = await coverWithTrain(root);
 	expect(
 		!single.collisions.includes("D"),
 		"collision must stay silent when only one root defines D",
@@ -974,7 +1009,7 @@ async function selfTestCollision() {
 async function selfTestInventedFamilyIsDerived() {
 	const root = await makeTree("invented", {
 		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
-		"spec-v5/scratch-zz.md":
+		[`${TRAIN_ROOT}/scratch-zz.md`]:
 			"- ZZ1. Invented family must be seen without a hand list.\n",
 		"claimed-scope.txt": "I2\n",
 		"gated-scope.txt": "",
@@ -983,7 +1018,7 @@ async function selfTestInventedFamilyIsDerived() {
 		),
 	});
 
-	const invented = await cover(root);
+	const invented = await coverWithTrain(root);
 	expect(
 		invented.prefixes.includes("ZZ"),
 		`invented ZZ must be derived, got ${invented.prefixes.join(",")}`,
@@ -1011,7 +1046,8 @@ async function selfTestInventedFamilyIsDerived() {
 async function selfTestContainmentFence() {
 	const root = await makeTree("containment", {
 		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
-		"spec-v5/03-ops.md": "- OP1. Closed union.\n- OPB1. Validate phase.\n",
+		[`${TRAIN_ROOT}/03-ops.md`]:
+			"- OP1. Closed union.\n- OPB1. Validate phase.\n",
 		"claimed-scope.txt": "I2\nOP1\n",
 		"gated-scope.txt": "",
 		[TEST_PATH]: namedTest(
@@ -1020,7 +1056,7 @@ async function selfTestContainmentFence() {
 		[SECOND_TEST_PATH]: namedTest("OPB1 runs in the validate phase"),
 	});
 
-	const contained = await cover(root);
+	const contained = await coverWithTrain(root);
 	expect(
 		contained.claimedUnclaimed.includes("OP1"),
 		`OPB1 must not claim OP1, got unclaimed=${contained.claimedUnclaimed.join(",")}`,

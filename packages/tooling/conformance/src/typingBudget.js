@@ -12,13 +12,14 @@
  * The report must print a blown spec as a loud banner. Missing last-run
  * is a hard fail in reportTypingBudget.js — silent pass is the worst case.
  *
- * What 3.4ms is NOT (corrected 2026-08-23 by a scheduler-wiring audit):
- * it is not a product overrun. The timed flush belongs to a second
- * DomScheduler the harness constructs, and caretRect is inside the timed
- * region only because the harness queued it — acceptCommit has zero
- * production callers, so a real keystroke never runs that flush. All four
- * metrics are harness numbers; the production read phase is unmeasured,
- * and becomes measurable when the scheduler is on the apply path.
+ * What 3.4ms is (rewired 2026-08-26, FE4): the production read phase. The
+ * field editor feeds every commit to the root scheduler, and the harness
+ * measures that scheduler instead of a second one it used to construct, so
+ * a real keystroke runs the timed flush. caretRect is inside the timed
+ * region because a host paints the caret the commit moved — host work, not
+ * a synthetic queue. The first wired recording read 3.3ms against the 3.4ms
+ * harness-era baseline, so the overrun predates the wiring: it is the caret
+ * read on a 10k-word document, and it is the number to bring under budget.
  */
 
 /**

@@ -1034,22 +1034,22 @@ function installBridge(): void {
 			return geometryBlocks(getHarnessSession().editor);
 		},
 		geometryLineBoxes(blockId: string) {
-			return geometryLineBoxes(getHarnessSession().editor, blockId);
+			return geometryLineBoxes(blockId);
 		},
 		invalidateGeometry() {
-			invalidateGeometry(getHarnessSession().editor);
+			invalidateGeometry();
 		},
 		warmCaretCache(points) {
-			warmCaretCache(getHarnessSession().editor, points);
+			warmCaretCache(points);
 		},
 		compareCaretCache(points) {
-			return compareCaretCache(getHarnessSession().editor, points);
+			return compareCaretCache(points);
 		},
 		verticalMotion(args) {
-			return runVerticalMotion(getHarnessSession().editor, args);
+			return runVerticalMotion(args);
 		},
 		flushEightRemoteCarets(points) {
-			return flushEightRemoteCarets(getHarnessSession().editor, points);
+			return flushEightRemoteCarets(points);
 		},
 		get beforeinputMap() {
 			return beforeinputMap();

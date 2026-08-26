@@ -58,6 +58,7 @@ export {
 export { resolveFullBlockTextSelection } from "./operationFactories";
 export {
 	accumulateSessionCommitMetrics,
+	beginGenerationSession,
 	buildSessionExecutionPrompt,
 	closeInlineSessionPrompt,
 	createDefaultSessionCommitMetrics,

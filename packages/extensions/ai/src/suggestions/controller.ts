@@ -1,14 +1,11 @@
 import {
-	deriveContentMoves,
 	fieldEditorHostFacet,
 	getOpOriginType,
 	localeFacet,
-	repairAnchor,
 } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
 import type {
 	AnchorRange,
-	ChangeSummary,
 	CommitEvent,
 	Editor,
 	FieldEditor,
@@ -40,6 +37,7 @@ import {
 	resolvePreferredOffset,
 	resolveSelectedBlockId,
 } from "./controllerUtils";
+import { mapSuggestionsThroughSummary } from "./controllerRangeMap";
 import type {
 	AISuggestion,
 	AISuggestionCandidate,
@@ -470,7 +468,20 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 	}
 
 	handleCommit(event: CommitEvent): void {
-		this.mapSuggestionsThroughSummary(event.summary);
+		const mapped = mapSuggestionsThroughSummary({
+			editor: this.editor,
+			ranges: this.ranges,
+			suggestions: this.state.suggestions,
+			activeSuggestionId: this.state.activeSuggestionId,
+			activeSuggestionGroupId: this.state.activeSuggestionGroupId,
+			summary: event.summary,
+		});
+		if (mapped) {
+			this.replaceAllSuggestions(mapped.suggestions, {
+				activeSuggestionId: mapped.activeSuggestionId,
+				activeSuggestionGroupId: mapped.activeSuggestionGroupId,
+			});
+		}
 
 		const originType = getOpOriginType(event.origin);
 		if (originType !== "user" && originType !== "input-rule") {
@@ -637,164 +648,6 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		}
 
 		return limitedCandidates;
-	}
-
-	private mapSuggestionsThroughSummary(summary: ChangeSummary): void {
-		if (this.state.suggestions.length === 0) {
-			return;
-		}
-
-		const moves = deriveContentMoves(summary, undefined);
-		let changed = false;
-		const nextSuggestions: AISuggestion[] = [];
-		for (const suggestion of this.state.suggestions) {
-			if (suggestion.invalidated) {
-				nextSuggestions.push(suggestion);
-				continue;
-			}
-
-			const synced = this.syncSuggestionRange(suggestion, moves);
-			if (synced.kind === "dead") {
-				this.ranges.delete(suggestion.id);
-				changed = true;
-				continue;
-			}
-			if (synced.kind === "retry") {
-				nextSuggestions.push(suggestion);
-				continue;
-			}
-			if (
-				synced.blockId !== suggestion.blockId ||
-				synced.from !== suggestion.from ||
-				synced.to !== suggestion.to
-			) {
-				changed = true;
-				nextSuggestions.push({
-					...suggestion,
-					blockId: synced.blockId,
-					from: synced.from,
-					to: synced.to,
-				});
-				continue;
-			}
-
-			nextSuggestions.push(suggestion);
-		}
-
-		if (!changed) {
-			return;
-		}
-
-		const activeStillPresent =
-			this.state.activeSuggestionId != null &&
-			nextSuggestions.some(
-				(suggestion) => suggestion.id === this.state.activeSuggestionId,
-			);
-		this.replaceAllSuggestions(nextSuggestions, {
-			activeSuggestionId: activeStillPresent
-				? this.state.activeSuggestionId
-				: null,
-			activeSuggestionGroupId: activeStillPresent
-				? this.state.activeSuggestionGroupId
-				: null,
-		});
-	}
-
-	private retargetThroughMerge(
-		suggestion: AISuggestion,
-		moves: ReturnType<typeof deriveContentMoves>,
-	): { blockId: string; from: number; to: number } | null {
-		for (const move of moves) {
-			if (move.fromBlockId !== suggestion.blockId) {
-				continue;
-			}
-			if (move.fromRange.from !== 0) {
-				continue;
-			}
-			if (this.editor.getBlock(suggestion.blockId)) {
-				continue;
-			}
-			return {
-				blockId: move.toBlockId,
-				from: move.toOffset + suggestion.from,
-				to: move.toOffset + suggestion.to,
-			};
-		}
-		return null;
-	}
-
-	private syncSuggestionRange(
-		suggestion: AISuggestion,
-		moves: ReturnType<typeof deriveContentMoves>,
-	):
-		| { kind: "live"; blockId: string; from: number; to: number }
-		| { kind: "retry" }
-		| { kind: "dead" } {
-		let range = this.ranges.get(suggestion.id) ?? null;
-		if (!range) {
-			range = this.editor.anchors.range({
-				anchor: {
-					blockId: suggestion.blockId,
-					offset: suggestion.from,
-				},
-				focus: {
-					blockId: suggestion.blockId,
-					offset: suggestion.to,
-				},
-			});
-			if (!range) {
-				return { kind: "dead" };
-			}
-			this.ranges.set(suggestion.id, range);
-		}
-
-		const from = repairAnchor(this.editor, range.from, moves);
-		const to = repairAnchor(this.editor, range.to, moves);
-		if (from !== range.from || to !== range.to) {
-			range = { kind: "anchor-range", from, to };
-			this.ranges.set(suggestion.id, range);
-		}
-
-		const merged = this.retargetThroughMerge(suggestion, moves);
-		if (merged) {
-			const reminted = this.editor.anchors.range({
-				anchor: { blockId: merged.blockId, offset: merged.from },
-				focus: { blockId: merged.blockId, offset: merged.to },
-			});
-			if (reminted) {
-				this.ranges.set(suggestion.id, reminted);
-			}
-			return { kind: "live", ...merged };
-		}
-
-		const resolved = this.editor.anchors.resolveRange(range);
-		if (!resolved) {
-			if (
-				this.editor.getBlock(range.from.blockId) ||
-				this.editor.getBlock(range.to.blockId) ||
-				this.editor.getBlock(suggestion.blockId)
-			) {
-				return { kind: "retry" };
-			}
-			return { kind: "dead" };
-		}
-		if (resolved.collapsed) {
-			return { kind: "dead" };
-		}
-		if (resolved.from.blockId !== resolved.to.blockId) {
-			return { kind: "dead" };
-		}
-		const nextFrom = Math.min(resolved.from.offset, resolved.to.offset);
-		const nextTo = Math.max(resolved.from.offset, resolved.to.offset);
-		if (nextFrom === nextTo) {
-			return { kind: "dead" };
-		}
-		return {
-			kind: "live",
-			blockId: resolved.from.blockId,
-			from: nextFrom,
-			to: nextTo,
-		};
 	}
 
 	private replaceSuggestionsForBlock(

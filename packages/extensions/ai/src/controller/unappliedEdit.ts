@@ -78,16 +78,27 @@ export function editToolAccountedForEdit(
 		if (step.status === "error") {
 			return true;
 		}
-		const output = step.output as {
-			ok?: unknown;
-			appliedOperations?: unknown;
-		} | null;
-		if (output?.ok === false) {
+		const output = step.output;
+		if (!isEditDocumentToolOutput(output)) {
+			return false;
+		}
+		if (output.ok === false) {
 			return true;
 		}
 		return (
-			Array.isArray(output?.appliedOperations) &&
+			Array.isArray(output.appliedOperations) &&
 			output.appliedOperations.length > 0
 		);
 	});
+}
+
+interface EditDocumentToolOutput {
+	ok?: boolean;
+	appliedOperations?: unknown;
+}
+
+function isEditDocumentToolOutput(
+	value: unknown,
+): value is EditDocumentToolOutput {
+	return value != null && typeof value === "object";
 }

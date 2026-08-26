@@ -102,6 +102,53 @@ export default tseslint.config(
 		},
 	},
 	{
+		// FE3: `DomScheduler` owns the frame in `@input/pen-dom`, so
+		// `scheduler.ts` (excepted below) is the only production module that may
+		// call requestAnimationFrame. A frame wait that is real scheduling moves
+		// onto scheduler.read / scheduler.write; a frame wait that is a selection
+		// retry in disguise is deleted under S4 rather than migrated.
+		//
+		// This was previously a grep stated in the rule and run by the v5 train's
+		// wave runner, which no CI job executed — FIELD-EDITOR-TEARDOWN.md claimed
+		// a CI gate that did not exist. Lint is the right home: the invariant is
+		// "do not call this function in these files", and `pnpm lint` already runs
+		// on every PR.
+		//
+		// The member-expression selector is what makes it hold: the scheduler's own
+		// call is `globalThis.requestAnimationFrame`, so a bare-identifier ban
+		// would miss `window.` / `globalThis.` / `defaultView.` forms — which is
+		// every form a reintroduced site would plausibly use. The sibling
+		// `@input/pen-react` is out of FE3's scope by the rule's own wording: its
+		// overlay and menu primitives own their frames, and pulling twenty
+		// component sites onto the editor's scheduler is not this rule.
+		files: ["packages/rendering/dom/src/**/*.{ts,tsx}"],
+		ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+		rules: {
+			"no-restricted-syntax": [
+				"error",
+				{
+					selector:
+						"CallExpression[callee.name='requestAnimationFrame']",
+					message:
+						"FE3: DomScheduler owns the frame. Use scheduler.read / scheduler.write, or delete the frame wait if it is a selection retry (S4).",
+				},
+				{
+					selector:
+						"MemberExpression[property.name='requestAnimationFrame']",
+					message:
+						"FE3: DomScheduler owns the frame. Use scheduler.read / scheduler.write, or delete the frame wait if it is a selection retry (S4).",
+				},
+			],
+		},
+	},
+	{
+		files: ["packages/rendering/dom/src/scheduler.ts"],
+		rules: {
+			// FE3: the scheduler is the frame owner this rule exists to protect.
+			"no-restricted-syntax": "off",
+		},
+	},
+	{
 		// LOC4: word logic in editing/search/selection uses the shared segmenter.
 		// `textSegmentation.ts` is the HOST4 whitespace-fallback home and is
 		// excluded below. Regex-mode search may pass user `\b` through a variable;

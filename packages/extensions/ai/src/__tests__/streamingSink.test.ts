@@ -66,6 +66,10 @@ describe("resolveGenerationStreamingSink", () => {
 			kind: "review-preview",
 			format: "markdown",
 			source: "markdown-block",
+			blockId: "b1",
+			offset: 0,
+			replaceTargetBlock: false,
+			replaceBlockIds: undefined,
 		});
 	});
 
@@ -93,6 +97,47 @@ describe("resolveGenerationStreamingSink", () => {
 			kind: "review-preview",
 			format: "plain",
 			source: "selection",
+			range: {
+				start: { blockId: "b1", offset: 2 },
+				end: { blockId: "b2", offset: 3 },
+			},
 		});
+	});
+
+	it("does not preview tool-loop talk as a rewrite", () => {
+		expect(
+			resolveGenerationStreamingSink({
+				target: {
+					type: "selection",
+					selection: textSelection(
+						{ blockId: "b1", offset: 0 },
+						{ blockId: "b1", offset: 5 },
+					),
+				},
+				shouldStreamDirectly: false,
+				contentFormat: "text",
+				mutationMode: "streaming-suggestions",
+				editsArriveAsToolCalls: true,
+				surface: "bottom-chat",
+				selectionRange: {
+					start: { blockId: "b1", offset: 0 },
+					end: { blockId: "b1", offset: 5 },
+				},
+			}),
+		).toEqual({ kind: "none" });
+	});
+
+	it("buffers a block that is not a live write, splice, or markdown preview", () => {
+		expect(
+			resolveGenerationStreamingSink({
+				target: { type: "block", blockId: "b1", offset: 0 },
+				shouldStreamDirectly: false,
+				contentFormat: "markdown",
+				mutationMode: "persistent-suggestions",
+				editsArriveAsToolCalls: false,
+				surface: undefined,
+				selectionRange: null,
+			}),
+		).toEqual({ kind: "buffered-commit" });
 	});
 });

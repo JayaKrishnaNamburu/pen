@@ -1,5 +1,6 @@
 import type { TextSelection } from "@input/pen-types";
 import type { AIContentFormat } from "../runtime/contracts";
+import { stagesAsSuggestions } from "../runtime/mutationPolicy";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type {
 	AIMutationReceipt,
@@ -33,9 +34,6 @@ export const operationCommitMethods = {
 		if (conflictReason) {
 			return buildMutationReceipt({
 				status: "invalid",
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 				issues: [conflictReason],
 			});
 		}
@@ -48,9 +46,6 @@ export const operationCommitMethods = {
 			if (!selection) {
 				return buildMutationReceipt({
 					status: "invalid",
-					adapterId: "flow-markdown",
-					blockClass: "flow",
-					transportKind: "flow-text",
 					issues: [
 						"The requested selection rewrite target is no longer available.",
 					],
@@ -89,9 +84,6 @@ export const operationCommitMethods = {
 			if (!target) {
 				return buildMutationReceipt({
 					status: "invalid",
-					adapterId: "flow-markdown",
-					blockClass: "flow",
-					transportKind: "flow-text",
 					issues: ["The requested block rewrite target is invalid."],
 				});
 			}
@@ -125,9 +117,6 @@ export const operationCommitMethods = {
 			if (!target) {
 				return buildMutationReceipt({
 					status: "invalid",
-					adapterId: "flow-markdown",
-					blockClass: "flow",
-					transportKind: "flow-text",
 					issues: [
 						"The requested document transform target is invalid.",
 					],
@@ -151,18 +140,12 @@ export const operationCommitMethods = {
 				if (ops.length === 0) {
 					return buildMutationReceipt({
 						status: "noop",
-						adapterId: "flow-markdown",
-						blockClass: "flow",
-						transportKind: "flow-text",
 					});
 				}
 				this._applySuggestedAIOps(ops, sessionId);
 				return buildMutationReceipt({
 					status: "staged_suggestions",
 					ops,
-					adapterId: "flow-markdown",
-					blockClass: "flow",
-					transportKind: "flow-text",
 				});
 			}
 			const targetBlockId =
@@ -174,9 +157,6 @@ export const operationCommitMethods = {
 			if (!targetBlockId) {
 				return buildMutationReceipt({
 					status: "invalid",
-					adapterId: "flow-markdown",
-					blockClass: "flow",
-					transportKind: "flow-text",
 					issues: [
 						"The requested document transform target is no longer available.",
 					],
@@ -203,9 +183,6 @@ export const operationCommitMethods = {
 		if (!target) {
 			return buildMutationReceipt({
 				status: "invalid",
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 				issues: ["The requested continuation target is invalid."],
 			});
 		}
@@ -230,11 +207,7 @@ export const operationCommitMethods = {
 	): AIMutationReceipt {
 		const selectedText = resolveSelectionText(this._editor, selection);
 		const ops = buildSelectionReplacementOps(this._editor, selection, text);
-		if (
-			mutationMode === "persistent-suggestions" ||
-			mutationMode === "streaming-suggestions" ||
-			mutationMode === "staged-review"
-		) {
+		if (stagesAsSuggestions(mutationMode)) {
 			this._applySuggestedAIOps(ops, sessionId);
 			this._recordCommitDebug({
 				attempted: true,
@@ -246,9 +219,6 @@ export const operationCommitMethods = {
 			return buildMutationReceipt({
 				status: "staged_suggestions",
 				ops,
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 			});
 		}
 		this._editor.selectTextRange(selection.anchor, selection.focus);
@@ -265,9 +235,6 @@ export const operationCommitMethods = {
 			return buildMutationReceipt({
 				status: "invalid",
 				ops,
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 				issues: ["Selection rewrite lost the active text selection."],
 			});
 		}
@@ -306,9 +273,6 @@ export const operationCommitMethods = {
 		return buildMutationReceipt({
 			status: "applied",
 			ops,
-			adapterId: "flow-markdown",
-			blockClass: "flow",
-			transportKind: "flow-text",
 		});
 	},
 };

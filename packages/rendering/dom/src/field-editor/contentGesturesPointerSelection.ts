@@ -423,34 +423,6 @@ export function createPointerSelectionGestures<
 			return true;
 		};
 
-		const tryHandleDraggedBlockSelection = (): boolean => {
-			if (!root || !moved) {
-				return false;
-			}
-			const resolvedSelection = resolvePointerDragSelection(
-				editor,
-				root,
-				gesture,
-				{
-					clientX,
-					clientY,
-					getBoundaryPoint: (blockId, side) =>
-						getBoundaryPoint(ctx, blockId, side),
-				},
-			);
-			if (resolvedSelection?.mode !== "block") {
-				return false;
-			}
-			if (!blockSelectionEnabled) {
-				return false;
-			}
-			editor.selectBlocks(resolvedSelection.blockIds);
-			fieldEditor.deactivate();
-			ensureEditorFocus(ctx, root);
-			skipNextClickRef.current = true;
-			return true;
-		};
-
 		const tryHandleCellSelection = (blockId: string): boolean => {
 			const cellCoord = resolveClickedCellCoord(ctx, event);
 			if (!cellCoord) {
@@ -579,13 +551,10 @@ export function createPointerSelectionGestures<
 				skipNextClickRef.current = true;
 				return;
 			}
-			if (tryHandleDraggedBlockSelection()) {
+			if (tryHandleDraggedPointerSelection()) {
 				return;
 			}
 			if (tryHandleMappedDomSelection()) {
-				return;
-			}
-			if (tryHandleDraggedPointerSelection()) {
 				return;
 			}
 			const blockId =

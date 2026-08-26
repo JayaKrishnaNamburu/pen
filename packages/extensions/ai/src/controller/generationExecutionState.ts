@@ -3,7 +3,6 @@ import type {
 	StreamingTarget,
 	ToolRuntime,
 } from "@input/pen-types";
-import type { BlockAdapter } from "../runtime/blockAdapters";
 import type { AIContentFormat } from "../runtime/contracts";
 import type { RequestRouterDecision } from "../runtime/router";
 import type {
@@ -59,7 +58,6 @@ export interface GenerationExecutionState {
 	requestedOperation: AIRequestedOperation | null;
 	route: RequestRouterDecision;
 	workingSet: AIWorkingSetEnvelope | null;
-	adapter: BlockAdapter;
 	contentFormat: AIContentFormat;
 	currentText: string;
 	streamingTarget: StreamingTarget | null;

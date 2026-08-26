@@ -50,7 +50,6 @@ export type ModelToolChoice =
 	| { type: "tool"; name: string };
 
 export interface ModelAdapterCapabilities {
-	structuredIntent?: boolean;
 	partialToolInput?: boolean;
 	forcedToolChoice?: boolean;
 }
@@ -75,12 +74,6 @@ export type ModelOperationKind =
 	| "rewrite-block"
 	| "continue-block"
 	| "document-transform";
-
-export type ModelOperationApplyPolicy =
-	| "selection-replace"
-	| "block-replace"
-	| "block-continue"
-	| "document-review";
 
 export interface ModelOperationSelectionTarget {
 	kind: "selection";
@@ -136,7 +129,6 @@ export interface ModelOperationProvenance {
 
 export interface ModelRequestedOperation {
 	kind: ModelOperationKind;
-	applyPolicy: ModelOperationApplyPolicy;
 	target:
 		| ModelOperationSelectionTarget
 		| ModelOperationScopedRangeTarget

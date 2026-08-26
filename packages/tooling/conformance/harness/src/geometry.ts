@@ -114,92 +114,57 @@ function placeOverlay(layer: OverlayLayer, root: HTMLElement): void {
 	content.insertAdjacentElement("afterend", layer.element);
 }
 
-function attachHost(editor: Editor): GeometryHost {
+function attachHost(): GeometryHost {
 	const root = editorRoot();
-	const reader = createGeometryReader({
-		root,
-		observeResize: false,
-		observeFonts: false,
-	});
-	const scheduler = new DomScheduler(root.id || "conformance-root", {
-		geometry: reader,
-	});
+	// Measure the reader and scheduler the mounted editor actually drives
+	// (FE4), not a private copy of them. The field editor feeds every commit
+	// to this scheduler, and its flush invalidates this reader, so there is
+	// nothing for the harness to replay.
+	const { reader, scheduler } = getRootGeometry(root);
 	const overlay = createOverlayLayer({ root });
 	placeOverlay(overlay, root);
 
-	const pendingCommits: CommitEvent[] = [];
-	const unsubscribers: Unsubscribe[] = [
-		editor.on("commit", (event) => {
-			pendingCommits.push(event);
-		}),
-	];
-
-	return {
-		reader,
-		scheduler,
-		overlay,
-		pendingCommits,
-		unsubscribers,
-	};
+	return { reader, scheduler, overlay };
 }
 
 export function disposeGeometry(): void {
 	if (!host) {
 		return;
 	}
-	for (const unsubscribe of host.unsubscribers) {
-		unsubscribe();
-	}
-	host.reader.dispose();
+	// The reader and scheduler belong to the editor root, so the mount that
+	// created them disposes them; the harness only owns the overlay.
 	host.overlay.element.remove();
 	host = null;
 }
 
-export function ensureGeometry(editor: Editor): GeometryHost {
+export function ensureGeometry(): GeometryHost {
 	if (host) {
 		placeOverlay(host.overlay, editorRoot());
 		return host;
 	}
-	host = attachHost(editor);
+	host = attachHost();
 	return host;
-}
-
-function drainCommits(current: GeometryHost): void {
-	for (const event of current.pendingCommits) {
-		current.scheduler.acceptCommit(event);
-		current.reader.invalidateBlocks(
-			event.summary.affectedBlockIds,
-			event.commitId,
-		);
-	}
-	current.pendingCommits.length = 0;
 }
 
 export function geometryGeneration(): number {
 	return host?.reader.generation ?? 0;
 }
 
-export function invalidateGeometry(editor: Editor): void {
-	ensureGeometry(editor).reader.invalidateAll();
+export function invalidateGeometry(): void {
+	ensureGeometry().reader.invalidateAll();
 }
 
 export function geometryBlocks(editor: Editor): GeometryBlockInfo[] {
 	return geometryBlocksFromEditor(editor);
 }
 
-export function geometryLineBoxes(
-	editor: Editor,
-	blockId: string,
-): GeometryLineBox[] {
-	const current = ensureGeometry(editor);
+export function geometryLineBoxes(blockId: string): GeometryLineBox[] {
+	const current = ensureGeometry();
 	return serializeLineBoxes(blockId, current.reader);
 }
 
-export function warmCaretCache(
-	editor: Editor,
-	points: readonly GeometryPointRef[],
-): void {
-	const current = ensureGeometry(editor);
+export function warmCaretCache(points: readonly GeometryPointRef[]): void {
+	const current = ensureGeometry();
 	for (const ref of points) {
 		const { point, affinity } = normalizePoint(ref);
 		current.reader.caretRect(point, affinity);
@@ -207,12 +172,10 @@ export function warmCaretCache(
 }
 
 export async function compareCaretCache(
-	editor: Editor,
 	points: readonly GeometryPointRef[],
 ): Promise<GeometryCaretCompareResult> {
-	const current = ensureGeometry(editor);
+	const current = ensureGeometry();
 	const root = editorRoot();
-	drainCommits(current);
 
 	return current.scheduler.read(() => {
 		const fresh = createGeometryReader({
@@ -249,16 +212,13 @@ export async function compareCaretCache(
 	});
 }
 
-export function runVerticalMotion(
-	editor: Editor,
-	args: {
+export function runVerticalMotion(args: {
 		situation: string;
 		from: GeometryPoint;
 		direction: "up" | "down";
 		goalX?: number | null;
-	},
-): GeometryVerticalMotion {
-	const current = ensureGeometry(editor);
+}): GeometryVerticalMotion {
+	const current = ensureGeometry();
 	const first = verticalCaretTarget(
 		current.reader,
 		args.from,
@@ -366,12 +326,10 @@ function countLayoutReads(
 }
 
 export async function flushEightRemoteCarets(
-	editor: Editor,
 	points: readonly GeometryPoint[],
 ): Promise<GeometryEightCaretBudget> {
-	const current = ensureGeometry(editor);
+	const current = ensureGeometry();
 	placeOverlay(current.overlay, editorRoot());
-	drainCommits(current);
 
 	const types = supportedEntryTypes();
 	const missingObserverTypes = ["layout-shift", "longtask"].filter(

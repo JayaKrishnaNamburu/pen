@@ -19,30 +19,22 @@
 - getAIInlineCompletionController
 - getAIInlineHistoryController
 - getAIReviewController
-- getBlockAdapter
-- listBlockAdapters
 - readAllSuggestions
 - readBlockSuggestionMeta
 - readSuggestionsFromBlock
 - rejectAllSuggestions
 - rejectSuggestion
-- resolveBlockAdapter
-- resolveBlockAdapterContentFormat
 - runAgenticLoop
 
 ### value
 
-- AI_BLOCK_ADAPTER_IDS
-- AI_BLOCK_CLASSES
 - AI_EGRESS_INVENTORY_CODE
-- AI_EXECUTION_MODES
 - AI_EXTENSION_NAME
 - AI_FEATURE_CONTENT
 - AI_REQUEST_REFUSED_CODE
 - AI_SESSION_SUGGESTION_ORIGIN
 - AI_TARGET_KINDS
 - AI_TOOL_RESULT_MAX_CHARS
-- AI_TRANSPORT_KINDS
 - aiEgressExtension
 - aiEgressFacet
 - defaultAICommands
@@ -54,8 +46,6 @@
 
 - AgenticStep
 - AIAwarenessState
-- AIBlockAdapterId
-- AIBlockClass
 - AICommandBinding
 - AICommandContext
 - AICommandExecutionOptions
@@ -70,7 +60,6 @@
 - AIController
 - AIControllerState
 - AIEditStreaming
-- AIExecutionMode
 - AIExtensionConfig
 - AIExternalInlineTurnResult
 - AIInlineCompletionController
@@ -100,7 +89,6 @@
 - AISuggestionPresentation
 - AISurface
 - AITargetKind
-- AITransportKind
 - AIWorkingSetRetrievedSpan
 - ApplySuggestedAIOperationsOptions
 - ApplySuggestedAIOperationsResult

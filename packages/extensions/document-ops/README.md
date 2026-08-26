@@ -43,7 +43,7 @@ Prefer `@input/pen-ai/tools` for the main public agent/tool integration story. R
 
 ## Tool surfaces
 
-This package registers every document tool. Which surface a tool is **mounted** on is a different question (`spec-v5/01-channel.md` UC7): the in-editor loop mounts reads plus exactly one mutator; the single-purpose mutators stay host-facing for external agents.
+This package registers every document tool. Which surface a tool is **mounted** on is a different question (`spec/rules/ai.md` UC7): the in-editor loop mounts reads plus exactly one mutator; the single-purpose mutators stay host-facing for external agents.
 
 | Tool                      | Surface                                                             |
 | ------------------------- | ------------------------------------------------------------------- |

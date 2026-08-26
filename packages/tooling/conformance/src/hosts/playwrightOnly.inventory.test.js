@@ -131,7 +131,11 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 	// Derived into the message rather than written twice: the literal and the
 	// message had already drifted apart (56 asserted, "expected 55" reported),
 	// which is the one failure this message exists to prevent.
-	const expectedPlaywrightSpecs = 64;
+	// 64 -> 65 on 2026-08-26 is v5 FE6 adding fe6-cell-parity, which asserts
+	// the table-cell parity contract on all three engines: the declared-
+	// supported capabilities work in a cell, and a mark toggle leaves the
+	// document byte-identical while reporting cell-capability-unsupported.
+	const expectedPlaywrightSpecs = 65;
 	assert.equal(
 		playwrightSpecs.length,
 		expectedPlaywrightSpecs,

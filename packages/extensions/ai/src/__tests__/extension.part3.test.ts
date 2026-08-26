@@ -73,7 +73,7 @@ describe("aiExtension", () => {
 			"Rewrite this",
 		);
 
-		expect(requestMode).toBe("selection-fast");
+		expect(requestMode).toBe("selection-rewrite");
 		expect(generation.route).toBe("selection-rewrite");
 		expect(generation.mutationReceipt?.status).toBe("noop");
 		expect(editor.getBlock(blockId)?.type).toBe("table");

@@ -13,7 +13,7 @@ import { aiExtension, getAIController } from "../index";
  * staged through `edit_document`. This file carries the other half of the
  * claim: that the door it replaced is shut. A model that puts a document
  * mutation plan in its assistant text gets no mutation from it, on any lane,
- * with any mutation preference (`spec-v5/01-channel.md` UC3).
+ * with any mutation preference (`spec/rules/ai.md` UC3).
  */
 
 const TEXT_EDIT_PLAN = JSON.stringify({

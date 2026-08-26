@@ -1,4 +1,4 @@
-import type { InlineDecoration } from "@input/pen-types";
+import type { Editor, InlineDecoration } from "@input/pen-types";
 import { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "@input/pen-types";
 
 const INLINE_DECORATION_ATTRIBUTE_KEY = "__penInlineDecoration";
@@ -224,6 +224,23 @@ export function areInlineDecorationsRenderEqual(
 	}
 
 	return true;
+}
+
+/** The inline decorations a field editor renders for one block (FE2). */
+export function inlineDecorationsForBlock(
+	editor: Editor,
+	blockId: string | null,
+): readonly InlineDecoration[] {
+	if (!blockId) {
+		return [];
+	}
+	return editor
+		.getDecorations()
+		.forBlock(blockId)
+		.filter(
+			(decoration): decoration is InlineDecoration =>
+				decoration.type === "inline",
+		);
 }
 
 export function buildInlineDecorationsRenderSignature(

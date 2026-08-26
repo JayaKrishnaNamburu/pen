@@ -5,4 +5,4 @@
 "@input/pen-types": patch
 ---
 
-Finish the plan/review deletion (`review_bundle`, stranded generation `structuredIntent`, orphaned review-artifact copy), split `operations.ts` and `contentGestures.ts` under 1k (FE5), flatten field-editor inheritance into three classes, replace AI controller `Object.assign` mixins with real class methods, and reuse `Point` from `@input/pen-types`.
+Delete leftover architecture the plan/review teardown left behind: the structured-intent module, the one-adapter registry, write-only `applyPolicy`, `app-partial`, and `AIExecutionMode`. Close generation streaming on the sink instead of re-deriving it, collapse the three suggestion mutation modes at the commit seam, and extract suggestion range mapping so the suggestions controller stays under 1k.

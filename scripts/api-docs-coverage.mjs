@@ -162,15 +162,38 @@ const SKIP_DIR_NAMES = new Set([
  * the same change that shrinks the surface.
  *
  * Lowered 1775 → 1761 on 2026-08-26 by wave 2's structured-preview deletion
- * (`spec-v5/waves/wave-2-one-preview.md` GATE 2.12). Again not a TSDoc pass:
+ * (the v5 train's one-preview wave; RS1). Again not a TSDoc pass:
  * 11 are the deleted producer-less preview surface — `pen-ai`'s
  * `GenerationStructuredPreviewState` / `StructuredPreviewPatchOperation` and
  * `pen-react`'s four `AIStructuredTargetPreview*` / `AIStructuredPreview*`
  * types plus its four preview hooks — and 3 are content-ops' plan-record
  * helpers (`normalizePlanRecord`, `normalizePlanSteps`, `PlanRecord`) that
  * the same dead-plan cleanup un-exported.
+ *
+ * Lowered 1761 → 1726 on 2026-08-26 at the close of waves 3 and 4. Three moves,
+ * none of them a TSDoc pass:
+ *
+ * - Wave 3's planner-lane deletion took 36 public symbols out of `pen-ai`
+ *   (the v5 train's routing-and-loop wave, UC3/UC5): the `DocumentMutationPlan` /
+ *   `StructuralReviewItem` types, the `PlanValidation*` family, the block
+ *   adapter and structured-intent prompt functions, and the five closed
+ *   vocabularies UC5 folded away, `AI_APPLY_STRATEGIES` among them. Against
+ *   that, waves 2c and 3 added 8 undocumented ones — the review-surface
+ *   constants and the `FastApply` → `Commit` metric renames, which were
+ *   undocumented under their old names too, so the renames are neutral.
+ * - `EditContextSelectionOptions` gained the TSDoc it should have had: it is
+ *   public only because `./field-editor/editContextBackend` is a published
+ *   subpath, and a host reading that signature needs to know a `text-update`
+ *   write is the one that trusts the offsets it was handed.
+ * - `pen-dom` stopped re-exporting `REVIEW_SURFACE_CLASSES`,
+ *   `REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES` and
+ *   `REVIEW_SURFACE_CUSTOM_PROPERTIES`. RS4 is "one styling contract, exported
+ *   once", and the re-export was a second import path for names that are
+ *   documented in `@input/pen-types`. No host used it; every real consumer
+ *   already imported from the contract layer. `PEN_REVIEW_STYLESHEET` stays in
+ *   `pen-dom`, where the CSS belongs.
  */
-export const MAX_UNDOCUMENTED = 1761;
+export const MAX_UNDOCUMENTED = 1726;
 
 const JSDOC_RE = /\/\*\*[\s\S]*?\*\//g;
 const DECL_RE =

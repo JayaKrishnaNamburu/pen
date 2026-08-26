@@ -219,6 +219,7 @@ function areGenerationsEqual(
 		previous.contentFormat !== next.contentFormat ||
 		previous.route !== next.route ||
 		previous.mutationMode !== next.mutationMode ||
+		previous.editsArriveAsToolCalls !== next.editsArriveAsToolCalls ||
 		previous.targetKind !== next.targetKind ||
 		!areStructuredValuesEqual(previous.debug, next.debug)
 	) {

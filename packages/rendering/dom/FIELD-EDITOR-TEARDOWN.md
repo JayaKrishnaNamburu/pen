@@ -1,8 +1,18 @@
 # Field-editor teardown
 
-H.6 / F21 inventory. What `FieldEditor.destroy()` must release, what `FieldEditorImpl.destroy()` actually releases today, and what is still open. This is not a completeness claim.
+What `FieldEditor.destroy()` releases, how the spine makes backend teardown total, and what is still open. This is not a completeness claim.
 
 There is no `dispose()` on the field editor. The public method is `destroy()` (`packages/types/src/types/fieldEditor.ts`). Adjacent modules use `destroy` (announcer) or `dispose` (geometry, reduced-motion).
+
+## The spine (FE1)
+
+A backend used to register listeners with `addEventListener` and undo them with a mirrored block of `removeEventListener` calls in `deactivate()`. Three backends carried three such mirrors, kept in sync by eye, and a listener added without its removal was a leak nobody could see.
+
+The mirrors are gone. `BackendAttachment` (`src/field-editor/backendAttachment.ts`) is the bookkeeping half of the lifecycle spine: a backend binds everything it holds while attached — DOM listeners, the EditContext's own listeners, mutation observers, Y.Text observers, editor subscriptions — through one attachment, and `release()` undoes them in the order they were bound. Teardown is total by construction, because there is no way to bind without recording the undo.
+
+What stays in a backend's `deactivate()` is what is not bookkeeping: releasing the editing host (`removeAttribute("contenteditable")`), nulling `element.editContext`, and resetting the backend's own state flags.
+
+`src/field-editor/__tests__/fe1.spineTeardown.test.ts` is the claim. It counts every listener and observer the process holds, attaches each of the three backends in turn, exercises it, detaches it, and asserts the count returns to zero — the same assertions against all three, naming the leaked listener when one survives.
 
 ## Ownership
 
@@ -19,11 +29,12 @@ Those hosts also clear the field-editor slots and their own `focusin` / `focusou
 
 `FieldEditorImpl.destroy()`:
 
-1. Unsubscribe editor `onSelectionChange` and `onHistoryApplied`.
-2. `SessionReconciler.destroy()`.
-3. `_deactivate({ restoreFocus: false })` — backend `deactivate()`, cell coord clear, session flags, `HistorySelectionCoordinator.reset()`, `FieldEditorSelectionCoordinator.reset()`, pending-mark reset, deactivate listeners, store notify.
-4. Clear activate / deactivate / store listener sets.
-5. `FocusController.destroy()`.
+1. Unbind the scheduler projector, focus sink, announcer, and root pointer gesture.
+2. Unsubscribe editor `onSelectionChange`, `commit`, and `onHistoryApplied`.
+3. `SessionReconciler.destroy()`.
+4. `_deactivate({ restoreFocus: false })` — backend `deactivate()` (which releases its attachment), cell coord clear, session flags, `HistorySelectionCoordinator.reset()`, `FieldEditorSelectionCoordinator.reset()`, pending-mark reset, deactivate listeners, store notify.
+5. Clear activate / deactivate / store listener sets.
+6. `FocusController.destroy()`.
 
 `_deactivate` is what tears down the live input backend. `destroy()` is what tears down the long-lived editor subscriptions that outlive a single session.
 
@@ -34,62 +45,67 @@ Status:
 - **Released** — `destroy()` / backend `deactivate()` drops it.
 - **Guarded leftover** — a scheduled callback can still fire after `destroy()`, but the live path no-ops. Not cancelled.
 - **Open** — still held, or a later callback can re-enter a destroyed editor.
-- **Not owned** — field editor never constructs it. Whoever creates it must release it. When a later wave wires it into the field-editor session, `destroy()` must call through.
+- **Not owned** — field editor never constructs it. Whoever creates it must release it.
 
 ### Editor subscriptions
 
 | Resource | Status |
 | --- | --- |
 | `editor.onSelectionChange` (`_unsubscribeSelection`) | Released |
+| `editor.on("commit")` (`_unsubscribeCommit`, the FE4 scheduler feed) | Released |
 | `editor.onHistoryApplied` (`_unsubscribeHistoryApplied`) | Released |
 | `SessionReconciler` `onDocumentCommit` | Released |
 | `SessionReconciler` `decorationsChange` | Released |
 | Activate / deactivate / store listener sets | Released |
 | Focus-lifecycle listeners (`FocusController`) | Released |
 | `waitForAttachment` waiter set (promises resolve `false`) | Released |
+| Scheduler projector (`_unbindSchedulerProjector`) | Released — the projector is cleared and the scheduler reference dropped |
 | Field-editor slots (`FIELD_EDITOR_SLOT_KEY` / core slot) | Open — host must clear. React and Vue do. |
 | `_rootElement` | Open — left pointing at the last root. |
 | `_editor` reference | Open — retained after destroy. |
-| Select-all cycle (`SelectAllController`) | Gone — core computes the T1 rung from selection state, so there is no cycle to leak. |
 
 ### Observers
 
+Every entry here is bound through the backend's attachment, so `release()` is what drops it.
+
 | Resource | Status |
 | --- | --- |
-| ContentEditable `MutationObserver` on the attached element | Released in `ContentEditableBackendCore.deactivate()` |
+| ContentEditable `MutationObserver` on the attached element | Released (`disconnect`) |
 | ContentEditable `ytext.observe` | Released (`unobserve`) |
 | EditContext `ytext.observe` | Released (`unobserve`) |
-| ContentEditable / EditContext `decorationsChange` | Released in backend `deactivate()` |
+| ContentEditable / EditContext `decorationsChange` | Released |
 | Expanded backend Y.Text / mutation observers | Not used — that backend has neither |
 | Geometry `ResizeObserver` on the content root | Not owned — see Geometry |
 | `document.fonts.ready` bump | Not owned — see Geometry |
 
 ### Listeners (input backends)
 
-Released by the matching `deactivate()`, which `destroy()` reaches through `_deactivate`.
+Released by the attachment's `release()`, which `deactivate()` calls and `destroy()` reaches through `_deactivate`.
 
-ContentEditable (`contenteditableBackendCore.ts`): `beforeinput`, `compositionstart`, `compositionend`, `keydown`, `copy`, `cut`, `dragstart`, `drop`, `pointerdown`, document `selectionchange`. `contentEditable` set back to `"false"`.
+ContentEditable (`contenteditableBackend.ts`): `beforeinput`, `compositionstart`, `compositionend`, `keydown`, `pointerdown`, `contextmenu`, the shared transfer set, document `selectionchange`. The `contenteditable` attribute is **removed**, never set to `"false"` — an explicit `false` would leave a read-only island inside a wider editing host, and WebKit clamps a selection at such a boundary.
 
-EditContext (`editContextBackend.ts`): element `keydown`, `copy`, `cut`, `paste`, `dragstart`, `drop`, `pointerdown`, document `selectionchange`; EditContext `textupdate`, `textformatupdate`, `characterboundsupdate`. `element.editContext` nulled. The `EditContext` object is dropped; it has no separate destroy API.
+EditContext (`editContextBackend.ts`): element `keydown`, `paste`, `pointerdown`, `contextmenu`, `compositionstart`, `compositionend`, the shared transfer set, document `selectionchange`; EditContext `textupdate`, `textformatupdate`, `characterboundsupdate`. `element.editContext` is nulled after those listeners are released, so the browser cannot deliver a `textupdate` against a context the backend no longer owns. The `EditContext` object is dropped; it has no separate destroy API.
 
-Expanded (`expandedContentEditableBackend.ts`): `beforeinput`, `keydown`, `copy`, `cut`, `dragstart`, `drop`, document `selectionchange`. `contentEditable` `"false"`, `tabindex` removed.
+Expanded (`expandedContentEditableBackend.ts`): `beforeinput`, `keydown`, the shared transfer set, document `selectionchange`. `contenteditable` and `tabindex` removed.
+
+The shared transfer set is `copy`, `cut`, `dragstart`, `drop`, bound for all three by `bindBackendTransferEvents` (`backendTransferEvents.ts`, FE2).
 
 Host `focusin` / `focusout` / document `keydown` (React root, Vue `PenEditor`): not owned. Those hosts remove them on unmount. A custom host must do the same.
 
-### Scheduled frames (geometry-adjacent, selection, IME)
+### Scheduled frames (selection, IME, geometry-adjacent)
 
-None of these go through `DomScheduler`. `DomScheduler` itself is not constructed by the field editor and has no `destroy()`.
+`DomScheduler` is the only owner of `requestAnimationFrame` in production DOM code (FE3), held by a `no-restricted-syntax` rule in `eslint.config.mjs` that excepts `scheduler.ts` and bans the member forms (`window.` / `globalThis.`) as well as the bare call. The frames below are the scheduler's own, reached through `read` / `write`.
+
+The field editor does not construct the scheduler: `_ensureScheduler()` resolves the one that belongs to the editor root through `getRootGeometry(root)`, sets itself as its projector, and feeds it every commit (FE4). The root owns the scheduler and reader; `destroy()` releases the field editor's hold on them (projector cleared, commit feed unsubscribed) but does not dispose them, because a second field editor on the same root still needs them.
 
 | Resource | Status |
 | --- | --- |
-| Session reconciler flush `requestAnimationFrame` | Released (`cancelAnimationFrame`) |
-| ContentEditable `pendingDomSyncFrame` | Released (`cancelAnimationFrame` in `deactivate()`) |
-| ContentEditable Safari composition-end frame | Guarded leftover — `deactivate()` nulls `element`; the callback returns. Not cancelled. |
+| Session reconciler flush | Released — queued on `scheduler.write`; `destroy()` unsubscribes the reconciler |
 | `FocusController.waitForAttachment` frames | Guarded leftover — waiters marked `done`; frames not cancelled. |
-| `FieldEditorSelectionAuthority.withSelectionWrite` | Same-turn — raises apply-depth, runs the write, releases in `finally`. No frame. `reset()` zeros depth; there is nothing to cancel. (`applySelectionUntilNextFrame` is deleted.) |
-| `SelectionProjectionController.syncDomSelectionOnce` (up to 4 retries + follow-up frame) | Guarded leftover — callback bails when `!isEditing()`. `reset()` does not cancel the frames. |
+| `FieldEditorSelectionAuthority.withSelectionWrite` | Same-turn — raises apply-depth, runs the write, releases in `finally`. No frame. |
+| `SelectionProjectionController.syncDomSelectionOnce` (up to 4 retries + follow-up) | Guarded leftover — callback bails when `!isEditing()`. `reset()` does not cancel the queued work. |
 | `CellEditingController.trySyncBackend` (up to 3 retries) | Guarded leftover — `clear()` nulls the coord so the callback returns. Not cancelled. |
-| Expanded `beforeinput` frame that calls `activateTextSelection` after `deactivate()` | **Open** — untracked. A `destroy()` in the same turn does not cancel it; the callback can start a new session on a destroyed editor. |
+| `DomScheduler` pending frame | Not owned — the scheduler has no `destroy()`; a pending frame is never cancelled. |
 
 `_deactivate({ restoreFocus: false })` skips restore focus. Destroy does not leave a programmatic focus call queued.
 
@@ -97,19 +113,11 @@ None of these go through `DomScheduler`. `DomScheduler` itself is not constructe
 
 `createAnnouncer` (`src/a11y/announcer.ts`) is the AX2 live region: one `role="status"` node, rate-limit timers (500ms), `announce` / `destroy`.
 
-`Announcer.destroy()` must release:
-
-- pending `setTimeout` keys (`clearTimeout`)
-- pending / last-written maps
-- the live-region node (`region.remove()`)
-
-That path exists and is tested. **The field editor does not construct an announcer.** Wave X.3 has not wired conversion / undo / selection announcements. React still has ad-hoc `aria-live` nodes in `selectionRect.tsx`; those unmount with the primitive, not via `FieldEditor.destroy()`.
-
-When X.3 attaches one announcer per editor root, the owner that calls `createAnnouncer` must call `announcer.destroy()` on the same teardown as `FieldEditor.destroy()`. Until that wire exists, field-editor destroy cannot leak an announcer it never created — and it also cannot clean one a host created on the side.
+`Announcer.destroy()` releases pending `setTimeout` keys, the pending / last-written maps, and the live-region node. The field editor binds one per root (`_unbindAnnouncer`) and releases it in `destroy()`. React still has ad-hoc `aria-live` nodes in `selectionRect.tsx`; those unmount with the primitive, not via `FieldEditor.destroy()`.
 
 ### Geometry
 
-`createGeometryReader` (`src/geometry/geometryReader.ts`) is the Wave 3.2 reader. `dispose()` must release:
+`createGeometryReader` (`src/geometry/geometryReader.ts`) must release, on `dispose()`:
 
 - `ResizeObserver` on the content root (`disconnect`)
 - per-block measure cache
@@ -117,9 +125,7 @@ When X.3 attaches one announcer per editor root, the owner that calls `createAnn
 
 `dispose()` exists. It does **not** cancel `document.fonts.ready` (the promise has no abort; the callback is only guarded). `blockCommitIds` is not cleared (harmless once disposed).
 
-**The field editor does not construct a GeometryReader.** Wave 3.2 note: not wired to DomScheduler, overlays, field-editor, React, or Vue. Field-editor paths still measure through `selectionBridge` / `selectionGeometry` (sync reads, no observer).
-
-When 3.3/3.4 attach a reader to the root, the owner must call `reader.dispose()` on the same teardown as `FieldEditor.destroy()`. Until then, field-editor destroy has no geometry observer to drop.
+The reader belongs to the editor root, not to the field editor: `getRootGeometry(root)` creates one reader and one scheduler per root and caches them against the root element. Whoever owns the root disposes them. The field editor's commit feed keeps the reader's caches honest while it is attached (FE4) and stops feeding on `destroy()`.
 
 ### Adjacent modules (not field-editor owned)
 
@@ -127,18 +133,15 @@ Listed so this file does not imply they ride along:
 
 | Module | Release API | Wired to field editor? |
 | --- | --- | --- |
-| `createAnnouncer` | `destroy()` | No |
-| `createGeometryReader` | `dispose()` | No |
+| `createGeometryReader` | `dispose()` | Through `getRootGeometry`; the root owns it |
+| `DomScheduler` | none — pending `requestAnimationFrame` is never cancelled | Through `getRootGeometry`; fed and projected while attached |
 | `createReducedMotionSignal` | `dispose()` (removes `matchMedia` `change`) | No |
-| `DomScheduler` | none — pending `requestAnimationFrame` is never cancelled | No |
 | Overlay layer (conformance harness `harness/src/overlays/`) | host unmount of the layer node | No |
 
 ## Still open
 
 - Core `editor.destroy()` still does not call field-editor `destroy()` (F21). Hosts must.
 - Slots, `_rootElement`, and the editor reference survive field-editor `destroy()`.
-- Untracked `requestAnimationFrame` work is not cancelled. The expanded-mode activate-after-deactivate frame can re-enter after destroy. The others are guarded but still run.
-- Announcer, GeometryReader, reduced-motion, and DomScheduler are standalone. Their own destroy/dispose (or lack of one, for the scheduler) is not part of `FieldEditor.destroy()`.
+- Queued scheduler work is not cancelled on teardown. The retry paths above are guarded but still run.
+- The root's geometry reader and scheduler have no owner that disposes them when the root goes away.
 - `destroy()` is not documented as idempotent. A second call runs `SessionReconciler.destroy()` again.
-
-Fixing those is later H.6 / Wave 3 / Wave X work. This file only records the gap.

@@ -31,6 +31,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/facets/aiEgressFacet.ts"],
 	},
 	{
+		code: "ai-tool-failed",
+		levels: ["error"],
+		sources: ["extensions/ai/src/agentic/loop.ts"],
+	},
+	{
 		code: "ai-tool-read-only-mutation",
 		levels: ["info"],
 		sources: ["extensions/ai/src/tools/execution.ts"],
@@ -84,6 +89,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		code: "caret-geometry-unavailable",
 		levels: ["info"],
 		sources: ["core/src/commands/caretVerticalMotion.ts"],
+	},
+	{
+		code: "cell-capability-unsupported",
+		levels: ["info"],
+		sources: ["rendering/dom/src/field-editor/contenteditableDirectHandlers.ts"],
 	},
 	{
 		code: "clipboard-invalid-payload",

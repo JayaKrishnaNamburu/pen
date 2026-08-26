@@ -14,10 +14,7 @@ import type {
 	AIMutationPreference,
 	AIRouteLane,
 	AIContentFormat,
-	AIBlockAdapterId,
-	AIBlockClass,
 	AITargetKind,
-	AITransportKind,
 } from "../runtime/contracts";
 import type {
 	AICommandBinding,
@@ -295,7 +292,6 @@ export type AIStreamEventType =
 	| "status"
 	| "text-delta"
 	| "operation"
-	| "app-partial"
 	| "tool-call"
 	| "tool-output"
 	| "tool-result"
@@ -324,11 +320,6 @@ export type AIStreamEvent =
 			type: "text-delta";
 			delta: string;
 			text: string;
-	  })
-	| (AIStreamEventBase & {
-			type: "app-partial";
-			data: unknown;
-			final: boolean;
 	  })
 	| (AIStreamEventBase & {
 			type: "tool-call";
@@ -385,11 +376,8 @@ export interface GenerationState {
 	mutationMode?: AIMutationMode;
 	contentFormat?: AIContentFormat;
 	/** Whether this turn's durable edits arrived as `edit_document` calls (EC1). */
-	editsArriveAsToolCalls?: boolean;
+	editsArriveAsToolCalls: boolean;
 	targetKind?: GenerationTargetKind;
-	blockClass?: AIBlockClass;
-	adapterId?: AIBlockAdapterId;
-	transportKind?: AITransportKind;
 	mutationReceipt?: AIMutationReceipt | null;
 	debug?: GenerationDebugState;
 	editPreview?: EditDocumentPreviewUpdate | null;

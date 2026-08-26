@@ -22,7 +22,7 @@ import { createDeferred } from "./extension.testUtils";
  * use — fails here rather than being discovered by a host.
  *
  * The vocabulary is imported from the module RS4 makes the source of truth
- * (`spec-v5/02-review-surface.md` RS1, RS4).
+ * (`spec/rules/ai.md` RS1, RS4).
  */
 
 /** (c) the review surface — proposed edits, in flight and staged. */

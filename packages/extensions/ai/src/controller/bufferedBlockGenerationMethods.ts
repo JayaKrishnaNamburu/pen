@@ -1,4 +1,5 @@
 import type { AIContentFormat } from "../runtime/contracts";
+import { stagesAsSuggestions } from "../runtime/mutationPolicy";
 import { normalizeFlowMarkdownOutput } from "../runtime/flowMarkdown";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type {
@@ -45,9 +46,6 @@ export const bufferedBlockGenerationMethods = {
 				if (!verification.valid) {
 					return buildMutationReceipt({
 						status: "invalid",
-						adapterId: "flow-markdown",
-						blockClass: "flow",
-						transportKind: "flow-text",
 						issues: [
 							"Scoped markdown replacement could not be verified safely.",
 						],
@@ -63,11 +61,7 @@ export const bufferedBlockGenerationMethods = {
 				ops,
 				scopedReplaceBlockIds.length,
 			);
-			if (
-				mutationMode === "persistent-suggestions" ||
-				mutationMode === "streaming-suggestions" ||
-				mutationMode === "staged-review"
-			) {
+			if (stagesAsSuggestions(mutationMode)) {
 				this._applySuggestedAIOps(ops, sessionId);
 				this._recordCommitDebug({
 					executionPath: "scoped-replacement",
@@ -76,9 +70,6 @@ export const bufferedBlockGenerationMethods = {
 				return buildMutationReceipt({
 					status: ops.length > 0 ? "staged_suggestions" : "noop",
 					ops,
-					adapterId: "flow-markdown",
-					blockClass: "flow",
-					transportKind: "flow-text",
 				});
 			}
 			this._editor.apply(
@@ -94,16 +85,11 @@ export const bufferedBlockGenerationMethods = {
 			return buildMutationReceipt({
 				status: ops.length > 0 ? "applied" : "noop",
 				ops,
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 			});
 		}
 		if (
 			contentFormat === "markdown" &&
-			(mutationMode === "persistent-suggestions" ||
-				mutationMode === "streaming-suggestions" ||
-				mutationMode === "staged-review") &&
+			stagesAsSuggestions(mutationMode) &&
 			this._applySuggestedMarkdownPlaceholderReplacement(
 				blockId,
 				normalizedText,
@@ -114,9 +100,6 @@ export const bufferedBlockGenerationMethods = {
 		) {
 			return buildMutationReceipt({
 				status: "staged_suggestions",
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 			});
 		}
 
@@ -137,23 +120,13 @@ export const bufferedBlockGenerationMethods = {
 			return buildMutationReceipt({
 				status: "noop",
 				ops,
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 			});
 		}
-		if (
-			mutationMode === "persistent-suggestions" ||
-			mutationMode === "streaming-suggestions" ||
-			mutationMode === "staged-review"
-		) {
+		if (stagesAsSuggestions(mutationMode)) {
 			this._applySuggestedAIOps(ops, sessionId);
 			return buildMutationReceipt({
 				status: "staged_suggestions",
 				ops,
-				adapterId: "flow-markdown",
-				blockClass: "flow",
-				transportKind: "flow-text",
 			});
 		}
 		this._editor.apply(
@@ -163,9 +136,6 @@ export const bufferedBlockGenerationMethods = {
 		return buildMutationReceipt({
 			status: "applied",
 			ops,
-			adapterId: "flow-markdown",
-			blockClass: "flow",
-			transportKind: "flow-text",
 		});
 	},
 };

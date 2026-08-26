@@ -62,3 +62,10 @@ export function shouldStreamDirectAIOutput(options: {
 
 	return options.mutationMode === "direct-stream";
 }
+
+/** Durable text lands as suggestion marks rather than applying immediately. */
+export function stagesAsSuggestions(
+	mode: AIMutationMode | undefined,
+): boolean {
+	return mode != null && mode !== "direct-stream";
+}

@@ -244,7 +244,6 @@
 - ModelAdapterCapabilities
 - ModelMessage
 - ModelMessagePart
-- ModelOperationApplyPolicy
 - ModelOperationBlockTarget
 - ModelOperationDocumentTarget
 - ModelOperationKind

@@ -12,7 +12,7 @@ import { createDeferred } from "./extension.testUtils";
  * re-staging its whole parsed payload as suggestions on every frame — a
  * second presentation stack with its own lifecycle, and a document write per
  * token. It now previews as streaming preview text and stages once on close
- * (`spec-v5/02-review-surface.md` RS2).
+ * (`spec/rules/ai.md` RS2).
  */
 describe("RS2: markdown block generation rides the review surface", () => {
 	it("RS2: an in-flight markdown block generation previews without writing, then stages", async () => {

@@ -415,7 +415,7 @@ describe("aiExtension", () => {
 		expect(controller.getSuggestions().length).toBeGreaterThan(0);
 	});
 
-	it("uses selection-fast request mode for bottom-chat selection rewrites", async () => {
+	it("uses selection-rewrite request mode for bottom-chat selection rewrites", async () => {
 		let requestMode: string | undefined;
 		const editor = createEditor({
 			schema: defaultSchema,
@@ -460,6 +460,6 @@ describe("aiExtension", () => {
 		});
 		await controller.runSessionPrompt(session.id, "Rewrite the selection");
 
-		expect(requestMode).toBe("selection-fast");
+		expect(requestMode).toBe("selection-rewrite");
 	});
 });

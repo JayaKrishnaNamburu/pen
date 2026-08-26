@@ -1,20 +1,17 @@
 import { selectionToRange, streamingTargetFacet } from "@input/pen-core";
 import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import { generateId, type StreamingTarget } from "@input/pen-types";
-import { getBlockAdapter } from "../runtime/blockAdapters";
+import { buildFlowMarkdownRequestPrompt } from "../runtime/flowMarkdown";
 import { routeAIRequest } from "../runtime/router";
-import { resolveExecutionMode } from "../runtime/generationTarget";
 import type { GenerationState } from "../types";
 import type { AIControllerImpl } from "./aiController";
 import {
-	appendUniqueString,
+	beginGenerationSession,
 	buildSessionExecutionPrompt,
 	createAIStreamEvent,
 	EMPTY_TOOL_RUNTIME,
 	isLocalRequestedOperation,
 	resolveSelectionText,
-	resolveSessionAnchor,
-	resolveSessionSelectionSnapshot,
 	shouldReplaceEmptyMarkdownTarget,
 	shouldTrimLeadingBlankBlockGenerationText,
 } from "../helpers";
@@ -110,7 +107,6 @@ export async function executeGeneration(
 	} else {
 		route = refinedRoute;
 	}
-	const adapter = getBlockAdapter(route.adapterId);
 	const contentFormat = route.contentFormat;
 	const streamingTarget =
 		(controller._editor.facet(
@@ -145,6 +141,8 @@ export async function executeGeneration(
 		editsArriveAsToolCalls: route.editsArriveAsToolCalls,
 		surface: context?.surface,
 		selectionRange,
+		replaceTargetBlock: shouldReplaceMarkdownTarget,
+		replaceBlockIds: context?.replaceBlockIds,
 	});
 	const sessionTurnId = context?.sessionId ? generateId() : undefined;
 	const existingSession =
@@ -158,11 +156,9 @@ export async function executeGeneration(
 		prompt,
 	);
 	const generationPrompt =
-		adapter.id === "flow-markdown" && contentFormat === "markdown"
-			? adapter.buildPrompt({
+		contentFormat === "markdown"
+			? buildFlowMarkdownRequestPrompt({
 					prompt: executionPrompt,
-					targetKind: route.targetKind,
-					activeBlockId: blockId,
 					workingSet,
 					editsArriveAsToolCalls: route.editsArriveAsToolCalls,
 				})
@@ -190,9 +186,6 @@ export async function executeGeneration(
 		contentFormat,
 		editsArriveAsToolCalls: route.editsArriveAsToolCalls,
 		targetKind: route.targetKind,
-		blockClass: route.blockClass,
-		adapterId: route.adapterId,
-		transportKind: route.transportKind,
 		mutationReceipt: null,
 		debug: {
 			messageAssemblyLatencyMs: 0,
@@ -203,7 +196,6 @@ export async function executeGeneration(
 			qualitySignals: {},
 			routeConfidence: workingSet?.routeConfidence,
 			structured: {
-				executionMode: resolveExecutionMode(route.mutationMode),
 				targetKind: route.targetKind,
 				validationIssueCount: 0,
 			},
@@ -214,95 +206,14 @@ export async function executeGeneration(
 		},
 	};
 	if (context?.sessionId) {
-		const nextSelectionSnapshot =
-			target.type === "selection"
-				? resolveSessionSelectionSnapshot(
-						controller._editor,
-						target.selection,
-					)
-				: undefined;
-		controller._updateSession(context.sessionId, {
-			status: "streaming",
+		beginGenerationSession(controller, {
+			sessionId: context.sessionId,
+			seedGeneration,
+			prompt,
+			target,
 			operation: requestedOperation,
-			activeTurnId: sessionTurnId,
-			anchor:
-				target.type === "selection"
-					? resolveSessionAnchor(controller._editor, target.selection)
-					: resolveSessionAnchor(
-							controller._editor,
-							controller._editor.selection,
-						),
-			generationIds: appendUniqueString(
-				existingSession?.generationIds ?? [],
-				seedGeneration.id,
-			),
-			promptHistory: [
-				...(existingSession?.promptHistory ?? []),
-				{
-					id: generateId(),
-					prompt,
-					createdAt: Date.now(),
-					generationId: seedGeneration.id,
-					operation: requestedOperation ?? undefined,
-				},
-			],
-			turns: sessionTurnId
-				? [
-						...(existingSession?.turns ?? []),
-						{
-							id: sessionTurnId,
-							prompt,
-							createdAt: Date.now(),
-							undoGroupId: seedGeneration.undoGroupId,
-							generationId: seedGeneration.id,
-							target: target.type,
-							operation: requestedOperation ?? undefined,
-							status: "streaming",
-							suggestionIds: [],
-							generatedBlockIds: [],
-							anchor:
-								target.type === "selection"
-									? resolveSessionAnchor(
-											controller._editor,
-											target.selection,
-										)
-									: undefined,
-							selection:
-								target.type === "selection"
-									? resolveSessionSelectionSnapshot(
-											controller._editor,
-											target.selection,
-										)
-									: undefined,
-						},
-					]
-				: existingSession?.turns,
-			contextualPrompt: existingSession?.contextualPrompt
-				? {
-						...existingSession.contextualPrompt,
-						anchor:
-							target.type === "selection"
-								? {
-										...existingSession.contextualPrompt
-											.anchor,
-										selectionSnapshot:
-											nextSelectionSnapshot,
-										focusBlockId: selectionToRange(
-											controller._editor.internals.doc,
-											target.selection,
-										).start.blockId,
-										status: "valid",
-									}
-								: existingSession.contextualPrompt.anchor,
-						composer: {
-							...existingSession.contextualPrompt.composer,
-							draftPrompt: "",
-							isSubmitting: true,
-							isOpen: true,
-							openReason: "user",
-						},
-					}
-				: undefined,
+			sessionTurnId,
+			existingSession,
 		});
 	}
 	controller._setState({
@@ -337,7 +248,6 @@ export async function executeGeneration(
 		requestedOperation,
 		route,
 		workingSet,
-		adapter,
 		contentFormat,
 		currentText: "",
 		streamingTarget,

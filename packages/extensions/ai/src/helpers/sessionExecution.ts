@@ -1,10 +1,23 @@
-import type { Editor } from "@input/pen-types";
+import { selectionToRange } from "@input/pen-core";
+import { generateId, type Editor } from "@input/pen-types";
 import {
 	isDocumentFollowUpEditPrompt,
 	isDocumentResetPrompt,
 } from "../runtime/promptTargeting";
 import { classifyPromptIntent } from "../runtime/router";
-import type { AISession, AISessionMetrics, CommitDebugState } from "../types";
+import type {
+	AIRequestedOperation,
+	AISession,
+	AISessionMetrics,
+	CommitDebugState,
+	GenerationState,
+} from "../types";
+import { appendUniqueString } from "./equality";
+import type { GenerationTarget } from "./types";
+import {
+	resolveSessionAnchor,
+	resolveSessionSelectionSnapshot,
+} from "./types";
 
 export function buildSessionExecutionPrompt(
 	session: AISession | null,
@@ -141,4 +154,120 @@ export function resolveReplacementDeleteBlockIds(
 			editor.getBlock(candidateBlockId) != null,
 	);
 	return deleteBlockIds.length > 0 ? deleteBlockIds : [blockId];
+}
+
+export interface GenerationSessionHost {
+	_editor: Editor;
+	_updateSession(sessionId: string, patch: Partial<AISession>): void;
+}
+
+export function beginGenerationSession(
+	controller: GenerationSessionHost,
+	input: {
+		sessionId: string;
+		seedGeneration: GenerationState;
+		prompt: string;
+		target: GenerationTarget;
+		operation: AIRequestedOperation | null;
+		sessionTurnId: string | undefined;
+		existingSession: AISession | null;
+	},
+): void {
+	const {
+		sessionId,
+		seedGeneration,
+		prompt,
+		target,
+		operation,
+		sessionTurnId,
+		existingSession,
+	} = input;
+	const nextSelectionSnapshot =
+		target.type === "selection"
+			? resolveSessionSelectionSnapshot(
+					controller._editor,
+					target.selection,
+				)
+			: undefined;
+	controller._updateSession(sessionId, {
+		status: "streaming",
+		operation,
+		activeTurnId: sessionTurnId,
+		anchor:
+			target.type === "selection"
+				? resolveSessionAnchor(controller._editor, target.selection)
+				: resolveSessionAnchor(
+						controller._editor,
+						controller._editor.selection,
+					),
+		generationIds: appendUniqueString(
+			existingSession?.generationIds ?? [],
+			seedGeneration.id,
+		),
+		promptHistory: [
+			...(existingSession?.promptHistory ?? []),
+			{
+				id: generateId(),
+				prompt,
+				createdAt: Date.now(),
+				generationId: seedGeneration.id,
+				operation: operation ?? undefined,
+			},
+		],
+		turns: sessionTurnId
+			? [
+					...(existingSession?.turns ?? []),
+					{
+						id: sessionTurnId,
+						prompt,
+						createdAt: Date.now(),
+						undoGroupId: seedGeneration.undoGroupId,
+						generationId: seedGeneration.id,
+						target: target.type,
+						operation: operation ?? undefined,
+						status: "streaming",
+						suggestionIds: [],
+						generatedBlockIds: [],
+						anchor:
+							target.type === "selection"
+								? resolveSessionAnchor(
+										controller._editor,
+										target.selection,
+									)
+								: undefined,
+						selection:
+							target.type === "selection"
+								? resolveSessionSelectionSnapshot(
+										controller._editor,
+										target.selection,
+									)
+								: undefined,
+					},
+				]
+			: existingSession?.turns,
+		contextualPrompt: existingSession?.contextualPrompt
+			? {
+					...existingSession.contextualPrompt,
+					anchor:
+						target.type === "selection"
+							? {
+									...existingSession.contextualPrompt.anchor,
+									selectionSnapshot: nextSelectionSnapshot,
+									focusBlockId: selectionToRange(
+										controller._editor.internals.doc,
+										target.selection,
+									).start.blockId,
+									status: "valid",
+								}
+							: existingSession.contextualPrompt.anchor,
+					composer: {
+						...existingSession.contextualPrompt.composer,
+						draftPrompt: "",
+						isSubmitting: true,
+						isOpen: true,
+						openReason: "user",
+					},
+				}
+			: undefined,
+	});
 }

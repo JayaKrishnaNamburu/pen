@@ -9,8 +9,11 @@ import {
 import type {
 	AIMutationReceipt,
 	AIWorkingSetEnvelope,
-	GenerationState,
 } from "../types";
+import {
+	readWorkingSetNavigatorHints,
+	readWorkingSetToolContext,
+} from "../runtime/generationTarget";
 import type { GenerationTarget } from "../helpers";
 import { resolveSelectionText } from "../helpers";
 import type { AIControllerImpl } from "./aiController";
@@ -28,24 +31,15 @@ export const workingSetMethods = {
 			 */
 			committedText: boolean;
 			suggestionIds: readonly string[];
-			adapterId: NonNullable<GenerationState["adapterId"]>;
-			blockClass: NonNullable<GenerationState["blockClass"]>;
-			transportKind: NonNullable<GenerationState["transportKind"]>;
 		},
 	): AIMutationReceipt {
 		if (input.suggestionIds.length > 0) {
 			return buildMutationReceipt({
 				status: "staged_suggestions",
-				adapterId: input.adapterId,
-				blockClass: input.blockClass,
-				transportKind: input.transportKind,
 			});
 		}
 		return buildMutationReceipt({
 			status: input.committedText ? "applied" : "noop",
-			adapterId: input.adapterId,
-			blockClass: input.blockClass,
-			transportKind: input.transportKind,
 		});
 	},
 
@@ -97,7 +91,7 @@ export const workingSetMethods = {
 			route.editsArriveAsToolCalls &&
 			this._editor.blockCount() <= AI_ANNOTATED_WORKING_SET_MAX_BLOCKS
 		) {
-			const context = (await toolRuntime.executeTool(
+			const raw = await toolRuntime.executeTool(
 				"get_context",
 				{
 					format: "markdown",
@@ -106,18 +100,8 @@ export const workingSetMethods = {
 					includeSuggestions: this._state.suggestMode,
 				},
 				{} as never,
-			)) as {
-				activeBlockType?: string | null;
-				markdown?: string | null;
-				blockIds?: string[];
-				surroundingBlocks?: Array<{ id: string }>;
-				selectedText?: string | null;
-				structuredTarget?: {
-					target?: {
-						kind?: "block" | "table";
-					};
-				} | null;
-			};
+			);
+			const context = readWorkingSetToolContext(raw);
 			const trackedBlockIds = [
 				...new Set([blockId, ...(context.blockIds ?? [])]),
 			];
@@ -139,21 +123,13 @@ export const workingSetMethods = {
 		}
 
 		if (route.useCursorContext) {
-			const context = (await toolRuntime.executeTool(
+			const raw = await toolRuntime.executeTool(
 				"get_cursor_context",
 				{ includeSuggestions: this._state.suggestMode },
 				{} as never,
-			)) as {
-				activeBlockType?: string | null;
-				markdown?: string | null;
-				surroundingBlocks?: Array<{ id: string }>;
-				selectedText?: string | null;
-				structuredTarget?: {
-					target?: {
-						kind?: "block" | "table";
-					};
-				} | null;
-			};
+			);
+			const context = readWorkingSetToolContext(raw);
+			const hints = readWorkingSetNavigatorHints(raw);
 			const trackedBlockIds = [
 				blockId,
 				...(context.surroundingBlocks ?? []).map((block) => block.id),
@@ -163,12 +139,8 @@ export const workingSetMethods = {
 				viewMode: this._state.suggestMode ? "raw" : "resolved",
 				source: "cursor-context",
 				context,
-				routeConfidence: refineRouteWithNavigator(route, {
-					selectedTextLength: context.selectedText?.length ?? 0,
-					activeBlockType: context.activeBlockType ?? null,
-					structuredTargetKind:
-						context.structuredTarget?.target?.kind ?? null,
-				}).confidence,
+				routeConfidence: refineRouteWithNavigator(route, hints)
+					.confidence,
 				trackedBlockIds: [...new Set(trackedBlockIds)],
 				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
@@ -176,7 +148,7 @@ export const workingSetMethods = {
 		}
 
 		if (route.useDocumentSummary) {
-			const context = (await toolRuntime.executeTool(
+			const raw = await toolRuntime.executeTool(
 				"get_context",
 				scope === "document"
 					? {
@@ -194,17 +166,9 @@ export const workingSetMethods = {
 							},
 						},
 				{} as never,
-			)) as {
-				activeBlockType?: string | null;
-				markdown?: string | null;
-				surroundingBlocks?: Array<{ id: string }>;
-				selectedText?: string | null;
-				structuredTarget?: {
-					target?: {
-						kind?: "block" | "table";
-					};
-				} | null;
-			};
+			);
+			const context = readWorkingSetToolContext(raw);
+			const hints = readWorkingSetNavigatorHints(raw);
 			const trackedBlockIds = [
 				blockId,
 				...(context.surroundingBlocks ?? []).map((block) => block.id),
@@ -214,12 +178,8 @@ export const workingSetMethods = {
 				viewMode: this._state.suggestMode ? "raw" : "resolved",
 				source: "document-summary",
 				context,
-				routeConfidence: refineRouteWithNavigator(route, {
-					selectedTextLength: context.selectedText?.length ?? 0,
-					activeBlockType: context.activeBlockType ?? null,
-					structuredTargetKind:
-						context.structuredTarget?.target?.kind ?? null,
-				}).confidence,
+				routeConfidence: refineRouteWithNavigator(route, hints)
+					.confidence,
 				trackedBlockIds: [...new Set(trackedBlockIds)],
 				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
@@ -246,22 +206,7 @@ export const workingSetMethods = {
 		if (!workingSet?.context || typeof workingSet.context !== "object") {
 			return route;
 		}
-		const context = workingSet.context as {
-			activeBlockType?: string | null;
-			markdown?: string | null;
-			surroundingBlocks?: Array<{ id: string }>;
-			selectedText?: string | null;
-			structuredTarget?: {
-				target?: {
-					kind?: "block" | "table";
-				};
-			} | null;
-		};
-		return refineRouteWithNavigator(route, {
-			selectedTextLength: context.selectedText?.length ?? 0,
-			activeBlockType: context.activeBlockType ?? null,
-			structuredTargetKind:
-				context.structuredTarget?.target?.kind ?? null,
-		});
+		const hints = readWorkingSetNavigatorHints(workingSet.context);
+		return refineRouteWithNavigator(route, hints);
 	},
 };

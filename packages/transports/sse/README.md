@@ -1,6 +1,8 @@
 # `@input/pen-transport-sse`
 
-**Grade: reference.** This transport is single-process, non-resumable, and development-oriented. It illustrates Pen's SSE streaming protocol. Do not use it as a production collaboration or sync backend.
+**Grade: reference.** Support status: reference. This transport is single-process, non-resumable, and development-oriented. It illustrates Pen's SSE streaming protocol. Do not use it as a production collaboration or sync backend.
+
+A host can rely on `sseTransport({ url }).stream(request)` POSTing a `PenStreamRequest` and yielding `PenStreamPart`s from `createSSEHandler`'s event-stream, including in-process `toolCalls` when a `toolRuntime` is wired. A host cannot rely on resume, `reconnect`, multi-process deployment, persistence, or request authentication — those stay host seams.
 
 Resume is absent, not stubbed. `createSSEHandler` answers `GET` — with or without `Last-Event-ID` — with `405 Method Not Allowed` and `Allow: POST`. It does not return `501`. There is no replayable log, no retention bound, and no `X-Replay-Supported` header. Event `id` fields on the wire are not a replay contract. The client POSTs a fresh stream and does not send `Last-Event-ID`. A dropped connection is a full restart, not a continuation. This package does not resync document state. The handler is in-process memory only; it does not survive a process restart or a second instance.
 

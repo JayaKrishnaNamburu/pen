@@ -21,6 +21,19 @@ export const AI_TOOL_UNCONFIRMED_CODE = "ai-tool-unconfirmed";
 /** A tool classified read-only called `editor.apply` or `openTextStream`; the write was dropped. */
 export const AI_TOOL_READ_ONLY_MUTATION_CODE = "ai-tool-read-only-mutation";
 
+/**
+ * A tool call in the agentic loop threw. The turn continues; the error is fed
+ * back to the model as the tool's result, so it may retry.
+ *
+ * The loop used to report this to the model only. A malformed `edit_document`
+ * payload is the case that matters: it is rejected before any op is applied, so
+ * the document is untouched and nothing throws out of `runPrompt` — from the
+ * host's side the turn simply did nothing, with no way to tell a refusal from a
+ * model that chose not to edit. UC2 requires the refusal be observable. The
+ * streaming path already emitted `stream-tool-error` for the same failure.
+ */
+export const AI_TOOL_FAILED_CODE = "ai-tool-failed";
+
 export const AI_READ_ONLY_TOOL_NAMES = [
 	"read_document",
 	"get_context",

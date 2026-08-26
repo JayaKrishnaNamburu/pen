@@ -14,7 +14,7 @@ import {
  * Producers must import the vocabulary instead of retyping the strings.
  * Sheet selectors and theme properties must interpolate it instead of
  * restating it. Every REVIEW_SURFACE_CLASSES name must have a rule in
- * the sheet (`spec-v5/02-review-surface.md` RS4).
+ * the sheet (`spec/rules/ai.md` RS4).
  */
 
 const AI_SRC = join(dirname(fileURLToPath(import.meta.url)), "..");

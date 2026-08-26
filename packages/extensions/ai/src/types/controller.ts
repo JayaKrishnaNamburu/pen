@@ -12,11 +12,7 @@ import type { EditDocumentPreviewUpdate } from "../runtime/editDocumentPreview";
 import type {
 	AIMutationPreference,
 	AIRouteLane,
-	AIBlockAdapterId,
-	AIBlockClass,
-	AIExecutionMode,
 	AITargetKind,
-	AITransportKind,
 	AIWorkingSetViewMode,
 } from "../runtime/contracts";
 import type {
@@ -360,7 +356,6 @@ export interface GenerationDebugState {
 }
 
 export interface StructuredGenerationDebugState {
-	executionMode?: AIExecutionMode;
 	targetKind?: AITargetKind;
 	validationIssueCount?: number;
 }
@@ -398,9 +393,6 @@ export interface AIMutationReceiptEvidence {
 	opsCount: number;
 	affectedBlockIds: string[];
 	createdBlockIds: string[];
-	adapterId: AIBlockAdapterId;
-	blockClass: AIBlockClass;
-	transportKind: AITransportKind;
 }
 
 export interface AIMutationReceipt {

@@ -53,6 +53,11 @@ jobs:
           # here until the TSDoc / un-export pass lands.
           - gate: api-docs-coverage
             command: pnpm api-docs-coverage
+          # HB1/HB5: every capability-matrix cell that claims a surface
+          # names a path that exists and is not in the playground, so a
+          # renamed test cannot leave a cell vouching for nothing.
+          - gate: capability-matrix
+            command: pnpm capability-matrix
           # API8: retired source-available / commercial wording stays
           # in the license decision record.
           - gate: positioning-check
@@ -93,15 +98,17 @@ jobs:
           # Bare path strings are the parking-lot shape and fail.
           - gate: above-floor-api-allowlist
             command: node scripts/above-floor-api-allowlist.mjs
-          # Classifies every `- GATE` line without executing it and
-          # fails when a command is structurally unable to fail. This is the
-          # only gate that can catch a gate: after the SF1 merge, GATE 2.3
-          # and 2.9 still named deleted packages, and `pnpm --filter` on a
-          # selector matching nothing exits 0 — both read green while running
-          # no tests. Cheap on purpose (no build, no suites); the executing
-          # run is a wave-owner command, not a PR hold.
-          - gate: v3-gate-scope-lint
-            command: node scripts/v3-gates.mjs --scope-lint
+          # The gate-that-catches-gates (`v3-gates.mjs --scope-lint`) was
+          # removed with the v5 train: it classified `- GATE` lines in a
+          # train's wave files, and with no train executing there is no
+          # population to lint. It earned its keep — it caught gates naming
+          # deleted packages, where `pnpm --filter` on a selector matching
+          # nothing exits 0 and reads green while running no tests. The v5
+          # train hit that class three more times by hand (a Playwright spec
+          # handed to `node --test`, twice) plus a gate that passed on its own
+          # placeholder text. A future train reintroduces the runner and this
+          # row with it; until then, review is the only thing checking that a
+          # new gate can fail.
           # I15 / GA1: every path-shaped datum in a check instrument
           # resolves against the tree. Blocking — a gate that cannot
           # fail is a defect this repo has already deleted twice.

@@ -22,27 +22,11 @@ export {
 } from "./egress";
 export { AICommandRegistry } from "./commands/registry";
 export { defaultAICommands } from "./commands/defaultCommands";
-export {
-	AI_EXECUTION_MODES,
-	AI_BLOCK_ADAPTER_IDS,
-	AI_BLOCK_CLASSES,
-	AI_TARGET_KINDS,
-	AI_TRANSPORT_KINDS,
-} from "./runtime/contracts";
+export { AI_TARGET_KINDS } from "./runtime/contracts";
 export type {
-	AIBlockAdapterId,
-	AIBlockClass,
 	AIMutationPreference,
 	AITargetKind,
-	AIExecutionMode,
-	AITransportKind,
 } from "./runtime/contracts";
-export {
-	getBlockAdapter,
-	listBlockAdapters,
-	resolveBlockAdapter,
-	resolveBlockAdapterContentFormat,
-} from "./runtime/blockAdapters";
 export {
 	acceptSuggestion,
 	rejectSuggestion,

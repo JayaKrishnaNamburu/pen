@@ -320,7 +320,7 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 	// markdown normalizer strips the wrapper and leaves nothing to insert — so it
 	// locks the rule in rather than proving the fix. The red-proof is the
 	// markdown case.
-	it("does not honour a well-formed commit payload sent as text", async () => {
+	it("does not honour a well-formed fast-apply payload sent as text", async () => {
 		const editor = createChatEditor(talkingModel("placeholder"));
 		await editor.whenReady();
 		const { lastParagraphId } = seedDocument(editor);
@@ -329,14 +329,23 @@ describe("EC1: on the tool channel, assistant text is not an edit", () => {
 		const applying = createChatEditor(
 			talkingModel(
 				[
-					"<pen-commit>",
+					// `pen-fast-apply` is deliberately spelled out, and must not be
+					// renamed with our internal vocabulary. It is not a Pen symbol: it
+					// is the tag a model trained on the *old* released contract will
+					// emit, and it is the only string this regression is about. A
+					// wave-3 rename swept it to `pen-commit` — a tag no released
+					// version ever accepted — which left the test asserting that an
+					// invented string is inert. GATE 1.4 / GATE 2.1 grep for this
+					// literal precisely so that a rename cannot quietly empty the
+					// guard out; this file is expected to be their only match.
+					"<pen-fast-apply>",
 					"<instructions>Make the last paragraph a bullet.</instructions>",
 					"<edit>",
 					"<operation>replace_text</operation>",
 					`<blockId>${lastParagraphId}</blockId>`,
 					"<text>Revenue grew</text>",
 					"</edit>",
-					"</pen-commit>",
+					"</pen-fast-apply>",
 				].join("\n"),
 			),
 		);

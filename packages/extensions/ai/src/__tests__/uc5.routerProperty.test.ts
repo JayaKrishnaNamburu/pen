@@ -2,12 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { SelectionState } from "@input/pen-types";
 import type { AISurface } from "../types";
 import {
-	AI_BLOCK_ADAPTER_IDS,
-	AI_BLOCK_CLASSES,
 	AI_MUTATION_MODES,
 	AI_ROUTE_LANES,
 	AI_TARGET_KINDS,
-	AI_TRANSPORT_KINDS,
 	type AIContentFormat,
 	type AIMutationPreference,
 } from "../runtime/contracts";
@@ -158,9 +155,6 @@ describe("UC5: the route vocabulary folds to members with producers", () => {
 			lane: new Set(routed.map((route) => route.lane)),
 			mutationMode: new Set(routed.map((route) => route.mutationMode)),
 			targetKind: new Set(routed.map((route) => route.targetKind)),
-			blockClass: new Set(routed.map((route) => route.blockClass)),
-			adapterId: new Set(routed.map((route) => route.adapterId)),
-			transportKind: new Set(routed.map((route) => route.transportKind)),
 			editsArriveAsToolCalls: new Set(
 				routed.map((route) => route.editsArriveAsToolCalls),
 			),
@@ -174,9 +168,6 @@ describe("UC5: the route vocabulary folds to members with producers", () => {
 		{ field: "lane", declared: AI_ROUTE_LANES },
 		{ field: "mutationMode", declared: AI_MUTATION_MODES },
 		{ field: "targetKind", declared: AI_TARGET_KINDS },
-		{ field: "blockClass", declared: AI_BLOCK_CLASSES },
-		{ field: "adapterId", declared: AI_BLOCK_ADAPTER_IDS },
-		{ field: "transportKind", declared: AI_TRANSPORT_KINDS },
 		{ field: "editsArriveAsToolCalls", declared: [false, true] },
 	];
 
@@ -214,6 +205,10 @@ describe("UC5: the route vocabulary folds to members with producers", () => {
 			"AIApplyStrategy",
 			"AI_PLANNER_MODES",
 			"AIPlannerMode",
+			"AI_BLOCK_ADAPTER_IDS",
+			"AI_BLOCK_CLASSES",
+			"AI_TRANSPORT_KINDS",
+			"AI_EXECUTION_MODES",
 		]) {
 			expect(Object.keys(contracts)).not.toContain(name);
 		}

@@ -11,9 +11,13 @@ import {
 } from "./streamingPreviewInput";
 
 /**
- * Where a generation's arriving text goes. Three jobs, computed once:
- * write into the document, splice suggestion marks, or paint a review
- * preview that writes nothing until close.
+ * Where a generation's arriving text goes, and what close does with it.
+ * Resolved once; delta application and finalize both switch on `kind`.
+ *
+ * - `direct-write` / `suggestion-splice`: already in the document.
+ * - `review-preview`: paint while streaming, then commit (or clear) on close.
+ * - `buffered-commit`: hold text, commit on close, no preview.
+ * - `none`: text is talk (tool channel) or otherwise must not become a mutation.
  */
 export type GenerationStreamingSink =
 	| { kind: "direct-write" }
@@ -26,9 +30,20 @@ export type GenerationStreamingSink =
 	  }
 	| {
 			kind: "review-preview";
-			format: "plain" | "markdown";
-			source: "selection" | "markdown-block";
+			format: "markdown";
+			source: "markdown-block";
+			blockId: string;
+			offset: number;
+			replaceTargetBlock: boolean;
+			replaceBlockIds?: readonly string[];
 	  }
+	| {
+			kind: "review-preview";
+			format: "plain" | "markdown";
+			source: "selection";
+			range: Pick<DocumentRange, "start" | "end">;
+	  }
+	| { kind: "buffered-commit" }
 	| { kind: "none" };
 
 export function resolveGenerationStreamingSink(input: {
@@ -39,7 +54,13 @@ export function resolveGenerationStreamingSink(input: {
 	editsArriveAsToolCalls: boolean;
 	surface: AISurface | undefined;
 	selectionRange: Pick<DocumentRange, "start" | "end"> | null;
+	replaceTargetBlock?: boolean;
+	replaceBlockIds?: readonly string[];
 }): GenerationStreamingSink {
+	if (input.editsArriveAsToolCalls) {
+		return { kind: "none" };
+	}
+
 	if (input.target.type === "block" && input.shouldStreamDirectly) {
 		return { kind: "direct-write" };
 	}
@@ -74,21 +95,28 @@ export function resolveGenerationStreamingSink(input: {
 		input.mutationMode === "streaming-suggestions" &&
 		input.contentFormat === "markdown" &&
 		input.target.type === "block" &&
-		!input.editsArriveAsToolCalls &&
 		input.surface === "bottom-chat"
 	) {
 		return {
 			kind: "review-preview",
 			format: "markdown",
 			source: "markdown-block",
+			blockId: input.target.blockId,
+			offset: input.target.offset,
+			replaceTargetBlock: input.replaceTargetBlock === true,
+			replaceBlockIds: input.replaceBlockIds,
 		};
 	}
-	if (input.target.type === "selection") {
+	if (input.target.type === "selection" && input.selectionRange) {
 		return {
 			kind: "review-preview",
 			format: input.contentFormat === "markdown" ? "markdown" : "plain",
 			source: "selection",
+			range: input.selectionRange,
 		};
+	}
+	if (input.target.type === "block") {
+		return { kind: "buffered-commit" };
 	}
 	return { kind: "none" };
 }
@@ -111,6 +139,7 @@ export function applyGenerationStreamingDelta(
 		case "review-preview":
 			applyReviewPreviewDelta(controller, state, sink);
 			return;
+		case "buffered-commit":
 		case "none":
 			return;
 		default: {
@@ -158,29 +187,23 @@ function applyReviewPreviewDelta(
 	}
 	const sessionId = active.sessionId ?? active.id;
 	if (sink.source === "markdown-block") {
-		if (state.target.type !== "block") {
-			return;
-		}
 		controller.setStreamingReviewPreview(
 			markdownReviewPreviewInput(controller._editor, {
 				sessionId,
 				turnId: active.turnId,
-				blockId: state.target.blockId,
-				offset: state.target.offset,
-				replaceTargetBlock: state.shouldReplaceMarkdownTarget,
-				replaceBlockIds: state.context?.replaceBlockIds,
+				blockId: sink.blockId,
+				offset: sink.offset,
+				replaceTargetBlock: sink.replaceTargetBlock,
+				replaceBlockIds: sink.replaceBlockIds,
 				text: state.currentText,
 			}),
 		);
 		return;
 	}
-	if (!state.selectionRange) {
-		return;
-	}
 	const preview = selectionReviewPreviewInput(controller._editor, {
 		sessionId,
 		turnId: active.turnId,
-		range: state.selectionRange,
+		range: sink.range,
 		text: state.currentText,
 		format: sink.format,
 	});

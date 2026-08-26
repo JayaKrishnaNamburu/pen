@@ -21,7 +21,7 @@ import { createDeferred } from "./extension.testUtils";
  * Two claims. First, that the posture resolver maps each input to a pinned
  * posture, so a swapped return cannot hide inside a closed-set walk. Second,
  * that a turn ending with an edit neither applied nor staged does not report
- * success (`spec-v5/02-review-surface.md` RS3).
+ * success (`spec/rules/ai.md` RS3).
  */
 
 describe("RS3: every reviewable state renders a defined posture", () => {

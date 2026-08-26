@@ -113,3 +113,36 @@ DOC4 | scripts/readme-sections.mjs | .github/workflows/readme-sections.yml | rea
 SCH1 | scripts/no-unscheduled-measure.mjs | .github/workflows/unscheduled-measure.yml | no-unscheduled-measure.mjs | getBoundingClientRect
 AIB2 | scripts/pen-stream-request-no-editor.mjs | .github/workflows/static-gates.yml | pen-stream-request-no-editor.mjs | PenStreamRequest
 API8 | scripts/positioning-check.mjs | .github/workflows/static-gates.yml | positioning-check.mjs | commercial license
+
+# v5 hosts (2026-08-26). Both rules are checked by one script, so both
+# rows name it:
+#   HB1 — every capability-matrix cell opens with a status from the closed
+#           four-word vocabulary, and the surface columns are exactly the
+#           four declared surfaces in order, so a row cannot drop a column
+#           and read as though it had answered
+#   HB5 — a cell claiming reach names a path that exists and is not under
+#           playground/, so a renamed test cannot leave a cell vouching for
+#           nothing and the reference host cannot stand in as proof
+# Watched failing while the matrix was authored: an undemonstrable cell, a
+# playground-only claim, and a path that had been renamed each produced a
+# distinct failure line before the matrix was corrected.
+HB1 | scripts/check-capability-matrix.mjs | .github/workflows/static-gates.yml | capability-matrix | bring-your-own-ui
+HB5 | scripts/check-capability-matrix.mjs | .github/workflows/static-gates.yml | capability-matrix | not the proof
+
+# FE3 (2026-08-26), and the first row here whose gate is a lint rule rather
+# than a script. `DomScheduler` is the only production owner of
+# requestAnimationFrame in @input/pen-dom; the ban is `no-restricted-syntax`
+# scoped to that package's src with scheduler.ts excepted.
+#
+# It is registered because it was previously a grep written into the rule and
+# executed only by the v5 train's wave runner, which no CI job ran —
+# FIELD-EDITOR-TEARDOWN.md asserted a CI gate that did not exist. `pnpm lint`
+# does run on every PR, so moving the invariant into lint is what makes the
+# claim true rather than aspirational.
+#
+# Watched failing: appending `view.requestAnimationFrame(() => {})` and a bare
+# `requestAnimationFrame(() => {})` to fieldEditorImpl.ts produced two FE3
+# errors; both disappeared on revert. The member-expression selector is
+# load-bearing — the scheduler's own call is `globalThis.requestAnimationFrame`,
+# so an identifier-only ban would pass over every namespaced form.
+FE3 | eslint.config.mjs | .github/workflows/ci.yml | lint | FE3: DomScheduler owns the frame

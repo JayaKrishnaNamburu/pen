@@ -27,9 +27,6 @@ export function finalizeLocalOperationExecution(
 		currentMutationReceipt ??
 		buildMutationReceipt({
 			status: "noop",
-			adapterId: "flow-markdown",
-			blockClass: "flow",
-			transportKind: "flow-text",
 		});
 	/*
 	 * The host asked for a specific operation, so an edit was always

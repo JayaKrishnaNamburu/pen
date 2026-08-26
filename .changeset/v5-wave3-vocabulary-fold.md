@@ -4,7 +4,7 @@
 "@input/pen-document-ops": patch
 ---
 
-Fold the AI route vocabulary to members with producers, give staleness one authority, declare the in-editor tool mounts, and rename the `fast-apply` surfaces (spec-v5 wave 3, UC4–UC8 and RS3)
+Fold the AI route vocabulary to members with producers, give staleness one authority, declare the in-editor tool mounts, and rename the `fast-apply` surfaces (v5 wave 3, UC4–UC8 and RS3)
 
 `AIApplyStrategy` and `AI_APPLY_STRATEGIES` are removed. The strategy was derived rather than decided — the router computed all three members from the lane, target, and content format it had already chosen — and every consumer read it as a single question: whether durable edits arrive as `edit_document` tool calls. That question is now `editsArriveAsToolCalls: boolean` on the route decision and on generation state.
 

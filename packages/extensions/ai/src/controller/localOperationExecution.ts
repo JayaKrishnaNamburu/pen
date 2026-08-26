@@ -1,19 +1,17 @@
-import { selectionToRange } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
 import type { AIMutationReceipt, GenerationState } from "../types";
 import type { AIControllerImpl } from "./aiController";
 import {
-	appendUniqueString,
+	beginGenerationSession,
 	buildSessionExecutionPrompt,
 	createAIStreamEvent,
 	resolveGenerationRequestMode,
 	resolveLocalOperationContentFormat,
-	resolveSessionAnchor,
-	resolveSessionSelectionSnapshot,
 } from "../helpers";
 import { excerptsFromOperation, streamThroughEgress } from "../egress";
 import { finalizeLocalOperationExecution } from "./localOperationExecutionFinalize";
 import type { ExecuteLocalOperationInput } from "./generationExecutionState";
+import type { GenerationStreamingSink } from "./streamingSink";
 import { markdownReviewPreviewInput } from "./streamingPreviewInput";
 
 export async function executeLocalOperation(
@@ -38,11 +36,23 @@ export async function executeLocalOperation(
 		operation,
 		controller._resolveContentFormat("block", context?.surface),
 	);
-	const streamsMarkdownSelectionPreview =
+	const streamingSink: GenerationStreamingSink =
 		operation.kind === "rewrite-selection" &&
 		operation.target.kind === "scoped-range" &&
 		contentFormat === "markdown" &&
-		operation.target.blockIds.length > 0;
+		operation.target.blockIds.length > 0
+			? {
+					kind: "review-preview",
+					format: "markdown",
+					source: "markdown-block",
+					blockId:
+						operation.target.blockIds[0] ??
+						operation.target.anchor.blockId,
+					offset: 0,
+					replaceTargetBlock: true,
+					replaceBlockIds: operation.target.blockIds,
+				}
+			: { kind: "none" };
 	const seedGeneration: GenerationState = {
 		id: generateId(),
 		zoneId: generateId(),
@@ -71,9 +81,6 @@ export async function executeLocalOperation(
 		// No tool runs on the requested-operation path; text is the edit.
 		editsArriveAsToolCalls: false,
 		targetKind: undefined,
-		blockClass: "flow",
-		adapterId: "flow-markdown",
-		transportKind: "flow-text",
 		mutationReceipt: null,
 		debug: {
 			messageAssemblyLatencyMs: 0,
@@ -96,95 +103,14 @@ export async function executeLocalOperation(
 	);
 
 	if (context?.sessionId) {
-		const nextSelectionSnapshot =
-			target.type === "selection"
-				? resolveSessionSelectionSnapshot(
-						controller._editor,
-						target.selection,
-					)
-				: undefined;
-		controller._updateSession(context.sessionId, {
-			status: "streaming",
+		beginGenerationSession(controller, {
+			sessionId: context.sessionId,
+			seedGeneration,
+			prompt,
+			target,
 			operation,
-			activeTurnId: sessionTurnId,
-			anchor:
-				target.type === "selection"
-					? resolveSessionAnchor(controller._editor, target.selection)
-					: resolveSessionAnchor(
-							controller._editor,
-							controller._editor.selection,
-						),
-			generationIds: appendUniqueString(
-				existingSession?.generationIds ?? [],
-				seedGeneration.id,
-			),
-			promptHistory: [
-				...(existingSession?.promptHistory ?? []),
-				{
-					id: generateId(),
-					prompt,
-					createdAt: Date.now(),
-					generationId: seedGeneration.id,
-					operation,
-				},
-			],
-			turns: sessionTurnId
-				? [
-						...(existingSession?.turns ?? []),
-						{
-							id: sessionTurnId,
-							prompt,
-							createdAt: Date.now(),
-							undoGroupId: seedGeneration.undoGroupId,
-							generationId: seedGeneration.id,
-							target: target.type,
-							operation,
-							status: "streaming",
-							suggestionIds: [],
-							generatedBlockIds: [],
-							anchor:
-								target.type === "selection"
-									? resolveSessionAnchor(
-											controller._editor,
-											target.selection,
-										)
-									: undefined,
-							selection:
-								target.type === "selection"
-									? resolveSessionSelectionSnapshot(
-											controller._editor,
-											target.selection,
-										)
-									: undefined,
-						},
-					]
-				: existingSession?.turns,
-			contextualPrompt: existingSession?.contextualPrompt
-				? {
-						...existingSession.contextualPrompt,
-						anchor:
-							target.type === "selection"
-								? {
-										...existingSession.contextualPrompt
-											.anchor,
-										selectionSnapshot:
-											nextSelectionSnapshot,
-										focusBlockId: selectionToRange(
-											controller._editor.internals.doc,
-											target.selection,
-										).start.blockId,
-										status: "valid",
-									}
-								: existingSession.contextualPrompt.anchor,
-						composer: {
-							...existingSession.contextualPrompt.composer,
-							draftPrompt: "",
-							isSubmitting: true,
-							isOpen: true,
-							openReason: "user",
-						},
-					}
-				: undefined,
+			sessionTurnId,
+			existingSession,
 		});
 	}
 
@@ -212,19 +138,21 @@ export async function executeLocalOperation(
 	let currentMutationReceipt: AIMutationReceipt | null = null;
 	let sawStructuredFinalFrame = false;
 	const previewSessionId = context?.sessionId ?? seedGeneration.id;
-	const showScopedMarkdownPreview = (
-		previewBlockId: string,
-		replaceBlockIds: readonly string[] | undefined,
-		text: string,
-	) => {
+	const showScopedMarkdownPreview = (text: string) => {
+		if (streamingSink.kind !== "review-preview") {
+			return;
+		}
+		if (streamingSink.source !== "markdown-block") {
+			return;
+		}
 		controller.setStreamingReviewPreview(
 			markdownReviewPreviewInput(controller._editor, {
 				sessionId: previewSessionId,
 				turnId: sessionTurnId,
-				blockId: previewBlockId,
-				offset: 0,
-				replaceTargetBlock: true,
-				replaceBlockIds,
+				blockId: streamingSink.blockId,
+				offset: streamingSink.offset,
+				replaceTargetBlock: streamingSink.replaceTargetBlock,
+				replaceBlockIds: streamingSink.replaceBlockIds,
 				text,
 			}),
 		);
@@ -306,20 +234,12 @@ export async function executeLocalOperation(
 			if (event.type === "text-delta") {
 				if (
 					operation.kind === "document-transform" ||
-					streamsMarkdownSelectionPreview
+					streamingSink.kind === "review-preview"
 				) {
 					currentText += event.delta;
-					if (
-						streamsMarkdownSelectionPreview &&
-						operation.target.kind === "scoped-range"
-					) {
+					if (streamingSink.kind === "review-preview") {
 						updatePreview(currentText, "preview");
-						showScopedMarkdownPreview(
-							operation.target.blockIds?.[0] ??
-								operation.target.anchor.blockId,
-							operation.target.blockIds,
-							currentText,
-						);
+						showScopedMarkdownPreview(currentText);
 					}
 					continue;
 				}
@@ -333,16 +253,8 @@ export async function executeLocalOperation(
 				event.type === "insert-preview"
 			) {
 				updatePreview(event.text, "preview");
-				if (
-					streamsMarkdownSelectionPreview &&
-					operation.target.kind === "scoped-range"
-				) {
-					showScopedMarkdownPreview(
-						operation.target.blockIds?.[0] ??
-							operation.target.anchor.blockId,
-						operation.target.blockIds,
-						event.text,
-					);
+				if (streamingSink.kind === "review-preview") {
+					showScopedMarkdownPreview(event.text);
 				}
 				continue;
 			}
@@ -353,10 +265,7 @@ export async function executeLocalOperation(
 			) {
 				sawStructuredFinalFrame = true;
 				updatePreview(event.text, "final");
-				if (
-					streamsMarkdownSelectionPreview &&
-					operation.target.kind === "scoped-range"
-				) {
+				if (streamingSink.kind === "review-preview") {
 					clearScopedMarkdownPreview();
 				}
 				currentMutationReceipt =
@@ -380,7 +289,7 @@ export async function executeLocalOperation(
 			!sawStructuredFinalFrame &&
 			currentText.length > 0 &&
 			operation.kind !== "document-transform" &&
-			!streamsMarkdownSelectionPreview
+			streamingSink.kind !== "review-preview"
 		) {
 			throw new Error(
 				"Local AI operations must return a validated final payload before they can be applied.",
@@ -402,7 +311,7 @@ export async function executeLocalOperation(
 		} else if (
 			!sawStructuredFinalFrame &&
 			currentText.length > 0 &&
-			streamsMarkdownSelectionPreview
+			streamingSink.kind === "review-preview"
 		) {
 			clearScopedMarkdownPreview();
 			currentMutationReceipt = controller._commitRequestedOperationResult(

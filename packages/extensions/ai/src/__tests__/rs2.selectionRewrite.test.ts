@@ -14,7 +14,7 @@ import { createDeferred } from "./extension.testUtils";
  * presentation — the ghost overlay standing in for an edit awaiting review.
  * RS1 keeps the ghost for autocomplete, whose job is a keystroke-accepted
  * completion, and gives every proposed edit to the review surface
- * (`spec-v5/02-review-surface.md` RS1, RS2).
+ * (`spec/rules/ai.md` RS1, RS2).
  */
 describe("RS2: selection rewrites ride the review surface", () => {
 	it("RS2: a mid-flight selection rewrite previews on the review surface, not the ghost", async () => {

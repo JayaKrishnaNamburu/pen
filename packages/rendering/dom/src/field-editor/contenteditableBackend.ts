@@ -3,6 +3,7 @@ import type { FieldEditorInputController } from "./controller";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import {
 	buildInlineDecorationsRenderSignature,
+	inlineDecorationsForBlock,
 	inlineDecorationsRequireFullReconcile,
 } from "../utils/inlineDecorations";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
@@ -12,7 +13,6 @@ import {
 	extractTextFromDOM,
 	getSelectionOffsets,
 } from "./selectionBridge";
-import { handleCopy, handleCut } from "./clipboard";
 import { applyListInputRule } from "./commands";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
 import type { InlineTextDiffOp } from "./inlineTextTransaction";
@@ -39,6 +39,8 @@ import {
 	resolveRestoreCellEndpoints,
 	resolveRestoreTextEndpoints,
 } from "./selectionAuthority";
+import { BackendAttachment } from "./backendAttachment";
+import { bindBackendTransferEvents } from "./backendTransferEvents";
 import { mapBeforeInput } from "./beforeinputMap";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import {
@@ -65,7 +67,7 @@ export class ContentEditableBackend {
 	protected lastWatchdogMismatch: string | null = null;
 	protected compositionStartText: string | null = null;
 	protected deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
-	protected unsubscribeDecorationsChange: (() => void) | null = null;
+	protected readonly attachment = new BackendAttachment();
 	protected inlineDecorationsSignature: readonly InlineDecoration[] | null =
 		null;
 	protected editor: Editor;
@@ -91,40 +93,64 @@ export class ContentEditableBackend {
 			this.compositionStartText = null;
 			this.fieldEditor.setComposing(false);
 
-			element.addEventListener("beforeinput", this.handleBeforeInput);
-			element.addEventListener(
+			this.attachment.listen(
+				element,
+				"beforeinput",
+				this.handleBeforeInput,
+			);
+			this.attachment.listen(
+				element,
 				"compositionstart",
 				this.handleCompositionStart,
 			);
-			element.addEventListener(
+			this.attachment.listen(
+				element,
 				"compositionend",
 				this.handleCompositionEnd,
 			);
-			element.addEventListener("keydown", this.handleKeyDown);
-			element.addEventListener("copy", this.handleCopyEvent);
-			element.addEventListener("cut", this.handleCutEvent);
-			element.addEventListener("dragstart", this.handleDragStart);
-			element.addEventListener("drop", this.handleDrop);
-			element.addEventListener("pointerdown", this.handlePointerDown);
-			element.addEventListener("contextmenu", this.handleContextMenu);
-			element.ownerDocument?.addEventListener(
-				"selectionchange",
-				this.handleSelectionChange,
+			this.attachment.listen(element, "keydown", this.handleKeyDown);
+			bindBackendTransferEvents(
+				this.attachment,
+				element,
+				this.editor,
+				this.fieldEditor,
+			);
+			this.attachment.listen(
+				element,
+				"pointerdown",
+				this.handlePointerDown,
+			);
+			this.attachment.listen(
+				element,
+				"contextmenu",
+				this.handleContextMenu,
+			);
+			if (element.ownerDocument) {
+				this.attachment.listenDocument(
+					element.ownerDocument,
+					"selectionchange",
+					this.handleSelectionChange,
+				);
+			}
+
+			this.mutationObserver = this.attachment.observeMutations(
+				element,
+				this.handleMutations,
+				{
+					childList: true,
+					subtree: true,
+					characterData: true,
+					characterDataOldValue: true,
+				},
 			);
 
-			this.mutationObserver = new MutationObserver(this.handleMutations);
-			this.mutationObserver.observe(element, {
-				childList: true,
-				subtree: true,
-				characterData: true,
-				characterDataOldValue: true,
-			});
-
 			this.observer = (event) => this.handleYTextChange(event);
-			activeYText.observe(this.observer);
-			this.unsubscribeDecorationsChange = this.editor.on(
-				"decorationsChange",
-				this.handleDecorationsChange,
+			this.attachment.observeText(activeYText, this.observer);
+			this.attachment.subscribe(
+				this.editor.on(
+					"decorationsChange",
+					this.handleDecorationsChange,
+				),
 			);
 			this.inlineDecorationsSignature =
 				this.getInlineDecorationsSignature();
@@ -156,45 +182,9 @@ export class ContentEditableBackend {
 			// reach the next block. Absent is equivalent while the parent is
 			// not editable, which is the single-field case.
 			this.element.removeAttribute("contenteditable");
-			this.element.removeEventListener(
-				"beforeinput",
-				this.handleBeforeInput,
-			);
-			this.element.removeEventListener(
-				"compositionstart",
-				this.handleCompositionStart,
-			);
-			this.element.removeEventListener(
-				"compositionend",
-				this.handleCompositionEnd,
-			);
-			this.element.removeEventListener("keydown", this.handleKeyDown);
-			this.element.removeEventListener("copy", this.handleCopyEvent);
-			this.element.removeEventListener("cut", this.handleCutEvent);
-			this.element.removeEventListener("dragstart", this.handleDragStart);
-			this.element.removeEventListener("drop", this.handleDrop);
-			this.element.removeEventListener(
-				"pointerdown",
-				this.handlePointerDown,
-			);
-			this.element.removeEventListener(
-				"contextmenu",
-				this.handleContextMenu,
-			);
-			this.element.ownerDocument?.removeEventListener(
-				"selectionchange",
-				this.handleSelectionChange,
-			);
 		}
-		if (this.mutationObserver) {
-			this.mutationObserver.disconnect();
-			this.mutationObserver = null;
-		}
-		if (this.observer && this.ytext) {
-			this.ytext.unobserve(this.observer);
-		}
-		this.unsubscribeDecorationsChange?.();
-		this.unsubscribeDecorationsChange = null;
+		this.attachment.release();
+		this.mutationObserver = null;
 		this.element = null;
 		this.ytext = null;
 		this.observer = null;
@@ -715,17 +705,10 @@ export class ContentEditableBackend {
 	};
 
 	protected getInlineDecorationsForBlock(): readonly InlineDecoration[] {
-		const blockId = this.fieldEditor.focusBlockId;
-		if (!blockId) {
-			return [];
-		}
-		return this.editor
-			.getDecorations()
-			.forBlock(blockId)
-			.filter(
-				(decoration): decoration is InlineDecoration =>
-					decoration.type === "inline",
-			);
+		return inlineDecorationsForBlock(
+			this.editor,
+			this.fieldEditor.focusBlockId,
+		);
 	}
 
 	protected getInlineDecorationsSignature(): readonly InlineDecoration[] {
@@ -907,26 +890,6 @@ export class ContentEditableBackend {
 	}
 
 	// ── Clipboard events ──────────────────────────────────────
-
-	protected handleCopyEvent = (event: ClipboardEvent): void => {
-		event.preventDefault();
-		handleCopy(this.editor, event);
-	};
-
-	protected handleCutEvent = (event: ClipboardEvent): void => {
-		event.preventDefault();
-		handleCut(this.editor, event);
-	};
-
-	protected handleDragStart = (event: DragEvent): void => {
-		this.fieldEditor.notifyGestureEvent?.("dragstart");
-		event.preventDefault();
-	};
-
-	protected handleDrop = (event: DragEvent): void => {
-		this.fieldEditor.notifyGestureEvent?.("drop-completed");
-		event.preventDefault();
-	};
 
 	protected handlePointerDown = (): void => {
 		this.fieldEditor.notifyGestureEvent?.("pointerdown");

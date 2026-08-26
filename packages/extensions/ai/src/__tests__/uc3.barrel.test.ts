@@ -9,7 +9,7 @@ import * as barrel from "../index";
  *
  * A behavioral test cannot see a type export, and `uc3.planReachability`
  * covers behavior anyway. This one guards the surface: the names a host could
- * still build a second edit channel against (`spec-v5/01-channel.md` UC3).
+ * still build a second edit channel against (`spec/rules/ai.md` UC3).
  */
 
 const AI_PACKAGE = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -41,7 +41,24 @@ const PLANNER_NAMES = [
 const STRANDED_INTENT_TRANSPORT_NAMES = [
 	"buildStructuredIntentModelPrompt",
 	"getStructuredIntentOutputSchema",
+	"parseStructuredIntentResult",
 	"parseStructuredIntentRequestPrompt",
+	"StructuredIntent",
+];
+
+const BLOCK_ADAPTER_NAMES = [
+	"getBlockAdapter",
+	"listBlockAdapters",
+	"resolveBlockAdapter",
+	"resolveBlockAdapterContentFormat",
+	"AI_BLOCK_ADAPTER_IDS",
+	"AI_BLOCK_CLASSES",
+	"AI_TRANSPORT_KINDS",
+	"AI_EXECUTION_MODES",
+	"AIBlockAdapterId",
+	"AIBlockClass",
+	"AITransportKind",
+	"AIExecutionMode",
 ];
 
 describe("UC3: planner symbols are absent from the public API", () => {
@@ -51,9 +68,11 @@ describe("UC3: planner symbols are absent from the public API", () => {
 		expect(exported.length).toBeGreaterThan(0);
 
 		const offenders = exported.filter((name) =>
-			[...PLANNER_NAMES, ...STRANDED_INTENT_TRANSPORT_NAMES].some(
-				(blocked) => name.includes(blocked),
-			),
+			[
+				...PLANNER_NAMES,
+				...STRANDED_INTENT_TRANSPORT_NAMES,
+				...BLOCK_ADAPTER_NAMES,
+			].some((blocked) => name.includes(blocked)),
 		);
 		expect(offenders, "planner values are still exported").toEqual([]);
 	});
@@ -66,6 +85,7 @@ describe("UC3: planner symbols are absent from the public API", () => {
 		const offenders = [
 			...PLANNER_NAMES,
 			...STRANDED_INTENT_TRANSPORT_NAMES,
+			...BLOCK_ADAPTER_NAMES,
 		].filter((name) => source.includes(name));
 		expect(
 			offenders,
@@ -82,6 +102,7 @@ describe("UC3: planner symbols are absent from the public API", () => {
 		const offenders = [
 			...PLANNER_NAMES,
 			...STRANDED_INTENT_TRANSPORT_NAMES,
+			...BLOCK_ADAPTER_NAMES,
 		].filter((name) => report.includes(name));
 		expect(offenders, "api-report.md still lists planner symbols").toEqual(
 			[],

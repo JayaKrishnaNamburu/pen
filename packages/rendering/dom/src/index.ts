@@ -121,10 +121,6 @@ export type {
 	VerticalDirection,
 } from "./geometry";
 
-// The review surface's styling contract (RS4): one sheet, one vocabulary.
+// The review surface's styling contract (RS4): one sheet here, and the class
+// vocabulary it styles stays exported once, from `@input/pen-types`.
 export { PEN_REVIEW_STYLESHEET } from "./styles/reviewStylesheet";
-export {
-	REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES,
-	REVIEW_SURFACE_CLASSES,
-	REVIEW_SURFACE_CUSTOM_PROPERTIES,
-} from "@input/pen-types";

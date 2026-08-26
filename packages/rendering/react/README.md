@@ -32,6 +32,12 @@ export function App() {
 
 `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `document-ops`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack.
 
+## Capabilities
+
+The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. React is the reference surface: every capability in the matrix is `supported` here except undo and input rules, which are `bring-your-own-ui` because they need no chrome — install `undoExtension()` or `inputRulesExtension()` and the keyboard works without any binding code.
+
+React ships the reference feature set, so it carries components other bindings leave to the host: the AI review and suggestion primitives, the generation zone, overlays and caret painting, multiplayer presence, and the search UI. That is bundled chrome over public state, not exclusive access — a capability marked `bring-your-own-ui` in another binding's column is reachable there too.
+
 ## Server rendering (HOST5)
 
 SSR is shell-only: the server renders the editor container and no document content. That is a decision, not a gap. Faithful SSR of a CRDT document would require that document on the server. Pen does not own that transport and does not run a server CRDT.

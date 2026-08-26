@@ -15,7 +15,10 @@ import {
 } from "../tools";
 // Not from `../tools`: that barrel is the published `@input/pen-ai/tools`
 // surface, and these stay in-package.
-import { AI_EDIT_DOCUMENT_TOOL_NAME } from "../tools/constants";
+import {
+	AI_EDIT_DOCUMENT_TOOL_NAME,
+	AI_TOOL_FAILED_CODE,
+} from "../tools/constants";
 import { type AIToolTurn, isAIToolResultAskingRetry } from "../tools/authority";
 import { advertiseAIToolsForRoute } from "../tools/descriptors";
 import {
@@ -547,6 +550,13 @@ export async function runAgenticLoop(
 				step.status = "error";
 				step.output =
 					error instanceof Error ? error.message : String(error);
+				editor.internals?.emit?.("diagnostic", {
+					code: AI_TOOL_FAILED_CODE,
+					level: "error",
+					source: "ai-tools",
+					message: `Tool "${toolCall.toolName}" failed: ${step.output}`,
+					extension: "ai-tools",
+				});
 				onToolResult?.({
 					toolCallId: toolCall.toolCallId,
 					toolName: toolCall.toolName,
@@ -614,6 +624,7 @@ export async function runAgenticLoop(
 		undoGroupId: generationId,
 		turnReason: turn.reason,
 		text: textBuffer,
+		editsArriveAsToolCalls: isEditChannel,
 		debug: {
 			messageAssemblyLatencyMs,
 			firstToolStartMs,

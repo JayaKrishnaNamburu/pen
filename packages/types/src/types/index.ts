@@ -269,7 +269,6 @@ export type {
 	ModelAdapter,
 	ModelAdapterCapabilities,
 	ModelToolChoice,
-	ModelOperationApplyPolicy,
 	ModelOperationBlockTarget,
 	ModelOperationDocumentTarget,
 	ModelOperationRangeTarget,

@@ -62,26 +62,6 @@ export type AIContentFormat = (typeof AI_CONTENT_FORMATS)[number];
 
 export type AIWorkingSetViewMode = "raw" | "resolved";
 
-export const AI_EXECUTION_MODES = [
-	"direct-stream",
-	"persistent-suggestions",
-	"staged-review",
-] as const;
-
-export type AIExecutionMode = (typeof AI_EXECUTION_MODES)[number];
-
 export const AI_TARGET_KINDS = ["text", "block", "table"] as const;
 
 export type AITargetKind = (typeof AI_TARGET_KINDS)[number];
-
-export const AI_BLOCK_CLASSES = ["flow"] as const;
-
-export type AIBlockClass = (typeof AI_BLOCK_CLASSES)[number];
-
-export const AI_BLOCK_ADAPTER_IDS = ["flow-markdown"] as const;
-
-export type AIBlockAdapterId = (typeof AI_BLOCK_ADAPTER_IDS)[number];
-
-export const AI_TRANSPORT_KINDS = ["flow-text"] as const;
-
-export type AITransportKind = (typeof AI_TRANSPORT_KINDS)[number];

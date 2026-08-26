@@ -476,26 +476,50 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 	},
 
 	formatBold: (_event, editor, _ytext, fe) => {
-		if (tryDispatchMarkToggle(editor, fe, "bold")) {
-			return;
-		}
-		toggleInlineMark(editor, "bold");
+		toggleMarkOrReport(editor, fe, "bold");
 	},
 
 	formatItalic: (_event, editor, _ytext, fe) => {
-		if (tryDispatchMarkToggle(editor, fe, "italic")) {
-			return;
-		}
-		toggleInlineMark(editor, "italic");
+		toggleMarkOrReport(editor, fe, "italic");
 	},
 
 	formatUnderline: (_event, editor, _ytext, fe) => {
-		if (tryDispatchMarkToggle(editor, fe, "underline")) {
-			return;
-		}
-		toggleInlineMark(editor, "underline");
+		toggleMarkOrReport(editor, fe, "underline");
 	},
 };
+
+/**
+ * Toggle a mark, and say so when a table cell is why nothing happened.
+ *
+ * Both toggle paths need a text selection, and cell editing holds a `cell`
+ * selection, so marks are declared unsupported inside a cell
+ * (`CELL-PARITY.md`, FE6). Declining used to be silent, which is the one
+ * outcome FE6 rules out: the press left no trace, so a host had no way to
+ * tell "not here" from "broken".
+ */
+function toggleMarkOrReport(
+	editor: Editor,
+	fe: FieldEditorInputController,
+	mark: string,
+): void {
+	if (tryDispatchMarkToggle(editor, fe, mark)) {
+		return;
+	}
+	if (toggleInlineMark(editor, mark)) {
+		return;
+	}
+	if (!isCellEditing(editor, fe)) {
+		return;
+	}
+	editor.internals.emit("diagnostic", {
+		code: "cell-capability-unsupported",
+		level: "info",
+		source: "field-editor",
+		message: `marks are not supported inside a table cell: ${mark}`,
+		capability: "marks",
+		mark,
+	});
+}
 
 function isCellEditing(
 	editor: Editor,

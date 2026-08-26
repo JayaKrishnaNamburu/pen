@@ -57,7 +57,6 @@ const SPEC_BUDGETS = {
 	flushesPerFrame: 1,
 } as const;
 
-const UNWIRED_TEXT = "probe";
 const WARMUP_TEXT = "warm";
 const STEADY_TEXT = "pack my box with five dozen.";
 const KEY_DELAY_MS = 17;
@@ -72,13 +71,7 @@ type FlushSample = {
 	measureNowCount: number;
 };
 
-type UnwiredObservation = {
-	keystrokes: number;
-	flushCount: number;
-	measureNowCount: number;
-};
-
-type FedObservation = {
+type RecordedObservation = {
 	readPhaseMs: number[];
 	writePhaseMs: number[];
 	measureNowPerKeystroke: number[];
@@ -123,10 +116,8 @@ type TypingBudgetDocument = {
 		keyDelayMs: number;
 		steadyText: string;
 		warmupText: string;
-		unwiredText: string;
 		wiring: string;
 		queuedWork: string;
-		unwired: UnwiredObservation;
 	};
 	samples: {
 		readPhaseMs: number[];
@@ -169,14 +160,12 @@ type ProbeWiring = {
 };
 
 type ProbeApi = {
-	startUnwired(): void;
-	endUnwired(): UnwiredObservation;
-	startFed(): void;
+	startRecording(): void;
 	markSteady(): void;
 	markKeystroke(): { measureNow: number; flushCount: number };
 	collectKeystroke(before: { measureNow: number; flushCount: number }): void;
 	waitFrames(count: number): Promise<void>;
-	endFed(): FedObservation;
+	endRecording(): RecordedObservation;
 };
 
 declare global {
@@ -237,7 +226,7 @@ function versusSpec(summary: TypingBudgetSummary) {
 
 async function installProbe(page: Page): Promise<void> {
 	const installed = await page.evaluate(
-		async ({ sessionHref, geometryHref, unwiredKeystrokes }) => {
+		async ({ sessionHref, geometryHref }) => {
 			const { getHarnessSession } = (await import(sessionHref)) as {
 				getHarnessSession: () => {
 					editor: import("@input/pen-types").Editor;
@@ -376,12 +365,14 @@ async function installProbe(page: Page): Promise<void> {
 				return originalAcceptCommit(event);
 			};
 
-			let feeding = false;
-			session.editor.on("commit", (event) => {
-				if (!feeding) {
+			// The field editor feeds acceptCommit for every commit (FE4), so
+			// the harness only paints the caret the commit moved — the work a
+			// host does per keystroke on top of the scheduler.
+			let painting = false;
+			session.editor.on("commit", () => {
+				if (!painting) {
 					return;
 				}
-				scheduler.acceptCommit(event);
 				const selection = session.editor.selection;
 				let plan: {
 					generation: number;
@@ -422,12 +413,10 @@ async function installProbe(page: Page): Promise<void> {
 				});
 			});
 
-			let unwiredStartFlush = 0;
-			let unwiredStartMeasure = 0;
-			let fedStartFlush = 0;
-			let fedStartMeasure = 0;
-			let fedStartWrap = 0;
-			let fedStartAccept = 0;
+			let startFlush = 0;
+			let startMeasure = 0;
+			let startWrap = 0;
+			let startAccept = 0;
 			const measureNowPerKeystroke: number[] = [];
 
 			const beforeCanaryWrap = flushWrapCalls;
@@ -472,32 +461,19 @@ async function installProbe(page: Page): Promise<void> {
 			acceptCommitCalls = 0;
 
 			window.__typingBudget = {
-				startUnwired() {
-					unwiredStartFlush = flushSamples.length;
-					unwiredStartMeasure = scheduler.diagnostics.measureNowCount;
-				},
-				endUnwired() {
-					return {
-						keystrokes: unwiredKeystrokes,
-						flushCount: flushSamples.length - unwiredStartFlush,
-						measureNowCount:
-							scheduler.diagnostics.measureNowCount -
-							unwiredStartMeasure,
-					};
-				},
-				startFed() {
-					feeding = true;
-					fedStartFlush = flushSamples.length;
-					fedStartMeasure = scheduler.diagnostics.measureNowCount;
-					fedStartWrap = flushWrapCalls;
-					fedStartAccept = acceptCommitCalls;
+				startRecording() {
+					painting = true;
+					startFlush = flushSamples.length;
+					startMeasure = scheduler.diagnostics.measureNowCount;
+					startWrap = flushWrapCalls;
+					startAccept = acceptCommitCalls;
 					measureNowPerKeystroke.length = 0;
 				},
 				markSteady() {
-					fedStartFlush = flushSamples.length;
-					fedStartMeasure = scheduler.diagnostics.measureNowCount;
-					fedStartWrap = flushWrapCalls;
-					fedStartAccept = acceptCommitCalls;
+					startFlush = flushSamples.length;
+					startMeasure = scheduler.diagnostics.measureNowCount;
+					startWrap = flushWrapCalls;
+					startAccept = acceptCommitCalls;
 					measureNowPerKeystroke.length = 0;
 				},
 				markKeystroke() {
@@ -524,9 +500,9 @@ async function installProbe(page: Page): Promise<void> {
 						step(count);
 					});
 				},
-				endFed() {
-					feeding = false;
-					const samples = flushSamples.slice(fedStartFlush);
+				endRecording() {
+					painting = false;
+					const samples = flushSamples.slice(startFlush);
 					const byFrame = new Map<number, number>();
 					for (const sample of samples) {
 						byFrame.set(
@@ -540,12 +516,12 @@ async function installProbe(page: Page): Promise<void> {
 						measureNowPerKeystroke: [...measureNowPerKeystroke],
 						flushesPerFrame: [...byFrame.values()],
 						flushCount: samples.length,
-						flushWrapCount: flushWrapCalls - fedStartWrap,
-						acceptCommitCount: acceptCommitCalls - fedStartAccept,
+						flushWrapCount: flushWrapCalls - startWrap,
+						acceptCommitCount: acceptCommitCalls - startAccept,
 						keystrokeCount: measureNowPerKeystroke.length,
 						measureNowTotal:
 							scheduler.diagnostics.measureNowCount -
-							fedStartMeasure,
+							startMeasure,
 					};
 				},
 			};
@@ -562,7 +538,6 @@ async function installProbe(page: Page): Promise<void> {
 		{
 			sessionHref: SESSION_HREF,
 			geometryHref: GEOMETRY_HREF,
-			unwiredKeystrokes: UNWIRED_TEXT.length,
 		},
 	);
 
@@ -674,24 +649,16 @@ scenario(
 			.click();
 
 		await installProbe(page);
-		await page.evaluate(() => window.__typingBudget!.startUnwired());
-		await typeAndCollect(page, UNWIRED_TEXT, false);
-		const unwired = await page.evaluate(() =>
-			window.__typingBudget!.endUnwired(),
-		);
-		expect(
-			unwired.flushCount,
-			"unwired typing must not flush — DomScheduler.acceptCommit is not on the production apply path",
-		).toBe(0);
-
-		await page.evaluate(() => window.__typingBudget!.startFed());
+		await page.evaluate(() => window.__typingBudget!.startRecording());
 		await typeAndCollect(page, WARMUP_TEXT, false);
 		await page.evaluate(() => window.__typingBudget!.markSteady());
 		await typeAndCollect(page, STEADY_TEXT, true);
 		await page.evaluate(async () => {
 			await window.__typingBudget!.waitFrames(2);
 		});
-		const fed = await page.evaluate(() => window.__typingBudget!.endFed());
+		const fed = await page.evaluate(() =>
+			window.__typingBudget!.endRecording(),
+		);
 
 		expect(
 			fed.keystrokeCount,
@@ -707,7 +674,7 @@ scenario(
 		).toBe(STEADY_TEXT.length);
 		expect(
 			fed.acceptCommitCount,
-			"harness-fed acceptCommit must run once per steady keystroke",
+			"the mounted editor must feed acceptCommit once per steady keystroke (FE4)",
 		).toBe(STEADY_TEXT.length);
 
 		const readPhaseMs = fed.readPhaseMs.map(roundMs);
@@ -756,11 +723,9 @@ scenario(
 				keyDelayMs: KEY_DELAY_MS,
 				steadyText: STEADY_TEXT,
 				warmupText: WARMUP_TEXT,
-				unwiredText: UNWIRED_TEXT,
-				wiring: "harness-fed commits only: editor.on('commit') → acceptCommit. DomScheduler is not on the production apply path (Wave 2 still open). Unwired observation is the real typing path today.",
+				wiring: "production apply path: the field editor feeds every commit to the root scheduler (FE4), and the harness measures that scheduler rather than a private one.",
 				queuedWork:
 					"one caretRect read of the live text focus and applyPaintPlan of that caret, queued per commit — the OV1 single-caret flush, not a synthetic scheduler loop",
-				unwired,
 			},
 			samples: {
 				readPhaseMs,

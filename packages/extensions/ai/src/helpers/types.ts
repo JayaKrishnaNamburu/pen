@@ -54,7 +54,7 @@ export function resolveGenerationRequestMode(
 			return "inline-edit";
 		}
 		if (context.surface === "bottom-chat") {
-			return "selection-fast";
+			return "selection-rewrite";
 		}
 	}
 	if (context?.targetType === "selection") {
@@ -62,7 +62,7 @@ export function resolveGenerationRequestMode(
 			return "inline-edit";
 		}
 		if (context.surface === "bottom-chat") {
-			return "selection-fast";
+			return "selection-rewrite";
 		}
 	}
 	if (context?.surface === "inline-edit") {
@@ -173,11 +173,6 @@ type AIStreamEventInput =
 			phase: "preview" | "final" | "conflict";
 			text?: string;
 			reason?: string;
-	  }
-	| {
-			type: "app-partial";
-			data: unknown;
-			final: boolean;
 	  }
 	| {
 			type: "tool-call";

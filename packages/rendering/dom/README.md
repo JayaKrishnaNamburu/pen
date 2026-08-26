@@ -41,6 +41,12 @@ Pen ships no required stylesheet — the editor is functional unstyled, includin
 
 The root export also includes `urlPolicy`, `urlPolicyExtension`, `DomScheduler`, and keyboard helpers such as `handleEditorDocumentKeyDown`. Extra subpaths exist on the `exports` map (`./field-editor`, `./constants/selectAll`, and the listed `./utils/*` keys). Prefer the root export unless you already depend on a subpath.
 
+## Capabilities
+
+The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. This package is the vanilla surface, and it is also where most capabilities are implemented for the framework bindings — so its column is mostly `bring-your-own-ui`: the behavior is here, and `mountEditor` renders no chrome for it.
+
+`supported` from `mountEditor` alone: single-block fields, expanded fields, document mutation, paste, and the review-surface styling contract (adopt `PEN_REVIEW_STYLESHEET`). Everything else — table chrome, AI review affordances, overlays, multiplayer presence, search UI — exports its state and utilities and leaves the rendering to you.
+
 ## Options
 
 `mountEditor(editor, root, options?)` returns `{ fieldEditor, root, destroy }`. Options:

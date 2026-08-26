@@ -25,14 +25,14 @@ The monorepo is layered; dependencies point strictly downward:
 Pen has no separate contracts directory; the spec set is the source of truth:
 
 - `spec/` is the living current-state tree and the only home for durable rules. `spec/packages/` describes each package as it is today; `spec/rules/` carries the normative rule families; `spec/charter/` holds the rule-ID registry and the working agreements; `spec/MIGRATION.md` is the host adoption guide.
-- `spec-v5/` is the adopted unification train (one edit channel, one preview surface, one field-editor spine, a declared host contract) with rule families `UC`/`RS`/`FE`/`HB`. It owns what to do next; `spec/` owns what a kept mechanism is.
+- A train — a numbered set of documents plus one work order per wave — lives in its own root beside `spec/` while it executes, and folds into `spec/` when it lands. None is executing. The v5 unification train (one edit channel, one preview surface, one field-editor spine, a declared host contract) landed on 2026-08-26: its `UC` and `RS` families are now in `spec/rules/ai.md`, `FE` in `spec/rules/dom.md`, `HB` in `spec/rules/host.md`, with the IDs unchanged. Its wave files and gate runner were deleted with it; git holds them.
 
 Rules for agents:
 
 - Before touching selection, input handling, the apply pipeline, extension wiring, rendering security, or packaging, read the matching `spec/rules/` document first — `selection.md`, `pipeline.md`, `anchors.md`, `dom.md`, `security.md`, `api.md`, and so on. Normative rules carry stable IDs (`A1`–`A6`, `S1`–`S6`, `SEC1`–`SEC9`, `AX1`–`AX8`, `API1`–`API10`, ...); cite them in PR descriptions and test names.
 - Check `spec/charter/rule-ids.md` before adopting a family prefix. `scripts/coverage-rules.mjs` derives every family from definition lines, so writing `- XX1. …` in a spec root is what puts a family in scope.
 - When implementation work proves a spec rule wrong or untestable, amend the spec in the same PR. Silent divergence between code and spec is not acceptable (`spec/charter/working-agreements.md` WA1).
-- `spec/` is updated when shipped behavior changes. `spec-v5/` is the executing train and is updated as its waves land.
+- `spec/` is updated when shipped behavior changes. While a train is executing, it is updated as its waves land and folds into `spec/` at the end.
 
 ## Core Principles
 
