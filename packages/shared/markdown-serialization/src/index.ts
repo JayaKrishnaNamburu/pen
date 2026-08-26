@@ -7,10 +7,3 @@ export type {
   MarkdownExportRange,
   MarkdownExportViewMode,
 } from "./markdownSerialization";
-export {
-  buildDatabaseData,
-  buildTableChildren,
-} from "./exporterUtils";
-export type { ExportedDatabaseData } from "./exporterUtils";
-export { getNumberedListItemValue } from "./orderedList";
-export { sortDeltaAttributes } from "./sortDeltaAttributes";

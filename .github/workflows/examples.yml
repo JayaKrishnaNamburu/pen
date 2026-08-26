@@ -1,0 +1,89 @@
+# Consumer-shaped smoke tests. Each example is a pnpm workspace member that
+# builds against workspace sources, so these catch the integration break a
+# package's own tests cannot see: a broken exports map, a missing peer, a
+# renderer that only mounts under the playground's setup.
+
+name: Examples
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: examples-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  smoke:
+    name: ${{ matrix.label }}
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # `label` exists only to render the check name; `example` is the
+        # workspace directory.
+        include:
+          - example: react
+            label: React
+          - example: vue
+            label: Vue
+          - example: vanilla
+            label: Vanilla
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: example-${{ matrix.example }}
+
+      - name: Build example from workspace artifacts
+        run: pnpm --filter @input/pen-example-${{ matrix.example }}... run build
+
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke-assert the editor mounts and accepts typed text
+        run: pnpm exec playwright test --config examples/playwright.config.ts --project=chromium
+        env:
+          EXAMPLE: ${{ matrix.example }}
+
+      - name: Upload Playwright artifacts
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-playwright-${{ matrix.example }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  examples:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: All examples
+    if: always()
+    needs: [smoke]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require every example to have smoked clean
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ligne Blanche"
+  short_description: "Audit whether changes cross structural lines"
+  default_prompt: "Use $ligne-blanche to audit whether the current changes cross structural boundaries without enough justification."

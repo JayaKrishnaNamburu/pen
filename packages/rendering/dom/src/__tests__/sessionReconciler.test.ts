@@ -1,0 +1,90 @@
+import { createHeadlessEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SessionReconciler } from "../field-editor/sessionReconciler";
+import { DomScheduler } from "../scheduler";
+
+describe("SessionReconciler", () => {
+	beforeEach(() => {
+		vi.stubGlobal(
+			"requestAnimationFrame",
+			(callback: FrameRequestCallback) => {
+				callback(0);
+				return 1;
+			},
+		);
+		vi.stubGlobal("cancelAnimationFrame", () => {});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it("does not reconcile the focus block after a user commit", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const blockId = editor.firstBlock()!.id;
+		const getYText = vi.fn(() => null);
+		const reconciler = createReconciler(editor, blockId, getYText);
+
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
+				to: 0,
+				insert: "a",
+			},
+		]);
+
+		expect(getYText).not.toHaveBeenCalled();
+		reconciler.destroy();
+		editor.destroy();
+	});
+
+	it("reconciles the focus block after a structured history commit", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const blockId = editor.firstBlock()!.id;
+		const getYText = vi.fn(() => null);
+		const reconciler = createReconciler(editor, blockId, getYText);
+
+		editor.apply(
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "a",
+				},
+			],
+			{ origin: { type: "history", source: "undo" } },
+		);
+
+		expect(getYText).toHaveBeenCalledWith(blockId);
+		reconciler.destroy();
+		editor.destroy();
+	});
+});
+
+function createReconciler(
+	editor: ReturnType<typeof createHeadlessEditor>,
+	blockId: string,
+	getYText: () => null,
+) {
+	const scheduler = new DomScheduler("session-reconciler-test");
+	return new SessionReconciler(editor, {
+		getSnapshot: () => ({
+			focusBlockId: blockId,
+			activeBlockIds: [blockId],
+			isEditing: true,
+			mode: "single",
+		}),
+		getAttachedElement: () => null,
+		getInlineElement: () => null,
+		getYText,
+		shouldPreserveSelection: () => false,
+		shouldProjectSelection: () => false,
+		projectSelection: () => {},
+		getScheduler: () => scheduler,
+	});
+}

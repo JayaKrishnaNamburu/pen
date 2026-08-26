@@ -1,10 +1,13 @@
-import type { SchemaRegistry } from "@pen/types";
+import type { SchemaRegistry } from "@input/pen-types";
+import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
+import { urlPolicy, type UrlPolicy } from "../security/urlPolicy";
 import { INLINE_DECORATION_ATTRIBUTE_KEY } from "../utils/inlineDecorations";
 
 export function wrapWithMarks(
 	node: Node,
 	attributes: Record<string, unknown>,
 	registry: SchemaRegistry,
+	policy: UrlPolicy = urlPolicy,
 ): Node {
 	let wrapped = node;
 	const decorationAttributes = isDecorationAttributesValue(
@@ -23,7 +26,7 @@ export function wrapWithMarks(
 		});
 
 	for (const [markType, markProps] of entries) {
-		const element = createMarkElement(markType, markProps);
+		const element = createMarkElement(markType, markProps, policy);
 		element.appendChild(wrapped);
 		wrapped = element;
 	}
@@ -32,6 +35,7 @@ export function wrapWithMarks(
 		const element = createMarkElement(
 			INLINE_DECORATION_ATTRIBUTE_KEY,
 			decorationAttributes,
+			policy,
 		);
 		element.appendChild(wrapped);
 		wrapped = element;
@@ -44,16 +48,21 @@ export function createMarkedNode(
 	text: string,
 	attributes: Record<string, unknown>,
 	registry: SchemaRegistry,
+	policy: UrlPolicy = urlPolicy,
 ): Node {
 	const node: Node = document.createTextNode(text);
-	return wrapWithMarks(node, attributes, registry);
+	return wrapWithMarks(node, attributes, registry, policy);
 }
 
-function createMarkElement(markType: string, props: unknown): HTMLElement {
+function createMarkElement(
+	markType: string,
+	props: unknown,
+	policy: UrlPolicy,
+): HTMLElement {
 	switch (markType) {
 		case INLINE_DECORATION_ATTRIBUTE_KEY: {
 			const span = document.createElement("span");
-			applyElementAttributes(span, props);
+			applyElementAttributes(span, props, policy);
 			return span;
 		}
 		case "bold":
@@ -70,7 +79,14 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 			const anchor = document.createElement("a");
 			if (typeof props === "object" && props !== null) {
 				const record = props as Record<string, unknown>;
-				if (record.href) anchor.href = record.href as string;
+				if (record.href) {
+					const href = policy.resolve(record.href, "link");
+					if (href === null) {
+						anchor.setAttribute("data-pen-blocked-url", "");
+					} else {
+						anchor.href = href;
+					}
+				}
 				if (record.title) anchor.title = record.title as string;
 			}
 			return anchor;
@@ -79,7 +95,8 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 			const mark = document.createElement("mark");
 			if (typeof props === "object" && props !== null) {
 				const record = props as Record<string, unknown>;
-				if (record.color) mark.style.backgroundColor = record.color as string;
+				if (record.color)
+					mark.style.backgroundColor = record.color as string;
 			}
 			return mark;
 		}
@@ -103,8 +120,8 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 				span.dataset.suggestionAction = suggestionAction;
 				span.classList.add(
 					suggestionAction === "delete"
-						? "pen-suggestion-delete"
-						: "pen-suggestion-insert",
+						? REVIEW_SURFACE_CLASSES.suggestionDelete
+						: REVIEW_SURFACE_CLASSES.suggestionInsert,
 				);
 			}
 
@@ -118,7 +135,21 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 	}
 }
 
-function applyElementAttributes(element: HTMLElement, props: unknown): void {
+/**
+ * Writes decoration-supplied attributes onto a rendered element, dropping any
+ * that fail the URL policy so untrusted decoration props cannot inject a
+ * navigable or script-bearing value.
+ *
+ * @param element - The element receiving the attributes.
+ * @param props - Candidate attribute values; ignored unless they are a valid
+ * decoration attributes object.
+ * @param policy - URL policy used to vet attribute values.
+ */
+export function applyElementAttributes(
+	element: HTMLElement,
+	props: unknown,
+	policy: UrlPolicy = urlPolicy,
+): void {
 	if (!isDecorationAttributesValue(props)) {
 		return;
 	}
@@ -127,12 +158,29 @@ function applyElementAttributes(element: HTMLElement, props: unknown): void {
 		if (value === null || value === false || value === undefined) {
 			continue;
 		}
-		if (key === "class" && typeof value === "string") {
-			element.className = value;
+		// SEC2: event handlers and stylesheets are not data
+		if (/^on/i.test(key) || key.toLowerCase() === "style") {
 			continue;
 		}
-		if (key === "style" && typeof value === "string") {
-			element.style.cssText = value;
+		const attributeName = key.toLowerCase();
+		if (
+			attributeName === "href" ||
+			attributeName === "src" ||
+			attributeName === "xlink:href"
+		) {
+			const resolved = policy.resolve(
+				value,
+				attributeName === "src" ? "image" : "link",
+			);
+			if (resolved === null) {
+				element.setAttribute("data-pen-blocked-url", "");
+			} else {
+				element.setAttribute(attributeName, resolved);
+			}
+			continue;
+		}
+		if (key === "class" && typeof value === "string") {
+			element.className = value;
 			continue;
 		}
 		if (value === true) {

@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEditor } from "@pen/core";
-import { handleTableCellSelectionKeyDown } from "@pen/dom";
-import { defaultPreset } from "@pen/preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { createEditor } from "@input/pen-core";
+import { handleTableCellSelectionKeyDown } from "@input/pen-dom";
+import { defaultPreset } from "@input/pen-preset-default";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
+import { defaultSchema } from "@input/pen-schema-default";
 
 class MockClipboardItem {
 	readonly types: string[];
@@ -57,6 +58,7 @@ async function flushAsyncWork(count = 4): Promise<void> {
 
 function createTableEditor() {
 	const editor = createEditor({
+		schema: defaultSchema,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -73,20 +75,20 @@ function createTableEditor() {
 			position: "last",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: "t1",
-			row: 0,
-			col: 0,
-			offset: 0,
-			text: "Bob's",
+			cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "Bob's",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: "t1",
-			row: 0,
-			col: 1,
-			offset: 0,
-			text: "Target",
+			cell: { row: 0, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "Target",
 		},
 	]);
 
@@ -98,7 +100,7 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-describe("@pen/react table cell navigation clipboard", () => {
+describe("@input/pen-react table cell navigation clipboard", () => {
 	it("does not cut cells when clipboard writes fail", async () => {
 		const editor = createTableEditor();
 		const fieldEditor = createFieldEditorStub();
@@ -124,7 +126,9 @@ describe("@pen/react table cell navigation clipboard", () => {
 		).toBe(true);
 		await flushAsyncWork();
 
-		expect(editor.getBlock("t1")?.tableCell(0, 0)?.textContent()).toBe("Bob's");
+		expect(
+			editor.getBlock("t1")!.as("table")?.tableCell(0, 0)?.textContent(),
+		).toBe("Bob's");
 
 		editor.destroy();
 	});
@@ -159,7 +163,7 @@ describe("@pen/react table cell navigation clipboard", () => {
 
 		const htmlBlob = await capturedItem!.getType("text/html");
 		const html = await htmlBlob.text();
-		expect(html).toContain("data-pen-cells=\"");
+		expect(html).toContain('data-pen-cells="');
 		expect(html).not.toContain("data-pen-cells='");
 
 		editor.selectCell("t1", 0, 1);
@@ -174,7 +178,9 @@ describe("@pen/react table cell navigation clipboard", () => {
 		});
 		await flushAsyncWork();
 
-		expect(editor.getBlock("t1")?.tableCell(0, 1)?.textContent()).toBe("Bob's");
+		expect(
+			editor.getBlock("t1")!.as("table")?.tableCell(0, 1)?.textContent(),
+		).toBe("Bob's");
 
 		editor.destroy();
 	});

@@ -1,310 +1,325 @@
 import type {
-	DocumentOp,
-	OpOrigin,
-	InsertBlockOp,
-	UpdateBlockOp,
-	DeleteBlockOp,
-	MoveBlockOp,
-	ConvertBlockOp,
-	SplitBlockOp,
-	MergeBlocksOp,
-	InsertTextOp,
-	DeleteTextOp,
+	AppOp,
 	FormatTextOp,
-	ReplaceTextOp,
-	InsertInlineNodeOp,
-	RemoveInlineNodeOp,
-	UpdateLayoutOp,
+	GridOp,
+	InlineInsert,
 	SetMetaOp,
-	CreateAppOp,
-	UpdateAppOp,
-	DeleteAppOp,
-	SetSelectionOp,
-	UpdateTableColumnsOp,
-	CRDTArray,
-} from "@pen/types";
-import { generateId, getOpOriginType } from "@pen/types";
-import { resolveRuntimeContentType } from "../schema/contentType";
+	SpliceTextOp,
+} from "@input/pen-types";
 import {
-	type CRDTUnknownArray,
+	type CRDTInlineTextLike,
+	type CRDTTextLike,
 	type CRDTUnknownMap,
-	getArrayProp,
-	getMapProp,
-	getStringProp,
-	getTableColumns,
 	getTableContent,
-	isCRDTMap,
 } from "./crdtShapes";
-import type { ApplyPipeline } from "./apply";
+import type { ApplyPipelineDocumentAccess } from "./applyPipelineContext";
+import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
+import { ensureCellContent, getCellContent } from "./tableGridCellHelpers";
+import {
+	createMutableMap,
+	getInlineTextContent,
+	getMutableAppMap,
+	getMutableBlockMap,
+	getOrCreateMapProp,
+	getTextContent,
+} from "./applySharedHelpers";
 
-type ApplyPipelineRuntime = any;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
-type MutableStringArray = CRDTUnknownArray<string>;
-interface CRDTInlineText extends CRDTText {
-	insertEmbed(offset: number, value: Record<string, unknown>): void;
-}
-interface CRDTText {
-	insert(offset: number, text: string, attributes?: Record<string, unknown | null>): void;
-	delete(offset: number, length: number): void;
-	format(offset: number, length: number, attributes: Record<string, unknown>): void;
-	toDelta(): Array<{ insert: string | object; attributes?: Record<string, unknown> }>;
-	toString(): string;
-	readonly length: number;
-}
-const ZERO_WIDTH_SPACE = "\u200B";
 
-
-export function insertText(pipeline: ApplyPipeline, op: InsertTextOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
-const content = self._getTextContent(blockMap);
-if (!content) return [];
-
-if (content.length === 1 && content.toString() === ZERO_WIDTH_SPACE) {
-	content.delete(0, 1);
+function embedRecordFromAtom(atom: {
+	nodeType: string;
+	props: Record<string, unknown>;
+}): Record<string, unknown> {
+	const embed = Object.create(null) as Record<string, unknown>;
+	if (atom.props) {
+		for (const key of Object.keys(atom.props)) {
+			embed[key] = atom.props[key];
+		}
+	}
+	embed.type = atom.nodeType;
+	return embed;
 }
 
-const marks = op.marks ? self._resolveMarks(op.marks) : undefined;
-content.insert(op.offset, op.text, marks);
-return [op.blockId];
+function flattenInsert(
+	insert: InlineInsert | readonly InlineInsert[],
+): InlineInsert[] {
+	if (Array.isArray(insert)) {
+		return [...insert];
+	}
+	return [insert as InlineInsert];
 }
 
-export function deleteText(pipeline: ApplyPipeline, op: DeleteTextOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
-const content = self._getTextContent(blockMap);
-if (!content) return [];
-
-content.delete(op.offset, op.length);
-return [op.blockId];
+function resolveBlockText(
+	pipeline: ApplyPipelineDocumentAccess,
+	blockId: string,
+): { blockMap: MutableMap; content: CRDTTextLike } | null {
+	const blockMap = getMutableBlockMap(pipeline, blockId);
+	if (!blockMap) return null;
+	const content = getTextContent(pipeline, blockMap);
+	if (!content) return null;
+	return { blockMap, content };
 }
 
-export function formatText(pipeline: ApplyPipeline, op: FormatTextOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
-const content = self._getTextContent(blockMap);
-if (!content) return [];
-
-content.format(op.offset, op.length, op.marks);
-return [op.blockId];
+function resolveCellText(
+	pipeline: ApplyPipelineDocumentAccess,
+	blockId: string,
+	cell: { row: number; col: number },
+	forInsert: boolean,
+): CRDTTextLike | null {
+	const blockMap = getMutableBlockMap(pipeline, blockId);
+	if (!blockMap) return null;
+	const tableContent = getTableContent(blockMap);
+	if (!tableContent) return null;
+	if (forInsert) {
+		return (
+			ensureCellContent(tableContent.get(cell.row), cell.col, () =>
+				pipeline._tableGrid.createTableCell(),
+			) ?? null
+		);
+	}
+	return getCellContent(
+		tableContent.get(cell.row),
+		cell.col,
+	) as CRDTTextLike | null;
 }
 
-export function replaceText(pipeline: ApplyPipeline, op: ReplaceTextOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
-const content = self._getTextContent(blockMap);
-if (!content) return [];
-
-if (content.length === 1 && content.toString() === ZERO_WIDTH_SPACE) {
-	content.delete(0, 1);
+function emitClamped(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: SpliceTextOp | FormatTextOp,
+	from: number,
+	to: number,
+): void {
+	pipeline._emitter.emit("diagnostic", {
+		code: "op-clamped",
+		level: "warn",
+		source: "apply",
+		message: `apply: clamped ${op.type} offsets to [${from}, ${to}]`,
+		op,
+	});
 }
 
-content.delete(op.offset, op.length);
-const marks = op.marks ? self._resolveMarks(op.marks) : undefined;
-content.insert(op.offset, op.text, marks);
-return [op.blockId];
+function clampRange(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: SpliceTextOp | FormatTextOp,
+	length: number,
+	from: number,
+	to: number,
+): { from: number; to: number } {
+	const nextFrom = Math.max(0, Math.min(from, length));
+	const nextTo = Math.max(nextFrom, Math.min(to, length));
+	if (nextFrom !== from || nextTo !== to) {
+		emitClamped(pipeline, op, nextFrom, nextTo);
+	}
+	return { from: nextFrom, to: nextTo };
 }
 
-export function resolveMarks(pipeline: ApplyPipeline, 
+function insertItems(
+	pipeline: ApplyPipelineDocumentAccess,
+	content: CRDTTextLike,
+	offset: number,
+	items: readonly InlineInsert[],
+	marks: Record<string, unknown | null> | undefined,
+	op: SpliceTextOp,
+): boolean {
+	let pos = offset;
+	const resolvedMarks = marks ? resolveMarks(pipeline, marks) : undefined;
+	for (const item of items) {
+		if (typeof item === "string") {
+			if (item.length === 0) {
+				continue;
+			}
+			content.insert(pos, item, resolvedMarks);
+			pos += item.length;
+			continue;
+		}
+		const rejectedKeys = rejectedOwnPropKeys(item.props);
+		if (rejectedKeys.length > 0) {
+			pipeline._emitter.emit("diagnostic", {
+				code: "PEN_APPLY_009",
+				level: "warn",
+				source: "apply",
+				message: `apply: rejected prototype keys in splice-text atom props (${rejectedKeys.join(", ")})`,
+				remediation:
+					"Remove __proto__, constructor, and prototype own keys from op props.",
+				op,
+			});
+			return false;
+		}
+		const inline = content as CRDTInlineTextLike;
+		if (typeof inline.insertEmbed !== "function") {
+			return false;
+		}
+		inline.insertEmbed(pos, embedRecordFromAtom(item));
+		pos += 1;
+	}
+	return true;
+}
+
+export function spliceText(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: SpliceTextOp,
+): string[] {
+	const items = flattenInsert(op.insert);
+	const insertingAnything = items.some((item) =>
+		typeof item === "string" ? item.length > 0 : true,
+	);
+
+	if (op.cell) {
+		const content = resolveCellText(
+			pipeline,
+			op.blockId,
+			op.cell,
+			insertingAnything,
+		);
+		if (!content) return [];
+		const range = clampRange(pipeline, op, content.length, op.from, op.to);
+		if (range.to > range.from) {
+			content.delete(range.from, range.to - range.from);
+		}
+		if (insertingAnything) {
+			insertItems(pipeline, content, range.from, items, op.marks, op);
+		}
+		return [op.blockId];
+	}
+
+	const resolved = resolveBlockText(pipeline, op.blockId);
+	if (!resolved) return [];
+	const { content } = resolved;
+
+	const range = clampRange(pipeline, op, content.length, op.from, op.to);
+	if (range.to > range.from) {
+		content.delete(range.from, range.to - range.from);
+	}
+	if (insertingAnything) {
+		if (items.length === 1 && typeof items[0] === "object") {
+			const inline = getInlineTextContent(pipeline, resolved.blockMap);
+			if (!inline) return [];
+			insertItems(pipeline, inline, range.from, items, op.marks, op);
+		} else {
+			insertItems(pipeline, content, range.from, items, op.marks, op);
+		}
+	}
+	return [op.blockId];
+}
+
+export function formatText(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: FormatTextOp,
+): string[] {
+	const content = op.cell
+		? resolveCellText(pipeline, op.blockId, op.cell, false)
+		: resolveBlockText(pipeline, op.blockId)?.content;
+	if (!content) return [];
+	const range = clampRange(pipeline, op, content.length, op.from, op.to);
+	if (range.to > range.from) {
+		content.format(range.from, range.to - range.from, op.marks);
+	}
+	return [op.blockId];
+}
+
+function resolveMarks(
+	pipeline: Pick<ApplyPipelineDocumentAccess, "_registry">,
 	marks: Record<string, unknown | null>,
 ): Record<string, unknown | null> {
-	const self = pipeline as ApplyPipelineRuntime;
-const resolved: Record<string, unknown | null> = {};
-for (const [type, value] of Object.entries(marks)) {
-	const schema = self._registry.resolveInline(type);
-	if (!schema) continue;
-	resolved[type] = value;
-}
-return resolved;
-}
-
-export function insertInlineNode(pipeline: ApplyPipeline, op: InsertInlineNodeOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
-const content = self._getInlineTextContent(blockMap);
-if (!content) return [];
-
-content.insertEmbed(op.offset, {
-	type: op.nodeType,
-	...op.props,
-});
-return [op.blockId];
+	const resolved: Record<string, unknown | null> = {};
+	for (const [type, value] of Object.entries(marks)) {
+		const schema = pipeline._registry.resolveInline(type);
+		if (!schema) continue;
+		resolved[type] = value;
+	}
+	return resolved;
 }
 
-export function removeInlineNode(pipeline: ApplyPipeline, op: RemoveInlineNodeOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
-const content = self._getTextContent(blockMap);
-if (!content) return [];
-
-content.delete(op.offset, 1);
-return [op.blockId];
-}
-
-export function setSelectionOp(pipeline: ApplyPipeline, op: SetSelectionOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-self._selection.setSelection(op.selection);
-return [];
-}
-
-export function updateLayout(pipeline: ApplyPipeline, op: UpdateLayoutOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
-
-const layoutMap = self._getOrCreateMapProp(blockMap, "layout");
-
-for (const [key, value] of Object.entries(op.layout)) {
-	if (value === undefined || value === null) {
-		layoutMap.delete(key);
-	} else {
-		layoutMap.set(key, value);
+export function applyApp(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: AppOp,
+): string[] {
+	const change = op.change;
+	switch (change.kind) {
+		case "create": {
+			const appMap = createMutableMap(pipeline);
+			appMap.set("type", change.appType);
+			appMap.set("placement", change.placement);
+			if (change.config && Object.keys(change.config).length > 0) {
+				const configMap = createMutableMap(pipeline);
+				for (const [key, value] of Object.entries(change.config)) {
+					configMap.set(key, value);
+				}
+				appMap.set("config", configMap);
+			}
+			pipeline.mutableApps.set(change.appId, appMap);
+			return [];
+		}
+		case "update": {
+			const appMap = getMutableAppMap(pipeline, change.appId);
+			if (!appMap) return [];
+			const configMap = getOrCreateMapProp(pipeline, appMap, "config");
+			for (const [key, value] of Object.entries(change.patch)) {
+				if (value === undefined || value === null) {
+					configMap.delete(key);
+				} else {
+					configMap.set(key, value);
+				}
+			}
+			return [];
+		}
+		case "delete": {
+			pipeline.mutableApps.delete(change.appId);
+			return [];
+		}
+		default: {
+			const _exhaustive: never = change;
+			return _exhaustive;
+		}
 	}
 }
 
-return [op.blockId];
+export function tableOp(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: GridOp,
+): string[] {
+	const blockMap = getMutableBlockMap(pipeline, op.blockId);
+	if (!blockMap) return [];
+	return pipeline._tableGrid.execute(blockMap, op);
 }
 
-export function createApp(pipeline: ApplyPipeline, op: CreateAppOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const appMap = self._createMutableMap();
-appMap.set("type", op.appType);
-appMap.set("placement", op.placement);
-
-if (op.config && Object.keys(op.config).length > 0) {
-	const configMap = self._createMutableMap();
-	for (const [key, value] of Object.entries(op.config)) {
-		configMap.set(key, value);
-	}
-	appMap.set("config", configMap);
-}
-
-self.mutableApps.set(op.appId, appMap);
-return [];
-}
-
-export function updateApp(pipeline: ApplyPipeline, op: UpdateAppOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const appMap = self._getMutableAppMap(op.appId);
-if (!appMap) return [];
-
-const configMap = self._getOrCreateMapProp(appMap, "config");
-
-for (const [key, value] of Object.entries(op.patch)) {
-	if (value === undefined || value === null) {
-		configMap.delete(key);
-	} else {
-		configMap.set(key, value);
-	}
-}
-return [];
-}
-
-export function deleteApp(pipeline: ApplyPipeline, op: DeleteAppOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-self.mutableApps.delete(op.appId);
-return [];
-}
-
-export function tableOp(pipeline: ApplyPipeline, op: DocumentOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const tableOp = op as { blockId: string; type: string };
-const blockMap = self._getMutableBlockMap(tableOp.blockId);
-if (!blockMap) return [];
-
-const blockType = blockMap.get("type");
-if (blockType === "database") {
-	if (op.type === "update-table-columns") {
-		return self._databaseOps.replaceColumns(
-			blockMap,
-			(op as UpdateTableColumnsOp).columns,
-		)
-			? [tableOp.blockId]
-			: [];
-	}
-
-	if (self._isDatabaseStructuralTableOp(op.type)) {
-		self._emitter.emit("diagnostic", {
-			code: "PEN_APPLY_006",
-			level: "warn",
-			source: "apply",
-			message: `apply: skipping ${op.type} for database block "${tableOp.blockId}"`,
-			remediation:
-				"Use database operations for structural database changes so row ids, column schema, and views stay in sync.",
-			op,
-		});
-		return [];
-	}
-}
-
-return self._tableGrid.execute(blockMap, op);
-}
-
-export function databaseOp(pipeline: ApplyPipeline, op: DocumentOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const databaseOp = op as { type: string; blockId: string };
-const blockMap = self._getMutableBlockMap(databaseOp.blockId);
-if (!blockMap) return [];
-
-return self._databaseOps.execute(blockMap, op);
-}
-
-export function clearTableState(pipeline: ApplyPipeline, blockMap: MutableMap): void {
-	const self = pipeline as ApplyPipelineRuntime;
-blockMap.delete("tableContent");
-blockMap.delete("tableColumns");
-}
-
-export function clearDatabaseState(pipeline: ApplyPipeline, blockMap: MutableMap): void {
-	const self = pipeline as ApplyPipelineRuntime;
-blockMap.delete("databaseViews");
-blockMap.delete("databasePrimaryViewId");
-}
-
-export function isDatabaseStructuralTableOp(pipeline: ApplyPipeline, type: string): boolean {
-	const self = pipeline as ApplyPipelineRuntime;
-return (
-	type === "insert-table-row" ||
-	type === "delete-table-row" ||
-	type === "insert-table-column" ||
-	type === "delete-table-column" ||
-	type === "merge-table-cells" ||
-	type === "split-table-cell"
-);
+export function clearTableState(blockMap: MutableMap): void {
+	blockMap.delete("tableContent");
+	blockMap.delete("tableColumns");
 }
 
 export function getPreservedInlineDeltas(
-	_pipeline: ApplyPipeline,
-	content: CRDTText | undefined,
+	content: CRDTTextLike | undefined,
 ): Array<{ insert: string; attributes?: Record<string, unknown> }> {
 	if (!content || typeof content.toDelta !== "function") {
 		return [];
 	}
-	return content.toDelta().filter(
-		(delta): delta is { insert: string; attributes?: Record<string, unknown> } =>
-			typeof delta.insert === "string" && delta.insert !== ZERO_WIDTH_SPACE,
-	);
+	return content
+		.toDelta()
+		.filter(
+			(
+				delta,
+			): delta is {
+				insert: string;
+				attributes?: Record<string, unknown>;
+			} => typeof delta.insert === "string",
+		);
 }
 
-export function setMeta(pipeline: ApplyPipeline, op: SetMetaOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockMap = self._getMutableBlockMap(op.blockId);
-if (!blockMap) return [];
+export function setMeta(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: SetMetaOp,
+): string[] {
+	const blockMap = getMutableBlockMap(pipeline, op.blockId);
+	if (!blockMap) return [];
 
-const metaMap = self._getOrCreateMapProp(blockMap, "meta");
+	const metaMap = getOrCreateMapProp(pipeline, blockMap, "meta");
 
-// Persist metadata as plain JSON so adapters can round-trip it predictably.
-if (op.data === null) {
-	metaMap.delete(op.namespace);
-} else {
-	metaMap.set(op.namespace, op.data);
-}
+	if (op.data === null) {
+		metaMap.delete(op.namespace);
+	} else {
+		metaMap.set(op.namespace, op.data);
+	}
 
-return [op.blockId];
+	return [op.blockId];
 }

@@ -3,20 +3,23 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import {
+	createEditor as createCoreEditor,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
-	const { without: _without, ...restOptions } = options;
 	return createCoreEditor({
-		...restOptions,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -64,17 +67,19 @@ async function cleanupEditor(
 	editor.destroy();
 }
 
-function getFieldEditor(editor: ReturnType<typeof createEditor>): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+function getFieldEditor(
+	editor: ReturnType<typeof createEditor>,
+): FieldEditorImpl {
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}
 	return fieldEditor;
 }
 
-describe("@pen/react text entry surface semantics", () => {
+describe("@input/pen-react text entry surface semantics", () => {
 	it("marks only the active inline edit surface as a multiline textbox", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;
@@ -101,7 +106,11 @@ describe("@pen/react text entry surface semantics", () => {
 
 		expect(firstSurface).not.toBeNull();
 		expect(secondSurface).not.toBeNull();
-		expect(container.querySelectorAll('[role="textbox"]')).toHaveLength(0);
+		expect(
+			container.querySelectorAll(
+				'[role="textbox"]:not([data-pen-editor-root])',
+			),
+		).toHaveLength(0);
 
 		await act(async () => {
 			fieldEditor.activate(firstBlockId);
@@ -110,7 +119,9 @@ describe("@pen/react text entry surface semantics", () => {
 
 		expect(firstSurface?.getAttribute("role")).toBe("textbox");
 		expect(firstSurface?.getAttribute("aria-multiline")).toBe("true");
+		expect(firstSurface?.getAttribute("aria-label")).toBe("Editor");
 		expect(secondSurface?.hasAttribute("role")).toBe(false);
+		expect(secondSurface?.hasAttribute("aria-label")).toBe(false);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -127,20 +138,20 @@ describe("@pen/react text entry surface semantics", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "semantic-table",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Alpha",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Alpha",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "semantic-table",
-				row: 0,
-				col: 1,
-				offset: 0,
-				text: "Beta",
+				cell: { row: 0, col: 1 },
+				from: 0,
+				to: 0,
+				insert: "Beta",
 			},
 		]);
 
@@ -155,7 +166,11 @@ describe("@pen/react text entry surface semantics", () => {
 
 		expect(firstCellSurface).not.toBeNull();
 		expect(secondCellSurface).not.toBeNull();
-		expect(container.querySelectorAll('[role="textbox"]')).toHaveLength(0);
+		expect(
+			container.querySelectorAll(
+				'[role="textbox"]:not([data-pen-editor-root])',
+			),
+		).toHaveLength(0);
 
 		await act(async () => {
 			editor.selectCell("semantic-table", 0, 0);
@@ -170,7 +185,9 @@ describe("@pen/react text entry surface semantics", () => {
 
 		expect(firstCellSurface?.getAttribute("role")).toBe("textbox");
 		expect(firstCellSurface?.getAttribute("aria-multiline")).toBe("true");
+		expect(firstCellSurface?.getAttribute("aria-label")).toBe("Editor");
 		expect(secondCellSurface?.hasAttribute("role")).toBe(false);
+		expect(secondCellSurface?.hasAttribute("aria-label")).toBe(false);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -181,7 +198,13 @@ describe("@pen/react text entry surface semantics", () => {
 		const secondBlockId = "semantic-expanded-second";
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Hello" },
+			{
+				type: "splice-text",
+				blockId: firstBlockId,
+				from: 0,
+				to: 0,
+				insert: "Hello",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -189,7 +212,13 @@ describe("@pen/react text entry surface semantics", () => {
 				props: {},
 				position: { after: firstBlockId },
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "World" },
+			{
+				type: "splice-text",
+				blockId: secondBlockId,
+				from: 0,
+				to: 0,
+				insert: "World",
+			},
 		]);
 
 		const { container, root } = await renderEditor(editor);
@@ -213,6 +242,7 @@ describe("@pen/react text entry surface semantics", () => {
 		expect(fieldEditor.getSnapshot().mode).toBe("expanded");
 		expect(blocksHost?.getAttribute("role")).toBe("textbox");
 		expect(blocksHost?.getAttribute("aria-multiline")).toBe("true");
+		expect(blocksHost?.getAttribute("aria-label")).toBe("Editor");
 
 		await cleanupEditor(editor, root, container);
 	});

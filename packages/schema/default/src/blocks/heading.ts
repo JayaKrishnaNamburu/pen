@@ -1,8 +1,13 @@
-import { defineBlock, prop } from "@pen/types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
+import { directionProp } from "../directionProp";
 
 export const heading = defineBlock("heading", {
   props: {
     level: prop.enum([1, 2, 3, 4, 5, 6]).default(1).describe("Heading level"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "richtext",
@@ -17,7 +22,9 @@ export const heading = defineBlock("heading", {
     toMarkdown: (block) =>
       `${"#".repeat((block.props.level as number) ?? 1)} ${block.content ?? ""}`,
     toHTML: (block) => {
-      const level = (block.props.level as number) ?? 1;
+      const raw = Number(block.props.level);
+      const level = raw >= 1 && raw <= 6 && Number.isInteger(raw) ? raw : 1;
+      // SEC5: clamped heading level
       return `<h${level}>${block.content ?? ""}</h${level}>`;
     },
   },

@@ -1,8 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import type { BlockDisplay, BlockSchema, Editor } from "@pen/types";
-import { generateId } from "@pen/types";
+import {
+	blockLogicalText,
+	foldAndNormalize,
+	isCollapsed,
+	localeFacet,
+} from "@input/pen-core";
+import type { BlockDisplay, BlockSchema, Editor } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
+import {
+	displayCatalogForEditor,
+	resolveSlashMenuTitle,
+} from "../utils/displayCopy";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
-import { getConvertBlockOps } from "../field-editor/commands";
+import { getConvertBlockOps } from "@input/pen-dom/field-editor/commands";
 import { getInsertSiblingBlockOp } from "../utils/parentIdTree";
 import { shouldShowBlockInDefaultMenus } from "../utils/flowCapabilities";
 import {
@@ -86,7 +96,7 @@ export function useSlashMenu(
 		};
 
 		syncSlashMenu();
-		const unsubDocument = editor.onDocumentCommit(syncSlashMenu);
+		const unsubDocument = editor.on("commit", () => syncSlashMenu());
 		const unsubSelection = editor.onSelectionChange(syncSlashMenu);
 		return () => {
 			unsubDocument();
@@ -132,11 +142,9 @@ export function useSlashMenu(
 			let insertedOrConvertedBlockId: string | null = null;
 
 			if (block) {
-				const currentText = block.textContent();
+				const currentText = blockLogicalText(ed, blockId);
 				const isEmptyOrSlash =
-					!currentText ||
-					currentText === "/" ||
-					currentText === "\u200B";
+					currentText.length === 0 || currentText === "/";
 				const isTableInsert = item.type === "table";
 				const tableActivationTarget = isTableInsert
 					? getTableActivationTarget(undefined)
@@ -149,10 +157,11 @@ export function useSlashMenu(
 					const ops = [];
 					if (currentText === "/") {
 						ops.push({
-							type: "delete-text" as const,
+							type: "splice-text" as const,
 							blockId,
-							offset: 0,
-							length: 1,
+							from: 0,
+							to: 0 + 1,
+							insert: "",
 						});
 					}
 					if (block.type !== item.type) {
@@ -193,9 +202,9 @@ export function useSlashMenu(
 					ed.apply(
 						[
 							{
-								type: "update-table-columns",
+								type: "set-props",
 								blockId: insertedOrConvertedBlockId,
-								columns: defaultCols,
+								props: { columns: defaultCols },
 							},
 						],
 						{ origin: "user", undoGroup: true },
@@ -230,7 +239,7 @@ export function useSlashMenu(
 
 function getSlashTarget(editor: Editor): SlashMenuTarget | null {
 	const selection = editor.selection;
-	if (!selection || selection.type !== "text" || !selection.isCollapsed) {
+	if (!selection || selection.type !== "text" || !isCollapsed(selection)) {
 		return null;
 	}
 
@@ -280,21 +289,34 @@ function filterItems(
 		}));
 	}
 
-	const lower = query.toLowerCase();
+	const locale = editor.facet(localeFacet);
+	const catalog = displayCatalogForEditor(editor);
+	const foldedQuery = foldAndNormalize(query, locale);
 	return visibleDisplays
 		.filter((d) => {
-			const title = d.display.title.toLowerCase();
-			const desc = d.display.description?.toLowerCase() ?? "";
+			const title = foldAndNormalize(
+				resolveSlashMenuTitle(d.type, d.display.title, catalog),
+				locale,
+			);
+			const desc = foldAndNormalize(d.display.description ?? "", locale);
 			const aliases = d.display.aliases ?? [];
 			return (
-				title.includes(lower) ||
-				desc.includes(lower) ||
-				aliases.some((a) => a.toLowerCase().includes(lower))
+				title.includes(foldedQuery) ||
+				desc.includes(foldedQuery) ||
+				aliases.some((alias) =>
+					foldAndNormalize(alias, locale).includes(foldedQuery),
+				)
 			);
 		})
 		.sort((a: (typeof displays)[number], b: (typeof displays)[number]) => {
-			const aPos = a.display.title.toLowerCase().indexOf(lower);
-			const bPos = b.display.title.toLowerCase().indexOf(lower);
+			const aPos = foldAndNormalize(
+				resolveSlashMenuTitle(a.type, a.display.title, catalog),
+				locale,
+			).indexOf(foldedQuery);
+			const bPos = foldAndNormalize(
+				resolveSlashMenuTitle(b.type, b.display.title, catalog),
+				locale,
+			).indexOf(foldedQuery);
 			return aPos - bPos;
 		})
 		.map((d) => ({ type: d.type, display: d.display }));

@@ -1,32 +1,30 @@
-# @pen/content-ops
+# @input/pen-content-ops
 
 ## Purpose
 
-`@pen/content-ops` provides shared parsing, normalization, and operation-building helpers for Pen. It is where Markdown-to-block parsing, pending-block normalization, profile-policy filtering, and generic write-op construction live.
+`@input/pen-content-ops` is the Markdown parse and write-op construction layer. Import and profile-policy helpers live in `@input/pen-core`.
 
 ## Public Role
 
-This package is a lower-level transformation layer used by higher-level import, AI, and document-tooling packages. It sits between raw content formats and editor-ready operations, but it does not own the editor runtime or end-user renderer surfaces.
+This package used to sit _under_ core (core imported it) and later re-exported the moved helpers. That dual path is gone (DL13): content-ops depends on `@input/pen-core` and hosts import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
 
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Block operation helpers such as `blocksToOps()`
-- Import normalization helpers such as `normalizePendingBlocksForImport()`, `filterPendingBlocksForDocumentProfile()`, `createImportResult()`, and diagnostic reporting helpers
-- Markdown parsing entrypoint: `parseMarkdownToBlocks()`
-- Generic write helper: `buildDocumentWriteOps()`
-- Structured target and plan normalization helpers for tooling and AI-oriented write flows
+- Implemented here: `parseMarkdownToBlocks()`, `splitPlainTextLineBlocks()`, `buildDocumentWriteOps()`, and the structured-target types
+- Import, profile-policy, and block-capability helpers (`blocksToOps()`, `normalizePendingBlocksForImport()`, `shouldExposeBlockInTooling()`, and siblings) export from `@input/pen-core` only
+- Structured-target descriptor types for document-ops and autocomplete write flows
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`, `htmlparser2`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`, `htmlparser2`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@pen/content-ops` is a shared transformation library and should not become an end-user entrypoint or runtime authority package.
+- Boundary: `@input/pen-content-ops` is a shared transformation library and should not become an end-user entrypoint or runtime authority package.
 
 ## Runtime Model
 
-`@pen/content-ops` turns content-like inputs into normalized pending blocks and operation lists that higher-level packages can safely apply:
+`@input/pen-content-ops` turns content-like inputs into normalized pending blocks and operation lists that higher-level packages can safely apply:
 
 ```mermaid
 flowchart TD
@@ -60,7 +58,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. It is already a high-leverage package because many higher-level features depend on its normalization and write-op rules staying stable.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. It is already a high-leverage package because many higher-level features depend on its normalization and write-op rules staying stable.
 
 ## Non-goals
 

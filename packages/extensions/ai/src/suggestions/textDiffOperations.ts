@@ -9,17 +9,8 @@ import {
 	DEFAULT_INSERTED_BLOCK_TYPE,
 	type ReplacementReviewOperation,
 } from "./replacementPlan/rangeReplacementOps";
-import {
-	compileReplacementSuggestionOps,
-	type CompileReplacementSuggestionOpsInput,
-	type ReplacementTextDiffOperation,
-} from "./replacementPlan/textDiffEngine";
 
 export type { ReplacementRangeBlock } from "./replacementPlan/replacementRange";
-export type {
-	CompileReplacementSuggestionOpsInput,
-	ReplacementTextDiffOperation,
-} from "./replacementPlan/textDiffEngine";
 export type { ReplacementReviewOperation } from "./replacementPlan/rangeReplacementOps";
 export { compileReplacementSuggestionOps } from "./replacementPlan/textDiffEngine";
 

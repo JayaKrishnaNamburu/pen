@@ -1,6 +1,7 @@
 import React from "react";
-import type { Editor } from "@pen/types";
-import type { AISuggestionGroup } from "@pen/ai-suggestions";
+import type { Editor } from "@input/pen-types";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
+import type { AISuggestionGroup } from "@input/pen-ai/suggestions";
 import { queryAISuggestionAnchorElement } from "../utils/aiDomScope";
 import { useAISuggestions } from "./useAISuggestions";
 
@@ -42,7 +43,10 @@ export function useAISuggestionPopover(editor: Editor) {
 				return;
 			}
 
-			const anchor = queryAISuggestionAnchorElement(editor, anchorSuggestionId);
+			const anchor = queryAISuggestionAnchorElement(
+				editor,
+				anchorSuggestionId,
+			);
 			if (!anchor) {
 				setPosition(null);
 				return;
@@ -61,7 +65,8 @@ export function useAISuggestionPopover(editor: Editor) {
 
 	const openGroup = React.useCallback(
 		(groupId: string) => {
-			const group = state.groups.find((item) => item.id === groupId) ?? null;
+			const group =
+				state.groups.find((item) => item.id === groupId) ?? null;
 			if (!group) {
 				return;
 			}
@@ -74,8 +79,9 @@ export function useAISuggestionPopover(editor: Editor) {
 	const openSuggestion = React.useCallback(
 		(suggestionId: string) => {
 			const groupId =
-				state.groups.find((group) => group.suggestionIds.includes(suggestionId))?.id ??
-				null;
+				state.groups.find((group) =>
+					group.suggestionIds.includes(suggestionId),
+				)?.id ?? null;
 			if (groupId) {
 				openGroup(groupId);
 				return;
@@ -93,7 +99,10 @@ export function useAISuggestionPopover(editor: Editor) {
 	}, [activeGroupIndex, openGroup, state.groups]);
 
 	const goToNextGroup = React.useCallback(() => {
-		if (activeGroupIndex < 0 || activeGroupIndex >= state.groups.length - 1) {
+		if (
+			activeGroupIndex < 0 ||
+			activeGroupIndex >= state.groups.length - 1
+		) {
 			return;
 		}
 		openGroup(state.groups[activeGroupIndex + 1]!.id);
@@ -117,7 +126,7 @@ export function useAISuggestionPopover(editor: Editor) {
 		return count;
 	}, [activeGroup, dismissSuggestionGroup]);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (!activeGroup) {
 			return;
 		}

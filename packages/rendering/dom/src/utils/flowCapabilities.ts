@@ -1,4 +1,3 @@
-import type { DocumentProfile, Editor } from "@pen/types";
 import {
 	getFlowCapabilityFromSchema as getSharedFlowCapabilityFromSchema,
 	getFlowCapabilityFromType as getSharedFlowCapabilityFromType,
@@ -6,11 +5,14 @@ import {
 	shouldAllowDirectBlockPaste as shouldAllowSharedDirectBlockPaste,
 	shouldAllowFlowInsertionInSlashMenu as shouldAllowSharedFlowInsertionInSlashMenu,
 	shouldShowBlockInDefaultMenus as shouldShowSharedBlockInDefaultMenus,
-	shouldFallbackMixedSelectionToBlock as shouldFallbackSharedMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll as shouldForceSharedBlockScopedSelectAll,
-	type FlowBlockCapability,
-} from "@pen/types";
-export type { FlowBlockCapability } from "@pen/types";
+} from "@input/pen-core";
+import type {
+	DocumentProfile,
+	Editor,
+	FlowBlockCapability,
+} from "@input/pen-types";
+export type { FlowBlockCapability } from "@input/pen-types";
 
 export function getFlowCapabilityFromSchema(
 	schema: Parameters<typeof getSharedFlowCapabilityFromSchema>[0],
@@ -36,13 +38,6 @@ export function getEditorFlowCapability(
 	return getFlowCapabilityFromSchema(editor.schema.resolve(block.type));
 }
 
-export function shouldFallbackMixedSelectionToBlock(
-	documentProfile: DocumentProfile,
-	capability: FlowBlockCapability | null,
-): boolean {
-	return shouldFallbackSharedMixedSelectionToBlock(documentProfile, capability);
-}
-
 export function shouldForceBlockScopedSelectAll(
 	documentProfile: DocumentProfile,
 	capability: FlowBlockCapability | null,
@@ -60,7 +55,10 @@ export function shouldAllowFlowInsertionInSlashMenu(
 	documentProfile: DocumentProfile,
 	capability: FlowBlockCapability | null,
 ): boolean {
-	return shouldAllowSharedFlowInsertionInSlashMenu(documentProfile, capability);
+	return shouldAllowSharedFlowInsertionInSlashMenu(
+		documentProfile,
+		capability,
+	);
 }
 
 export function shouldShowBlockInDefaultMenus(

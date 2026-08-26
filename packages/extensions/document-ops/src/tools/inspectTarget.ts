@@ -1,4 +1,4 @@
-import type { Editor, ToolDefinition } from "@pen/types";
+import type { Editor, ToolDefinition } from "@input/pen-types";
 import { inspectStructuredTarget } from "../utils/structuredTargets";
 
 export function inspectTargetTool(editor: Editor): ToolDefinition {
@@ -6,6 +6,7 @@ export function inspectTargetTool(editor: Editor): ToolDefinition {
 		name: "inspect_target",
 		description:
 			"Inspect the active block or a specific block id to learn its schema-aware target details and valid operations.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			properties: {

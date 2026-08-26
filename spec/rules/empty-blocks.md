@@ -1,0 +1,19 @@
+# Empty Blocks
+
+An empty block stores the empty string. `\u200B` has no reserved meaning anywhere in Pen: not in storage, not in the logical domain, not in exports, not on the clipboard. The DOM's need for a caret position inside an empty element is a renderer problem with a renderer solution. Implementation spans `@input/pen-core` (load migration, the single permitted namer), `@input/pen-dom` (reconciliation, geometry, offset clamps), and `@input/pen-crdt-yjs` (the document format stamp); see `spec/charter/document-model.md` for the same rules stated as document-model invariants.
+
+## EM — Empty Blocks
+
+- EM1. Storage: the stored `Y.Text` of an empty text-capable block is `""`. The logical domain equals the stored domain, so translation between a stored and a logical length has ceased to exist as a concept.
+- EM2. DOM placeholder: an empty block's field element renders exactly one `<br data-pen-empty="">` child, produced and removed by `@input/pen-dom` reconciliation in the write phase. It is never serialized — exporters and the clipboard payload read the document, not the DOM, and every DOM-scraping path ignores `data-pen-empty` nodes. The placeholder appears in no summary, no op, and no anchor target.
+- EM3. Load migration: documents whose format stamp is below 3 pass through the `strip-empty-block-sentinels` migration on load. Every block and cell text equal to a lone `"\u200B"` becomes `""`, the stamp becomes 3, and counts are reported through the load-state surface with `diagnostic { code: "empty-block-sentinels-stripped" }`. The migration runs under the `"migration"` origin, is idempotent, and holds the workspace's only production reference to the character (I14).
+- EM5. Seam deletions: the summary builder's sentinel insert/remove cancellation seam is deleted with nothing replacing it, because with no sentinel there is nothing to cancel. Since stored length equals logical length, the remaining DOM offset helpers are identity clamps; do not reintroduce a logical-to-DOM translation seam to hold them.
+- EM6. Caret and geometry: `caretRect` for offset 0 of an empty block measures the placeholder's line box, so the overlay caret and native caret placement agree. `pointAt` inside an empty block resolves to offset 0, and the projector projects a collapsed selection there onto the position before the placeholder.
+- EM7. Typing into empty: the first `splice-text` into an empty block inserts at offset 0 of `""`, and reconciliation replaces the placeholder with the text node in the same flush's write phase; deleting the last character restores the placeholder in the same flush. There is no intermediate commit, no sentinel round-trip, and no special-cased backend path — both input backends see a genuinely empty text buffer.
+- EM8. Corpus: the durability corpus carries a stamp-2 fixture that must load to stamp 3 with the expected strip counts. The interop corpus asserts that no export, clipboard payload, or selected-text result contains a lone-sentinel empty block or cell. It does not ban the character: a user-typed or pasted `\u200B` inside longer text is preserved, and the escape stays hostile input for the security and AI-boundary rules.
+
+## Retired
+
+`EM4` stays reserved. Do not reuse the ID to number a new rule or to close a coverage line.
+
+- EM4. RETIRED (2026-08-24). The stamp-2 remote heal — a normalization rule that stripped a stored text of exactly `"\u200B"` down to `""` when it arrived in a remote commit — is deleted along with its observer wiring and its `sentinel-stripped` diagnostic. There is no remote-commit heal: a lone sentinel arriving from a peer is ordinary text until the next load, because the peer that produced it is the one that needs migrating, and EM3 owns the only strip site. The clause naming EM4 as the sole module permitted to write the character moved to EM3's load-migration detector.

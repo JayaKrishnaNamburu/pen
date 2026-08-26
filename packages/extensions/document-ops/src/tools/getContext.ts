@@ -1,7 +1,8 @@
-import type { Editor, ToolDefinition } from "@pen/types";
+import type { Editor, ToolDefinition } from "@input/pen-types";
 import {
 	buildCursorContext,
 	exportDocumentRangeAsMarkdown,
+	formatBlocksAsAnnotatedMarkdown,
 	normalizeContextToolOptions,
 	resolveDocumentBlocks,
 	summarizeBlocks,
@@ -11,7 +12,8 @@ export function getContextTool(editor: Editor): ToolDefinition {
 	return {
 		name: "get_context",
 		description:
-			"Get document context in summary, json, or markdown form with optional selection details.",
+			"Get document context in summary, json, or markdown form with optional selection details. Set annotateBlocks with markdown format to prefix every block with a `<!-- block:<id> <type> -->` comment for precise addressing.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -28,6 +30,10 @@ export function getContextTool(editor: Editor): ToolDefinition {
 					type: "boolean",
 					default: false,
 				},
+				annotateBlocks: {
+					type: "boolean",
+					default: false,
+				},
 				range: {
 					type: "object",
 					properties: {
@@ -40,17 +46,21 @@ export function getContextTool(editor: Editor): ToolDefinition {
 		handler: async (input: unknown) => {
 			const options = normalizeContextToolOptions(input);
 			const viewMode = options.includeSuggestions ? "raw" : "resolved";
-			const blocks = resolveDocumentBlocks(editor, options.range, viewMode);
+			const blocks = resolveDocumentBlocks(
+				editor,
+				options.range,
+				viewMode,
+			);
 			const cursorContext = buildCursorContext(editor, viewMode);
 			const selectionPayload = options.includeSelection
 				? {
-					selection: cursorContext.selection,
-					selectedText: cursorContext.selectedText,
-					activeBlockId: cursorContext.activeBlockId,
-					activeBlockType: cursorContext.activeBlockType,
-					surroundingBlocks: cursorContext.surroundingBlocks,
-					structuredTarget: cursorContext.structuredTarget,
-				}
+						selection: cursorContext.selection,
+						selectedText: cursorContext.selectedText,
+						activeBlockId: cursorContext.activeBlockId,
+						activeBlockType: cursorContext.activeBlockType,
+						surroundingBlocks: cursorContext.surroundingBlocks,
+						structuredTarget: cursorContext.structuredTarget,
+					}
 				: {};
 
 			if (options.format === "markdown") {
@@ -58,7 +68,14 @@ export function getContextTool(editor: Editor): ToolDefinition {
 					format: "markdown",
 					viewMode,
 					blockCount: blocks.length,
-					markdown: exportDocumentRangeAsMarkdown(editor, options.range, viewMode),
+					blockIds: blocks.map((block) => block.id),
+					markdown: options.annotateBlocks
+						? formatBlocksAsAnnotatedMarkdown(blocks)
+						: exportDocumentRangeAsMarkdown(
+								editor,
+								options.range,
+								viewMode,
+							),
 					...selectionPayload,
 				};
 			}

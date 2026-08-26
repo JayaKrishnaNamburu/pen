@@ -1,17 +1,24 @@
 name: Docs
 
+# HB3: PRs must compile the docs site. Pages upload/deploy stay off pull requests.
 on:
   push:
     branches:
       - main
+  pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
+    name: Build
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,35 +28,43 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-
       - name: Configure GitHub Pages
+        if: ${{ github.event_name != 'pull_request' }}
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: docs
+
+      - name: Check DOC2 pages
+        run: pnpm --filter @input/pen-docs check:pages
+
+      - name: Check COL5/COL6 collaboration contract
+        run: pnpm --filter @input/pen-docs check:collaboration
+
+      - name: Check DOC3 generated tables
+        run: pnpm --filter @input/pen-docs check:tables
+
+      - name: Type-check docs page samples
+        run: pnpm --filter @input/pen-docs check:samples
 
       - name: Build docs site
-        run: pnpm --filter @pen/docs build
+        run: pnpm --filter @input/pen-docs build
         env:
-          PEN_DOCS_BASE: ${{ steps.pages.outputs.base_path }}
+          PEN_DOCS_BASE: ${{ steps.pages.outputs.base_path || '/' }}
 
       - name: Upload GitHub Pages artifact
+        if: ${{ github.event_name != 'pull_request' }}
         uses: actions/upload-pages-artifact@v4
         with:
           path: packages/docs/dist
 
   deploy:
+    name: Deploy
+    if: ${{ github.event_name != 'pull_request' }}
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: build
     permissions:
@@ -63,3 +78,24 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  docs:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: All docs jobs
+    if: always()
+    needs: [build, deploy]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require the docs site to have built
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}
+          # Pages deployment is push-only; HB3 keeps it off pull requests.
+          allow-skipped: deploy

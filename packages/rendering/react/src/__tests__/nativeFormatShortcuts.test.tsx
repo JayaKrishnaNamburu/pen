@@ -3,11 +3,11 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -24,18 +24,19 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 function getFieldEditor(
 	editor: ReturnType<typeof createEditor>,
 ): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}
 	return fieldEditor;
 }
 
-describe("@pen/react native format shortcuts", () => {
+describe("@input/pen-react native format shortcuts", () => {
 	it("stops bold expansion after native formatBold toggles bold off", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -46,10 +47,11 @@ describe("@pen/react native format shortcuts", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 				marks: { bold: true },
 			},
 		]);
@@ -108,7 +110,6 @@ describe("@pen/react native format shortcuts", () => {
 			type: "text",
 			anchor: { blockId, offset: 6 },
 			focus: { blockId, offset: 6 },
-			isCollapsed: true,
 		});
 
 		await act(async () => {
@@ -120,6 +121,7 @@ describe("@pen/react native format shortcuts", () => {
 
 	it("still handles standalone native formatBold beforeinput", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -129,7 +131,7 @@ describe("@pen/react native format shortcuts", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");

@@ -1,4 +1,5 @@
-import type { InlineDecoration } from "@pen/types";
+import type { InlineDecoration } from "@input/pen-types";
+import { createRemotePresenceAttributes } from "../presence/presenceAttributes";
 import type { RemoteCursorState } from "../types";
 
 export function buildRemoteCursorDecorations(
@@ -10,13 +11,11 @@ export function buildRemoteCursorDecorations(
 		from: cursor.offset,
 		to: cursor.offset,
 		key: `multiplayer-cursor:${cursor.clientId}:${cursor.blockId}:${cursor.offset}:${cursor.clock}`,
-		attributes: {
-			class: "pen-multiplayer-cursor",
-			style: `--pen-multiplayer-color: ${cursor.user.color}`,
-			"data-pen-multiplayer-cursor": "",
-			"data-multiplayer-client-id": String(cursor.clientId),
-			"data-user-id": cursor.user.id,
-			"data-user-name": cursor.user.name,
-		},
+		attributes: createRemotePresenceAttributes({
+			className: "pen-multiplayer-cursor",
+			markerName: "data-pen-multiplayer-cursor",
+			clientId: cursor.clientId,
+			user: cursor.user,
+		}),
 	}));
 }

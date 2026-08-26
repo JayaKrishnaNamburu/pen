@@ -1,0 +1,37 @@
+{
+  "id": "apple-notes",
+  "source": "Apple Notes",
+  "provenance": "synthetic-until-capture",
+  "approximates": "Apple Notes clipboard fragment: StartFragment, heading plus div-wrapped paragraphs, semantic lists. Notes typically uses <div> rather than <p>.",
+  "markers": ["StartFragment", "div-wrapped body"],
+  "imageCount": 0,
+  "outcomes": {
+    "headings": "h1",
+    "lists": "flat bullets",
+    "tables": "none",
+    "code": "none",
+    "links": "kept",
+    "images": "none",
+    "marks": "bold kept after the mixed-inline split",
+    "colors": "none"
+  },
+  "intentionalLosses": [
+    "A Notes <div> with mixed text and <b> fragments into adjacent paragraphs; leading text is trimmed"
+  ],
+  "blocks": [
+    { "type": "heading", "level": 1, "text": "Meeting notes" },
+    { "type": "paragraph", "text": "Hello" },
+    {
+      "type": "paragraph",
+      "text": "world",
+      "marks": [{ "type": "bold", "text": "world" }]
+    },
+    { "type": "bulletListItem", "indent": 0, "text": "First item" },
+    { "type": "bulletListItem", "indent": 0, "text": "Second item" },
+    {
+      "type": "paragraph",
+      "text": "Notes link",
+      "marks": [{ "type": "link", "text": "Notes link" }]
+    }
+  ]
+}

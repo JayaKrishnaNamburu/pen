@@ -1,4 +1,6 @@
-import type { Editor } from "@pen/types";
+import { localeFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import { displayCatalogForEditor, resolveSlashMenuTitle } from "./displayCopy";
 import {
 	getFlowCapabilityFromSchema,
 	shouldShowBlockInDefaultMenus,
@@ -27,6 +29,7 @@ const DISPLAY_GROUP_ORDER: Record<string, number> = {
 export function getDefaultToolbarBlockTypeOptions(
 	editor: Editor,
 ): ToolbarBlockTypeOption[] {
+	const catalog = displayCatalogForEditor(editor);
 	return editor.schema
 		.allBlockDisplays()
 		.filter((display) =>
@@ -35,7 +38,11 @@ export function getDefaultToolbarBlockTypeOptions(
 		.sort((a, b) => compareToolbarDisplays(editor, a, b))
 		.map((display) => ({
 			value: display.type,
-			label: display.display.title,
+			label: resolveSlashMenuTitle(
+				display.type,
+				display.display.title,
+				catalog,
+			),
 		}));
 }
 
@@ -50,12 +57,16 @@ function compareToolbarDisplays(
 		return capabilityDelta;
 	}
 
-	const groupDelta = getGroupOrder(a.display.group) - getGroupOrder(b.display.group);
+	const groupDelta =
+		getGroupOrder(a.display.group) - getGroupOrder(b.display.group);
 	if (groupDelta !== 0) {
 		return groupDelta;
 	}
 
-	return a.display.title.localeCompare(b.display.title);
+	return a.display.title.localeCompare(
+		b.display.title,
+		editor.facet(localeFacet),
+	);
 }
 
 function getCapabilityOrder(

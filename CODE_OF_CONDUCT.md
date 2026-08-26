@@ -20,13 +20,15 @@ Examples of unacceptable behavior:
 
 ## Scope
 
-This code of conduct applies to project spaces, issues, pull requests, discussions, and
-other community interactions related to Pen.
+This code of conduct applies to project spaces, issues, pull requests,
+and other community interactions related to Pen.
 
 ## Reporting
 
-If you experience or witness unacceptable behavior, contact the maintainers through
-`SUPPORT.md`. Please include as much context as you can so the situation can be reviewed.
+If you experience or witness unacceptable behavior, email
+`support@input.so` with enough context for the maintainers to review
+it. Do not open a public GitHub issue for a conduct report.
+`SUPPORT.md` is for product bugs and feature requests, not for this.
 
 ## Enforcement
 

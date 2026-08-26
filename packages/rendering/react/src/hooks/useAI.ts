@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
-import { getAIController, type AIControllerState } from "@pen/ai";
+import { aiControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import type { AIController, AIControllerState } from "@input/pen-ai";
 
 const EMPTY_AI_STATE: AIControllerState = {
 	status: "idle",
@@ -8,13 +9,15 @@ const EMPTY_AI_STATE: AIControllerState = {
 	sessions: [],
 	activeSessionId: null,
 	suggestMode: false,
+	mutationPreference: "suggestions",
 	ephemeralSuggestion: null,
-	streamingReviewPreview: null,
+	streamingReviewPreviews: [],
 	commandMenuOpen: false,
 } as AIControllerState;
 
 export function useAI(editor: Editor): AIControllerState {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStore(
 		(callback) => {

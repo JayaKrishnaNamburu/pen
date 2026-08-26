@@ -1,4 +1,4 @@
-import type { FieldEditor, Unsubscribe } from "@pen/types";
+import type { FieldEditor, Unsubscribe } from "@input/pen-types";
 
 export interface FieldEditorStoreSnapshot {
 	focusBlockId: string | null;

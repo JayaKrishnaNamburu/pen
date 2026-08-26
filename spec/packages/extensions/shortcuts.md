@@ -1,4 +1,4 @@
-# @pen/shortcuts
+# @input/pen-shortcuts
 
 ## Purpose
 
@@ -11,17 +11,18 @@ Add optional runtime behavior on top of the editor core without changing the can
 ## Key Exports / Entrypoints
 
 - Export map: `.`
+- Primary extension entrypoint: `richTextShortcutsExtension()`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: Extensions compose through the core editor and slots/events rather than side channels.
+- Boundary: Extensions compose through the core editor and slots/events rather than side channels. Core does not install this package.
 
 ## Data Flow / Runtime Model
 
-Extension package packages in Pen should stay package-first and explicit about ownership. Adopt this package only when the host app needs the capability it provides.
+`richTextShortcutsExtension()` publishes bindings on `keymapFacet` (`pen.keymap`). Bare `createEditor()` does not include these shortcuts; `defaultPreset()` does.
 
 ## Integration Notes
 
@@ -31,7 +32,7 @@ Extension package packages in Pen should stay package-first and explicit about o
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

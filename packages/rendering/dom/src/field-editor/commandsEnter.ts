@@ -1,10 +1,11 @@
-import type { DocumentOp, Editor } from "@pen/types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import { isInsideParentIdContainer } from "../utils/parentIdTree";
 import {
 	CONTAINER_EXIT_TYPES,
 	HEADING_TYPES,
 	LIST_BLOCK_TYPES,
 	isBlockEmpty,
+	normalizeInlineOffset,
 	type EnterAction,
 	type SelectionRange,
 	type SelectionTarget,
@@ -12,7 +13,6 @@ import {
 import {
 	convertBlock,
 	insertTextAtRange,
-	normalizeInlineOffset,
 	splitBlockAtOffset,
 } from "./commandsBlock";
 
@@ -55,6 +55,15 @@ export function resolveEnterAction(
 	return { action: "split", newBlockType: undefined };
 }
 
+/**
+ * Applies the Enter behaviour for a block: splitting it, exiting an empty list
+ * item, or inserting a newline when the block's input mode keeps Enter inline.
+ *
+ * @param editor - The editor whose document receives the resulting ops.
+ * @param options - The block, its input mode, its inline text, and the current range.
+ * @returns The selection target to restore after the edit, or `null` when the
+ * keystroke has no effect and the caller should fall through.
+ */
 export function applyEnterBehavior(
 	editor: Editor,
 	options: {
@@ -110,7 +119,7 @@ function liftBlockOutOfParent(
 	editor.apply(
 		[
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: options.blockId,
 				props: { parentId: null },
 			} as DocumentOp,

@@ -1,9 +1,9 @@
 import * as Y from "yjs";
-import { defaultSchema } from "@pen/schema-default";
-import { createEditor } from "@pen/core";
-import { yjsAdapter, wrapYjsDocument } from "@pen/crdt-yjs";
+import { defaultSchema } from "@input/pen-schema-default";
+import { createEditor } from "@input/pen-core";
+import { yjsAdapter, wrapYjsDocument } from "@input/pen-crdt-yjs";
 import { createTestDocument } from "./createTestDocument";
-import type { SchemaEngine } from "@pen/types";
+import type { SchemaEngine } from "@input/pen-types";
 import type { TestEditor, TestEditorOptions } from "./types";
 import { simulateKeypress, simulateTyping } from "./simulation";
 

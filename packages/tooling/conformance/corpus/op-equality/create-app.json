@@ -1,0 +1,150 @@
+{
+	"id": "create-app",
+	"opType": "create-app",
+	"family": "apps",
+	"path": "synthetic",
+	"command": null,
+	"setup": {
+		"blocks": [
+			{
+				"id": "toggle",
+				"type": "toggle",
+				"text": "Parent",
+				"props": {
+					"open": true
+				}
+			},
+			{
+				"id": "child",
+				"type": "paragraph",
+				"text": "Nested child",
+				"parent": "toggle",
+				"index": 0
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "create-app",
+			"appId": "app-1",
+			"appType": "calendar",
+			"config": {
+				"view": "week"
+			},
+			"placement": {
+				"mode": "anchored",
+				"blockId": "child",
+				"anchor": "after"
+			}
+		}
+	],
+	"updateBytes": "AQUBKScBBGFwcHMFYXBwLTEBKAABKQR0eXBlAXcIY2FsZW5kYXIoAAEpCXBsYWNlbWVudAF2AwRtb2RldwhhbmNob3JlZAdibG9ja0lkdwVjaGlsZAZhbmNob3J3BWFmdGVyJwABKQZjb25maWcBKAABLAR2aWV3AXcEd2VlawEBAQIH",
+	"updateByteLength": 132,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"toggle"
+		],
+		"blocks": {
+			"child": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Nested child"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"toggle": {
+				"children": [
+					"child"
+				],
+				"content": {
+					"delta": [
+						{
+							"insert": "Parent"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {
+					"open": true
+				},
+				"type": "toggle"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {
+			"app-1": {
+				"config": {
+					"view": "week"
+				},
+				"placement": {
+					"anchor": "after",
+					"blockId": "child",
+					"mode": "anchored"
+				},
+				"type": "calendar"
+			}
+		},
+		"blockOrder": [
+			"toggle"
+		],
+		"blocks": {
+			"child": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Nested child"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"toggle": {
+				"children": [
+					"child"
+				],
+				"content": {
+					"delta": [
+						{
+							"insert": "Parent"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {
+					"open": true
+				},
+				"type": "toggle"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": null
+}

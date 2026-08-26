@@ -1,15 +1,40 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
-  "changelog": false,
+  "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@input/pen-ai",
+      "@input/pen-assets-memory",
+      "@input/pen-bench",
+      "@input/pen-content-ops",
+      "@input/pen-core",
+      "@input/pen-crdt-yjs",
+      "@input/pen-document-ops",
+      "@input/pen-dom",
+      "@input/pen-history",
+      "@input/pen-input-rules",
+      "@input/pen-interop",
+      "@input/pen-markdown-serialization",
+      "@input/pen-multiplayer",
+      "@input/pen-preset-default",
+      "@input/pen-react",
+      "@input/pen-schema-default",
+      "@input/pen-search",
+      "@input/pen-shortcuts",
+      "@input/pen-test",
+      "@input/pen-transport-direct",
+      "@input/pen-transport-sse",
+      "@input/pen-types",
+      "@input/pen-undo",
+      "@input/pen-vue"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "@pen/docs"
-  ],
+  "ignore": ["@input/pen-docs"],
   "bumpVersionsWithWorkspaceProtocolOnly": false,
   "privatePackages": {
     "version": false,

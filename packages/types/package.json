@@ -1,20 +1,21 @@
 {
-  "name": "@pen/types",
-  "version": "0.0.0",
+  "name": "@input/pen-types",
+  "version": "0.0.1",
   "description": "Type definitions and lightweight runtime helpers for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/input-systems/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/input-systems/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/input-systems/pen.git",
     "directory": "packages/types"
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -26,7 +27,8 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -36,10 +38,14 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },

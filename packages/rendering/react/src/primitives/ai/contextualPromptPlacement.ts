@@ -1,20 +1,36 @@
-import type { Editor } from "@pen/types";
-import type { AIContextualPromptAnchor, AISession } from "@pen/ai";
-import { getAIController } from "@pen/ai";
+import { aiControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import type {
+	AIContextualPromptAnchor,
+	AIController,
+	AISession,
+} from "@input/pen-ai";
 import React from "react";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useSyncExternalStoreWithSelector } from "../../utils/useSyncExternalStoreWithSelector";
-import { areContextualPromptLayoutsEqual, areRectsEqual, resolveAnchorRect, resolveFallbackRect, resolveInsertedAnchorRect, resolveLiveSelectionRect } from "./contextualPromptGeometry";
-import type { ContextualPromptPlacement, UseContextualPromptPlacementOptions } from "./contextualPromptTypes";
+import {
+	areContextualPromptLayoutsEqual,
+	areRectsEqual,
+	resolveAnchorRect,
+	resolveFallbackRect,
+	resolveInsertedAnchorRect,
+	resolveLiveSelectionRect,
+} from "./contextualPromptGeometry";
+import type {
+	ContextualPromptPlacement,
+	UseContextualPromptPlacementOptions,
+} from "./contextualPromptTypes";
 
 const SESSION_VIEWPORT_PADDING = 8;
 
 export function useContextualPromptSession(editor: Editor): AISession | null {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStoreWithSelector(
 		(callback) => {
 			if (!controller) {
-				return () => { };
+				return () => {};
 			}
 			return controller.subscribeSessions(callback);
 		},
@@ -22,7 +38,9 @@ export function useContextualPromptSession(editor: Editor): AISession | null {
 		() => null,
 		(state) => {
 			const activeSession =
-				state?.sessions.find((session) => session.id === state.activeSessionId) ?? null;
+				state?.sessions.find(
+					(session) => session.id === state.activeSessionId,
+				) ?? null;
 			if (
 				!activeSession ||
 				activeSession.surface !== "inline-edit" ||
@@ -40,12 +58,13 @@ export function useContextualPromptAnchor(
 	editor: Editor,
 	sessionId?: string,
 ): AIContextualPromptAnchor | null {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStoreWithSelector(
 		(callback) => {
 			if (!controller) {
-				return () => { };
+				return () => {};
 			}
 			return controller.subscribeSessions(callback);
 		},
@@ -54,7 +73,9 @@ export function useContextualPromptAnchor(
 		(state) => {
 			const session =
 				state?.sessions.find((item) =>
-					sessionId ? item.id === sessionId : item.id === state.activeSessionId,
+					sessionId
+						? item.id === sessionId
+						: item.id === state.activeSessionId,
 				) ?? null;
 			return session?.contextualPrompt?.anchor ?? null;
 		},
@@ -65,7 +86,8 @@ export function useContextualPromptPlacement(
 	editor: Editor,
 	options: UseContextualPromptPlacementOptions = {},
 ): ContextualPromptPlacement | null {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const session = useContextualPromptSession(editor);
 	const anchor = useContextualPromptAnchor(editor, options.sessionId);
 	const {
@@ -76,9 +98,10 @@ export function useContextualPromptPlacement(
 		surfaceRef,
 		containerRef,
 	} = options;
-	const [layout, setLayout] = React.useState<ContextualPromptPlacement | null>(null);
+	const [layout, setLayout] =
+		React.useState<ContextualPromptPlacement | null>(null);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		const sessionId = options.sessionId ?? session?.id;
 		if (!sessionId || !anchor || !surfaceRef?.current) {
 			setLayout(null);
@@ -123,12 +146,12 @@ export function useContextualPromptPlacement(
 			);
 			const anchorRect =
 				mode === "inserted"
-					? resolveInsertedAnchorRect(host, anchorState) ??
-					resolveFallbackRect(anchorState.lastResolvedRect) ??
-					resolveAnchorRect(host, anchorState)
-					: liveSelectionRect ??
-					resolveFallbackRect(anchorState.lastResolvedRect) ??
-					resolveAnchorRect(host, anchorState);
+					? (resolveInsertedAnchorRect(host, anchorState) ??
+						resolveFallbackRect(anchorState.lastResolvedRect) ??
+						resolveAnchorRect(host, anchorState))
+					: (liveSelectionRect ??
+						resolveFallbackRect(anchorState.lastResolvedRect) ??
+						resolveAnchorRect(host, anchorState));
 			if (!anchorRect) {
 				setLayout(null);
 				return;
@@ -167,7 +190,10 @@ export function useContextualPromptPlacement(
 					}
 				} else {
 					top = anchorBottom + sideOffset;
-					if (top + surfaceRect.height > availableHeight - SESSION_VIEWPORT_PADDING) {
+					if (
+						top + surfaceRect.height >
+						availableHeight - SESSION_VIEWPORT_PADDING
+					) {
 						side = "top";
 						top = anchorTop - sideOffset - surfaceRect.height;
 					}
@@ -176,25 +202,39 @@ export function useContextualPromptPlacement(
 				side = "top";
 			}
 
-			let left = anchorLeft + anchorRect.width / 2 - surfaceRect.width / 2;
+			let left =
+				anchorLeft + anchorRect.width / 2 - surfaceRect.width / 2;
 			left = Math.max(
 				SESSION_VIEWPORT_PADDING,
 				Math.min(
 					left,
-					availableWidth - surfaceRect.width - SESSION_VIEWPORT_PADDING,
+					availableWidth -
+						surfaceRect.width -
+						SESSION_VIEWPORT_PADDING,
 				),
 			);
 
 			const nextLayout: ContextualPromptPlacement = {
-				top: hostRect.top - containerRect.top + containerScrollTop + top,
-				left: hostRect.left - containerRect.left + containerScrollLeft + left,
+				top:
+					hostRect.top - containerRect.top + containerScrollTop + top,
+				left:
+					hostRect.left -
+					containerRect.left +
+					containerScrollLeft +
+					left,
 				side,
 				anchorBlockId: anchorState.focusBlockId ?? undefined,
 				anchorRect: {
 					top:
-						hostRect.top - containerRect.top + containerScrollTop + anchorTop,
+						hostRect.top -
+						containerRect.top +
+						containerScrollTop +
+						anchorTop,
 					left:
-						hostRect.left - containerRect.left + containerScrollLeft + anchorLeft,
+						hostRect.left -
+						containerRect.left +
+						containerScrollLeft +
+						anchorLeft,
 					width: anchorRect.width,
 					height: anchorRect.height,
 				},

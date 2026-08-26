@@ -3,10 +3,16 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/index.ts", "src/plugin.ts"],
   format: ["esm", "cjs"],
-  dts: true,
+  dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
-  external: ["@pen/core", "@pen/dom", "@pen/types", "vue"],
+  external: [
+    "@input/pen-core",
+    "@input/pen-dom",
+    "@input/pen-interop",
+    "@input/pen-types",
+    "vue",
+  ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },

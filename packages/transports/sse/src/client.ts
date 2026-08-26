@@ -3,17 +3,17 @@ import type {
   PenStreamRequest,
   PenStreamPart,
   Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { SSEClientOptions } from "./types";
 import { parseSSEStream } from "./parser";
+
+const MAX_SSE_EVENT_BYTES = 1_048_576;
+const textEncoder = new TextEncoder();
 
 export function sseTransport(options: SSEClientOptions): PenTransport {
   const {
     url,
     headers = {},
-    reconnect: _enableReconnect = true,
-    reconnectDelay = 1000,
-    maxReconnectAttempts = 5,
     pingTimeout = 30_000,
   } = options;
 
@@ -67,7 +67,6 @@ export function sseTransport(options: SSEClientOptions): PenTransport {
         }
 
         setConnected(true);
-        let lastEventId: string | undefined;
         let pingTimer: ReturnType<typeof setTimeout> | null = null;
 
         const resetPingTimer = (): void => {
@@ -83,10 +82,13 @@ export function sseTransport(options: SSEClientOptions): PenTransport {
           for await (const sseEvent of parseSSEStream(reader)) {
             resetPingTimer();
 
-            if (sseEvent.id) lastEventId = sseEvent.id;
+            const decoded = decodeStreamPart(sseEvent.data);
+            if (decoded.kind === "drop") {
+              yield decoded.error;
+              continue;
+            }
 
-            const part = JSON.parse(sseEvent.data) as PenStreamPart;
-
+            const part = decoded.part;
             if (part.type === "ping") continue;
 
             yield part;
@@ -111,64 +113,6 @@ export function sseTransport(options: SSEClientOptions): PenTransport {
       }
     },
 
-    async *reconnect(streamId: string): AsyncGenerator<PenStreamPart> {
-      let attempts = 0;
-
-      while (attempts < maxReconnectAttempts) {
-        attempts++;
-
-        try {
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              Accept: "text/event-stream",
-              "Last-Event-ID": streamId,
-              ...headers,
-            },
-          });
-
-          if (response.status === 501) {
-            yield {
-              type: "error",
-              errorText:
-                "Replay unsupported by transport, start a fresh stream",
-              code: "REPLAY_UNSUPPORTED",
-            } as PenStreamPart;
-            return;
-          }
-
-          if (!response.ok || !response.body) {
-            await delay(reconnectDelay * attempts);
-            continue;
-          }
-
-          setConnected(true);
-          const reader = response.body.getReader();
-
-          try {
-            for await (const sseEvent of parseSSEStream(reader)) {
-              const part = JSON.parse(sseEvent.data) as PenStreamPart;
-              if (part.type === "ping") continue;
-              yield part;
-              if (part.type === "done" || part.type === "error") return;
-            }
-          } finally {
-            reader.releaseLock();
-          }
-          return;
-        } catch {
-          setConnected(false);
-          await delay(reconnectDelay * attempts);
-        }
-      }
-
-      yield {
-        type: "error",
-        errorText: `Reconnection failed after ${maxReconnectAttempts} attempts`,
-        code: "RECONNECT_EXHAUSTED",
-      } as PenStreamPart;
-    },
-
     async connect(): Promise<void> {
       try {
         const response = await fetch(url, {
@@ -177,6 +121,7 @@ export function sseTransport(options: SSEClientOptions): PenTransport {
         });
         setConnected(response.ok);
       } catch {
+        // probe fetch failed; stay disconnected.
         setConnected(false);
       }
     },
@@ -202,6 +147,49 @@ export function sseTransport(options: SSEClientOptions): PenTransport {
   return transport;
 }
 
+function decodeStreamPart(
+  data: string,
+): { kind: "part"; part: PenStreamPart } | { kind: "drop"; error: PenStreamPart } {
+  if (textEncoder.encode(data).byteLength > MAX_SSE_EVENT_BYTES) {
+    return {
+      kind: "drop",
+      error: {
+        type: "error",
+        errorText: "SSE event exceeded the size bound.",
+        code: "OVERSIZED_EVENT",
+      },
+    };
+  }
+
+  try {
+    const part = JSON.parse(data) as PenStreamPart;
+    if (
+      typeof part !== "object" ||
+      part === null ||
+      typeof part.type !== "string"
+    ) {
+      return {
+        kind: "drop",
+        error: {
+          type: "error",
+          errorText: "SSE event was not a stream part.",
+          code: "MALFORMED_EVENT",
+        },
+      };
+    }
+    return { kind: "part", part };
+  } catch {
+    return {
+      kind: "drop",
+      error: {
+        type: "error",
+        errorText: "SSE event was not valid JSON.",
+        code: "MALFORMED_EVENT",
+      },
+    };
+  }
+}
+
 function composeAbortSignals(...signals: AbortSignal[]): AbortSignal {
   if (typeof AbortSignal.any === "function") {
     return AbortSignal.any(signals);
@@ -220,6 +208,3 @@ function composeAbortSignals(...signals: AbortSignal[]): AbortSignal {
   return controller.signal;
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}

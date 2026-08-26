@@ -1,12 +1,13 @@
-import type { Editor } from "@pen/types";
+import { aiControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import type {
 	AICommandExecutionOptions,
+	AIController,
 	AISession,
 	AISessionResolution,
 	AISurface,
 	GenerationState,
-} from "@pen/ai";
-import { getAIController } from "@pen/ai";
+} from "@input/pen-ai";
 
 export function useAISessionActions(editor: Editor): {
 	startSession: (input: {
@@ -17,7 +18,10 @@ export function useAISessionActions(editor: Editor): {
 		surface?: Extract<AISurface, "inline-edit">;
 		target?: "auto" | "selection" | "block" | "document";
 	}) => AISession | null;
-	updateContextualPromptDraft: (sessionId: string, draftPrompt: string) => void;
+	updateContextualPromptDraft: (
+		sessionId: string,
+		draftPrompt: string,
+	) => void;
 	runSessionPrompt: (
 		sessionId: string,
 		prompt: string,
@@ -35,14 +39,18 @@ export function useAISessionActions(editor: Editor): {
 	) => boolean;
 	acceptSessionTurn: (sessionId: string, turnId: string) => boolean;
 	rejectSessionTurn: (sessionId: string, turnId: string) => boolean;
-	resolveSession: (sessionId: string, resolution: AISessionResolution) => boolean;
+	resolveSession: (
+		sessionId: string,
+		resolution: AISessionResolution,
+	) => boolean;
 	acceptSession: (sessionId: string) => boolean;
 	rejectSession: (sessionId: string) => boolean;
 	cancelSession: (sessionId: string) => void;
 	suspendInlineSession: (sessionId: string) => void;
 	resumeInlineSession: (sessionId: string) => void;
 } {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return {
 		startSession(input) {
@@ -61,10 +69,16 @@ export function useAISessionActions(editor: Editor): {
 			return controller.runSessionPrompt(sessionId, prompt, options);
 		},
 		canReuseSessionPrompt(sessionId, prompt, options) {
-			return controller?.canReuseSessionPrompt(sessionId, prompt, options) ?? false;
+			return (
+				controller?.canReuseSessionPrompt(sessionId, prompt, options) ??
+				false
+			);
 		},
 		resolveSessionTurn(sessionId, turnId, resolution) {
-			return controller?.resolveSessionTurn(sessionId, turnId, resolution) ?? false;
+			return (
+				controller?.resolveSessionTurn(sessionId, turnId, resolution) ??
+				false
+			);
 		},
 		acceptSessionTurn(sessionId, turnId) {
 			return controller?.acceptSessionTurn(sessionId, turnId) ?? false;

@@ -1,5 +1,8 @@
-import { INPUT_RULES_ENGINE_SLOT_KEY, supportsInlineInputRules } from "@pen/types";
-import type { DocumentOp, Editor } from "@pen/types";
+import {
+	inputRulesEngineFacet,
+	supportsInlineInputRules,
+} from "@input/pen-core";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import { matchInlineInputRule } from "../utils/inlineInputRule";
 import type { InlineInputRuleEngine } from "./crdt";
 
@@ -9,6 +12,16 @@ export type InlineInputRuleSelectionTarget = {
 	focusOffset: number;
 };
 
+/**
+ * Runs the registered inline input rules against a single typed character and
+ * applies the first match, so that markdown-style shorthand becomes marks as
+ * the user types.
+ *
+ * @param editor - The editor whose document receives the resulting ops.
+ * @param options - The block, the caret offset, and the single character typed.
+ * @returns The selection target to restore after the rewrite, or `null` when no
+ * rule matches.
+ */
 export function applyInlineInputRule(
 	editor: Editor,
 	options: {
@@ -33,12 +46,17 @@ export function applyInlineInputRule(
 	}
 
 	const inputRuleEngine =
-		editor.internals.getSlot<InlineInputRuleEngine>(
-			INPUT_RULES_ENGINE_SLOT_KEY,
-		) ?? null;
+		(editor.facet(inputRulesEngineFacet) as InlineInputRuleEngine | null) ??
+		null;
 	const ops =
 		inputRuleEngine?.tryMatchInline(editor, blockId, text, { offset }) ??
-		resolveFallbackInlineInputRule(editor, blockId, block.textContent(), offset, text);
+		resolveFallbackInlineInputRule(
+			editor,
+			blockId,
+			block.textContent(),
+			offset,
+			text,
+		);
 	if (!ops) {
 		return null;
 	}
@@ -71,16 +89,18 @@ function resolveFallbackInlineInputRule(
 
 	return [
 		{
-			type: "delete-text",
+			type: "splice-text",
 			blockId,
-			offset: match.deleteRange.start,
-			length: match.deleteRange.end - match.deleteRange.start,
+			from: match.deleteRange.start,
+			to: match.deleteRange.end,
+			insert: "",
 		},
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: match.deleteRange.start,
-			text: match.text,
+			from: match.deleteRange.start,
+			to: match.deleteRange.start,
+			insert: match.text,
 			marks: match.marks,
 		},
 	];
@@ -92,8 +112,11 @@ function resolveInlineSelectionTarget(
 ): InlineInputRuleSelectionTarget | null {
 	let nextOffset: number | null = null;
 	for (const op of ops) {
-		if (op.type === "insert-text" && op.blockId === blockId) {
-			nextOffset = op.offset + op.text.length;
+		if (op.type !== "splice-text" || op.blockId !== blockId) {
+			continue;
+		}
+		if (typeof op.insert === "string" && op.insert.length > 0) {
+			nextOffset = op.from + op.insert.length;
 		}
 	}
 

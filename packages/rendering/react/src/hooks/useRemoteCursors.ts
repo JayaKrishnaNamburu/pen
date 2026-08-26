@@ -1,17 +1,18 @@
 import { useSyncExternalStore } from "react";
+import { multiplayerControllerFacet } from "@input/pen-core";
 import type {
 	MultiplayerController,
 	RemoteCursorState,
-} from "@pen/multiplayer";
-import { getMultiplayerController } from "@pen/multiplayer";
-import type { Editor, Unsubscribe } from "@pen/types";
+} from "@input/pen-multiplayer";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 
 const EMPTY_REMOTE_CURSORS: readonly RemoteCursorState[] = [];
 
-export function useRemoteCursors(
-	editor: Editor,
-): readonly RemoteCursorState[] {
-	const controller = getMultiplayerController(editor);
+export function useRemoteCursors(editor: Editor): readonly RemoteCursorState[] {
+	const controller =
+		(editor.facet(
+			multiplayerControllerFacet,
+		) as MultiplayerController | null) ?? null;
 	const canReadRemoteCursors = isRemoteCursorController(controller);
 
 	return useSyncExternalStore(

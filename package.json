@@ -1,29 +1,80 @@
 {
   "name": "pen",
   "private": true,
-  "license": "LICENSE.md",
-  "packageManager": "pnpm@9.15.9",
+  "license": "MIT",
+  "packageManager": "pnpm@10.16.1",
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
     "dev": "turbo run dev",
-    "sync:package-metadata": "node sync-package-metadata.mjs",
+    "sync:package-metadata": "node scripts/sync-package-metadata.mjs",
     "test": "turbo run test",
     "test:e2e": "playwright test",
     "typecheck": "turbo run typecheck",
-    "lint:format": "prettier --check \"README.md\" \"CLA.md\" \"CODE_OF_CONDUCT.md\" \"CONTRIBUTING.md\" \"LICENSE.md\" \"SECURITY.md\" \"SUPPORT.md\" \"package.json\" \"pnpm-workspace.yaml\" \"turbo.json\" \"tsconfig.base.json\" \"playwright.config.ts\" \"vitest.workspace.ts\" \".github/**/*.yml\" \"packages/**/README.md\" \"packages/**/package.json\" \"playground/package.json\" \"spec/**/*.md\"",
-    "lint": "pnpm lint:format && pnpm exec turbo run lint",
-    "version-packages": "changeset version",
-    "release": "changeset publish",
+    "lint:format": "node scripts/lint-format.mjs",
+    "lint:eslint": "eslint . --max-warnings 1215",
+    "lint": "pnpm lint:format && pnpm lint:eslint",
+    "verify": "node scripts/verify.mjs",
+    "changeset-check": "node scripts/changeset-check.mjs",
+    "workflow-integrity": "node scripts/workflow-integrity.mjs",
+    "version-packages": "changeset version && node scripts/stamp-first-train.mjs",
+    "release": "changeset publish --provenance",
+    "release-check": "node scripts/release-check.mjs",
+    "size-limit": "node scripts/size-limit.mjs",
+    "ch-gates": "node scripts/ch-gates.mjs",
+    "verdaccio-closure-check": "node scripts/verdaccio-closure-check.mjs",
+    "dag-check": "node scripts/dag-check.mjs",
+    "types-purity": "node scripts/types-purity.mjs",
+    "api-reports": "node scripts/api-reports.mjs",
+    "doc-refs": "node scripts/doc-refs.mjs",
+    "catalog:check": "node scripts/catalog-check.mjs",
+    "command-catalog-check": "node scripts/command-catalog-check.mjs",
+    "workspace-pins": "node scripts/workspace-pins.mjs",
+    "readme-sections": "node scripts/readme-sections.mjs",
+    "api-docs-coverage": "node scripts/api-docs-coverage.mjs",
+    "capability-matrix": "node scripts/check-capability-matrix.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "prettier": {
+    "overrides": [
+      {
+        "files": [
+          "*.ts",
+          "*.tsx",
+          "*.mts",
+          "*.cts",
+          "*.mjs",
+          "*.cjs",
+          "*.js",
+          "*.jsx"
+        ],
+        "options": {
+          "useTabs": true,
+          "tabWidth": 4,
+          "endOfLine": "lf"
+        }
+      }
+    ]
+  },
+  "pnpm": {
+    "overrides": {
+      "undici": "7.29.0",
+      "dompurify": "3.4.14"
+    }
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
+    "@eslint/js": "^10.0.1",
+    "@input/pen-eslint-plugin": "workspace:*",
     "@playwright/test": "^1.58.2",
+    "eslint": "^10.8.1",
+    "globals": "^17.11.0",
     "prettier": "^3.8.1",
     "tsup": "^8.4.0",
     "turbo": "^2.4.4",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.7"
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^3.0.7",
+    "yaml": "^2.9.0"
   }
 }

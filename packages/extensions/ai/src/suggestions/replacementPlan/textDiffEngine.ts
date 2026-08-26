@@ -1,8 +1,9 @@
-import type { DocumentOp } from "@pen/types";
+import { nextWordBoundary, wordRangeAt, type WordRange } from "@input/pen-core";
+import type { DocumentOp } from "@input/pen-types";
 
 export type ReplacementTextDiffOperation = Extract<
 	DocumentOp,
-	{ type: "delete-text" | "insert-text" | "replace-text" }
+	{ type: "splice-text" }
 >;
 
 export type TextToken = {
@@ -11,13 +12,15 @@ export type TextToken = {
 	end: number;
 };
 
-export type DiffHunk = {
+type DiffHunk = {
 	originalStart: number;
 	deletedText: string;
 	insertedText: string;
 };
 
-export const DEFAULT_MAX_DIFF_CELLS = 20_000;
+const DEFAULT_MAX_DIFF_CELLS = 20_000;
+
+const DEFAULT_DIFF_LOCALE = "en";
 
 const NOISY_REPLACEMENT_MIN_TEXT_LENGTH = 80;
 const NOISY_REPLACEMENT_MIN_HUNKS = 4;
@@ -29,6 +32,7 @@ export interface CompileReplacementSuggestionOpsInput {
 	originalText: string;
 	replacementText: string;
 	maxDiffCells?: number;
+	locale?: string;
 }
 
 export function compileReplacementSuggestionOps({
@@ -37,6 +41,7 @@ export function compileReplacementSuggestionOps({
 	originalText,
 	replacementText,
 	maxDiffCells = DEFAULT_MAX_DIFF_CELLS,
+	locale = DEFAULT_DIFF_LOCALE,
 }: CompileReplacementSuggestionOpsInput): ReplacementTextDiffOperation[] {
 	if (originalText === replacementText) {
 		return [];
@@ -45,22 +50,31 @@ export function compileReplacementSuggestionOps({
 	if (originalText.length === 0) {
 		return replacementText.length === 0
 			? []
-			: [{ type: "insert-text", blockId, offset, text: replacementText }];
+			: [
+					{
+						type: "splice-text",
+						blockId,
+						from: offset,
+						to: offset,
+						insert: replacementText,
+					},
+				];
 	}
 
 	if (replacementText.length === 0) {
 		return [
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId,
-				offset,
-				length: originalText.length,
+				from: offset,
+				to: offset + originalText.length,
+				insert: "",
 			},
 		];
 	}
 
-	const originalTokens = tokenizeText(originalText);
-	const replacementTokens = tokenizeText(replacementText);
+	const originalTokens = tokenizeText(originalText, locale);
+	const replacementTokens = tokenizeText(replacementText, locale);
 	if (
 		originalTokens.length === 0 ||
 		replacementTokens.length === 0 ||
@@ -68,11 +82,11 @@ export function compileReplacementSuggestionOps({
 	) {
 		return [
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId,
-				offset,
-				length: originalText.length,
-				text: replacementText,
+				from: offset,
+				to: offset + originalText.length,
+				insert: replacementText,
 			},
 		];
 	}
@@ -81,18 +95,21 @@ export function compileReplacementSuggestionOps({
 	if (shouldUseCoarseReplacement({ hunks, originalText, replacementText })) {
 		return [
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId,
-				offset,
-				length: originalText.length,
-				text: replacementText,
+				from: offset,
+				to: offset + originalText.length,
+				insert: replacementText,
 			},
 		];
 	}
 	return hunksToOperations({ blockId, hunks: [...hunks].reverse(), offset });
 }
 
-export function tokenizeText(text: string): TextToken[] {
+export function tokenizeText(
+	text: string,
+	locale: string = DEFAULT_DIFF_LOCALE,
+): TextToken[] {
 	const tokens: TextToken[] = [];
 	let index = 0;
 
@@ -110,44 +127,25 @@ export function tokenizeText(text: string): TextToken[] {
 			continue;
 		}
 
-		if (isWhitespace(char)) {
-			index += 1;
-			while (
-				index < text.length &&
-				isWhitespace(text[index] ?? "") &&
-				text[index] !== "\r" &&
-				text[index] !== "\n"
-			) {
-				index += 1;
-			}
-			tokens.push({ text: text.slice(start, index), start, end: index });
+		const word = wordStartingAt(text, index, locale);
+		if (word) {
+			tokens.push({
+				text: text.slice(word.start, word.end),
+				start: word.start,
+				end: word.end,
+			});
+			index = word.end;
 			continue;
 		}
 
-		if (isWordChar(char)) {
-			index += 1;
-			while (index < text.length && isWordChar(text[index] ?? "")) {
-				index += 1;
-			}
-			tokens.push({ text: text.slice(start, index), start, end: index });
-			continue;
-		}
-
-		index += 1;
-		while (
-			index < text.length &&
-			!isWhitespace(text[index] ?? "") &&
-			!isWordChar(text[index] ?? "")
-		) {
-			index += 1;
-		}
+		index = nextGapEnd(text, index, locale);
 		tokens.push({ text: text.slice(start, index), start, end: index });
 	}
 
 	return tokens;
 }
 
-export function diffTokens(
+function diffTokens(
 	originalTokens: readonly TextToken[],
 	replacementTokens: readonly TextToken[],
 ): DiffHunk[] {
@@ -179,7 +177,7 @@ export function diffTokens(
 	}));
 }
 
-export function diffTokenMiddle(
+function diffTokenMiddle(
 	originalTokens: readonly TextToken[],
 	replacementTokens: readonly TextToken[],
 ): DiffHunk[] {
@@ -273,7 +271,7 @@ export function diffTokenMiddle(
 	return hunks;
 }
 
-export function hunksToOperations({
+function hunksToOperations({
 	blockId,
 	hunks,
 	offset,
@@ -287,25 +285,27 @@ export function hunksToOperations({
 		const deleteOffset = offset + hunk.originalStart;
 		if (hunk.deletedText.length > 0) {
 			operations.push({
-				type: "delete-text",
+				type: "splice-text",
 				blockId,
-				offset: deleteOffset,
-				length: hunk.deletedText.length,
+				from: deleteOffset,
+				to: deleteOffset + hunk.deletedText.length,
+				insert: "",
 			});
 		}
 		if (hunk.insertedText.length > 0) {
 			operations.push({
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: deleteOffset + hunk.deletedText.length,
-				text: hunk.insertedText,
+				from: deleteOffset + hunk.deletedText.length,
+				to: deleteOffset + hunk.deletedText.length,
+				insert: hunk.insertedText,
 			});
 		}
 	}
 	return operations;
 }
 
-export function shouldUseCoarseReplacement({
+function shouldUseCoarseReplacement({
 	hunks,
 	originalText,
 	replacementText,
@@ -365,10 +365,39 @@ function countSharedSuffix(
 	return count;
 }
 
-function isWhitespace(char: string): boolean {
-	return /\s/u.test(char);
+function wordStartingAt(
+	text: string,
+	offset: number,
+	locale: string,
+): WordRange | null {
+	const word = wordRangeAt(text, offset, locale);
+	if (word && word.start === offset) {
+		return word;
+	}
+	return null;
 }
 
-function isWordChar(char: string): boolean {
-	return /[\p{L}\p{N}'’]/u.test(char);
+function nextGapEnd(text: string, offset: number, locale: string): number {
+	const nextWordEnd = nextWordBoundary(text, offset, locale);
+	const coveringWord =
+		nextWordEnd > 0 ? wordRangeAt(text, nextWordEnd - 1, locale) : null;
+	const nextWordStart =
+		coveringWord && coveringWord.start > offset
+			? coveringWord.start
+			: text.length;
+
+	const newline = indexOfNewline(text, offset);
+	if (newline >= 0 && newline < nextWordStart) {
+		return newline;
+	}
+	return nextWordStart;
+}
+
+function indexOfNewline(text: string, offset: number): number {
+	const cr = text.indexOf("\r", offset);
+	const lf = text.indexOf("\n", offset);
+	if (cr >= 0 && lf >= 0) {
+		return Math.min(cr, lf);
+	}
+	return cr >= 0 ? cr : lf;
 }

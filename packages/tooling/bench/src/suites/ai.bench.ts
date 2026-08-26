@@ -1,18 +1,7 @@
-import { getInlineCompletionController } from "@pen/core";
-import { buildDocumentWriteOps } from "@pen/document-ops";
+import { getInlineCompletionController } from "@input/pen-core";
+import { buildDocumentWriteOps } from "@input/pen-document-ops";
+import type { BenchContext, BenchDefinition } from "../bench";
 import {
-	applyBenchMarkdownFastApply,
-	parseBenchMarkdownFastApplyContract,
-} from "../utils/markdownFastApply";
-import {
-	buildBenchFlowPatchAlignmentExecution,
-	buildBenchFlowPatchScopedReplacementExecution,
-	buildBenchFlowPatchTextEditExecution,
-} from "../utils/flowPatchExecution";
-import type { BenchDefinition } from "../bench";
-import {
-	AI_FLOW_PATCH_ALIGNMENT_BENCH,
-	AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH,
 	AI_GET_CONTEXT_SUMMARY_200_BLOCKS_BENCH,
 	AI_GET_CURSOR_CONTEXT_BENCH,
 	AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH,
@@ -20,17 +9,23 @@ import {
 	AI_AUTOCOMPLETE_PARTIAL_ACCEPT_BENCH,
 	AI_AUTOCOMPLETE_PREFETCH_AFTER_ACCEPT_BENCH,
 	AI_AUTOCOMPLETE_REQUESTING_CANCEL_CHURN_BENCH,
-	AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH,
 	AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH,
 	AI_PROMPT_ASSEMBLY_TOOL_JOURNAL_BENCH,
 	AI_READ_DOCUMENT_RANGE_20_BLOCKS_BENCH,
 	AI_READ_DOCUMENT_SUMMARY_200_BLOCKS_BENCH,
 	AI_RETRIEVE_DOCUMENT_SPANS_BENCH,
-	AI_FLOW_PATCH_TEXT_EDIT_BENCH,
 } from "../constants/benchmarks";
+import { delayedTimerFloor, macrotaskYieldFloor } from "../harness/floor";
 import {
 	AI_RANGE_END_BLOCK_ID,
 	AI_RANGE_START_BLOCK_ID,
+	AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS,
+	AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS,
+	AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES,
+	AUTOCOMPLETE_SLOW_PROVIDER_ID,
+	AI_BENCH_BLOCK_COUNT,
+	assertProviderBudgetObserved,
+	assertRequestingCancelObserved,
 	buildPromptAssemblyMessages,
 	createAIBenchEditor,
 	createAutocompleteCancelChurnBenchEditor,
@@ -47,14 +42,7 @@ import {
 export const aiBenchmarks: BenchDefinition[] = [
 	{
 		...AI_READ_DOCUMENT_SUMMARY_200_BLOCKS_BENCH,
-		async fn(b) {
-			const editor = createAIBenchEditor();
-			const toolRuntime = getToolRuntime(editor);
-
-			b.start();
-			await toolRuntime.executeTool("read_document", { format: "summary" }, {} as never);
-			b.end();
-		},
+		fn: createReadDocumentSummaryRunner().fn,
 	},
 	{
 		...AI_GET_CONTEXT_SUMMARY_200_BLOCKS_BENCH,
@@ -63,12 +51,14 @@ export const aiBenchmarks: BenchDefinition[] = [
 			const toolRuntime = getToolRuntime(editor);
 
 			b.start();
-			await toolRuntime.executeTool(
+			const result = (await toolRuntime.executeTool(
 				"get_context",
 				{ format: "summary", includeSelection: true },
 				{} as never,
-			);
+			)) as { blockCount?: number };
 			b.end();
+			b.observe("blockCount", result.blockCount ?? 0, AI_BENCH_BLOCK_COUNT);
+			await editor.destroy();
 		},
 	},
 	{
@@ -78,8 +68,18 @@ export const aiBenchmarks: BenchDefinition[] = [
 			const toolRuntime = getToolRuntime(editor);
 
 			b.start();
-			await toolRuntime.executeTool("get_cursor_context", {}, {} as never);
+			const result = (await toolRuntime.executeTool(
+				"get_cursor_context",
+				{},
+				{} as never,
+			)) as { selectedText?: string };
 			b.end();
+			b.observe(
+				"selectedTextLength",
+				result.selectedText?.length ?? 0,
+				18,
+			);
+			await editor.destroy();
 		},
 	},
 	{
@@ -89,7 +89,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 			const toolRuntime = getToolRuntime(editor);
 
 			b.start();
-			await toolRuntime.executeTool(
+			const result = await toolRuntime.executeTool(
 				"read_document",
 				{
 					format: "markdown",
@@ -101,6 +101,12 @@ export const aiBenchmarks: BenchDefinition[] = [
 				{} as never,
 			);
 			b.end();
+			const blockHits =
+				typeof result === "string"
+					? (result.match(/Benchmark block /g) ?? []).length
+					: 0;
+			b.observe("rangedBlockCount", blockHits, 20);
+			await editor.destroy();
 		},
 	},
 	{
@@ -127,7 +133,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 			}));
 
 			b.start();
-			buildPromptAssemblyMessages({
+			const messages = buildPromptAssemblyMessages({
 				prompt: "Continue the current section.",
 				workingSet: JSON.stringify({
 					source: "cursor-context",
@@ -136,6 +142,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 				toolResults,
 			});
 			b.end();
+			b.observe("messageCount", messages.length, 17);
 		},
 	},
 	{
@@ -145,7 +152,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 			const toolRuntime = getToolRuntime(editor);
 
 			b.start();
-			await toolRuntime.executeTool(
+			const result = (await toolRuntime.executeTool(
 				"retrieve_document_spans",
 				{
 					query: "find the benchmark block about latency measurement near block 90",
@@ -153,41 +160,10 @@ export const aiBenchmarks: BenchDefinition[] = [
 					activeBlockId: AI_RANGE_START_BLOCK_ID,
 				},
 				{} as never,
-			);
+			)) as { spans?: unknown[] };
 			b.end();
-		},
-	},
-	{
-		...AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH,
-		fn(b) {
-			const contract = parseBenchMarkdownFastApplyContract(`
-<pen-fast-apply>
-  <instructions>I am inserting a people table after the intro paragraph.</instructions>
-  <anchorBefore><![CDATA[Benchmark block 90. This is representative playground context for AI read latency measurement.]]></anchorBefore>
-  <anchorAfter><![CDATA[Benchmark block 91. This is representative playground context for AI read latency measurement.]]></anchorAfter>
-  <patch><![CDATA[
-<!-- ... existing markdown ... -->
-
-| Name | Role |
-| --- | --- |
-| Alice | Design |
-| Bob | Engineering |
-<!-- ... existing markdown ... -->
-  ]]></patch>
-</pen-fast-apply>
-`);
-			const originalMarkdown = [
-				"Benchmark block 90. This is representative playground context for AI read latency measurement.",
-				"",
-				"Benchmark block 91. This is representative playground context for AI read latency measurement.",
-			].join("\n");
-
-			b.start();
-			applyBenchMarkdownFastApply({
-				originalMarkdown,
-				contract: contract!,
-			});
-			b.end();
+			b.observe("spanCount", (result.spans?.length ?? 0) >= 1 ? 1 : 0, 1);
+			await editor.destroy();
 		},
 	},
 	{
@@ -206,69 +182,19 @@ export const aiBenchmarks: BenchDefinition[] = [
 			].join("\n");
 
 			b.start();
-			buildDocumentWriteOps(editor, {
+			const result = buildDocumentWriteOps(editor, {
 				format: "markdown",
 				content: replacementMarkdown,
 				position: { before: AI_RANGE_START_BLOCK_ID },
 				surface: "bench:ai-markdown-full-replace",
 			});
 			b.end();
-		},
-	},
-	{
-		...AI_FLOW_PATCH_TEXT_EDIT_BENCH,
-		fn(b) {
-			const editor = createAIBenchEditor();
-
-			b.start();
-			buildBenchFlowPatchTextEditExecution(
-				editor,
-				AI_RANGE_START_BLOCK_ID,
-				"Benchmark block 90 updated for native patch compilation.",
-			);
-			b.end();
-		},
-	},
-	{
-		...AI_FLOW_PATCH_ALIGNMENT_BENCH,
-		fn(b) {
-			const editor = createAIBenchEditor();
-
-			b.start();
-			const result = buildBenchFlowPatchAlignmentExecution(editor);
-			b.end();
-			b.setMetrics({
-				executionPath: "native-fast-apply",
-				preservedBlockCount: result.metrics.preservedBlockCount,
-				rewrittenBlockCount: result.metrics.rewrittenBlockCount,
-				unchangedBlockCount: result.metrics.unchangedBlockCount,
-				insertedBlockCount: result.metrics.insertedBlockCount,
-				deletedBlockCount: result.metrics.deletedBlockCount,
-				estimatedOperationCost: result.metrics.estimatedOperationCost,
-				opCount: result.ops.length,
-			});
-		},
-	},
-	{
-		...AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH,
-		fn(b) {
-			const editor = createAIBenchEditor();
-
-			b.start();
-			const result = buildBenchFlowPatchScopedReplacementExecution(editor);
-			b.end();
-			b.setMetrics({
-				executionPath: result.metrics.kind,
-				opsCount: result.metrics.opsCount,
-				insertedBlockCount: result.metrics.insertedBlockCount,
-				deletedBlockCount: result.metrics.deletedBlockCount,
-				targetBlockCount: result.metrics.targetBlockCount,
-			});
+			b.observe("writeOpCount", result.ops.length >= 1 ? 1 : 0, 1);
 		},
 	},
 	{
 		...AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH,
-		fn(b) {
+		async fn(b) {
 			const cycleCount = 25;
 			const {
 				controller,
@@ -285,6 +211,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 			b.end();
 
 			const metrics = controller.getState().metrics;
+			b.observe("requestCount", metrics.requestCount, cycleCount);
 			b.setMetrics({
 				cycleCount,
 				requestCount: metrics.requestCount,
@@ -293,78 +220,18 @@ export const aiBenchmarks: BenchDefinition[] = [
 					metrics.policyInvalidationScheduledCount,
 				modelCallCount: getModelCallCount(),
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 	{
 		...AI_AUTOCOMPLETE_REQUESTING_CANCEL_CHURN_BENCH,
-		async fn(b) {
-			const cycleCount = 10;
-			const {
-				controller,
-				editor,
-				getModelCallCount,
-			} = createAutocompleteRequestingCancelChurnBenchEditor();
-
-			b.start();
-			for (let index = 0; index < cycleCount; index += 1) {
-				controller.request({ explicit: true });
-				await waitForCondition(
-					() => controller.getState().status === "requesting",
-				);
-				controller.updateBlockPolicy({ allowInCodeBlocks: false });
-				await waitForCondition(() => controller.getState().status === "idle");
-				controller.updateBlockPolicy({ allowInCodeBlocks: true });
-			}
-			b.end();
-
-			const metrics = controller.getState().metrics;
-			b.setMetrics({
-				cycleCount,
-				requestCount: metrics.requestCount,
-				cancelCount: metrics.cancelCount,
-				policyInvalidationRequestingCount:
-					metrics.policyInvalidationRequestingCount,
-				modelCallCount: getModelCallCount(),
-			});
-			editor.destroy();
-		},
+		floor: macrotaskYieldFloor(AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES),
+		fn: createRequestingCancelChurnRunner().fn,
 	},
 	{
 		...AI_AUTOCOMPLETE_PROVIDER_BUDGET_BENCH,
-		async fn(b) {
-			const {
-				controller,
-				editor,
-				getModelCallCount,
-			} = createAutocompleteProviderBudgetBenchEditor();
-
-			b.start();
-			expectControllerRequest(controller.request({ explicit: true }));
-			await waitForCondition(
-				() => controller.getState().providerTimings.length > 0,
-				80,
-			);
-			b.end();
-
-			const providerTimings = controller.getState().providerTimings;
-			const totalProviderChars = providerTimings.reduce(
-				(total, timing) => total + timing.chars,
-				0,
-			);
-			b.setMetrics({
-				includedProviderCount: providerTimings.length,
-				totalProviderChars,
-				slowProviderIncluded: providerTimings.some(
-					(timing) => timing.id === "slow-timeout",
-				),
-				clippedProviderChars:
-					providerTimings.find((timing) => timing.id === "consumer-clipped")
-						?.chars ?? 0,
-				modelCallCount: getModelCallCount(),
-			});
-			editor.destroy();
-		},
+		floor: delayedTimerFloor(AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS),
+		fn: createProviderBudgetRunner().fn,
 	},
 	{
 		...AI_AUTOCOMPLETE_PARTIAL_ACCEPT_BENCH,
@@ -390,13 +257,14 @@ export const aiBenchmarks: BenchDefinition[] = [
 			b.end();
 
 			const metrics = controller.getState().metrics;
+			b.observe("acceptStepCount", acceptStepCount >= 1 ? acceptStepCount : 0, acceptStepCount >= 1 ? acceptStepCount : 1);
 			b.setMetrics({
 				acceptStepCount,
 				initialVisibleSuggestionLength,
 				acceptCount: metrics.acceptCount,
 				modelCallCount: getModelCallCount(),
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 	{
@@ -418,13 +286,134 @@ export const aiBenchmarks: BenchDefinition[] = [
 			b.end();
 
 			const metrics = controller.getState().metrics;
+			b.observe("modelCallCount", getModelCallCount(), 2);
 			b.setMetrics({
 				acceptCount: metrics.acceptCount,
 				modelCallCount: getModelCallCount(),
 				finalVisibleSuggestionLength: getVisibleSuggestionText().length,
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 ];
+
+export function createReadDocumentSummaryRunner(
+	options: { skip?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	return {
+		async fn(b: BenchContext) {
+			const editor = createAIBenchEditor();
+			const toolRuntime = getToolRuntime(editor);
+
+			b.start();
+			const result = options.skip
+				? { blockCount: 0 }
+				: ((await toolRuntime.executeTool(
+						"read_document",
+						{ format: "summary" },
+						{} as never,
+					)) as { blockCount?: number });
+			b.end();
+			b.observe("blockCount", result.blockCount ?? 0, AI_BENCH_BLOCK_COUNT);
+			await editor.destroy();
+		},
+	};
+}
+
+export function createRequestingCancelChurnRunner(
+	options: { skipRequests?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	const cycleCount = AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES;
+	return {
+		async fn(b: BenchContext) {
+			const {
+				controller,
+				editor,
+				getModelCallCount,
+			} = createAutocompleteRequestingCancelChurnBenchEditor();
+
+			b.start();
+			if (!options.skipRequests) {
+				for (let index = 0; index < cycleCount; index += 1) {
+					controller.request({ explicit: true });
+					await waitForCondition(
+						() => controller.getState().status === "requesting",
+					);
+					controller.updateBlockPolicy({ allowInCodeBlocks: false });
+					await waitForCondition(
+						() => controller.getState().status === "idle",
+					);
+					controller.updateBlockPolicy({ allowInCodeBlocks: true });
+				}
+			}
+			b.end();
+
+			const metrics = controller.getState().metrics;
+			assertRequestingCancelObserved({
+				cycleCount,
+				requestCount: metrics.requestCount,
+				cancelCount: metrics.cancelCount,
+				modelCallCount: getModelCallCount(),
+			});
+			b.observe("requestCount", metrics.requestCount, cycleCount);
+			b.setMetrics({
+				cycleCount,
+				requestCount: metrics.requestCount,
+				cancelCount: metrics.cancelCount,
+				policyInvalidationRequestingCount:
+					metrics.policyInvalidationRequestingCount,
+				modelCallCount: getModelCallCount(),
+			});
+			await editor.destroy();
+		},
+	};
+}
+
+export function createProviderBudgetRunner(
+	options: { skipRequest?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	return {
+		async fn(b: BenchContext) {
+			const {
+				controller,
+				editor,
+				getModelCallCount,
+			} = createAutocompleteProviderBudgetBenchEditor();
+
+			b.start();
+			if (!options.skipRequest) {
+				expectControllerRequest(controller.request({ explicit: true }));
+				await waitForCondition(
+					() => controller.getState().providerTimings.length > 0,
+					80,
+				);
+			}
+			b.end();
+
+			const providerTimings = controller.getState().providerTimings;
+			assertProviderBudgetObserved({
+				providerTimings,
+				modelCallCount: getModelCallCount(),
+				maxProviderChars: AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS,
+			});
+			b.observe("modelCallCount", getModelCallCount(), 1);
+			b.setMetrics({
+				includedProviderCount: providerTimings.length,
+				totalProviderChars: providerTimings.reduce(
+					(total, timing) => total + timing.chars,
+					0,
+				),
+				slowProviderIncluded: providerTimings.some(
+					(timing) => timing.id === AUTOCOMPLETE_SLOW_PROVIDER_ID,
+				),
+				clippedProviderChars:
+					providerTimings.find(
+						(timing) => timing.id === "consumer-clipped",
+					)?.chars ?? 0,
+				modelCallCount: getModelCallCount(),
+			});
+			await editor.destroy();
+		},
+	};
+}
 

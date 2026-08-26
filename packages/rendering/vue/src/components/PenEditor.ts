@@ -1,29 +1,42 @@
 import {
+	ariaReadOnlyFacet,
+	resolveEditorA11yLabel,
+	resolveEditorMessage,
+} from "@input/pen-core";
+import { htmlImporter } from "@input/pen-interop/html";
+import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,
+	handleFieldEditorPointerActivate,
+	registerVerticalCaretMeasure,
 	resolveSelectAllBehavior,
 	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
-} from "@pen/dom";
-import { domSelectionToEditor } from "@pen/dom/field-editor/selectionBridge";
-import { DATA_ATTRS } from "@pen/dom/utils/dataAttributes";
+} from "@input/pen-dom";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import type {
 	AssetProvider,
 	Editor,
 	InteractionModel,
-} from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+} from "@input/pen-types";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import {
+	computed,
 	defineComponent,
 	h,
 	mergeProps,
 	onBeforeUnmount,
+	onMounted,
+	onUpdated,
 	ref,
 	toRef,
 	watch,
 	type ComponentPublicInstance,
 	type PropType,
 } from "vue";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { useDocumentEmptyState } from "../internal/editorState";
 import { provideEditorContext } from "../internal/editorContext";
 import {
@@ -33,6 +46,15 @@ import {
 import type { PasteImporters, RendererOverrides } from "../types";
 import { PenContent } from "./PenContent";
 
+/**
+ * The editor root. Owns the field editor, key handling, paste importers,
+ * and focus state, and provides the editor context every other Pen
+ * component and composable reads — so it must wrap them.
+ *
+ * Renders `PenContent` by default; supplying a default slot replaces
+ * that, and the slot content is then responsible for rendering the
+ * document.
+ */
 export const PenEditor = defineComponent({
 	name: "PenEditor",
 	props: {
@@ -69,7 +91,14 @@ export const PenEditor = defineComponent({
 		const focused = ref(false);
 		const rootElement = ref<HTMLElement | null>(null);
 		const readonlyRef = toRef(props, "readonly");
-		const emptyPlaceholderRef = toRef(props, "emptyPlaceholder");
+		const emptyPlaceholderRef = computed(
+			() =>
+				props.emptyPlaceholder ??
+				resolveEditorMessage(
+					props.editor,
+					"pen.schema.document.emptyPlaceholder",
+				),
+		);
 		const renderersRef = toRef(props, "renderers");
 		const fieldEditor = new FieldEditorImpl(props.editor, {
 			selectAllBehavior: resolveSelectAllBehavior(
@@ -86,8 +115,7 @@ export const PenEditor = defineComponent({
 		});
 		provideFieldEditorContext(fieldEditor);
 
-		props.editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
-		props.editor.internals.setSlot(CORE_FIELD_EDITOR_SLOT_KEY, fieldEditor);
+		props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 
 		watch(
 			() => props.interactionModel,
@@ -107,6 +135,11 @@ export const PenEditor = defineComponent({
 					fieldEditor.setFocused(false);
 					return;
 				}
+
+				const unregisterVerticalCaret = registerVerticalCaretMeasure(
+					props.editor,
+					nextElement,
+				);
 
 				const ownerDocument = nextElement.ownerDocument;
 				const handleFocusIn = () => {
@@ -153,17 +186,40 @@ export const PenEditor = defineComponent({
 					}
 				};
 
+				const handlePointerActivate = (event: MouseEvent) => {
+					const blocksHost = nextElement.querySelector(
+						`[${DATA_ATTRS.editorBlocksHost}]`,
+					);
+					if (!(blocksHost instanceof HTMLElement)) {
+						return;
+					}
+					handleFieldEditorPointerActivate({
+						event,
+						editor: props.editor,
+						fieldEditor,
+						root: nextElement,
+						blocksHost,
+						readonly: props.readonly,
+					});
+				};
+
 				nextElement.addEventListener("focusin", handleFocusIn);
 				nextElement.addEventListener("focusout", handleFocusOut);
+				nextElement.addEventListener("mousedown", handlePointerActivate);
 				ownerDocument?.addEventListener("keydown", handleKeyDown, true);
 				onCleanup(() => {
 					nextElement.removeEventListener("focusin", handleFocusIn);
 					nextElement.removeEventListener("focusout", handleFocusOut);
+					nextElement.removeEventListener(
+						"mousedown",
+						handlePointerActivate,
+					);
 					ownerDocument?.removeEventListener(
 						"keydown",
 						handleKeyDown,
 						true,
 					);
+					unregisterVerticalCaret();
 				});
 			},
 			{ immediate: true },
@@ -172,8 +228,11 @@ export const PenEditor = defineComponent({
 		watch(
 			() => [props.importers, props.assets] as const,
 			([importers, assets]) => {
-				props.editor.internals.setSlot("paste:importers", importers);
-				props.editor.internals.setSlot(
+				props.editor.internals.assignSlot("paste:importers", {
+					...importers,
+					html: importers?.html ?? htmlImporter,
+				});
+				props.editor.internals.assignSlot(
 					"paste:assetProvider",
 					assets ?? importers?.assets,
 				);
@@ -181,14 +240,30 @@ export const PenEditor = defineComponent({
 			{ immediate: true },
 		);
 
+		const ackMountedBlocks = () => {
+			const root = rootElement.value;
+			if (!root) {
+				return;
+			}
+			for (const element of root.querySelectorAll(
+				`[${DATA_ATTRS.editorBlock}]`,
+			)) {
+				if (!(element instanceof HTMLElement)) {
+					continue;
+				}
+				const blockId = element.getAttribute(DATA_ATTRS.blockId);
+				if (blockId) {
+					fieldEditor.ackBlockMounted(blockId, element);
+				}
+			}
+		};
+		onMounted(ackMountedBlocks);
+		onUpdated(ackMountedBlocks);
+
 		onBeforeUnmount(() => {
-			props.editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, undefined);
-			props.editor.internals.setSlot(
-				CORE_FIELD_EDITOR_SLOT_KEY,
-				undefined,
-			);
-			props.editor.internals.setSlot("paste:importers", undefined);
-			props.editor.internals.setSlot("paste:assetProvider", undefined);
+			props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
+			props.editor.internals.assignSlot("paste:importers", undefined);
+			props.editor.internals.assignSlot("paste:assetProvider", undefined);
 			fieldEditor.setRootElement(null);
 			fieldEditor.destroy();
 		});
@@ -207,15 +282,22 @@ export const PenEditor = defineComponent({
 					},
 					[DATA_ATTRS.editorRoot]: "",
 					[DATA_ATTRS.viewId]: props.editor.internals.viewId,
-					[DATA_ATTRS.focused]: focused.value || undefined,
-					[DATA_ATTRS.readonly]: props.readonly || undefined,
-					[DATA_ATTRS.empty]: isDocumentEmpty.value || undefined,
+					...buildDataAttributes({
+						[DATA_ATTRS.focused]: focused.value,
+						[DATA_ATTRS.readonly]: props.readonly,
+						[DATA_ATTRS.empty]: isDocumentEmpty.value,
+					}),
 					tabIndex: -1,
+					role: "textbox",
+					"aria-multiline": "true",
+					...resolveEditorA11yLabel(props.editor),
+					"aria-readonly":
+						props.readonly ||
+						props.editor.facet(ariaReadOnlyFacet) ||
+						undefined,
 				}),
 				children,
 			);
 		};
 	},
 });
-
-export type PenEditorProps = InstanceType<typeof PenEditor>["$props"];

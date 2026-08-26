@@ -1,4 +1,6 @@
-// ── @pen/react — React rendering layer for Pen ─────────────
+"use client";
+
+// ── @input/pen-react — React rendering layer for Pen ─────────────
 //
 // Package entry. Re-exports all public API:
 // - Pen.* compound component namespace
@@ -145,7 +147,6 @@ export {
 	AICommandList,
 	AICommandItem,
 	AIGenerationZone,
-	AIStructuredTargetPreview,
 	AIActionBar,
 	AIAcceptButton,
 	AIRejectButton,
@@ -177,7 +178,6 @@ export {
 	type AICommandListProps,
 	type AICommandItemProps,
 	type AIGenerationZoneProps,
-	type AIStructuredTargetPreviewProps,
 	type AIActionBarProps,
 	type AIAcceptButtonProps,
 	type AIRejectButtonProps,
@@ -226,10 +226,6 @@ export {
 	useAIDebugLog,
 	useAISessions,
 	useActiveAISession,
-	useActiveAIStructuredPreview,
-	useAIStructuredPreview,
-	useAIStructuredPreviewContent,
-	useAIStructuredTargetPreview,
 	useContextualPromptSession,
 	useContextualPromptAnchor,
 	useContextualPromptPlacement,
@@ -237,6 +233,7 @@ export {
 	useAISessionActions,
 	useAttribution,
 	useEditor,
+	useEditorMessage,
 	useFieldEditor,
 	useEditorFocusController,
 	useFocusController,
@@ -259,9 +256,8 @@ export {
 	resolveSuggestionMenuTarget,
 	useBlockList,
 	useBlockDragHandle,
-	useVisualViewport,
 	type AIDebugLogEntry,
-	type AIDebugLogFastApplyMetrics,
+	type AIDebugLogCommitMetrics,
 	type AIDebugLogState,
 	type AttributionState,
 	type PenFocusController,
@@ -269,8 +265,6 @@ export {
 	type PenFocusOffset,
 	type PenRangeFocusRequest,
 	type PenTextFocusRequest,
-	type AIStructuredPreviewSelection,
-	type AIStructuredTargetPreviewSelection,
 	type AISuggestionPopoverPosition,
 	type ContextualPromptMode,
 	type ContextualPromptPlacement,
@@ -293,10 +287,11 @@ export {
 	type SuggestionMenuTarget,
 	type SuggestionMenuTrigger,
 	type UseSuggestionMenuOptions,
-	type VisualViewportState,
 } from "./hooks/index";
 
 // ── Contexts (for advanced composition) ─────────────────────
+// EMPTY_TOOLBAR_STATE stays off the barrel. Hosts read toolbar state
+// through useToolbar.
 export {
 	EditorContext,
 	useEditorContext,
@@ -304,7 +299,6 @@ export {
 	useFieldEditorContext,
 	ToolbarContext,
 	useToolbarContext,
-	EMPTY_TOOLBAR_STATE,
 	SelectionToolbarContext,
 	type EditorContextValue,
 	type BlockControlsProps,
@@ -345,41 +339,11 @@ export {
 	richTextShortcutsExtension,
 	RICH_TEXT_SHORTCUTS_EXTENSION_NAME,
 	type RichTextShortcutsOptions,
-} from "@pen/shortcuts";
+} from "@input/pen-shortcuts";
 
-// ── Field editor extension helpers ───────────────────────────
-export type {
-	FieldEditorStore,
-	FieldEditorStoreSnapshot,
-} from "./field-editor/store";
-export {
-	applyDeltaToDOM,
-	fullReconcileToDOM,
-	fullReconcileDeltasToDOM,
-	saveSelection,
-	restoreSelection,
-} from "./field-editor/reconciler";
-export { resolveMarksAtPosition } from "./field-editor/markBoundary";
-export {
-	computeTextDiff,
-	extractTextFromDOM,
-	getSelectionOffsets,
-	type TextDiffOp,
-	type SelectionPoint,
-} from "./field-editor/selectionBridge";
-export {
-	classifySelectionSurface,
-	getExpandedBlockRole,
-	type ExpandedBlockRole,
-	type FieldEditorSurfaceMode,
-	type FieldEditorSurfaceState,
-} from "./field-editor/crossBlock";
-export {
-	handlePaste,
-	handleClipboardPaste,
-	handleCopy,
-	handleCut,
-} from "./field-editor/clipboard";
+// Engine helpers live on `@input/pen-dom/field-editor`.
+// `fullReconcileDeltasToDOM` is not on that first-class subpath.
+export { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 
 // ── Internal hooks (for extension authors) ──────────────────
 export { useFieldEditorState } from "./hooks/useFieldEditorState";
@@ -395,7 +359,10 @@ export {
 // ── Utilities ───────────────────────────────────────────────
 export { composeRefs } from "./utils/composeRefs";
 export { renderAsChild, type AsChildProps } from "./utils/asChild";
-export { DATA_ATTRS, buildDataAttributes } from "./utils/dataAttributes";
+export {
+	DATA_ATTRS,
+	buildDataAttributes,
+} from "@input/pen-dom/utils/dataAttributes";
 export {
 	getAttachedFieldEditor,
 	getAttachedFieldEditorStore,
@@ -410,10 +377,10 @@ export type {
 	PenFocusPolicy,
 	PenFocusRequest,
 	PenFocusReason,
-} from "@pen/dom";
+} from "@input/pen-dom";
 export { isCellInSelection } from "./utils/cellSelection";
 
-// ── Re-export key types from @pen/types for convenience ─────
+// ── Re-export key types from @input/pen-types for convenience ─────
 export type {
 	BlockRenderContext,
 	BlockRenderer,
@@ -425,14 +392,17 @@ export type {
 	InlineDecoration,
 	BlockDecoration,
 	FieldEditor,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export type {
 	BlameRange,
 	CharacterAttribution,
 	HistoryState,
-} from "@pen/history";
-export type { MultiplayerState, PeerState } from "@pen/multiplayer";
-export type { RemoteCursorState, RemoteSelectionState } from "@pen/multiplayer";
+} from "@input/pen-history";
+export type { MultiplayerState, PeerState } from "@input/pen-multiplayer";
+export type {
+	RemoteCursorState,
+	RemoteSelectionState,
+} from "@input/pen-multiplayer";
 
-export type { CreateEditorOptions } from "@pen/types";
+export type { CreateEditorOptions } from "@input/pen-types";

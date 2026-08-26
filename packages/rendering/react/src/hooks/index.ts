@@ -1,4 +1,5 @@
 export { useEditor } from "./useEditor";
+export { useEditorMessage } from "./useEditorMessage";
 export { useAI } from "./useAI";
 export { useAISuggestions } from "./useAISuggestions";
 export {
@@ -9,7 +10,7 @@ export { useAISuggestionsMetrics } from "./useAISuggestionsMetrics";
 export {
 	useAIDebugLog,
 	type AIDebugLogEntry,
-	type AIDebugLogFastApplyMetrics,
+	type AIDebugLogCommitMetrics,
 	type AIDebugLogState,
 } from "./useAIDebugLog";
 export { useAISessions } from "./useAISessions";
@@ -23,16 +24,10 @@ export {
 	type ContextualPromptSide,
 	type UseContextualPromptPlacementOptions,
 } from "../primitives/ai/contextualPrompt";
-export { useAIStreamEvents } from "./useAIStreamEvents";
-export { useAttribution, type AttributionState } from "./useAttribution";
 export {
-	useAIStructuredPreview,
-	useActiveAIStructuredPreview,
-	useAIStructuredTargetPreview,
-	useAIStructuredPreviewContent,
-	type AIStructuredPreviewSelection,
-	type AIStructuredTargetPreviewSelection,
-} from "./useAIStructuredPreview";
+	useAttribution,
+	type AttributionState,
+} from "./useAttribution";
 export { useAIActions } from "./useAIActions";
 export { useAISessionActions } from "./useAISessionActions";
 export { useFieldEditor } from "./useFieldEditor";
@@ -91,7 +86,3 @@ export {
 	useBlockDragHandle,
 	type BlockDragHandleHookResult,
 } from "./useBlockDragHandle";
-export {
-	useVisualViewport,
-	type VisualViewportState,
-} from "./useVisualViewport";

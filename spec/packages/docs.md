@@ -1,4 +1,4 @@
-# @pen/docs
+# @input/pen-docs
 
 ## Purpose
 

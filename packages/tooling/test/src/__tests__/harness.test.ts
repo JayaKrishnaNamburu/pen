@@ -4,6 +4,7 @@ import {
   createTestDocument,
   createTestEditor,
   assertDocEquals,
+  assertPeerEditsSurvive,
   createTestCollaboration,
   resetTestIdCounter,
 } from "../index";
@@ -12,7 +13,7 @@ beforeEach(() => {
   resetTestIdCounter();
 });
 
-describe("@pen/test harness", () => {
+describe("@input/pen-test harness", () => {
   // ── AC 9: createTestDocument ────────────────────────────
   describe("AC 9 — createTestDocument", () => {
     it("produces a valid CRDT document with one heading block", () => {
@@ -163,6 +164,30 @@ describe("@pen/test harness", () => {
 
       expect(() => assertDocEquals(editorA, editorB)).not.toThrow();
     });
+
+    it("DUR7: compares empty table structure between two editors", () => {
+      const editorA = createTestEditor({
+        blocks: [{ id: "t1", type: "table" }],
+      });
+      resetTestIdCounter();
+      const editorB = createTestEditor({
+        blocks: [{ id: "t1", type: "table" }],
+      });
+
+      expect(() => assertDocEquals(editorA, editorB)).not.toThrow();
+    });
+
+    it("throws for table cell mismatch", () => {
+      const editor = createTestEditor({
+        blocks: [{ id: "t1", type: "table" }],
+      });
+
+      expect(() =>
+        assertDocEquals(editor, [
+          { type: "table", table: [{ cells: [{ content: "nope" }] }] },
+        ]),
+      ).toThrow("table mismatch");
+    });
   });
 
   // ── AC 21: round-trip ───────────────────────────────────
@@ -179,7 +204,7 @@ describe("@pen/test harness", () => {
     });
   });
 
-  describe("Wave 3 test input helpers", () => {
+  describe("test input helpers", () => {
     it("simulateTyping inserts text into the current text selection", () => {
       const editor = createTestEditor({
         blocks: [{ id: "p1", type: "paragraph", content: "Hello" }],
@@ -232,26 +257,33 @@ describe("@pen/test harness", () => {
         ],
       });
 
-      const ydocA = collab.editorA.ydoc as Y.Doc;
-      const ydocB = collab.editorB.ydoc as Y.Doc;
+      expect(collab.editorA).not.toBe(collab.editorB);
+      expect(collab.editorA.ydoc).not.toBe(collab.editorB.ydoc);
 
-      ydocA.transact(() => {
-        const blocks = ydocA.getMap("blocks");
-        const blockMap = blocks.get("p1") as Y.Map<unknown>;
-        const content = blockMap.get("content") as Y.Text;
-        content.insert(5, " A");
-      });
+      collab.editorA.apply(
+        [{ type: "splice-text", blockId: "p1", from: 5, to: 5, insert: " A" }],
+        { origin: "user" },
+      );
+      expect(collab.editorB.getBlock("p1").textContent()).not.toContain(" A");
 
-      ydocB.transact(() => {
-        const blocks = ydocB.getMap("blocks");
-        const blockMap = blocks.get("p1") as Y.Map<unknown>;
-        const content = blockMap.get("content") as Y.Text;
-        content.insert(5, " B");
-      });
+      collab.editorB.apply(
+        [{ type: "splice-text", blockId: "p1", from: 5, to: 5, insert: " B" }],
+        { origin: "user" },
+      );
+      expect(collab.editorA.getBlock("p1").textContent()).not.toContain(" B");
 
       collab.sync();
 
       assertDocEquals(collab.editorA, collab.editorB);
+      assertPeerEditsSurvive([collab.editorA, collab.editorB], {
+        blockId: "p1",
+        tokens: [" A", " B"],
+      });
+
+      const mergedA = collab.editorA.getBlock("p1").textContent();
+      const mergedB = collab.editorB.getBlock("p1").textContent();
+      expect(mergedA).toBe(mergedB);
+      expect(["Hello A B", "Hello B A"]).toContain(mergedA);
     });
   });
 });

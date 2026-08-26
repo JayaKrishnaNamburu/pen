@@ -1,0 +1,149 @@
+{
+	"id": "update-block",
+	"opType": "update-block",
+	"family": "conversions",
+	"path": "command",
+	"command": "pen.indent",
+	"setup": {
+		"blocks": [
+			{
+				"id": "li1",
+				"type": "bulletListItem",
+				"text": "one",
+				"props": {
+					"indent": 0
+				}
+			},
+			{
+				"id": "li2",
+				"type": "bulletListItem",
+				"text": "two",
+				"props": {
+					"indent": 0
+				}
+			}
+		],
+		"selection": {
+			"blockId": "li2",
+			"from": 0,
+			"to": 0
+		}
+	},
+	"ops": [
+		{
+			"type": "update-block",
+			"blockId": "li2",
+			"props": {
+				"indent": 1
+			}
+		}
+	],
+	"updateBytes": "AQEBHagBGAF9AQEBAwIHDgEYAQ==",
+	"updateByteLength": 19,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"li1",
+			"li2"
+		],
+		"blocks": {
+			"li1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "one"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "bulletListItem"
+			},
+			"li2": {
+				"content": {
+					"delta": [
+						{
+							"insert": "two"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "bulletListItem"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"li1",
+			"li2"
+		],
+		"blocks": {
+			"li1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "one"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "bulletListItem"
+			},
+			"li2": {
+				"content": {
+					"delta": [
+						{
+							"insert": "two"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {
+					"indent": 1
+				},
+				"type": "bulletListItem"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "li2",
+			"offset": 0
+		},
+		"blockRange": [
+			"li2"
+		],
+		"focus": {
+			"blockId": "li2",
+			"offset": 0
+		},
+		"goalX": null,
+		"isCollapsed": true,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

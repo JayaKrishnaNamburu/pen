@@ -1,0 +1,892 @@
+/*
+ * The primitives, one section per component in `src/ui/`.
+ *
+ * Input writes these with Emotion, one styled component per element. Here they
+ * are plain classes over the theme in `styles/tokens.css` — same geometry, same
+ * tokens, no styling dependency.
+ */
+
+/* ── Button ────────────────────────────────────────────────── */
+
+/*
+ * Input's button heights are 22/28/36/44 for xs/sm/md/lg. Icon buttons are
+ * square, so width follows height.
+ */
+.button {
+	position: relative;
+	isolation: isolate;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	flex-shrink: 0;
+	height: 36px;
+	padding: 0 12px;
+	border-radius: var(--radius-round);
+	font-size: var(--font-size-body);
+	font-weight: 500;
+	white-space: nowrap;
+	user-select: none;
+	transition:
+		color 0.1s ease,
+		background-color 0.1s ease,
+		box-shadow 0.1s ease,
+		transform 0.1s ease,
+		opacity 0.1s ease;
+}
+
+.button-sm {
+	height: 28px;
+	padding: 0 10px;
+	font-size: var(--font-size-md);
+}
+
+.button-square {
+	width: 36px;
+	padding: 0;
+}
+
+.button-sm.button-square {
+	width: 28px;
+}
+
+.button-stretch {
+	width: 100%;
+}
+
+/* Icons stay on the 14px grid even when the button is 28. */
+.button svg,
+.chat-bar svg,
+.chat-status-icon svg,
+.top-bar svg,
+.sheet-bar svg,
+.modal-bar svg {
+	width: 14px;
+	height: 14px;
+}
+
+.button-rounded {
+	border-radius: var(--radius-md);
+}
+
+.button:disabled {
+	color: var(--button-color-disabled);
+	cursor: default;
+}
+
+/* Primary: a tinted fill with a hairline. The default, and most of the app. */
+.button-primary {
+	color: var(--button-primary-text);
+	background-color: var(--button-primary-background);
+	box-shadow: inset 0 0 0 1px var(--line-faded);
+}
+
+.button-primary:hover:not(:disabled) {
+	color: var(--button-primary-text-hover);
+	background-color: var(--button-primary-background-hover);
+}
+
+.button-primary:disabled {
+	background-color: var(--button-primary-background-disabled);
+}
+
+/* Secondary: solid ink. One per screen at most. */
+.button-secondary {
+	color: var(--button-secondary-text);
+	background-color: var(--button-secondary-background);
+	box-shadow: var(--button-shadow-secondary-default);
+}
+
+.button-secondary:hover:not(:disabled) {
+	background-color: var(--button-secondary-background-hover);
+	box-shadow: var(--button-shadow-secondary-hover);
+}
+
+.button-secondary:active:not(:disabled) {
+	transform: scale(0.99);
+	box-shadow: var(--button-shadow-secondary-active);
+}
+
+.button-secondary:disabled {
+	color: var(--button-secondary-text-disabled);
+}
+
+/* Tertiary: transparent, but raised off the surface by its shadow. */
+.button-tertiary {
+	color: var(--palette-b100);
+	background: transparent;
+	border: 1px solid var(--button-border);
+	box-shadow: var(--button-shadow-primary-default);
+}
+
+.button-tertiary:hover:not(:disabled) {
+	color: var(--button-color-hover);
+	background-color: var(--tab-default);
+	box-shadow: var(--button-shadow-primary-hover);
+}
+
+.button-tertiary:active:not(:disabled) {
+	transform: scale(0.99);
+	box-shadow: var(--button-shadow-primary-active);
+}
+
+.button-tertiary:disabled {
+	color: var(--palette-b20);
+}
+
+/* Faded: quieter than primary, for a control you should notice second. */
+.button-faded {
+	color: var(--palette-b60);
+	background-color: var(--button-faded-background);
+	box-shadow: inset 0 0 0 1px var(--line-faded);
+}
+
+.button-faded:hover:not(:disabled) {
+	color: var(--palette-b100);
+	background-color: var(--button-faded-background-hover);
+}
+
+/* Transparent: the chrome icon button. Input's `transparentB60`. */
+.button-transparent {
+	color: var(--palette-b60);
+}
+
+.button-transparent:hover:not(:disabled),
+.button-transparent[data-active] {
+	color: var(--palette-b100);
+}
+
+/*
+ * Its fill grows into place from 70% rather than fading in, which is what makes
+ * a 28px button feel like something you pressed.
+ */
+.button-transparent::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	background: var(--tab-hover);
+	opacity: 0;
+	transform: scale(0.7);
+	transition:
+		opacity 0.1s ease,
+		background 0.1s ease;
+}
+
+.button-transparent:hover:not(:disabled)::before {
+	opacity: 1;
+	transform: scale(1);
+	transition:
+		opacity 0.1s ease,
+		background 0.1s ease,
+		transform 0.1s ease;
+}
+
+.button-transparent:focus-visible::before {
+	opacity: 1;
+	transform: scale(1);
+	background: var(--tab-active);
+	transition: none;
+}
+
+.button-transparent:active:not(:disabled)::before {
+	transform: scale(0.94);
+}
+
+.button-transparent[data-active]::before {
+	opacity: 1;
+	transform: scale(1);
+	background: var(--tab-active);
+}
+
+/* The fill is the focus ring for these, so drop the outline. */
+.button-transparent:focus-visible {
+	outline: none;
+}
+
+/*
+ * On, as opposed to held. Input keeps these apart: the fill says "you are on
+ * this control" (hover, focus, a panel held open) and the glyph colour says
+ * "the thing it controls is running". Sharing the fill would make live
+ * collaboration look like a stray focus ring.
+ */
+.button-transparent[data-enabled],
+.button-transparent[data-enabled]:hover:not(:disabled) {
+	color: var(--palette-blue);
+}
+
+/* ── Tooltip ───────────────────────────────────────────────── */
+
+.tooltip-anchor {
+	position: relative;
+	display: inline-flex;
+}
+
+.tooltip {
+	position: absolute;
+	z-index: 4;
+	display: flex;
+	align-items: center;
+	padding: 6px 10px;
+	border-radius: var(--radius-md);
+	background: var(--tooltip-background);
+	box-shadow: var(--popover-shadow);
+	backdrop-filter: blur(4px);
+	color: var(--palette-b60);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	line-height: 1.5em;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	transform: scale(0);
+	transition:
+		opacity 0.2s ease,
+		transform 0.2s ease;
+}
+
+.tooltip-shortcut {
+	margin-left: 5px;
+	color: var(--palette-b40);
+	font-weight: 400;
+}
+
+.tooltip[data-side="bottom"] {
+	top: calc(100% + 5px);
+	left: 50%;
+	translate: -50% 0;
+	transform-origin: top center;
+}
+
+.tooltip[data-side="top"] {
+	bottom: calc(100% + 5px);
+	left: 50%;
+	translate: -50% 0;
+	transform-origin: bottom center;
+}
+
+.tooltip[data-side="left"] {
+	top: 50%;
+	right: calc(100% + 5px);
+	translate: 0 -50%;
+	transform-origin: center right;
+}
+
+.tooltip[data-side="right"] {
+	top: 50%;
+	left: calc(100% + 5px);
+	translate: 0 -50%;
+	transform-origin: center left;
+}
+
+/* A pause before showing, none before hiding. */
+.tooltip-anchor:hover > .tooltip,
+.tooltip-anchor:focus-within > .tooltip {
+	opacity: 1;
+	transform: scale(1);
+	transition-delay: 300ms;
+}
+
+.tooltip-anchor[data-disabled] > .tooltip {
+	display: none;
+}
+
+/* ── Select ────────────────────────────────────────────────── */
+
+.select {
+	position: relative;
+	display: inline-flex;
+}
+
+.select-trigger {
+	justify-content: flex-start;
+	min-width: 118px;
+	padding-right: 28px;
+	overflow: visible;
+}
+
+.select-label {
+	min-width: 0;
+	overflow: hidden;
+	font-weight: 400;
+	text-overflow: ellipsis;
+}
+
+.select-chevron {
+	position: absolute;
+	top: 50%;
+	right: 10px;
+	display: flex;
+	color: var(--palette-b60);
+	transform: translateY(-50%);
+	transition: transform 0.1s ease;
+}
+
+.select-chevron svg {
+	width: 10px;
+	height: 10px;
+}
+
+.select[data-open] .select-chevron {
+	transform: translateY(-50%) rotate(180deg);
+}
+
+.select-menu {
+	position: absolute;
+	top: calc(100% + 5px);
+	left: 0;
+	z-index: 4;
+	min-width: 180px;
+	margin: 0;
+	padding: var(--spacing-xs);
+	border-radius: var(--radius-lg);
+	background: var(--popover-background);
+	box-shadow: var(--popover-shadow);
+	list-style: none;
+	animation: select-menu-in 160ms ease-out;
+}
+
+.select-option {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	width: 100%;
+	height: 30px;
+	padding: 0 10px 0 6px;
+	border-radius: calc(var(--radius-lg) - var(--spacing-xs));
+	color: var(--palette-b80);
+	font-size: var(--font-size-md);
+	text-align: left;
+}
+
+.select-option:hover,
+.select-option[data-highlighted] {
+	background: var(--tab-default);
+}
+
+.select-option-check {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	color: var(--palette-b60);
+}
+
+@keyframes select-menu-in {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ── Badge ─────────────────────────────────────────────────── */
+
+.badge {
+	display: inline-block;
+	flex: none;
+	padding: 2px 6px;
+	border: 1px solid currentColor;
+	border-radius: var(--radius-round);
+	color: var(--palette-yellow);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	line-height: 1.3em;
+	white-space: nowrap;
+}
+
+/* ── Tile ──────────────────────────────────────────────────── */
+
+.tile {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-xl);
+	background: var(--tile-background);
+	color: var(--palette-b80);
+	text-align: left;
+}
+
+/*
+ * The edge, drawn above the content so a card wrapping a text field keeps a
+ * crisp outline while the field stays clickable.
+ */
+.tile::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	border-radius: inherit;
+	box-shadow: var(--input-shadow-default);
+	pointer-events: none;
+	transition: box-shadow 0.1s ease;
+}
+
+.tile:focus-within::before {
+	box-shadow: var(--input-shadow-focus);
+}
+
+.tile-interactive {
+	cursor: pointer;
+	transition:
+		color 0.1s ease,
+		transform 0.1s ease;
+}
+
+.tile-interactive:hover {
+	color: var(--palette-b100);
+}
+
+.tile-interactive:active {
+	transform: scale(0.99);
+}
+
+/* ── ScrollArea ────────────────────────────────────────────── */
+
+.scroll-area {
+	position: relative;
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+}
+
+.scroll-viewport {
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+/* Content fills the viewport when it is short, so empty states can centre. */
+.scroll-viewport > div {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 100%;
+}
+
+/*
+ * A gradient alone is invisible over a card, so the fade is masked and blurred
+ * too — the three ingredients Input's streaming scroll box uses. Content
+ * dissolves into the surface instead of meeting a hard line.
+ */
+.scroll-area::before,
+.scroll-area::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 28px;
+	z-index: 1;
+	pointer-events: none;
+	opacity: 0;
+	backdrop-filter: blur(2px);
+	transition: opacity 0.15s ease;
+}
+
+.scroll-area::before {
+	top: 0;
+	background: linear-gradient(to bottom, var(--fade-background), transparent);
+	mask-image: linear-gradient(
+		to bottom,
+		#000 35%,
+		rgba(0, 0, 0, 0.45) 75%,
+		transparent 100%
+	);
+}
+
+.scroll-area::after {
+	bottom: 0;
+	background: linear-gradient(to top, var(--fade-background), transparent);
+	mask-image: linear-gradient(
+		to top,
+		#000 35%,
+		rgba(0, 0, 0, 0.45) 75%,
+		transparent 100%
+	);
+}
+
+.scroll-area[data-fade-top]::before,
+.scroll-area[data-fade-bottom]::after {
+	opacity: 1;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────── */
+
+.tabs {
+	position: relative;
+	display: flex;
+	flex: none;
+}
+
+.tab {
+	position: relative;
+	z-index: 1;
+	flex: 1;
+	height: 28px;
+	padding: 0 10px;
+	color: var(--palette-b40);
+	font-size: var(--font-size-md);
+	font-weight: 500;
+	line-height: 1em;
+	transition: color 0.2s ease;
+}
+
+.tab:hover {
+	color: var(--palette-b60);
+}
+
+.tab[aria-selected="true"] {
+	color: var(--palette-b100);
+}
+
+/* The pill behind the selected tab. Its width is one tab. */
+.tab-selector {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	border-radius: var(--radius-round);
+	background: var(--tab-default);
+	transition: transform 0.2s ease;
+}
+
+/* ── Sheet ─────────────────────────────────────────────────── */
+
+.sheet {
+	/* It sits on the popover surface, so its scroll fades match. */
+	--fade-background: var(--popover-background);
+
+	position: absolute;
+	/* Clears the top bar, so the button that opened it stays reachable. */
+	top: calc(var(--top-bar-height) + var(--spacing-md));
+	right: var(--spacing-md);
+	bottom: var(--spacing-md);
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	width: var(--sheet-width);
+	max-width: calc(100% - var(--spacing-xl));
+	border-radius: var(--radius-xxl);
+	background: var(--popover-background);
+	box-shadow: var(--popover-shadow);
+	opacity: 0;
+	transform: translateX(80px);
+	transition:
+		transform 0.2s ease,
+		opacity 0.2s ease;
+}
+
+.sheet[data-open] {
+	opacity: 1;
+	transform: translateX(0);
+}
+
+.sheet-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--spacing-md);
+	flex: none;
+	margin: 0 5px;
+	padding: var(--spacing-md) var(--spacing-md) var(--spacing-md)
+		var(--spacing-lg);
+	border-bottom: 1px solid var(--line-default);
+}
+
+.sheet-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+}
+
+.sheet-body {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+}
+
+/* ── Agent loader ──────────────────────────────────────────── */
+
+/*
+ * Input's IntelligenceLoader, pulse variant. Eight frames at 6fps. The nine
+ * dots share three opacity sequences (corner / edge / centre), so three
+ * keyframe sets is the whole animation.
+ */
+.agent-loader {
+	display: inline-grid;
+	grid-template-columns: repeat(3, 2.667px);
+	grid-template-rows: repeat(3, 2.667px);
+	gap: 2px;
+	width: 12px;
+	height: 12px;
+	color: var(--spinner-background);
+	vertical-align: middle;
+}
+
+.agent-loader-dot {
+	border-radius: 50%;
+	background: currentColor;
+	animation: agent-loader-edge 1333ms ease infinite;
+}
+
+.agent-loader-dot[data-role="corner"] {
+	animation-name: agent-loader-corner;
+}
+
+.agent-loader-dot[data-role="center"] {
+	animation-name: agent-loader-center;
+}
+
+@keyframes agent-loader-corner {
+	0%,
+	12.5% {
+		opacity: 0;
+	}
+	25%,
+	31.25% {
+		opacity: 0.4;
+	}
+	37.5%,
+	43.75% {
+		opacity: 1;
+	}
+	50%,
+	56.25% {
+		opacity: 0.4;
+	}
+	62.5%,
+	100% {
+		opacity: 0;
+	}
+}
+
+@keyframes agent-loader-edge {
+	0%,
+	6.25% {
+		opacity: 0;
+	}
+	12.5%,
+	18.75% {
+		opacity: 0.4;
+	}
+	25%,
+	56.25% {
+		opacity: 1;
+	}
+	62.5%,
+	68.75% {
+		opacity: 0.4;
+	}
+	75%,
+	100% {
+		opacity: 0;
+	}
+}
+
+@keyframes agent-loader-center {
+	0%,
+	6.25% {
+		opacity: 0.4;
+	}
+	12.5%,
+	68.75% {
+		opacity: 1;
+	}
+	75%,
+	81.25% {
+		opacity: 0.4;
+	}
+	87.5%,
+	100% {
+		opacity: 0;
+	}
+}
+
+/* ── Icon animations ───────────────────────────────────────── */
+
+/* Input draws the check with framer-motion; here the stroke is CSS. */
+.icon-check-stroke {
+	stroke-dasharray: 16;
+	stroke-dashoffset: 16;
+	animation: icon-check-draw 200ms ease-out forwards;
+}
+
+@keyframes icon-check-draw {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+/* ── Modal ─────────────────────────────────────────────────── */
+
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 6;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--spacing-xl);
+	background: rgba(0, 0, 0, 0.28);
+}
+
+.modal {
+	width: 100%;
+	max-width: 380px;
+	padding: var(--spacing-lg);
+	border-radius: var(--radius-xxl);
+	background: var(--popover-background);
+	box-shadow: var(--popover-shadow);
+}
+
+.modal-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--spacing-md);
+	margin-bottom: var(--spacing-md);
+}
+
+.modal-bar h2 {
+	color: var(--palette-b80);
+	font-size: var(--font-size-lg);
+	font-weight: 500;
+}
+
+.collaborate-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-md);
+}
+
+.collaborate-copy {
+	color: var(--palette-b60);
+	font-size: var(--font-size-base);
+	line-height: 1.5;
+}
+
+.collaborate-field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs);
+	color: var(--palette-b60);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+}
+
+.collaborate-field input {
+	height: 36px;
+	padding: 0 var(--spacing-md);
+	border: none;
+	border-radius: var(--radius-md);
+	background: var(--input-background);
+	box-shadow: var(--input-shadow-default);
+	color: var(--palette-b100);
+	font: inherit;
+	font-size: var(--font-size-base);
+	font-weight: 400;
+	outline: none;
+}
+
+.collaborate-field input:focus {
+	box-shadow: var(--input-shadow-focus);
+}
+
+.collaborate-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--spacing-sm);
+	margin-top: var(--spacing-xs);
+}
+
+/* ── Toggle ────────────────────────────────────────────────── */
+
+/*
+ * Input's `Toggle`: 22×14 track, 10px knob, 8px travel. The label sits to
+ * the left and stays `--palette-b40`.
+ */
+.toggle {
+	--toggle-knob-x: 0px;
+	--toggle-knob-scale: 1;
+
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 0;
+	color: var(--palette-b40);
+}
+
+.toggle[aria-checked="true"] {
+	--toggle-knob-x: 8px;
+}
+
+.toggle:hover:not(:disabled) {
+	--toggle-knob-scale: 0.9;
+}
+
+.toggle:disabled {
+	cursor: default;
+}
+
+.toggle-label {
+	margin-right: 5px;
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	line-height: 1em;
+	user-select: none;
+}
+
+.toggle-track {
+	display: block;
+	width: 22px;
+	height: 14px;
+	padding: 2px;
+	border-radius: var(--radius-round);
+	background: var(--toggle-background);
+	transition: background 0.18s ease;
+}
+
+.toggle:hover:not(:disabled) .toggle-track {
+	background: var(--toggle-hover);
+}
+
+.toggle[aria-checked="true"] .toggle-track {
+	background: var(--toggle-active);
+}
+
+.toggle[aria-checked="true"]:hover:not(:disabled) .toggle-track {
+	background: var(--toggle-active-hover);
+}
+
+.toggle-knob {
+	display: block;
+	width: 10px;
+	height: 10px;
+	border-radius: var(--radius-round);
+	background: var(--palette-b10);
+	transform: translateX(var(--toggle-knob-x)) scale(var(--toggle-knob-scale));
+	transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.toggle:disabled .toggle-knob {
+	opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.agent-loader-dot {
+		animation: none;
+		opacity: 0.6;
+	}
+
+	.icon-check-stroke {
+		stroke-dashoffset: 0;
+	}
+}

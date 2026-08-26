@@ -1,7 +1,7 @@
-import type { Editor } from "@pen/types";
-import { AI_AUTOCOMPLETE_CONTROLLER_SLOT } from "@pen/types";
+import { aiAutocompleteControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 
-interface ReactAutocompleteController {
+interface AutocompleteController {
 	acceptVisibleSuggestion(): boolean;
 	dismiss(reason?: "typing"): void;
 	hasVisibleSuggestion(): boolean;
@@ -10,8 +10,10 @@ interface ReactAutocompleteController {
 
 export function getAutocompleteController(
 	editor: Editor,
-): ReactAutocompleteController | null {
-	return editor.internals.getSlot<ReactAutocompleteController>(
-		AI_AUTOCOMPLETE_CONTROLLER_SLOT,
-	) ?? null;
+): AutocompleteController | null {
+	return (
+		(editor.facet(
+			aiAutocompleteControllerFacet,
+		) as AutocompleteController | null) ?? null
+	);
 }

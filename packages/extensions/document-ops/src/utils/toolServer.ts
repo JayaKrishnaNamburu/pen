@@ -1,6 +1,9 @@
-import type { Editor, ToolRuntime } from "@pen/types";
-import { DOCUMENT_OPS_TOOL_RUNTIME_SLOT } from "../constants/toolServer";
+import { documentOpsToolRuntimeFacet } from "@input/pen-core";
+import type { Editor, ToolRuntime } from "@input/pen-types";
 
 export function getDocumentToolRuntime(editor: Editor): ToolRuntime | null {
-  return editor.internals.getSlot<ToolRuntime>(DOCUMENT_OPS_TOOL_RUNTIME_SLOT) ?? null;
+	return (
+		(editor.facet(documentOpsToolRuntimeFacet) as ToolRuntime | null) ??
+		null
+	);
 }

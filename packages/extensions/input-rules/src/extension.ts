@@ -1,5 +1,5 @@
-import type { DocumentOp, Extension, OpOrigin } from "@pen/types";
-import { defineExtension, INPUT_RULES_ENGINE_SLOT_KEY } from "@pen/types";
+import type { DocumentOp, Extension, OpOrigin } from "@input/pen-types";
+import { INPUT_RULES_ENGINE_SLOT_KEY } from "@input/pen-types";
 import { InputRuleEngine } from "./engine";
 import { defaultBlockRules } from "./defaultRules";
 import { defaultInlineRules } from "./inlineRules";
@@ -43,30 +43,39 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 	}
 
 	let unsub: (() => void) | null = null;
+	const produced = new WeakSet<DocumentOp[]>();
 
-	return defineExtension({
+	return {
 		name: INPUT_RULES_EXTENSION_NAME,
+		version: "0.0.0",
 
 		activateClient: async (ctx) => {
 			const { editor } = ctx;
 
+			unsub?.();
 			unsub = editor.onBeforeApply(
 				(ops, options) => {
 					const origin = options.origin ?? "user";
 					if (BYPASS_ORIGINS.has(origin)) return ops;
-					return appendInputRuleTransforms(editor, engine, ops);
+					if (produced.has(ops)) return ops;
+					const next = appendInputRuleTransforms(editor, engine, ops);
+					produced.add(next);
+					return next;
 				},
 				{ priority: 300 },
 			);
 
-			ctx.editor.internals.setSlot(INPUT_RULES_ENGINE_SLOT_KEY, engine);
+			ctx.editor.internals.assignSlot(
+				INPUT_RULES_ENGINE_SLOT_KEY,
+				engine,
+			);
 		},
 
 		deactivateClient: async () => {
 			unsub?.();
 			unsub = null;
 		},
-	});
+	};
 }
 
 function appendInputRuleTransforms(
@@ -79,21 +88,31 @@ function appendInputRuleTransforms(
 	for (const op of ops) {
 		transformedOps.push(op);
 
-		if (op.type !== "insert-text" || op.text.length !== 1) {
+		if (
+			op.type !== "splice-text" ||
+			typeof op.insert !== "string" ||
+			op.insert.length !== 1 ||
+			op.from !== op.to
+		) {
 			continue;
 		}
 
-		const blockResult = engine.tryMatch(editor, op.blockId, op.text, {
-			offset: op.offset,
+		const blockResult = engine.tryMatch(editor, op.blockId, op.insert, {
+			offset: op.from,
 		});
 		if (blockResult) {
 			transformedOps.push(...blockResult);
 			continue;
 		}
 
-		const inlineResult = engine.tryMatchInline(editor, op.blockId, op.text, {
-			offset: op.offset,
-		});
+		const inlineResult = engine.tryMatchInline(
+			editor,
+			op.blockId,
+			op.insert,
+			{
+				offset: op.from,
+			},
+		);
 		if (inlineResult) {
 			transformedOps.push(...inlineResult);
 		}

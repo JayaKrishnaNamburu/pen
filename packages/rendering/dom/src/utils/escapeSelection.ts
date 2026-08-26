@@ -1,4 +1,5 @@
-import type { Editor } from "@pen/types";
+import { isCollapsed } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import type { FieldEditorEscapeController } from "../field-editor/controller";
 
 export function handleEscapeSelectionTransition(options: {
@@ -32,7 +33,7 @@ export function handleEscapeSelectionTransition(options: {
 		return true;
 	}
 
-	if (selection?.type === "text" && !selection.isCollapsed) {
+	if (selection?.type === "text" && !isCollapsed(selection)) {
 		fieldEditor.collapseSelectionToFocus();
 		return true;
 	}
@@ -47,8 +48,7 @@ export function handleEscapeSelectionTransition(options: {
 
 	if (selection?.type === "cell") {
 		const { blockId, anchor, head } = selection;
-		const isMultiCell =
-			anchor.row !== head.row || anchor.col !== head.col;
+		const isMultiCell = anchor.row !== head.row || anchor.col !== head.col;
 
 		if (isMultiCell) {
 			editor.selectCell(blockId, anchor.row, anchor.col);

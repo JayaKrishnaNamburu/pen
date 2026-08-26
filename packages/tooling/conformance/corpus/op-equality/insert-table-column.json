@@ -1,0 +1,292 @@
+{
+	"id": "insert-table-column",
+	"opType": "insert-table-column",
+	"family": "tables",
+	"path": "command",
+	"command": "pen.duplicateBlock",
+	"setup": {
+		"blocks": [
+			{
+				"id": "tbl",
+				"type": "table",
+				"props": {
+					"hasHeaderRow": true
+				}
+			}
+		],
+		"extraOps": [
+			{
+				"type": "insert-table-column",
+				"blockId": "tbl",
+				"index": 2
+			},
+			{
+				"type": "insert-table-cell-text",
+				"blockId": "tbl",
+				"row": 0,
+				"col": 2,
+				"offset": 0,
+				"text": "third-col"
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "insert-block",
+			"blockId": "00000000-0000-4000-8000-00000000000b",
+			"blockType": "table",
+			"props": {
+				"hasHeaderRow": true,
+				"hasHeaderColumn": false,
+				"columnWidths": []
+			},
+			"position": {
+				"after": "tbl"
+			}
+		},
+		{
+			"type": "insert-table-column",
+			"blockId": "00000000-0000-4000-8000-00000000000b",
+			"index": 2
+		},
+		{
+			"type": "insert-table-cell-text",
+			"blockId": "00000000-0000-4000-8000-00000000000b",
+			"row": 0,
+			"col": 2,
+			"offset": 0,
+			"text": "third-col"
+		}
+	],
+	"updateBytes": "ASIBMScBBmJsb2NrcyQwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGIBKAABMQR0eXBlAXcFdGFibGUnAAExBXByb3BzAScAATEEbWV0YQEnAAExDHRhYmxlQ29udGVudAAHAAE1ASgAATYCaWQBdyQwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDI3MTEnAAE2BWNlbGxzAAcAATgBKAABOQJpZAF3JDAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMjcxMicAATkHY29udGVudAKHATkBKAABPAJpZAF3JDAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMjcxMycAATwHY29udGVudAKHATYBKAABPwJpZAF3JDAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMjcxNCcAAT8FY2VsbHMABwABQQEoAAFCAmlkAXckMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAyNzE1JwABQgdjb250ZW50AocBQgEoAAFFAmlkAXckMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAyNzE2JwABRQdjb250ZW50AigAATMMaGFzSGVhZGVyUm93AXgoAAEzD2hhc0hlYWRlckNvbHVtbgF5KAABMwxjb2x1bW5XaWR0aHMBdQDIASEBBwF3JDAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYocBPAEoAAFMAmlkAXckMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAyNzE3JwABTAdjb250ZW50AocBRQEoAAFPAmlkAXckMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAyNzE4JwABTwdjb250ZW50AgQAAU4JdGhpcmQtY29sAQEDAgcgAUgD",
+	"updateByteLength": 738,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"tbl"
+		],
+		"blocks": {
+			"tbl": {
+				"meta": {},
+				"props": {},
+				"tableContent": [
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000004"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000005"
+							},
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "third-col"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000009"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000003"
+					},
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000007"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000008"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000a"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000006"
+					}
+				],
+				"type": "table"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"tbl",
+			"00000000-0000-4000-8000-00000000000b"
+		],
+		"blocks": {
+			"00000000-0000-4000-8000-00000000000b": {
+				"meta": {},
+				"props": {},
+				"tableContent": [
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000002712"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000002713"
+							},
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "third-col"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000002717"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000002711"
+					},
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000002715"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000002716"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000002718"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000002714"
+					}
+				],
+				"type": "table"
+			},
+			"tbl": {
+				"meta": {},
+				"props": {},
+				"tableContent": [
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000004"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000005"
+							},
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "third-col"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000009"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000003"
+					},
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000007"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000008"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000a"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000006"
+					}
+				],
+				"type": "table"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"blockIds": [
+			"00000000-0000-4000-8000-00000000000b"
+		],
+		"head": "00000000-0000-4000-8000-00000000000b",
+		"type": "block"
+	}
+}

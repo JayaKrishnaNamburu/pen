@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
-import type { BlockHandle, BlockRenderContext, Editor } from "@pen/types";
-import { createEditor } from "@pen/core";
+import type { BlockHandle, BlockRenderContext, Editor } from "@input/pen-types";
+import { createEditor } from "@input/pen-core";
 import { PenEditor } from "../penEditor";
 import { useEditorContext } from "../context/editorContext";
+import {
+	displayCatalogForEditor,
+	resolveSlashMenuTitle,
+} from "../utils/displayCopy";
 
 function SubdocumentRendererInner(props: {
 	block: BlockHandle;
@@ -19,9 +23,10 @@ function SubdocumentRendererInner(props: {
 	const [childEditor, setChildEditor] = useState<Editor | null>(null);
 
 	const session = parentEditor.internals.documentSession;
-	const childScope = session?.getScopeForBlock(block.id, {
-		scopeId: parentEditor.documentScope.id,
-	}) ?? null;
+	const childScope =
+		session?.getScopeForBlock(block.id, {
+			scopeId: parentEditor.documentScope.id,
+		}) ?? null;
 	const childScopeId = childScope?.id ?? null;
 
 	useEffect(() => {
@@ -51,7 +56,7 @@ function SubdocumentRendererInner(props: {
 		<div
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			data-block-type="subdocument"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 			data-pen-subdocument-host=""
 			data-subdocument-guid={childScope?.guid}
 		>
@@ -68,7 +73,11 @@ function SubdocumentRendererInner(props: {
 					<div data-pen-subdocument-placeholder="">
 						{typeof block.props.title === "string"
 							? block.props.title
-							: "Subdocument"}
+							: resolveSlashMenuTitle(
+									"subdocument",
+									undefined,
+									displayCatalogForEditor(parentEditor),
+								)}
 					</div>
 				)}
 			</div>

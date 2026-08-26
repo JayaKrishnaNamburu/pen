@@ -6,8 +6,9 @@ import {
 	reportPendingBlockImportViolations,
 } from "../index";
 import { blocksToOps } from "../importerUtils";
-import type { DocumentOp } from "@pen/types";
+import type { DocumentOp } from "@input/pen-types";
 import type { PendingBlock } from "../importerUtils";
+import { defaultSchema } from "./fixtures/testSchema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -16,10 +17,10 @@ const noDefaultExtensionsPreset = {
 };
 
 type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
-type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
-type InsertTableRowOp = Extract<DocumentOp, { type: "insert-table-row" }>;
-type InsertTableColumnOp = Extract<DocumentOp, { type: "insert-table-column" }>;
-type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
+type InsertTableCellTextOp = Extract<DocumentOp, { type: "splice-text" }>;
+type InsertTableRowOp = Extract<DocumentOp, { type: "grid" }>;
+type InsertTableColumnOp = Extract<DocumentOp, { type: "grid" }>;
+type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-text" }>;
 
 describe("blocksToOps table materialization", () => {
 	it("materializes __table_row / __table_cell into table ops", () => {
@@ -77,20 +78,18 @@ describe("blocksToOps table materialization", () => {
 		const tableBlockId = insertBlock.blockId;
 
 		const cellTextOps = ops.filter(
-			(op) => op.type === "insert-table-cell-text",
+			(op) => op.type === "splice-text" && op.cell,
 		);
 		expect(cellTextOps.length).toBe(4);
 
 		const firstCellText = cellTextOps[0] as InsertTableCellTextOp;
 		expect(firstCellText.blockId).toBe(tableBlockId);
-		expect(firstCellText.row).toBe(0);
-		expect(firstCellText.col).toBe(0);
-		expect(firstCellText.text).toBe("Name");
+		expect(firstCellText.cell).toEqual({ row: 0, col: 0 });
+		expect(firstCellText.insert).toBe("Name");
 
 		const lastCellText = cellTextOps[3] as InsertTableCellTextOp;
-		expect(lastCellText.row).toBe(1);
-		expect(lastCellText.col).toBe(1);
-		expect(lastCellText.text).toBe("30");
+		expect(lastCellText.cell).toEqual({ row: 1, col: 1 });
+		expect(lastCellText.insert).toBe("30");
 	});
 
 	it("generates insert-table-row for rows beyond the seed", () => {
@@ -137,9 +136,15 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const ops = blocksToOps(blocks);
-		const rowOps = ops.filter((op) => op.type === "insert-table-row");
+		const rowOps = ops.filter(
+			(op) => op.type === "grid" && op.change.kind === "insert-row",
+		);
 		expect(rowOps.length).toBe(1);
-		expect((rowOps[0] as InsertTableRowOp).index).toBe(2);
+		const rowChange = (rowOps[0] as InsertTableRowOp).change;
+		expect(rowChange.kind).toBe("insert-row");
+		if (rowChange.kind === "insert-row") {
+			expect(rowChange.index).toBe(2);
+		}
 	});
 
 	it("generates insert-table-column for columns beyond the seed", () => {
@@ -162,9 +167,15 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const ops = blocksToOps(blocks);
-		const colOps = ops.filter((op) => op.type === "insert-table-column");
+		const colOps = ops.filter(
+			(op) => op.type === "grid" && op.change.kind === "insert-column",
+		);
 		expect(colOps.length).toBe(1);
-		expect((colOps[0] as InsertTableColumnOp).index).toBe(2);
+		const colChange = (colOps[0] as InsertTableColumnOp).change;
+		expect(colChange.kind).toBe("insert-column");
+		if (colChange.kind === "insert-column") {
+			expect(colChange.index).toBe(2);
+		}
 	});
 
 	it("generates format-table-cell-text for marks on cells", () => {
@@ -190,14 +201,12 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const ops = blocksToOps(blocks);
-		const fmtOps = ops.filter(
-			(op) => op.type === "format-table-cell-text",
-		);
+		const fmtOps = ops.filter((op) => op.type === "format-text" && op.cell);
 		expect(fmtOps.length).toBe(1);
 		const formatOp = fmtOps[0] as FormatTableCellTextOp;
 		expect(formatOp.marks).toEqual({ bold: true });
-		expect(formatOp.offset).toBe(0);
-		expect(formatOp.length).toBe(4);
+		expect(formatOp.from).toBe(0);
+		expect(formatOp.to).toBe(4);
 	});
 
 	it("does not recurse __table children as regular blocks", () => {
@@ -233,7 +242,11 @@ describe("blocksToOps table materialization", () => {
 						type: "__table_row",
 						props: {},
 						children: [
-							{ type: "__table_cell", props: {}, content: "Only" },
+							{
+								type: "__table_cell",
+								props: {},
+								content: "Only",
+							},
 						],
 					},
 				],
@@ -241,6 +254,7 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: noDefaultExtensionsPreset,
 		});
 
@@ -248,9 +262,11 @@ describe("blocksToOps table materialization", () => {
 
 		const imported = editor.lastBlock()!;
 		expect(imported.type).toBe("table");
-		expect(imported.tableRowCount()).toBe(1);
-		expect(imported.tableColumnCount()).toBe(1);
-		expect(imported.tableCell(0, 0)?.textContent()).toBe("Only");
+		expect(imported.as("table")!.tableRowCount()).toBe(1);
+		expect(imported.as("table")!.tableColumnCount()).toBe(1);
+		expect(imported.as("table")!.tableCell(0, 0)?.textContent()).toBe(
+			"Only",
+		);
 
 		editor.destroy();
 	});
@@ -264,32 +280,39 @@ describe("blocksToOps table materialization", () => {
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "A" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "A" },
+						],
 					},
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "B" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "B" },
+						],
 					},
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "C" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "C" },
+						],
 					},
 				],
 			},
 		];
 
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
 
 		const imported = editor.lastBlock()!;
-		expect(imported.tableRowCount()).toBe(3);
-		expect(imported.tableColumnCount()).toBe(1);
-		expect(imported.tableCell(2, 0)?.textContent()).toBe("C");
+		expect(imported.as("table")!.tableRowCount()).toBe(3);
+		expect(imported.as("table")!.tableColumnCount()).toBe(1);
+		expect(imported.as("table")!.tableCell(2, 0)?.textContent()).toBe("C");
 
 		editor.destroy();
 	});
@@ -303,7 +326,9 @@ describe("blocksToOps table materialization", () => {
 					{
 						type: "__table_row",
 						props: {},
-						children: [{ type: "__table_cell", props: {}, content: "A" }],
+						children: [
+							{ type: "__table_cell", props: {}, content: "A" },
+						],
 					},
 					{
 						type: "__table_row",
@@ -319,21 +344,23 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
 
 		const imported = editor.lastBlock()!;
-		expect(imported.tableRowCount()).toBe(2);
-		expect(imported.tableColumnCount()).toBe(3);
-		expect(imported.tableCell(1, 2)?.textContent()).toBe("B3");
+		expect(imported.as("table")!.tableRowCount()).toBe(2);
+		expect(imported.as("table")!.tableColumnCount()).toBe(3);
+		expect(imported.as("table")!.tableCell(1, 2)?.textContent()).toBe("B3");
 
 		editor.destroy();
 	});
 
-	it("drops schema-unknown imported blocks before converting them to ops", () => {
+	it("DUR3: passthrough resolve keeps schema-unknown pending blocks at the import filter", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: noDefaultExtensionsPreset,
 		});
 		const normalized = normalizePendingBlocksForImport(
@@ -345,12 +372,13 @@ describe("blocksToOps table materialization", () => {
 			editor.schema,
 		);
 
-		expect(normalized.blocks.map((block) => block.type)).toEqual(["heading"]);
-		expect(normalized.violations).toContainEqual(
-			expect.objectContaining({
-				blockType: "customWidget",
-				reason: "unknown-block-type",
-			}),
+		expect(normalized.blocks.map((block) => block.type)).toEqual([
+			"customWidget",
+			"heading",
+		]);
+		expect(normalized.violations).toEqual([]);
+		expect(editor.schema.resolve("customWidget")?.type).toBe(
+			"customWidget",
 		);
 
 		editor.destroy();
@@ -358,6 +386,7 @@ describe("blocksToOps table materialization", () => {
 
 	it("emits a diagnostic when import normalization drops unknown block types", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: noDefaultExtensionsPreset,
 		});
 		const diagnostics: unknown[] = [];

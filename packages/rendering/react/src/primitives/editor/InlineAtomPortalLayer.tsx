@@ -1,18 +1,19 @@
-import React, { useLayoutEffect, useSyncExternalStore } from "react";
+import React, { useSyncExternalStore } from "react";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { createPortal } from "react-dom";
-import type { Editor, SelectionState } from "@pen/types";
+import type { Editor, SelectionState } from "@input/pen-types";
 import type {
 	InlineAtomRenderers,
 	ResolvedInlineAtomInteractions,
 } from "../../context/editorContext";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import {
 	attachInlineAtomWrapperInteractions,
 	getInlineAtomDragSnapshot,
 	getInlineAtomRenderInteractionProps,
 	isInlineAtomDragSource,
 	subscribeInlineAtomDragSnapshot,
-} from "./inlineAtomInteraction";
+} from "@input/pen-dom";
 import {
 	isInlineAtomSelected,
 	type InlineAtomRenderTarget,
@@ -90,7 +91,7 @@ export function InlineAtomPortalLayer(props: {
 		];
 	});
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		targets.forEach((target) => {
 			target.element.toggleAttribute(
 				DATA_ATTRS.selected,
@@ -108,7 +109,7 @@ export function InlineAtomPortalLayer(props: {
 		});
 	}, [blockId, editor, inlineAtomDragSnapshot, targets, selection]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		const cleanups = targets.map((target) =>
 			attachInlineAtomWrapperInteractions({
 				element: target.element,

@@ -1,12 +1,18 @@
-import type { Editor, Extension, KeyBinding } from "@pen/types";
-import { defineExtension, SEARCH_CONTROLLER_SLOT } from "@pen/types";
-import { createDecorationSet } from "@pen/core";
+import type { Editor, Extension, FacetProvider, KeyBinding } from "@input/pen-types";
+import { SEARCH_CONTROLLER_SLOT } from "@input/pen-types";
+import {
+	createDecorationSet,
+	decorationsFacet,
+	defineExtension,
+	keyBindingPriorityToPrecedence,
+	keymapFacet,
+	searchControllerFacet,
+} from "@input/pen-core";
 import { SearchControllerImpl } from "./controller";
 import { buildSearchDecorations } from "./decorations";
 import type { SearchController } from "./types";
 
 export const SEARCH_EXTENSION_NAME = "search";
-export { SEARCH_CONTROLLER_SLOT };
 
 const SEARCH_KEY_BINDINGS: KeyBinding[] = [
 	{
@@ -102,14 +108,23 @@ export function searchExtension(): Extension {
 
 	return defineExtension({
 		name: SEARCH_EXTENSION_NAME,
-		keyBindings: SEARCH_KEY_BINDINGS,
+		facets: [
+			...searchKeymapProviders(SEARCH_KEY_BINDINGS),
+			decorationsFacet.of(() => {
+				const state = controller?.getState();
+				if (!state || state.matches.length === 0) {
+					return createDecorationSet([]);
+				}
+				return createDecorationSet(buildSearchDecorations(state));
+			}),
+		],
 
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
 			controller = new SearchControllerImpl(editor);
-			editor.internals.setSlot(SEARCH_CONTROLLER_SLOT, controller);
+			editor.internals.assignSlot(SEARCH_CONTROLLER_SLOT, controller);
 
-			unsubscribeCommit = editor.onDocumentCommit(() => {
+			unsubscribeCommit = editor.on("commit", () => {
 				controller?.recompute();
 			});
 
@@ -123,23 +138,24 @@ export function searchExtension(): Extension {
 			unsubscribeCommit = null;
 			unsubscribeController?.();
 			unsubscribeController = null;
-			activeEditor?.internals.setSlot(SEARCH_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(SEARCH_CONTROLLER_SLOT, null);
 			controller = null;
 			activeEditor = null;
-		},
-
-		decorations: () => {
-			const state = controller?.getState();
-			if (!state || state.matches.length === 0) {
-				return createDecorationSet([]);
-			}
-			return createDecorationSet(buildSearchDecorations(state));
 		},
 	});
 }
 
 export function getSearchController(editor: Editor): SearchController | null {
-	return (
-		editor.internals.getSlot<SearchController>(SEARCH_CONTROLLER_SLOT) ?? null
+	return (editor.facet(searchControllerFacet) as SearchController | null) ?? null;
+}
+
+function searchKeymapProviders(
+	bindings: readonly KeyBinding[],
+): readonly FacetProvider[] {
+	return bindings.map((binding) =>
+		keymapFacet.of(
+			[binding],
+			keyBindingPriorityToPrecedence(binding.priority ?? 300),
+		),
 	);
 }

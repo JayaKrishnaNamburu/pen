@@ -1,20 +1,21 @@
 {
-  "name": "@pen/react",
-  "version": "0.0.0",
+  "name": "@input/pen-react",
+  "version": "0.0.1",
   "description": "React primitives, hooks, and renderers for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/input-systems/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/input-systems/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/input-systems/pen.git",
     "directory": "packages/rendering/react"
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -76,7 +77,8 @@
         "types": "./dist/search.d.cts",
         "default": "./dist/search.cjs"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -84,43 +86,62 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE.md"
+    "LICENSE.md",
+    "STYLING.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm --filter @pen/preset-default build && pnpm --filter @pen/history build && pnpm --filter @pen/search build && vitest run",
+    "lint": "eslint .",
+    "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/ai-suggestions": "workspace:*",
-    "@pen/ai": "workspace:*",
-    "@pen/core": "workspace:*",
-    "@pen/dom": "workspace:*",
-    "@pen/history": "workspace:*",
-    "@pen/multiplayer": "workspace:*",
-    "@pen/search": "workspace:*",
-    "@pen/schema-default": "workspace:*",
-    "@pen/shortcuts": "workspace:*",
-    "@pen/types": "workspace:^"
+    "@input/pen-core": "workspace:^",
+    "@input/pen-dom": "workspace:^",
+    "@input/pen-schema-default": "workspace:^",
+    "@input/pen-shortcuts": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "peerDependencies": {
-    "@pen/import-html": "workspace:*",
-    "@pen/import-markdown": "workspace:*",
+    "@input/pen-ai": "workspace:^",
+    "@input/pen-history": "workspace:^",
+    "@input/pen-interop": "workspace:^",
+    "@input/pen-multiplayer": "workspace:^",
+    "@input/pen-search": "workspace:^",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
-    "@pen/import-html": {
+    "@input/pen-ai": {
       "optional": true
     },
-    "@pen/import-markdown": {
+    "@input/pen-history": {
+      "optional": true
+    },
+    "@input/pen-interop": {
+      "optional": true
+    },
+    "@input/pen-multiplayer": {
+      "optional": true
+    },
+    "@input/pen-search": {
       "optional": true
     }
   },
   "devDependencies": {
-    "@pen/preset-default": "workspace:*",
+    "@input/pen-ai": "workspace:*",
+    "@input/pen-document-ops": "workspace:*",
+    "@input/pen-history": "workspace:*",
+    "@input/pen-interop": "workspace:*",
+    "@input/pen-multiplayer": "workspace:*",
+    "@input/pen-preset-default": "workspace:*",
+    "@input/pen-search": "workspace:*",
+    "@input/pen-undo": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^28.1.0",

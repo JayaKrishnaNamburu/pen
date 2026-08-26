@@ -5,9 +5,14 @@ import type {
 	MultiplayerSession,
 	MultiplayerSessionContext,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export interface MultiplayerConfig {
+	/**
+	 * Host-provided presence. This payload is published on awareness and is
+	 * visible to every peer in the room. Do not put emails, internal ids, or
+	 * other secrets here unless they are meant to be broadcast.
+	 */
 	user: MultiplayerUser;
 	autoConnect?: boolean;
 	session?: MultiplayerSession;
@@ -17,11 +22,25 @@ export interface MultiplayerConfig {
 	resolvePeerIdentity?: ResolvePeerIdentity;
 }
 
+/**
+ * Host-provided presence fields. Peers see whatever the host puts here;
+ * Pen treats the values as untrusted input on read (COL2).
+ */
 export interface MultiplayerUser {
 	id: string;
 	name: string;
 	color?: string;
 	avatar?: string;
+	/** COL3: awareness/ledger identities are display hints, never verified. */
+	readonly unverified?: true;
+}
+
+/** COL3: peer-asserted presence. Never render as verified authorship. */
+export interface PresenceDisplayHint {
+	readonly unverified: true;
+	name: string;
+	userId?: string;
+	color?: string;
 }
 
 export interface RemoteCursorState {
@@ -75,15 +94,17 @@ export interface MultiplayerSnapshot {
 }
 
 export interface MultiplayerCursorPayload {
-	blockId: string;
-	offset: number;
+	/** Serialized `editor.anchors.serialize` payload (AN11). */
+	anchor: string;
 	clock: number;
 }
 
 export interface MultiplayerTextSelectionPayload {
 	kind?: "text";
-	anchor: { blockId: string; offset: number };
-	head: { blockId: string; offset: number };
+	/** Serialized anchor for the selection start. */
+	anchor: string;
+	/** Serialized anchor for the selection head. */
+	head: string;
 	clock: number;
 }
 
@@ -160,4 +181,5 @@ export interface MultiplayerControllerOptions {
 	config: MultiplayerConfig;
 	authorLedger: AuthorLedgerLike;
 	identityMap: ClientIdentityMapLike;
+	now?: () => number;
 }

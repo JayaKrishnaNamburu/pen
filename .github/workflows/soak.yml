@@ -1,0 +1,34 @@
+# SCALE4 nightly soak (F.4). Heap during the session is a trend, not a gate.
+# spec/rules/scale.md SCALE4; spec/rules/reliability.md CH8.
+name: Soak
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  soak:
+    name: SCALE4
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+
+      - name: Build bench and its dependencies
+        run: pnpm --filter @input/pen-bench... build
+
+      - name: Run SCALE4 soak
+        env:
+          SCALE4_SOAK_ITERATIONS: "400"
+        run: node --expose-gc packages/tooling/bench/src/soak/run.mjs

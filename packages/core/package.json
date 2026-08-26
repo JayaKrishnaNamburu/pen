@@ -1,20 +1,21 @@
 {
-  "name": "@pen/core",
-  "version": "0.0.0",
+  "name": "@input/pen-core",
+  "version": "0.0.1",
   "description": "Headless, extension-first editor engine for human-AI co-authoring",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/input-systems/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/input-systems/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/input-systems/pen.git",
     "directory": "packages/core"
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -26,7 +27,8 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -36,26 +38,23 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "catalog:check": "node ../../scripts/catalog-check.mjs",
     "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/content-ops": "workspace:*",
-    "@pen/crdt-yjs": "workspace:*",
-    "@pen/delta-stream": "workspace:*",
-    "@pen/document-ops": "workspace:*",
-    "@pen/markdown-serialization": "workspace:*",
-    "@pen/schema-default": "workspace:^",
-    "@pen/shortcuts": "workspace:*",
-    "@pen/types": "workspace:*",
-    "@pen/undo": "workspace:*"
+    "@input/pen-crdt-yjs": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
-    "@pen/input-rules": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7",

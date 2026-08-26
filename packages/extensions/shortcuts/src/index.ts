@@ -4,7 +4,7 @@ export {
 	type RichTextShortcutsOptions,
 } from "./richTextShortcutsExtension";
 export {
-	toggleInlineMark,
-	setInlineMark,
-	getAttachedFieldEditor,
-} from "./toggleInlineMark";
+	shortcutsToKeymapProviders,
+	PEN_KEYMAP_FACET_NAME,
+} from "./providers";
+export { toggleInlineMark, setInlineMark } from "./toggleInlineMark";

@@ -1,12 +1,12 @@
-# @pen/react
+# @input/pen-react
 
 ## Purpose
 
-`@pen/react` is the primary documented renderer surface for Pen. It binds the headless runtime to React components, hooks, contexts, and higher-level primitives for editor composition.
+`@input/pen-react` is the primary documented renderer surface for Pen. It binds the headless runtime to React components, hooks, contexts, and higher-level primitives for editor composition.
 
 ## Public Role
 
-This package is where most adopters start when embedding Pen in a React application. It provides both a high-level convenience entrypoint and a lower-level compound-component surface, while keeping runtime authority in `@pen/core` and editing engine behavior in `@pen/dom`.
+This package is where most adopters start when embedding Pen in a React application. It provides both a high-level convenience entrypoint and a lower-level compound-component surface, while keeping runtime authority in `@input/pen-core` and editing engine behavior in `@input/pen-dom`.
 
 ## Key Exports / Entrypoints
 
@@ -21,9 +21,9 @@ This package is where most adopters start when embedding Pen in a React applicat
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/ai`, `@pen/ai-suggestions`, `@pen/core`, `@pen/dom`, `@pen/history`, `@pen/multiplayer`, `@pen/schema-default`, `@pen/search`, `@pen/shortcuts`, `@pen/types`
-- Peer dependencies: `@pen/import-html`, `@pen/import-markdown`, `react`, `react-dom`
-- Boundary: `@pen/react` binds the headless runtime to React without taking ownership of document truth.
+- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`
+- Peer dependencies: `@input/pen-ai`, `@input/pen-history`, `@input/pen-interop`, `@input/pen-multiplayer`, `@input/pen-search` (all optional), plus `react` and `react-dom`
+- Boundary: `@input/pen-react` binds the headless runtime to React without taking ownership of document truth.
 
 ## Runtime Model
 
@@ -34,8 +34,8 @@ flowchart TD
   App[ReactApp]
   Primitives[PenPrimitivesAndHooks]
   Contexts[ReactContexts]
-  Dom["@pen/dom"]
-  Core["@pen/core"]
+  Dom["@input/pen-dom"]
+  Core["@input/pen-core"]
   Extensions[InstalledExtensions]
 
   App --> Primitives
@@ -50,8 +50,16 @@ Important responsibilities:
 
 - Mount editor roots and block rendering surfaces
 - Subscribe React state to editor state through hooks and contexts
-- Install the shared field-editor session, paste importer slots, and captured document-keyboard handlers for the active editor root
-- Delegate shared DOM editing, selection transition, table-cell navigation, and shortcut routing behavior to `@pen/dom`
+- Install the shared field-editor session and captured document-keyboard handlers for the active editor root. Host `importers` / assets, when passed, are written with `internals.assignSlot("paste:importers" | "paste:assetProvider", …)`. This package does not install a default HTML importer; `defaultPreset()`'s `html-clipboard` extension does.
+- Feature hooks (`useAI`, `useAISuggestions`, `useSearch`, `useHistory`, `useMultiplayer`, and siblings) read controllers from core facets (`aiControllerFacet`, `aiSuggestionsControllerFacet`, `searchControllerFacet`, `historyControllerFacet`, `multiplayerControllerFacet`). When the matching optional peer / extension is absent, the hook returns empty state.
+- Pointer activation walks to the block element (`data-pen-editor-block`), not the inline span. React keeps its own gesture path in `useEditorContentGestures` rather than calling `handleFieldEditorPointerActivate()`; the hit target is still the block. Clicks in the empty space above the first block or below the last block are handled by `handleClickOutsideBlocks` (focus an empty adjacent text block, or insert a paragraph). Vanilla and Vue share a different fallback in `handleFieldEditorPointerActivate` that places the caret at the last text block's end instead of inserting.
+- Idle `InlineContent` and `TableCellContent` pass `{ editor }` into `fullReconcileDeltasToDOM` so `pen.urlPolicy` cannot be skipped by omitting a policy. `ImageRenderer` resolves `src` with `resolveEditorUrl(editor, src, "image")`. Denied URLs omit the attribute and set `data-pen-blocked-url`.
+- `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })`. It injects the default schema and still installs no preset — no undo, no shortcuts, no document-ops, no stream extension. Pass `preset: defaultPreset()` or an explicit `extensions` list when the host wants those.
+
+- `useEditor` owns only the editor it created: it destroys that editor on unmount, and returns an editor passed in as `useEditor(editor)` without ever destroying it. Ownership is what makes it the documented host entry point over a module-scope `createEditor`, which shares one instance across every mount and is never torn down. Because StrictMode runs effect setup, cleanup, then setup again for a single mount, the first cleanup destroys an owned editor while the component is still mounted; the hook detects the second setup and rebuilds, so a StrictMode host never renders against a destroyed editor.
+- The `readonly` prop on `EditorRoot` / `PenEditor` is what declines typing and gestures. `pen.ariaReadOnly` is read only for `aria-readonly` and does not set `data-readonly`. The facet does not decline typing, `editor.apply`, or the wire. That split is an open owner decision.
+- Boolean `data-*` attributes use the same valueless form as `@input/pen-dom` (`data-readonly=""`). ARIA booleans remain `"true"` / `"false"`.
+- Delegate shared DOM editing, selection transition, table-cell navigation, and shortcut routing behavior to `@input/pen-dom`
 - Surface extension state through React-friendly primitives rather than reimplementing extension logic locally
 
 ## Integration Notes
@@ -62,11 +70,11 @@ Important responsibilities:
 - The `Pen` namespace exists for lower-level composition when hosts need toolbar, slash-menu, AI, search, or multiplayer surfaces
 - Optional subpath entrypoints let hosts import AI, AI suggestions, history, multiplayer, and search surfaces without pulling from the root barrel directly.
 - `Pen.Editor.CaretOverlay` renders an optional local caret for collapsed active text selections, exposes `CARET` variants, and hides the native caret while the overlay is visible.
-- Optional importer peer dependencies stay peer-level because not every React integration needs HTML or Markdown paste/import support
+- Markdown ingest stays an optional peer on `@input/pen-interop` because not every React integration needs it. HTML paste ingest is not a React default; it comes from `defaultPreset()`'s `html-clipboard` extension (or a host `importers` prop). The renderer still exports `./ai-suggestions` as a UI subpath; the headless suggestion runtime is `@input/pen-ai/suggestions`.
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. This is still the main renderer the repo documents and validates most thoroughly.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. This is still the main renderer the repo documents and validates most thoroughly.
 
 ## Non-goals
 

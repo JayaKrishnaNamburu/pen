@@ -1,4 +1,4 @@
-const MULTIPLAYER_COLORS = [
+export const MULTIPLAYER_COLORS = [
 	"#2563eb",
 	"#dc2626",
 	"#16a34a",

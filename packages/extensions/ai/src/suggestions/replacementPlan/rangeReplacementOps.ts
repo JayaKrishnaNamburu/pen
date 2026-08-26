@@ -1,4 +1,4 @@
-import type { DocumentOp } from "@pen/types";
+import { generateId, type DocumentOp } from "@input/pen-types";
 import {
 	resolveSelectedRangeTextFragments,
 	splitReplacementParagraphs,
@@ -10,22 +10,14 @@ import { compileReplacementSuggestionOps } from "./textDiffEngine";
 export type ReplacementReviewOperation = Extract<
 	DocumentOp,
 	{
-		type:
-			| "delete-block"
-			| "delete-text"
-			| "insert-block"
-			| "insert-text"
-			| "replace-text";
+		type: "delete-block" | "insert-block" | "splice-text";
 	}
 >;
 
 export const DEFAULT_INSERTED_BLOCK_TYPE = "paragraph";
 
 export function createDefaultReplacementBlockId(): string {
-	const randomId =
-		globalThis.crypto?.randomUUID?.() ??
-		`${Date.now()}-${Math.random().toString(36).slice(2)}`;
-	return `ai-paragraph-${randomId}`;
+	return `ai-paragraph-${generateId()}`;
 }
 
 export function buildSingleBlockReplacementOperations({
@@ -111,21 +103,21 @@ export function buildMultiBlockReplacementOperations({
 
 	if (normalizedRange.start.offset < normalizedRange.startBlock.text.length) {
 		operations.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: normalizedRange.start.blockId,
-			offset: normalizedRange.start.offset,
-			length:
-				normalizedRange.startBlock.text.length -
-				normalizedRange.start.offset,
+			from: normalizedRange.start.offset,
+			to: normalizedRange.startBlock.text.length,
+			insert: "",
 		});
 	}
 
 	if (normalizedRange.end.offset > 0) {
 		operations.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: normalizedRange.end.blockId,
-			offset: 0,
-			length: normalizedRange.end.offset,
+			from: 0,
+			to: 0 + normalizedRange.end.offset,
+			insert: "",
 		});
 	}
 
@@ -161,14 +153,18 @@ export function buildMultiBlockReplacementOperations({
 		normalizedRange.end.offset,
 	);
 	if (endSuffix.length > 0) {
-		const suffixBlock = insertedParagraphBlocks.at(-1);
+		const suffixBlock =
+			insertedParagraphBlocks[insertedParagraphBlocks.length - 1];
 		operations.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: suffixBlock?.blockId ?? normalizedRange.start.blockId,
-			offset: suffixBlock
+			from: suffixBlock
 				? suffixBlock.text.length
 				: normalizedRange.start.offset + firstReplacementText.length,
-			text: endSuffix,
+			to: suffixBlock
+				? suffixBlock.text.length
+				: normalizedRange.start.offset + firstReplacementText.length,
+			insert: endSuffix,
 		});
 	}
 
@@ -180,7 +176,7 @@ export function buildMultiBlockReplacementOperations({
 	return operations;
 }
 
-export function buildAlignedMultiBlockParagraphReplacementOperations({
+function buildAlignedMultiBlockParagraphReplacementOperations({
 	maxDiffCells,
 	normalizedRange,
 	replacementParagraphs,
@@ -208,7 +204,7 @@ export function buildAlignedMultiBlockParagraphReplacementOperations({
 	);
 }
 
-export function buildInsertedParagraphBlockOperations({
+function buildInsertedParagraphBlockOperations({
 	afterBlockId,
 	blockType,
 	createBlockId,
@@ -227,14 +223,14 @@ export function buildInsertedParagraphBlockOperations({
 	}).flatMap(toInsertedParagraphBlockOperations);
 }
 
-export interface InsertedParagraphBlock {
+interface InsertedParagraphBlock {
 	afterBlockId: string;
 	blockId: string;
 	blockType: string;
 	text: string;
 }
 
-export function buildInsertedParagraphBlocks({
+function buildInsertedParagraphBlocks({
 	afterBlockId,
 	blockType,
 	createBlockId,
@@ -262,7 +258,7 @@ export function buildInsertedParagraphBlocks({
 	return blocks;
 }
 
-export function toInsertedParagraphBlockOperations(
+function toInsertedParagraphBlockOperations(
 	block: InsertedParagraphBlock,
 ): ReplacementReviewOperation[] {
 	const operations: ReplacementReviewOperation[] = [
@@ -277,10 +273,11 @@ export function toInsertedParagraphBlockOperations(
 
 	if (block.text.length > 0) {
 		operations.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: block.blockId,
-			offset: 0,
-			text: block.text,
+			from: 0,
+			to: 0,
+			insert: block.text,
 		});
 	}
 

@@ -1,0 +1,27 @@
+{
+	"id": "DUR7-unknown-block-type",
+	"rule": "DUR7",
+	"shape": "unknown block type",
+	"kind": "json-export-snapshot",
+	"document": {
+		"version": 1,
+		"blocks": [
+			{
+				"id": "DUR7-host-widget",
+				"type": "hostWidget",
+				"props": {
+					"label": "kept"
+				},
+				"content": {
+					"text": "Unknown type body",
+					"segments": [
+						{
+							"type": "text",
+							"text": "Unknown type body"
+						}
+					]
+				}
+			}
+		]
+	}
+}

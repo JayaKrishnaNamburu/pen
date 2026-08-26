@@ -1,23 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
 	assignMultiplayerColor,
+	MULTIPLAYER_COLORS,
 	normalizeMultiplayerColor,
 } from "../presence/colorAssignment";
-
-const MULTIPLAYER_COLORS = new Set([
-	"#2563eb",
-	"#dc2626",
-	"#16a34a",
-	"#ca8a04",
-	"#9333ea",
-	"#0891b2",
-	"#e11d48",
-	"#65a30d",
-	"#7c3aed",
-	"#059669",
-	"#d97706",
-	"#4f46e5",
-]);
 
 describe("assignMultiplayerColor", () => {
 	it("returns the same color for the same user id", () => {
@@ -26,14 +12,15 @@ describe("assignMultiplayerColor", () => {
 		);
 	});
 
-	it("returns a known palette color", () => {
-		expect(MULTIPLAYER_COLORS.has(assignMultiplayerColor("someone"))).toBe(
-			true,
-		);
+	it("returns a color from the exported palette", () => {
+		expect(MULTIPLAYER_COLORS).toContain(assignMultiplayerColor("someone"));
+		expect(MULTIPLAYER_COLORS).toContain(assignMultiplayerColor(""));
 	});
 
-	it("handles empty user ids", () => {
-		expect(MULTIPLAYER_COLORS.has(assignMultiplayerColor(""))).toBe(true);
+	it("every palette entry is a hex color normalize accepts", () => {
+		for (const color of MULTIPLAYER_COLORS) {
+			expect(normalizeMultiplayerColor(color, "#000000")).toBe(color);
+		}
 	});
 });
 

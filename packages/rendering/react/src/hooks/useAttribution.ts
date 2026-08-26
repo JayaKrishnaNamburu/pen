@@ -1,11 +1,11 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { historyControllerFacet } from "@input/pen-core";
 import type {
 	BlameRange,
 	CharacterAttribution,
 	HistoryController,
-} from "@pen/history";
-import { getHistoryController } from "@pen/history";
-import type { Editor, Unsubscribe } from "@pen/types";
+} from "@input/pen-history";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 import { useHistory } from "./useHistory";
 import { useMultiplayer } from "./useMultiplayer";
 
@@ -23,37 +23,36 @@ export function useAttribution(
 	editor: Editor,
 	blockId: string,
 ): AttributionState {
-	const historyController = getHistoryController(editor);
+	const historyController =
+		(editor.facet(historyControllerFacet) as HistoryController | null) ??
+		null;
 	const historyState = useHistory(editor);
 	const multiplayerState = useMultiplayer(editor);
 	const canReadHistoryAttribution =
 		isHistoryAttributionController(historyController);
 	const blockRevision = useSyncExternalStore(
-		(callback) => editor.onDocumentCommit(callback),
+		(callback) => editor.on("commit", () => callback()),
 		() => editor.getBlockRevision(blockId),
 		() => 0,
 	);
 
-	return useMemo(
-		() => {
-			if (!canReadHistoryAttribution) {
-				return EMPTY_ATTRIBUTION_STATE;
-			}
+	return useMemo(() => {
+		if (!canReadHistoryAttribution) {
+			return EMPTY_ATTRIBUTION_STATE;
+		}
 
-			return {
-				attributions: historyController.getCharacterAttribution(blockId),
-				blameRanges: historyController.getBlameRanges(blockId),
-			};
-		},
-		[
-			blockId,
-			blockRevision,
-			canReadHistoryAttribution,
-			historyController,
-			historyState,
-			multiplayerState,
-		],
-	);
+		return {
+			attributions: historyController.getCharacterAttribution(blockId),
+			blameRanges: historyController.getBlameRanges(blockId),
+		};
+	}, [
+		blockId,
+		blockRevision,
+		canReadHistoryAttribution,
+		historyController,
+		historyState,
+		multiplayerState,
+	]);
 }
 
 function isHistoryAttributionController(

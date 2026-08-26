@@ -34,12 +34,3 @@ export interface LayoutProps {
   minHeight?: string;
   overflow?: "visible" | "hidden" | "auto";
 }
-
-export interface LayoutChildProps {
-  flex?: string;
-  alignSelf?: "start" | "center" | "end" | "stretch";
-  order?: number;
-  gridColumn?: string;
-  gridRow?: string;
-  colSpan?: number;
-}

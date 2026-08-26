@@ -4,8 +4,8 @@ import { hasSelection, isCollapsed } from "./guards";
 export const defaultAICommands: AICommandBinding[] = [
 	{
 		id: "ai:rewrite",
-		label: "Rewrite",
-		description: "Rewrite the selected text",
+		label: "pen.ai.command.rewrite",
+		description: "pen.ai.command.rewrite.description",
 		group: "edit",
 		target: "selection",
 		prompt: (ctx) =>
@@ -14,8 +14,8 @@ export const defaultAICommands: AICommandBinding[] = [
 	},
 	{
 		id: "ai:continue",
-		label: "Continue writing",
-		description: "Continue writing from the current position",
+		label: "pen.ai.command.continue",
+		description: "pen.ai.command.continue.description",
 		group: "generate",
 		target: "block",
 		prompt: (ctx) => {
@@ -27,17 +27,18 @@ export const defaultAICommands: AICommandBinding[] = [
 	},
 	{
 		id: "ai:summarize",
-		label: "Summarize",
-		description: "Summarize the selected text",
+		label: "pen.ai.command.summarize",
+		description: "pen.ai.command.summarize.description",
 		group: "edit",
 		target: "selection",
-		prompt: (ctx) => `Summarize the following text concisely:\n\n${ctx.selectedText}`,
+		prompt: (ctx) =>
+			`Summarize the following text concisely:\n\n${ctx.selectedText}`,
 		guard: hasSelection,
 	},
 	{
 		id: "ai:fix-grammar",
-		label: "Fix grammar",
-		description: "Fix grammar and spelling",
+		label: "pen.ai.command.fixGrammar",
+		description: "pen.ai.command.fixGrammar.description",
 		group: "edit",
 		target: "selection",
 		prompt: (ctx) =>
@@ -46,8 +47,8 @@ export const defaultAICommands: AICommandBinding[] = [
 	},
 	{
 		id: "ai:simplify",
-		label: "Simplify",
-		description: "Make the text simpler and more concise",
+		label: "pen.ai.command.simplify",
+		description: "pen.ai.command.simplify.description",
 		group: "edit",
 		target: "selection",
 		prompt: (ctx) =>
@@ -56,8 +57,8 @@ export const defaultAICommands: AICommandBinding[] = [
 	},
 	{
 		id: "ai:expand",
-		label: "Expand",
-		description: "Expand the text with more detail",
+		label: "pen.ai.command.expand",
+		description: "pen.ai.command.expand.description",
 		group: "generate",
 		target: "selection",
 		prompt: (ctx) =>
@@ -66,8 +67,8 @@ export const defaultAICommands: AICommandBinding[] = [
 	},
 	{
 		id: "ai:translate",
-		label: "Translate",
-		description: "Translate to another language",
+		label: "pen.ai.command.translate",
+		description: "pen.ai.command.translate.description",
 		group: "edit",
 		target: "selection",
 		prompt: (ctx) =>

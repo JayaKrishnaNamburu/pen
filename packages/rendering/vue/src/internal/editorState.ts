@@ -1,17 +1,21 @@
-import { emptyDecorationSet, getNumberedListItemValue } from "@pen/core";
-import { getExpandedBlockRole } from "@pen/dom/field-editor";
+import {
+  affectedBlockIdsFromSummary,
+  getNumberedListItemValue,
+  isBlockSelected as isBlockIdInSelection,
+} from "@input/pen-core";
+import { getExpandedBlockRole } from "@input/pen-dom/field-editor";
 import type {
   FieldEditorStore,
   FieldEditorStoreSnapshot,
-} from "@pen/dom/field-editor/store";
-import { getParentIdChildBlockIds } from "@pen/dom/utils/parentIdTree";
+} from "@input/pen-dom/field-editor/store";
+import { computeDocumentPlaceholderVisible } from "@input/pen-dom/utils/editorEmptyState";
+import { getParentIdChildBlockIds } from "@input/pen-dom/utils/parentIdTree";
 import type {
-  CellSelection,
   Decoration,
-  DecorationSet,
   Editor,
+  ReadonlySelectionState,
   TableCellHandle,
-} from "@pen/types";
+} from "@input/pen-types";
 import { useExternalStore } from "./useExternalStore";
 
 interface BlockTextDelta {
@@ -19,19 +23,19 @@ interface BlockTextDelta {
   attributes?: Readonly<Record<string, unknown>>;
 }
 
-export interface BlockTextSnapshot {
+interface BlockTextSnapshot {
   exists: boolean;
   text: string;
   deltas: readonly BlockTextDelta[];
 }
 
-export interface CellTextSnapshot {
+interface CellTextSnapshot {
   exists: boolean;
   text: string;
   deltas: readonly BlockTextDelta[];
 }
 
-export interface BlockModelSnapshot {
+interface BlockModelSnapshot {
   exists: boolean;
   id: string;
   type: string | null;
@@ -59,14 +63,14 @@ const EMPTY_FIELD_EDITOR_STATE: FieldEditorStoreSnapshot = {
 
 export function useDocumentEmptyState(editor: Editor) {
   return useExternalStore(
-    (callback) => editor.onDocumentCommit(() => callback()),
+    (callback) => editor.on("commit", () => callback()),
     () => editor.documentState.isEmpty,
   );
 }
 
 export function useDocumentPlaceholderState(editor: Editor) {
   return useExternalStore(
-    (callback) => editor.onDocumentCommit(() => callback()),
+    (callback) => editor.on("commit", () => callback()),
     () => computeDocumentPlaceholderVisible(editor),
   );
 }
@@ -74,8 +78,8 @@ export function useDocumentPlaceholderState(editor: Editor) {
 export function useBlockTextSnapshot(editor: Editor, blockId: string) {
   return useExternalStore(
     (callback) =>
-      editor.onDocumentCommit((event) => {
-        if (event.affectedBlocks.includes(blockId)) {
+      editor.on("commit", (event) => {
+        if (affectedBlockIdsFromSummary(event.summary).includes(blockId)) {
           callback();
         }
       }),
@@ -92,8 +96,8 @@ export function useCellTextSnapshot(
 ) {
   return useExternalStore(
     (callback) =>
-      editor.onDocumentCommit((event) => {
-        if (event.affectedBlocks.includes(tableBlockId)) {
+      editor.on("commit", (event) => {
+        if (affectedBlockIdsFromSummary(event.summary).includes(tableBlockId)) {
           callback();
         }
       }),
@@ -105,8 +109,8 @@ export function useCellTextSnapshot(
 export function useBlockModel(editor: Editor, blockId: string) {
   return useExternalStore(
     (callback) =>
-      editor.onDocumentCommit((event) => {
-        if (event.affectedBlocks.includes(blockId)) {
+      editor.on("commit", (event) => {
+        if (affectedBlockIdsFromSummary(event.summary).includes(blockId)) {
           callback();
         }
       }),
@@ -136,7 +140,7 @@ export function useBlockModel(editor: Editor, blockId: string) {
 
 export function useParentIdChildBlockIds(editor: Editor, parentBlockId: string) {
   return useExternalStore(
-    (callback) => editor.onDocumentCommit(() => callback()),
+    (callback) => editor.on("commit", () => callback()),
     () => [...getParentIdChildBlockIds(editor, parentBlockId)],
     stringArrayEqual,
   );
@@ -159,36 +163,15 @@ export function useFieldEditorState(fieldEditor: FieldEditorStore | null) {
 }
 
 export function isBlockSelected(
-  selection:
-    | {
-        type: string;
-        blockIds?: readonly string[];
-        blockRange?: readonly string[];
-      }
-    | null,
+  editor: Editor,
+  selection: ReadonlySelectionState,
   blockId: string,
 ): boolean {
-  return (
-    (selection?.type === "block" &&
-      Array.isArray(selection.blockIds) &&
-      selection.blockIds.includes(blockId)) ||
-    (selection?.type === "text" &&
-      Array.isArray(selection.blockRange) &&
-      selection.blockRange.includes(blockId))
+  return isBlockIdInSelection(
+    editor.documentState.blockOrder,
+    selection,
+    blockId,
   );
-}
-
-export function isCellInSelection(
-  selection: Pick<CellSelection, "anchor" | "head">,
-  row: number,
-  col: number,
-): boolean {
-  const minRow = Math.min(selection.anchor.row, selection.head.row);
-  const maxRow = Math.max(selection.anchor.row, selection.head.row);
-  const minCol = Math.min(selection.anchor.col, selection.head.col);
-  const maxCol = Math.max(selection.anchor.col, selection.head.col);
-
-  return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
 }
 
 export function resolveExpandedSurfaceRole(
@@ -207,37 +190,6 @@ export function resolveExpandedSurfaceRole(
 
 export function resolveNumberedListValue(editor: Editor, blockId: string): number {
   return getNumberedListItemValue(editor.getBlock(blockId)) ?? 1;
-}
-
-export function getBlockInlineDecorations(
-  decorations: readonly Decoration[],
-): DecorationSet["decorations"] {
-  return decorations.filter(
-    (decoration) => decoration.type === "inline",
-  );
-}
-
-function computeDocumentPlaceholderVisible(editor: Editor): boolean {
-  const { blockOrder } = editor.documentState;
-  if (blockOrder.length === 0) {
-    return true;
-  }
-  if (blockOrder.length > 1) {
-    return false;
-  }
-
-  const block = editor.getBlock(blockOrder[0] ?? "");
-  if (!block) {
-    return true;
-  }
-
-  const schema = editor.schema.resolve(block.type);
-  if (!schema || schema.content !== "inline" || schema.fieldEditor === "none") {
-    return false;
-  }
-
-  const text = block.textContent();
-  return !text || text === "\u200B";
 }
 
 function getBlockTextSnapshot(editor: Editor, blockId: string): BlockTextSnapshot {
@@ -264,7 +216,7 @@ function getCellTextSnapshot(
     return EMPTY_BLOCK_TEXT_SNAPSHOT;
   }
 
-  const cell: TableCellHandle | null = block.tableCell(row, col);
+  const cell: TableCellHandle | null = block.as("table")?.tableCell(row, col) ?? null;
   if (!cell) {
     return EMPTY_BLOCK_TEXT_SNAPSHOT;
   }
@@ -389,4 +341,3 @@ function shallowEqual(
   return true;
 }
 
-export { emptyDecorationSet };

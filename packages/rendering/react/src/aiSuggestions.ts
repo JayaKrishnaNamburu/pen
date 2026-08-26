@@ -1,3 +1,5 @@
+"use client";
+
 export {
 	AISuggestionsRoot,
 	AISuggestionsPopover,
@@ -15,4 +17,4 @@ export type {
 	AISuggestionGroup,
 	AISuggestionsMetrics,
 	AISuggestionsState,
-} from "@pen/ai-suggestions";
+} from "@input/pen-ai/suggestions";

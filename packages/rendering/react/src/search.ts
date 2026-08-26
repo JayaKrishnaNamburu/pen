@@ -1,3 +1,5 @@
+"use client";
+
 export {
 	SearchRoot,
 	SearchInput,
@@ -26,4 +28,4 @@ export type {
 	SearchMatch,
 	SearchOptions,
 	SearchState,
-} from "@pen/search";
+} from "@input/pen-search";

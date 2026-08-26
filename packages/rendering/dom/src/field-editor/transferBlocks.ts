@@ -1,8 +1,9 @@
-import type { Block, DocumentOp, Editor, Position } from "@pen/types";
+import type { DocumentOp, Editor, Position } from "@input/pen-types";
 import type { FieldEditorTransferController } from "./controller";
 import type { Delta, PenBlock } from "../utils/clipboardPayload";
 import type { TransferCursorContext } from "./transferSelection";
 import { getInsertSiblingBlockOp } from "../utils/parentIdTree";
+import { generateId } from "@input/pen-types";
 
 export function pasteBlocks(
 	blocks: PenBlock[],
@@ -37,7 +38,13 @@ export function pasteBlocks(
 			return;
 		}
 		if (typeof single.content === "string") {
-			pasteInlineText(editor, fieldEditor, single.content, cursor, options);
+			pasteInlineText(
+				editor,
+				fieldEditor,
+				single.content,
+				cursor,
+				options,
+			);
 		}
 		return;
 	}
@@ -51,32 +58,31 @@ export function pasteBlocks(
 
 	for (const block of valid) {
 		const schema = editor.schema.resolve(block.type!)!;
-		const blockId = crypto.randomUUID();
-		const insertBlockOp =
-			previousBlockId
-				? ({
+		const blockId = generateId();
+		const insertBlockOp = previousBlockId
+			? ({
 					type: "insert-block",
 					blockId,
 					blockType: block.type!,
 					props: block.props ?? {},
 					position: { after: previousBlockId } as Position,
 				} as DocumentOp)
-				: cursor
-					? shouldReplaceEmpty
-						? ({
+			: cursor
+				? shouldReplaceEmpty
+					? ({
 							type: "insert-block",
 							blockId,
 							blockType: block.type!,
 							props: block.props ?? {},
 							position: { before: cursor.blockId } as Position,
 						} as DocumentOp)
-						: getInsertSiblingBlockOp(editor, {
+					: getInsertSiblingBlockOp(editor, {
 							siblingBlockId: cursor.blockId,
 							blockId,
 							blockType: block.type!,
 							props: block.props ?? {},
 						})
-					: ({
+				: ({
 						type: "insert-block",
 						blockId,
 						blockType: block.type!,
@@ -89,7 +95,9 @@ export function pasteBlocks(
 		if (schema.content === "inline") {
 			const deltas = getPenBlockInlineDeltas(block);
 			lastContentLength =
-				deltas.length > 0 ? appendInlineContentOps(ops, blockId, deltas) : 0;
+				deltas.length > 0
+					? appendInlineContentOps(ops, blockId, deltas)
+					: 0;
 		} else if (schema.content === "table" && block.children) {
 			appendTableChildrenOps(ops, blockId, block.children);
 			lastContentLength = 0;
@@ -137,7 +145,15 @@ export function pasteInlineText(
 	if (lines.length === 1) {
 		const insertedText = lines[0];
 		editor.apply(
-			[{ type: "insert-text", blockId, offset, text: insertedText }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: offset,
+					to: offset,
+					insert: insertedText,
+				},
+			],
 			{
 				origin: "user",
 				...(options?.undoGroup === false ? {} : { undoGroup: true }),
@@ -154,16 +170,24 @@ export function pasteInlineText(
 	const ops: DocumentOp[] = [];
 	const firstLine = lines[0];
 	if (firstLine) {
-		ops.push({ type: "insert-text", blockId, offset, text: firstLine });
+		ops.push({
+			type: "splice-text",
+			blockId,
+			from: offset,
+			to: offset,
+			insert: firstLine,
+		});
 	}
 
-	const tailText = editor.getBlock(blockId)?.textContent().slice(offset) ?? "";
+	const tailText =
+		editor.getBlock(blockId)?.textContent().slice(offset) ?? "";
 	if (tailText) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId,
-			offset: offset + (firstLine?.length ?? 0),
-			length: tailText.length,
+			from: offset + (firstLine?.length ?? 0),
+			to: offset + (firstLine?.length ?? 0) + tailText.length,
+			insert: "",
 		});
 	}
 
@@ -172,33 +196,34 @@ export function pasteInlineText(
 	let lastInsertedTextLength = offset + (firstLine?.length ?? 0);
 
 	for (let i = 1; i < lines.length; i++) {
-		const newId = crypto.randomUUID();
+		const newId = generateId();
 		const isLast = i === lines.length - 1;
 		const lineText = isLast ? lines[i] + tailText : lines[i];
 
 		ops.push({
 			...(previousBlockId === blockId
 				? getInsertSiblingBlockOp(editor, {
-					siblingBlockId: previousBlockId,
-					blockId: newId,
-					blockType,
-					props: {},
-				})
+						siblingBlockId: previousBlockId,
+						blockId: newId,
+						blockType,
+						props: {},
+					})
 				: {
-					type: "insert-block",
-					blockId: newId,
-					blockType,
-					props: {},
-					position: { after: previousBlockId },
-				}),
+						type: "insert-block",
+						blockId: newId,
+						blockType,
+						props: {},
+						position: { after: previousBlockId },
+					}),
 		});
 
 		if (lineText) {
 			ops.push({
-				type: "insert-text",
+				type: "splice-text",
 				blockId: newId,
-				offset: 0,
-				text: lineText,
+				from: 0,
+				to: 0,
+				insert: lineText,
 			});
 		}
 
@@ -239,12 +264,13 @@ function pasteInlineFragment(
 	const ops: DocumentOp[] = [];
 	let offset = cursor.offset;
 	for (const delta of deltas) {
-		if (!delta.insert) continue;
+		if (typeof delta.insert !== "string" || !delta.insert) continue;
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: cursor.blockId,
-			offset,
-			text: delta.insert,
+			from: offset,
+			to: offset,
+			insert: delta.insert,
 			...(delta.attributes ? { marks: delta.attributes } : {}),
 		});
 		offset += delta.insert.length;
@@ -285,12 +311,13 @@ function appendInlineContentOps(
 	let offset = 0;
 
 	for (const delta of deltas) {
-		if (!delta.insert) continue;
+		if (typeof delta.insert !== "string" || !delta.insert) continue;
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset,
-			text: delta.insert,
+			from: offset,
+			to: offset,
+			insert: delta.insert,
 			...(delta.attributes ? { marks: delta.attributes } : {}),
 		});
 		offset += delta.insert.length;
@@ -300,7 +327,9 @@ function appendInlineContentOps(
 }
 
 function deltasToPlainText(deltas: Delta[]): string {
-	return deltas.map((delta) => delta.insert).join("");
+	return deltas
+		.map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
+		.join("");
 }
 
 function hasAttributedDeltas(deltas: Delta[]): boolean {
@@ -312,42 +341,42 @@ function hasAttributedDeltas(deltas: Delta[]): boolean {
 function appendTableChildrenOps(
 	ops: DocumentOp[],
 	blockId: string,
-	children: Block[],
+	children: readonly PenBlock[],
 ): void {
 	const tableRows = children.filter((child) => child.type === "__table_row");
 	for (let rowIdx = 0; rowIdx < tableRows.length; rowIdx++) {
 		const row = tableRows[rowIdx];
 		const cells = (row.children ?? []).filter(
-			(cell: Block) => cell.type === "__table_cell",
+			(cell) => cell.type === "__table_cell",
 		);
 
 		if (rowIdx > 0) {
 			ops.push({
-				type: "insert-table-row",
+				type: "grid",
 				blockId,
-				index: rowIdx,
-			} as DocumentOp);
+				change: { kind: "insert-row", index: rowIdx },
+			});
 		}
 
 		for (let colIdx = 0; colIdx < cells.length; colIdx++) {
 			if (rowIdx === 0 && colIdx > 0) {
 				ops.push({
-					type: "insert-table-column",
+					type: "grid",
 					blockId,
-					index: colIdx,
-				} as DocumentOp);
+					change: { kind: "insert-column", index: colIdx },
+				});
 			}
 
 			const cellContent = cells[colIdx].content;
 			if (cellContent) {
 				ops.push({
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId,
-					row: rowIdx,
-					col: colIdx,
-					offset: 0,
-					text: cellContent,
-				} as DocumentOp);
+					cell: { row: rowIdx, col: colIdx },
+					from: 0,
+					to: 0,
+					insert: cellContent,
+				});
 			}
 		}
 	}

@@ -1,5 +1,5 @@
-import { FieldEditorImpl } from "@pen/dom";
-import type { FieldEditorStore } from "@pen/dom/field-editor/store";
+import { FieldEditorImpl } from "@input/pen-dom";
+import type { FieldEditorStore } from "@input/pen-dom/field-editor/store";
 import { inject, provide, type InjectionKey } from "vue";
 
 export type VueFieldEditor = FieldEditorImpl & FieldEditorStore;

@@ -1,26 +1,59 @@
 import type { Block } from "./block";
-import type { SelectionState } from "./selection";
+import type {
+	SelectionOrigin,
+	SelectionRecord,
+	SelectionState,
+} from "./selection";
 import type {
 	CRDTAdapter,
 	CRDTDocument,
-	CRDTEvent,
 	PenDocument,
 	Awareness,
 	DocumentSession,
 	DocumentScope,
 	DocumentProfile,
 } from "./crdt";
-import type { DocumentOp, OpOrigin, ApplyOptions } from "./ops";
+import type { EditorAnchors } from "./anchors";
+import type { ChangeSummary, Point } from "./changes";
+import type { Facet, FacetOutput } from "./facets";
+import type {
+	DocumentOp,
+	OpOrigin,
+	ApplyOptions,
+	StructuredOpOrigin,
+} from "./ops";
 import type { Decoration, DecorationSet } from "./decorations";
 import type { Extension } from "./extension";
 import type { BlockHandle, AppHandle } from "./handles";
 import type { Unsubscribe } from "./utility";
 import type { SchemaRegistry } from "./schema";
 import type { AssetProvider } from "./persistence";
+import type { A11yLabel } from "./a11y";
+import type { MessageCatalog } from "./messages";
 
 export type EditorViewMode = DocumentProfile;
 
+/** Named commit-pipeline phases (`06-commit-pipeline.md`). */
+export type PipelinePhase =
+	| "hooks"
+	| "validate"
+	| "execute"
+	| "normalize"
+	| "summarize"
+	| "map-selection"
+	| "settle-facets"
+	| "emit";
+
 export type InteractionModel = "content-first" | "block-first";
+
+/**
+ * Which rung `Mod-a` enters the T1 select-all ladder on
+ * (`spec/rules/selection.md` T1).
+ *
+ * `"block-first"` starts at the active block and escalates on each press.
+ * `"document-first"` enters at the top rung, so one press covers all content.
+ */
+export type SelectAllBehavior = "document-first" | "block-first";
 
 // ── Document State ──────────────────────────────────────────
 
@@ -92,13 +125,21 @@ export interface HistoryAppliedEvent {
 	requestId: number;
 }
 
-export interface DocumentCommitEvent {
-	commitId: number;
-	ops: readonly DocumentOp[];
-	origin: OpOrigin;
-	affectedBlocks: string[];
-	blockRevisions: Readonly<Record<string, number>>;
-	scope?: DocumentScope;
+export type CommitEventSource = "apply" | "remote" | "undo" | "redo" | "stream";
+
+/** Dropped ops and validation failures for one commit (`06-commit-pipeline.md`). */
+export type Diagnostic = DiagnosticEvent;
+
+export type { SelectionRecord };
+
+export interface CommitEvent {
+	readonly commitId: number;
+	readonly origin: StructuredOpOrigin;
+	readonly summary: ChangeSummary;
+	readonly selectionBefore: SelectionRecord;
+	readonly selectionAfter: SelectionRecord;
+	readonly source: CommitEventSource;
+	readonly diagnostics: readonly Diagnostic[];
 }
 
 // ── Schema Engine ───────────────────────────────────────────
@@ -107,6 +148,8 @@ export interface SchemaEngine {
 	markDirty(blockId: string): void;
 	normalizeDirty(): void;
 	normalizeAll(): void;
+	deferBlock(blockId: string): void;
+	undeferBlock(blockId: string): void;
 }
 
 // ── Diagnostic Events ───────────────────────────────────────
@@ -125,13 +168,13 @@ export interface DiagnosticEvent {
 
 export interface DocumentValidationError {
 	code:
-	| "MISSING_SHARED_TYPE"
-	| "INVALID_BLOCK_STRUCTURE"
-	| "ORPHAN_BLOCK"
-	| "DUPLICATE_BLOCK_ORDER"
-	| "UNKNOWN_CONTENT_TYPE"
-	| "MISSING_BLOCK_MAP_KEY"
-	| "INVALID_SUBDOCUMENT";
+		| "MISSING_SHARED_TYPE"
+		| "INVALID_BLOCK_STRUCTURE"
+		| "ORPHAN_BLOCK"
+		| "DUPLICATE_BLOCK_ORDER"
+		| "UNKNOWN_CONTENT_TYPE"
+		| "MISSING_BLOCK_MAP_KEY"
+		| "INVALID_SUBDOCUMENT";
 	blockId?: string;
 	message: string;
 	severity: "error" | "warning";
@@ -140,14 +183,13 @@ export interface DocumentValidationError {
 // ── Editor Events ───────────────────────────────────────────
 
 export interface PenEventMap {
-	change: (events: CRDTEvent[]) => void;
-	documentCommit: (event: DocumentCommitEvent) => void;
+	commit: (event: CommitEvent) => void;
 	historyApplied: (event: HistoryAppliedEvent) => void;
 	decorationsChange: (generation: number) => void;
-	selectionChange: (selection: SelectionState) => void;
+	selectionChange: (record: SelectionRecord) => void;
 	diagnostic: (event: DiagnosticEvent) => void;
 	"crdt:corruption": (errors: DocumentValidationError[]) => void;
-	"crdt:recovered": (method: "snapshot" | "repair" | "reimport") => void;
+	"crdt:recovered": (method: "snapshot" | "repair") => void;
 }
 
 // ── Hook Priority Constants ─────────────────────────────────
@@ -166,6 +208,7 @@ export interface EditorPresetContext {
 
 export interface EditorPresetResult {
 	extensions?: Extension[];
+	schema?: SchemaRegistry;
 }
 
 export interface EditorPreset {
@@ -176,8 +219,6 @@ export interface CreateEditorOptions {
 	schema?: SchemaRegistry;
 	preset?: EditorPreset;
 	extensions?: Extension[];
-	/** @deprecated Prefer `preset` for default feature composition. */
-	without?: string[];
 	crdt?: CRDTAdapter;
 	assets?: AssetProvider;
 	document?: CRDTDocument;
@@ -185,6 +226,9 @@ export interface CreateEditorOptions {
 	documentScopeId?: string;
 	documentProfile?: DocumentProfile;
 	editorViewMode?: EditorViewMode;
+	locale?: string;
+	messages?: Partial<MessageCatalog>;
+	a11yLabel?: A11yLabel;
 }
 
 // ── Command Context ─────────────────────────────────────────
@@ -204,7 +248,10 @@ export interface InlineCompletionSuggestion {
 	blockType?: string;
 	props?: Record<string, unknown>;
 	previewBlocks?: readonly InlineCompletionPreviewBlock[];
-	accept?: (editor: Editor, suggestion: InlineCompletionSuggestion) => boolean;
+	accept?: (
+		editor: Editor,
+		suggestion: InlineCompletionSuggestion,
+	) => boolean;
 }
 
 export interface InlineCompletionPreviewBlock {
@@ -231,19 +278,43 @@ export interface InlineCompletionController {
 
 // ── Editor Interface ────────────────────────────────────────
 
+export interface TextStreamWriter {
+	append(text: string, marks?: Record<string, unknown>): void;
+	splice(from: number, to: number, text: string): void;
+	readonly position: Point;
+	flush(): void;
+	close(): void;
+	abort(): void;
+}
+
+export interface OpenTextStreamOptions {
+	origin: OpOrigin;
+	flushIntervalMs?: number;
+	deferNormalization?: boolean;
+}
+
 export interface Editor {
 	apply(ops: DocumentOp[], options?: ApplyOptions): void;
+	openTextStream(
+		target: { blockId: string },
+		options: OpenTextStreamOptions,
+	): TextStreamWriter;
 	loadDocument(doc: CRDTDocument): void;
 
 	onBeforeApply(
 		hook: (ops: DocumentOp[], options: ApplyOptions) => DocumentOp[],
 		options?: { priority?: number },
 	): Unsubscribe;
+	facet<F extends Facet<unknown, unknown>>(facet: F): FacetOutput<F>;
+	whenReady(): Promise<void>;
 
 	readonly schema: SchemaRegistry;
 	readonly selection: SelectionState;
+	/** CRDT-relative positions that survive commits (AN1–AN14). */
+	readonly anchors: EditorAnchors;
 	readonly documentState: DocumentState;
 	readonly internals: EditorInternals;
+	readonly lastChangeSummary: ChangeSummary | null;
 	readonly clientId: number;
 	readonly documentScope: DocumentScope;
 	readonly documentProfile: DocumentProfile;
@@ -256,7 +327,10 @@ export interface Editor {
 	blockCount(): number;
 	getBlockRevision(blockId: string): number;
 
-	setSelection(selection: SelectionState): void;
+	setSelection(
+		selection: SelectionState,
+		options?: { origin?: SelectionOrigin },
+	): void;
 	getSelection(): SelectionState;
 	selectBlock(blockId: string): void;
 	selectBlocks(blockIds: string[]): void;
@@ -271,7 +345,7 @@ export interface Editor {
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
 	): void;
-	selectAll(): void;
+	selectAll(behavior?: SelectAllBehavior): void;
 
 	getSelectedText(): string;
 	getSelectedBlocks(): BlockHandle[];
@@ -282,7 +356,6 @@ export interface Editor {
 	getDecorations(): DecorationSet;
 	scrollToBlock?(blockId: string): void;
 
-	onDocumentCommit(callback: PenEventMap["documentCommit"]): Unsubscribe;
 	onSelectionChange(callback: PenEventMap["selectionChange"]): Unsubscribe;
 	onHistoryApplied(callback: PenEventMap["historyApplied"]): Unsubscribe;
 
@@ -290,14 +363,27 @@ export interface Editor {
 		event: K,
 		handler: PenEventMap[K],
 	): Unsubscribe;
-	on(event: string, handler: (...args: unknown[]) => void): Unsubscribe;
+	// Extension-namespaced channel emitted by extensionManager as
+	// `ext:<name>:<event>`. Deliberately narrower than `string`: a plain string
+	// overload also accepts deleted and misspelled core event names, which then
+	// fail silently at runtime instead of compiling.
+	on(
+		event: `ext:${string}:${string}`,
+		handler: (...args: unknown[]) => void,
+	): Unsubscribe;
 
 	readonly undoManager: UndoManager;
 
 	getExtensionState<T>(name: string): T | undefined;
 
 	normalizeAll(): void;
-	destroy(): void;
+	/**
+	 * Deactivates extensions and tears down observation. Does not destroy an
+	 * attached field editor — hosts own that call. The returned promise
+	 * settles when queued teardown finishes; callers that ignore it stay
+	 * correct.
+	 */
+	destroy(): Promise<void>;
 }
 
 export interface EditorInternals {
@@ -313,6 +399,7 @@ export interface EditorInternals {
 		event: K,
 		...args: Parameters<PenEventMap[K]>
 	): void;
+	hasListeners<K extends keyof PenEventMap>(event: K): boolean;
 	onApplyBoundary(
 		hook: (event: {
 			phase: "before" | "after";
@@ -321,8 +408,8 @@ export interface EditorInternals {
 			applied: boolean;
 		}) => void,
 	): Unsubscribe;
-	getSlot<T>(key: string): T | undefined;
-	setSlot(key: string, value: unknown): void;
+	onPipelinePhase(listener: (phase: PipelinePhase) => void): Unsubscribe;
+	assignSlot: (key: string, value: unknown) => void;
 	getBlockText(blockId: string): unknown;
 	getCellText(blockId: string, row: number, col: number): unknown;
 }

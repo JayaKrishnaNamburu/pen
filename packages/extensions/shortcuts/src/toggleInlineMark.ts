@@ -1,18 +1,35 @@
+import {
+	fieldEditorHostFacet,
+	isCollapsed,
+	selectionToRange,
+} from "@input/pen-core";
 import type {
 	DocumentOp,
 	Editor,
 	FieldEditor,
 	TextSelection,
-} from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY, supportsInlineMarks } from "@pen/types";
+} from "@input/pen-types";
 
+/**
+ * Toggle an inline mark over the current text selection, returning
+ * whether the toggle was expressible. The mark is removed only when
+ * every character in range already carries it; a partially marked range
+ * gains the mark instead, which is what makes repeated presses
+ * converge. On a collapsed selection there is no text to format, so the
+ * mark becomes a pending mark on the attached field editor and applies
+ * to the next typed character.
+ *
+ * Returns `false` when the selection is not text, the mark is not in the
+ * schema, or a collapsed toggle has no rich-text field editor to hold
+ * the pending mark.
+ */
 export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	const selection = editor.selection;
 	if (!selection || selection.type !== "text") return false;
 	if (!editor.schema.resolveInline(markType)) return false;
 
 	const fieldEditor = getAttachedFieldEditor(editor);
-	if (selection.isCollapsed) {
+	if (isCollapsed(selection)) {
 		if (
 			!fieldEditor ||
 			fieldEditor.inputMode !== "richtext" ||
@@ -33,8 +50,8 @@ export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	return true;
 }
 
-export function getAttachedFieldEditor(editor: Editor): FieldEditor | null {
-	return editor.internals.getSlot<FieldEditor>(FIELD_EDITOR_SLOT_KEY) ?? null;
+function getAttachedFieldEditor(editor: Editor): FieldEditor | null {
+	return (editor.facet(fieldEditorHostFacet) as FieldEditor | null) ?? null;
 }
 
 function isInlineMarkEditableBlock(editor: Editor, blockId: string): boolean {
@@ -42,7 +59,9 @@ function isInlineMarkEditableBlock(editor: Editor, blockId: string): boolean {
 	if (!block) return false;
 
 	const schema = editor.schema.resolve(block.type);
-	return supportsInlineMarks(schema);
+	if (!schema) return false;
+	if (schema.fieldEditor && schema.fieldEditor !== "richtext") return false;
+	return schema.content === "inline";
 }
 
 function getBlockTextLength(editor: Editor, blockId: string): number {
@@ -53,7 +72,7 @@ function getSelectionSegments(
 	editor: Editor,
 	selection: TextSelection,
 ): Array<{ blockId: string; start: number; end: number }> {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	const blockIds = range.blockRange;
 	const segments: Array<{ blockId: string; start: number; end: number }> = [];
 
@@ -103,6 +122,17 @@ function hasMarkAcrossSegments(
 	return true;
 }
 
+/**
+ * Set an inline mark to an explicit value over the current text
+ * selection, or clear it with `null`. Unlike
+ * {@link toggleInlineMark} this does not read the existing marks, so it
+ * suits marks carrying attributes a caller already holds — a link href,
+ * a comment id — where toggling would discard them.
+ *
+ * Returns `false` when the selection is collapsed, is not text, or the
+ * mark is not in the schema: there is no pending-mark equivalent for a
+ * value the caller chose.
+ */
 export function setInlineMark(
 	editor: Editor,
 	markType: string,
@@ -113,7 +143,7 @@ export function setInlineMark(
 	if (!editor.schema.resolveInline(markType)) return false;
 
 	const fieldEditor = getAttachedFieldEditor(editor);
-	if (selection.isCollapsed) {
+	if (isCollapsed(selection)) {
 		return false;
 	}
 
@@ -134,8 +164,8 @@ function buildFormatTextOps(
 	return segments.map((segment) => ({
 		type: "format-text",
 		blockId: segment.blockId,
-		offset: segment.start,
-		length: segment.end - segment.start,
+		from: segment.start,
+		to: segment.end,
 		marks: { [markType]: nextValue },
 	}));
 }

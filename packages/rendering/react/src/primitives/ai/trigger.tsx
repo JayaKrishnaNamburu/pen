@@ -15,13 +15,9 @@ export function AITrigger(props: AITriggerProps) {
 		onClick: () => controller?.openCommandMenu(),
 	};
 
-	return renderAsChild(
-		triggerProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-trigger": "",
-			"data-open": state.commandMenuOpen ? "" : undefined,
-		},
-	);
+	return renderAsChild(triggerProps, "button", {
+		type: "button",
+		"data-pen-ai-trigger": "",
+		"data-open": state.commandMenuOpen ? "" : undefined,
+	});
 }

@@ -1,4 +1,4 @@
-# @pen/preset-default
+# @input/pen-preset-default
 
 ## Purpose
 
@@ -16,26 +16,26 @@ Package the standard runtime stack for most adopters so they can start from a co
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/delta-stream`, `@pen/document-ops`, `@pen/shortcuts`, `@pen/types`, `@pen/undo`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-document-ops`, `@input/pen-interop`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Presets compose existing runtime packages rather than becoming new architecture layers.
 
 ## Data Flow / Runtime Model
 
-Preset composition packages in Pen should stay package-first and explicit about ownership. Use `defaultPreset()` when the standard Pen runtime is the right baseline.
+`defaultPreset()` is the only batteries-included composition path. Bare `createEditor()` installs neither this stack nor a schema.
 
-The default preset composes document tools, delta stream, undo, and rich-text shortcuts. Hosts can turn individual defaults off or pass typed options to the composed extension packages; hosts that need full control should skip the preset and register extensions explicitly through `createEditor({ extensions: [...] })`.
+The preset's `resolve()` returns `createDefaultSchema()` plus, unless turned off, `documentOpsExtension()`, `deltaStreamExtension()` from `@input/pen-ai/stream`, `undoExtension()`, and `richTextShortcutsExtension()`. It always also installs `htmlClipboardExtension()` (`name: "html-clipboard"`), which `assignSlot`s `{ html: htmlImporter }` onto `paste:importers` so HTML paste works without a renderer-owned importer. That clipboard extension is on by default and opts out through `htmlClipboard: false`, like the other members of `DefaultPresetOptions` (`documentOps`, `deltaStream`, `undo`, `shortcuts`). Hosts can turn the defaults off or pass typed options to the composed packages. Hosts that need full control should skip the preset and register extensions explicitly through `createEditor({ extensions: [...] })`.
 
 ## Integration Notes
 
 - Path in workspace: `packages/presets/default`
 - Spec path mirrors workspace path: `packages/presets/default.md`
 - This package is part of the current package surface and should stay aligned with the headless runtime architecture.
-- Prefer `createEditor({ preset: defaultPreset(...) })` over the deprecated `createEditor({ without })` shape when customizing default feature composition.
+- Use `createEditor({ preset: defaultPreset(...) })` when a host wants the standard rich-text stack. Do not assume `createEditor()` already includes shortcuts or the stream extension. React and Vue `useEditor()` inject `defaultSchema` only; they still do not call this preset.
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

@@ -1,5 +1,5 @@
-import type { Editor, OpOrigin } from "@pen/types";
-import type { DocumentOp } from "@pen/types";
+import type { Editor, OpOrigin } from "@input/pen-types";
+import type { DocumentOp } from "@input/pen-types";
 import type { GenerationState, AISession } from "../types";
 import { applySuggestedAIOperations } from "../suggestions/applySuggestedAIOperations";
 import { AI_SESSION_SUGGESTION_ORIGIN } from "../suggestions/suggestMode";
@@ -28,16 +28,9 @@ export class SuggestedAIOperationRunner {
 			undoGroupId?: string;
 		},
 	): void {
-		const session =
-			sessionId != null ? this.options.getSession(sessionId) : null;
 		const activeGeneration = this.options.getActiveGeneration();
 		const undoGroupId =
-			options?.undoGroupId ??
-			(session?.surface === "bottom-chat" &&
-			activeGeneration != null &&
-			activeGeneration.sessionId === sessionId
-				? activeGeneration.undoGroupId
-				: undefined);
+			options?.undoGroupId ?? activeGeneration?.undoGroupId;
 
 		applySuggestedAIOperations(this.options.editor, {
 			operations,
@@ -50,7 +43,7 @@ export class SuggestedAIOperationRunner {
 			sessionId,
 			suggestionIds: options?.suggestionIds,
 			turnId: options?.turnId,
-			origin: options?.origin ?? (sessionId ? AI_SESSION_SUGGESTION_ORIGIN : "extension"),
+			origin: options?.origin ?? AI_SESSION_SUGGESTION_ORIGIN,
 			undoGroupId,
 		});
 	}

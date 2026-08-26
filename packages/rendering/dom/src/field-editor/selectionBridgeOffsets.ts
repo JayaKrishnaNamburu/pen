@@ -1,12 +1,17 @@
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import { findEmptyBlockPlaceholder } from "./emptyBlockPlaceholder";
 import {
 	findLogicalDOMPoint,
 	getInlineAtomPointerOffset,
 	getLogicalNodeLength,
 } from "./inlineAtomDom";
-import { getInlineCaretRectFromOffset } from "./selectionGeometry";
 import { queryBlockElement } from "./selectionDomQueries";
-import { domPointToOffset, type DirectionalSelectionOffsets, type SelectionPoint } from "./selectionBridge";
+import {
+	domPointToOffset,
+	type DirectionalSelectionOffsets,
+	type SelectionPoint,
+} from "./selectionBridge";
+
 function isNodeWithinOrEqual(container: HTMLElement, node: Node): boolean {
 	return node === container || container.contains(node);
 }
@@ -93,6 +98,7 @@ export function getTextSelectionClientRects(
 		range.setStart(anchorPoint.node, anchorPoint.offset);
 		range.setEnd(focusPoint.node, focusPoint.offset);
 	} catch {
+		// reversed endpoints; try the swapped range.
 		range.setStart(focusPoint.node, focusPoint.offset);
 		range.setEnd(anchorPoint.node, anchorPoint.offset);
 	}
@@ -193,12 +199,55 @@ export function getCaretOffset(inlineElement: HTMLElement): number {
 	return offsets?.start ?? 0;
 }
 
-function setDOMSelection(
+function resolveWritableDOMPoint(point: { node: Node; offset: number }): {
+	node: Node;
+	offset: number;
+} {
+	if (point.node.nodeType !== Node.ELEMENT_NODE) {
+		return point;
+	}
+
+	const childAtOffset = point.node.childNodes[point.offset];
+	if (childAtOffset?.nodeType === Node.TEXT_NODE) {
+		return { node: childAtOffset, offset: 0 };
+	}
+
+	if (point.offset > 0) {
+		const previousChild = point.node.childNodes[point.offset - 1];
+		if (previousChild?.nodeType === Node.TEXT_NODE) {
+			return {
+				node: previousChild,
+				offset: previousChild.textContent?.length ?? 0,
+			};
+		}
+	}
+
+	return point;
+}
+
+function selectionHasEndpoints(
 	selection: Selection,
 	anchor: { node: Node; offset: number },
 	focus: { node: Node; offset: number },
+): boolean {
+	return (
+		selection.rangeCount > 0 &&
+		selection.anchorNode === anchor.node &&
+		selection.anchorOffset === anchor.offset &&
+		selection.focusNode === focus.node &&
+		selection.focusOffset === focus.offset
+	);
+}
+
+function setDOMSelection(
+	selection: Selection,
+	rawAnchor: { node: Node; offset: number },
+	rawFocus: { node: Node; offset: number },
 ): void {
-	selection.removeAllRanges();
+	const anchor = resolveWritableDOMPoint(rawAnchor);
+	const focus = resolveWritableDOMPoint(rawFocus);
+	const intendedRange =
+		anchor.node !== focus.node || anchor.offset !== focus.offset;
 
 	const setBaseAndExtent = (
 		selection as Selection & {
@@ -219,22 +268,41 @@ function setDOMSelection(
 				focus.node,
 				focus.offset,
 			);
-			return;
+			// Firefox accepts the call for mixed element/text points but
+			// leaves a caret; only trust the write when the endpoints stuck
+			if (
+				!intendedRange ||
+				selectionHasEndpoints(selection, anchor, focus)
+			) {
+				return;
+			}
 		} catch {
 			// Fall back to the range-based path in test environments like jsdom.
 		}
 	}
+
+	selection.removeAllRanges();
 
 	const collapseRange = document.createRange();
 	collapseRange.setStart(anchor.node, anchor.offset);
 	collapseRange.collapse(true);
 	selection.addRange(collapseRange);
 
-	if (
-		(anchor.node !== focus.node || anchor.offset !== focus.offset) &&
-		typeof selection.extend === "function"
-	) {
-		selection.extend(focus.node, focus.offset);
+	if (intendedRange && typeof selection.extend === "function") {
+		try {
+			selection.extend(focus.node, focus.offset);
+			if (
+				selectionHasEndpoints(selection, anchor, focus) ||
+				!selection.isCollapsed
+			) {
+				return;
+			}
+		} catch {
+			// Fall through to an ordered addRange.
+		}
+	}
+
+	if (!intendedRange) {
 		return;
 	}
 
@@ -248,6 +316,229 @@ function setDOMSelection(
 		orderedRange.setEnd(anchor.node, anchor.offset);
 	}
 	selection.addRange(orderedRange);
+}
+
+const WRAPPED_LINE_HYSTERESIS_PX = 6;
+const WRAPPED_LINE_HORIZONTAL_SLACK_PX = 12;
+const WRAPPED_LINE_DELTA_PX = 1;
+
+function getCharacterRectAtOffset(
+	container: HTMLElement,
+	charOffset: number,
+): DOMRect | null {
+	const domPoint = findLogicalDOMPoint(container, charOffset);
+	const range = document.createRange();
+	try {
+		range.setStart(domPoint.node, domPoint.offset);
+		range.setEnd(domPoint.node, domPoint.offset);
+	} catch {
+		// detached or out-of-range DOM point.
+		return null;
+	}
+	const rangeRectGetter = (
+		range as Range & { getBoundingClientRect?: () => DOMRect }
+	).getBoundingClientRect;
+	if (typeof rangeRectGetter === "function") {
+		const rect = rangeRectGetter.call(range);
+		if (rect.width > 0 || rect.height > 0) {
+			return rect;
+		}
+	}
+
+	return null;
+}
+
+function getInlineCaretRectFromOffset(
+	inlineEl: HTMLElement,
+	offset: number,
+): DOMRect {
+	const textLength = getLogicalNodeLength(inlineEl);
+	const placeholder = findEmptyBlockPlaceholder(inlineEl);
+	const inlineRect = (placeholder ?? inlineEl).getBoundingClientRect();
+	if (textLength <= 0) {
+		return {
+			x: inlineRect.left,
+			y: inlineRect.top,
+			left: inlineRect.left,
+			top: inlineRect.top,
+			right: inlineRect.left,
+			bottom: inlineRect.bottom,
+			width: 0,
+			height: inlineRect.height,
+			toJSON() {
+				return {};
+			},
+		} as DOMRect;
+	}
+
+	if (offset <= 0) {
+		const firstRect = getCharacterRectAtOffset(inlineEl, 0);
+		const left = firstRect?.left ?? inlineRect.left;
+		const top = firstRect?.top ?? inlineRect.top;
+		const height = firstRect?.height ?? inlineRect.height;
+		return {
+			x: left,
+			y: top,
+			left,
+			top,
+			right: left,
+			bottom: top + height,
+			width: 0,
+			height,
+			toJSON() {
+				return {};
+			},
+		} as DOMRect;
+	}
+
+	if (offset >= textLength) {
+		const lastRect = getCharacterRectAtOffset(inlineEl, textLength - 1);
+		const left = lastRect?.right ?? inlineRect.right;
+		const top = lastRect?.top ?? inlineRect.top;
+		const height = lastRect?.height ?? inlineRect.height;
+		return {
+			x: left,
+			y: top,
+			left,
+			top,
+			right: left,
+			bottom: top + height,
+			width: 0,
+			height,
+			toJSON() {
+				return {};
+			},
+		} as DOMRect;
+	}
+
+	const previousRect = getCharacterRectAtOffset(inlineEl, offset - 1);
+	const nextRect = getCharacterRectAtOffset(inlineEl, offset);
+	const useNextRect =
+		previousRect && nextRect && nextRect.top > previousRect.top + 1;
+	const sourceRect = useNextRect
+		? nextRect
+		: (previousRect ?? nextRect ?? inlineRect);
+	const left = useNextRect
+		? (nextRect?.left ?? inlineRect.left)
+		: (previousRect?.right ?? nextRect?.left ?? inlineRect.left);
+
+	return {
+		x: left,
+		y: sourceRect.top,
+		left,
+		top: sourceRect.top,
+		right: left,
+		bottom: sourceRect.top + sourceRect.height,
+		width: 0,
+		height: sourceRect.height,
+		toJSON() {
+			return {};
+		},
+	} as DOMRect;
+}
+
+function getCaretDistanceMetrics(
+	rect: DOMRect,
+	clientX: number,
+	clientY: number,
+): {
+	dx: number;
+	dy: number;
+} {
+	return {
+		dx: Math.abs(clientX - rect.left),
+		dy:
+			clientY < rect.top
+				? rect.top - clientY
+				: clientY > rect.bottom
+					? clientY - rect.bottom
+					: 0,
+	};
+}
+
+function stabilizeWrappedLineOffset(
+	inlineEl: HTMLElement,
+	candidateOffset: number,
+	clientX: number,
+	clientY: number,
+	previousOffset: number | null | undefined,
+): number {
+	if (previousOffset == null || previousOffset === candidateOffset) {
+		return candidateOffset;
+	}
+
+	const previousRect = getInlineCaretRectFromOffset(inlineEl, previousOffset);
+	const candidateRect = getInlineCaretRectFromOffset(
+		inlineEl,
+		candidateOffset,
+	);
+	if (
+		Math.abs(previousRect.top - candidateRect.top) <= WRAPPED_LINE_DELTA_PX
+	) {
+		return candidateOffset;
+	}
+
+	const previousMetrics = getCaretDistanceMetrics(
+		previousRect,
+		clientX,
+		clientY,
+	);
+	const candidateMetrics = getCaretDistanceMetrics(
+		candidateRect,
+		clientX,
+		clientY,
+	);
+	const isNearWrappedBoundary =
+		previousMetrics.dy <= WRAPPED_LINE_HYSTERESIS_PX &&
+		candidateMetrics.dy <= WRAPPED_LINE_HYSTERESIS_PX;
+	if (!isNearWrappedBoundary) {
+		return candidateOffset;
+	}
+
+	const shouldPreservePreviousLine =
+		previousMetrics.dx <=
+			candidateMetrics.dx + WRAPPED_LINE_HORIZONTAL_SLACK_PX &&
+		previousMetrics.dy <= candidateMetrics.dy + WRAPPED_LINE_DELTA_PX;
+	return shouldPreservePreviousLine ? previousOffset : candidateOffset;
+}
+
+export function approximateInlineOffsetFromPoint(
+	inlineEl: HTMLElement,
+	clientX: number,
+	clientY: number,
+	previousOffset?: number | null,
+): number {
+	const textLength = getLogicalNodeLength(inlineEl);
+	if (textLength <= 0) return 0;
+	const inlineAtomOffset = getInlineAtomPointerOffset(
+		inlineEl,
+		clientX,
+		clientY,
+	);
+	if (inlineAtomOffset !== null) {
+		return inlineAtomOffset;
+	}
+
+	let bestOffset = 0;
+	let bestScore = Number.POSITIVE_INFINITY;
+
+	for (let offset = 0; offset <= textLength; offset++) {
+		const rect = getInlineCaretRectFromOffset(inlineEl, offset);
+		const { dx, dy } = getCaretDistanceMetrics(rect, clientX, clientY);
+		const score = dy * 1000 + dx;
+		if (score < bestScore) {
+			bestScore = score;
+			bestOffset = offset;
+		}
+	}
+
+	return stabilizeWrappedLineOffset(
+		inlineEl,
+		bestOffset,
+		clientX,
+		clientY,
+		previousOffset,
+	);
 }
 
 function compareDOMPoints(

@@ -1,16 +1,3 @@
-// ── Branded IDs ─────────────────────────────────────────────
-export {
-	type BlockId,
-	type AppId,
-	type ZoneId,
-	type DocId,
-	blockId,
-	appId,
-	zoneId,
-	docId,
-} from "./ids";
-
-// ── Utility ─────────────────────────────────────────────────
 export type { Unsubscribe, Spacing, BorderDef } from "./utility";
 
 // ── Collaboration ───────────────────────────────────────────
@@ -25,18 +12,22 @@ export type { Block, App, Range, AppPlacement, AnchorPosition } from "./block";
 
 // ── Selection ───────────────────────────────────────────────
 export type {
+	Affinity,
 	SelectionState,
+	ReadonlySelectionState,
 	TextSelection,
 	BlockSelection,
 	AppSelection,
 	CellSelection,
+	SelectionOrigin,
+	SelectionRecordState,
 } from "./selection";
 
 // ── Document Range ──────────────────────────────────────────
 export type { DocumentRange } from "./documentRange";
 
 // ── Layout ──────────────────────────────────────────────────
-export type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout";
+export type { LayoutSchema, LayoutProps } from "./layout";
 
 // ── Input ───────────────────────────────────────────────────
 export type {
@@ -47,6 +38,27 @@ export type {
 	InputRuleContext,
 } from "./input";
 
+// ── Facets ──────────────────────────────────────────────────
+export type {
+	Precedence,
+	FacetSpec,
+	Facet,
+	FacetDependency,
+	FacetProvider,
+	FacetOutput,
+	DefineFacet,
+} from "./facets";
+
+// ── Commands ────────────────────────────────────────────────
+export type {
+	Command,
+	CommandResult,
+	CommandHandler,
+	CommandHandlerRegistration,
+	DefineCommand,
+	CommandHandlerProvider,
+} from "./commands";
+
 // ── Operations ──────────────────────────────────────────────
 export type {
 	DocumentOp,
@@ -54,60 +66,24 @@ export type {
 	OpOrigin,
 	StructuredOpOrigin,
 	MutationGroupMetadata,
+	StructuralOriginTag,
 	ApplyOptions,
 	Position,
+	InlineInsert,
+	SpliceTextOp,
+	FormatTextOp,
 	InsertBlockOp,
-	UpdateBlockOp,
 	DeleteBlockOp,
 	MoveBlockOp,
-	ConvertBlockOp,
-	SplitBlockOp,
-	MergeBlocksOp,
-	InsertTextOp,
-	DeleteTextOp,
-	FormatTextOp,
-	ReplaceTextOp,
-	InsertInlineNodeOp,
-	RemoveInlineNodeOp,
-	UpdateLayoutOp,
-	InsertTableRowOp,
-	DeleteTableRowOp,
-	InsertTableColumnOp,
-	DeleteTableColumnOp,
-	MergeTableCellsOp,
-	SplitTableCellOp,
-	InsertTableCellTextOp,
-	DeleteTableCellTextOp,
-	FormatTableCellTextOp,
-	UpdateTableColumnsOp,
-	DatabaseAddColumnOp,
-	DatabaseUpdateColumnOp,
-	DatabaseConvertColumnOp,
-	DatabaseRemoveColumnOp,
-	DatabaseInsertRowOp,
-	DatabaseUpdateCellOp,
-	DatabaseDeleteRowOp,
-	DatabaseDeleteRowsOp,
-	DatabaseDuplicateRowOp,
-	DatabaseMoveRowOp,
-	DatabaseAddViewOp,
-	DatabaseUpdateViewOp,
-	DatabaseRemoveViewOp,
-	DatabaseSetActiveViewOp,
-	DatabaseUpdateSelectOptionsOp,
+	SetPropsOp,
 	SetMetaOp,
-	CreateAppOp,
-	UpdateAppOp,
-	DeleteAppOp,
-	SetSelectionOp,
+	GridChange,
+	GridOp,
+	AppChange,
+	AppOp,
+	StreamOpenOp,
 } from "./ops";
-export {
-	MUTATION_GROUP_METADATA_KEY,
-	createMutationGroupMetadata,
-	getApplyOptionsGroupId,
-	getOpOriginGroupId,
-	getOpOriginType,
-} from "./ops";
+export { MUTATION_GROUP_METADATA_KEY } from "./ops";
 
 // ── Stream ──────────────────────────────────────────────────
 export type {
@@ -137,6 +113,7 @@ export type {
 	PingPart,
 	DonePart,
 } from "./stream";
+export { PEN_STREAM_PROTOCOL_VERSION } from "./stream";
 
 // ── Schema ──────────────────────────────────────────────────
 export {
@@ -164,26 +141,20 @@ export type {
 	AppHandle,
 	InlineDelta,
 	InlineNodeDeltaInsert,
+	TableBlockHandle,
 	TableCellHandle,
 	TableColumnSchema,
 	TableRowHandle,
 } from "./handles";
+export type { BlockCapabilityKey, BlockCapabilityMap } from "./capabilities";
 
-// ── Database ────────────────────────────────────────────────
+// ── Columns ─────────────────────────────────────────────────
 export type {
 	ColumnType,
 	SelectOption,
 	NumberFormat,
 	DateFormat,
-	DatabaseSort,
-	FilterOperator,
-	FilterCondition,
-	FilterGroup,
-	DatabaseRowPinning,
-	DatabaseViewState,
-	DatabaseQuery,
-} from "./database";
-export { DEFAULT_DATABASE_COLUMN_WIDTH } from "./database";
+} from "./columns";
 
 // ── Field Editor ────────────────────────────────────────────
 export type {
@@ -196,19 +167,11 @@ export type {
 	FieldEditorBehavior,
 	FieldEditorInputMode,
 } from "./fieldEditorCapabilities";
-export {
-	delegatesToGridEditing,
-	hasFieldEditorSurface,
-	resolveFieldEditorBehavior,
-	resolveFieldEditorInputMode,
-	supportsInlineInputRules,
-	supportsInlineMarks,
-	usesInlineTextSelection,
-} from "./fieldEditorCapabilities";
 
 // ── CRDT ────────────────────────────────────────────────────
 export type {
 	CRDTAdapter,
+	LoadDocumentOptions,
 	CRDTDocument,
 	PenDocument,
 	CRDTUndoManager,
@@ -245,6 +208,9 @@ export type {
 export {
 	type Editor,
 	type EditorInternals,
+	type TextStreamWriter,
+	type OpenTextStreamOptions,
+	type PipelinePhase,
 	type CreateEditorOptions,
 	type EditorPreset,
 	type EditorPresetContext,
@@ -257,7 +223,10 @@ export {
 	type UndoHistoryMetadataController,
 	type UndoHistoryRestore,
 	type HistoryAppliedEvent,
-	type DocumentCommitEvent,
+	type CommitEvent,
+	type CommitEventSource,
+	type Diagnostic,
+	type SelectionRecord,
 	type SchemaEngine,
 	type DiagnosticEvent,
 	type DocumentValidationError,
@@ -268,6 +237,7 @@ export {
 	type InlineCompletionController,
 	type EditorViewMode,
 	type InteractionModel,
+	type SelectAllBehavior,
 	HOOK_PRIORITY_AUTH,
 	HOOK_PRIORITY_SUGGEST,
 	HOOK_PRIORITY_INPUT_RULE,
@@ -275,23 +245,20 @@ export {
 } from "./editor";
 
 // ── Tools ───────────────────────────────────────────────────
-export {
-	isAsyncIterable,
-	resolveToolExecution,
-	collectToolExecutionOutput,
-} from "./tools";
+export { isAsyncIterable, isScopedSelectionTarget } from "./tools";
 export type {
 	ToolRegistry,
 	ToolRuntime,
-	ToolServer,
 	ToolExecutionResult,
 	ToolDefinition,
 	ToolContext,
 	ToolSchema,
 	ModelAdapter,
-	ModelOperationApplyPolicy,
+	ModelAdapterCapabilities,
+	ModelToolChoice,
 	ModelOperationBlockTarget,
 	ModelOperationDocumentTarget,
+	ModelOperationRangeTarget,
 	ModelOperationScopedRangeTarget,
 	ModelOperationKind,
 	ModelOperationProvenance,
@@ -301,6 +268,40 @@ export type {
 	ModelMessage,
 	ModelMessagePart,
 } from "./tools";
+
+// ── AI request ──────────────────────────────────────────────
+export type {
+	AIDocumentExcerpt,
+	AIDocumentExcerptKind,
+	AIRequestContext,
+	AIRequestFeature,
+	AIRequestFilter,
+} from "./aiRequest";
+export {
+	AI_EGRESS_INVENTORY_CODE,
+	AI_REQUEST_REFUSED_CODE,
+} from "./aiRequest";
+
+// ── Accessibility ───────────────────────────────────────────
+export type { A11yLabel, BlockA11ySpec, EditorAnnouncer } from "./a11y";
+export { isA11yLabelledBy } from "./a11y";
+export type { A11yMessageKey, A11yMessageCatalog } from "./a11yMessages";
+
+// ── Localization ────────────────────────────────────────────
+export {
+	DEFAULT_MESSAGE_CATALOG,
+	isMessageKey,
+	isPluralMessage,
+} from "./messages";
+export type {
+	MessageArgs,
+	MessageCatalog,
+	MessageKey,
+	MessageParams,
+	MessageParamsByKey,
+	MessageValue,
+	PluralMessage,
+} from "./messages";
 
 // ── Persistence ─────────────────────────────────────────────
 export type {
@@ -312,22 +313,50 @@ export type {
 	AssetProvider,
 } from "./persistence";
 
-// ── Decorations ─────────────────────────────────────────────
+// ── Document format ─────────────────────────────────────────
 export {
-	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
-} from "../constants/decorations";
+	PEN_DOCUMENT_FORMAT,
+	PEN_FORMAT_METADATA_KEY,
+	DOCUMENT_PROFILE_METADATA_KEY,
+	MIGRATION_LEDGER_METADATA_KEY,
+	RESERVED_METADATA_KEYS,
+	IMPLICIT_V1_FORMAT_STAMP,
+} from "./format";
+export type { PenFormatStamp, ReservedMetadataKey } from "./format";
+
+// ── Decorations ─────────────────────────────────────────────
+// Canonical path for INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE (also
+// defined in `../constants/decorations`; do not re-export from `../index`).
+export { INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE } from "../constants/decorations";
+// Same discipline for the review-surface vocabulary (RS4).
+export {
+	REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES,
+	REVIEW_SURFACE_CLASSES,
+	REVIEW_SURFACE_CUSTOM_PROPERTIES,
+} from "../constants/reviewSurface";
 export type {
 	Decoration,
 	InlineDecoration,
 	BlockDecoration,
 	AppDecoration,
 	DecorationSet,
-	PositionMapping,
 } from "./decorations";
 export { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "./decorations";
 
 // ── Transport ───────────────────────────────────────────────
 export type { PenTransport, ServerConfig } from "./transport";
+
+// ── Clipboard ───────────────────────────────────────────────
+export {
+	PEN_CLIPBOARD_JSON_MIME,
+	PEN_CLIPBOARD_JSON_MIME_LEGACY,
+	PEN_CLIPBOARD_PAYLOAD_VERSION,
+} from "./clipboard";
+export type {
+	PenClipboardBlock,
+	PenClipboardDelta,
+	PenClipboardPayload,
+} from "./clipboard";
 
 // ── Serialization ───────────────────────────────────────────
 export type {
@@ -348,3 +377,24 @@ export type { BlockRenderContext, BlockRenderer } from "./rendering";
 
 // ── Suggestions ─────────────────────────────────────────────
 export type { BlockSuggestion } from "./suggestions";
+
+// ── Anchors ─────────────────────────────────────────────────
+export type {
+	Anchor,
+	AnchorRange,
+	AnchorTarget,
+	EditorAnchors,
+	ResolvedAnchorRange,
+	ResolveRelativePositionOptions,
+} from "./anchors";
+
+// ── Change summaries ────────────────────────────────────────
+export type {
+	Assoc,
+	DefaultAssoc,
+	Point,
+	TextSplice,
+	BlockTextChange,
+	StructuralChange,
+	ChangeSummary,
+} from "./changes";

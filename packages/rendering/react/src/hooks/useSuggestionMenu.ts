@@ -1,11 +1,7 @@
-import {
-	useCallback,
-	useEffect,
-	useLayoutEffect,
-	useRef,
-	useState,
-} from "react";
-import type { Editor } from "@pen/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { isCollapsed } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 
 export type SuggestionMenuStatus = "idle" | "loading" | "ready" | "error";
 
@@ -222,13 +218,13 @@ export function useSuggestionMenu<TItem>(
 			});
 	}, [dismiss]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		optionsRef.current = options;
 	});
 
 	useEffect(() => {
 		refresh();
-		const unsubscribeDocument = editor.onDocumentCommit(refresh);
+		const unsubscribeDocument = editor.on("commit", () => refresh());
 		const unsubscribeSelection = editor.onSelectionChange(refresh);
 		return () => {
 			unsubscribeDocument();
@@ -332,7 +328,7 @@ export function resolveSuggestionMenuTarget(
 	}
 
 	const selection = editor.selection;
-	if (selection?.type !== "text" || !selection.isCollapsed) {
+	if (selection?.type !== "text" || !isCollapsed(selection)) {
 		return null;
 	}
 	if (selection.anchor.blockId !== selection.focus.blockId) {

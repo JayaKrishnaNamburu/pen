@@ -1,23 +1,23 @@
-import type { Editor } from "@pen/types";
-import {
-	getAIController,
-	type AICommandExecutionOptions,
-	type AISession,
-	type AISessionResolution,
-	type AISurface,
-} from "@pen/ai";
+import { aiControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import type {
+	AICommandExecutionOptions,
+	AIController,
+	AISession,
+	AISessionResolution,
+	AISurface,
+} from "@input/pen-ai";
 
 export function useAIActions(editor: Editor): {
-	runPrompt: (prompt: string, options?: AICommandExecutionOptions) => Promise<unknown>;
+	runPrompt: (
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	) => Promise<unknown>;
 	acceptSuggestion: (id: string) => boolean;
 	rejectSuggestion: (id: string) => boolean;
 	acceptAllSuggestions: () => void;
 	rejectAllSuggestions: () => void;
 	acceptActiveGeneration: () => boolean;
-	acceptReviewItem: (id: string) => boolean;
-	rejectReviewItem: (id: string) => boolean;
-	acceptReviewItems: (ids: readonly string[]) => boolean;
-	rejectReviewItems: (ids: readonly string[]) => boolean;
 	retryActiveGeneration: () => Promise<unknown>;
 	openCommandMenu: () => void;
 	closeCommandMenu: () => void;
@@ -39,12 +39,16 @@ export function useAIActions(editor: Editor): {
 		turnId: string,
 		resolution: AISessionResolution,
 	) => boolean;
-	resolveSession: (sessionId: string, resolution: AISessionResolution) => boolean;
+	resolveSession: (
+		sessionId: string,
+		resolution: AISessionResolution,
+	) => boolean;
 	acceptSession: (sessionId: string) => boolean;
 	rejectSession: (sessionId: string) => boolean;
 	cancelSession: (sessionId: string) => void;
 } {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return {
 		runPrompt(prompt: string, options?: AICommandExecutionOptions) {
@@ -67,18 +71,6 @@ export function useAIActions(editor: Editor): {
 		},
 		acceptActiveGeneration() {
 			return controller?.acceptActiveGeneration() ?? false;
-		},
-		acceptReviewItem(id: string) {
-			return controller?.acceptReviewItem(id) ?? false;
-		},
-		rejectReviewItem(id: string) {
-			return controller?.rejectReviewItem(id) ?? false;
-		},
-		acceptReviewItems(ids: readonly string[]) {
-			return controller?.acceptReviewItems(ids) ?? false;
-		},
-		rejectReviewItems(ids: readonly string[]) {
-			return controller?.rejectReviewItems(ids) ?? false;
 		},
 		retryActiveGeneration() {
 			if (!controller) {
@@ -105,7 +97,10 @@ export function useAIActions(editor: Editor): {
 			return controller.runSessionPrompt(sessionId, prompt, options);
 		},
 		resolveSessionTurn(sessionId, turnId, resolution) {
-			return controller?.resolveSessionTurn(sessionId, turnId, resolution) ?? false;
+			return (
+				controller?.resolveSessionTurn(sessionId, turnId, resolution) ??
+				false
+			);
 		},
 		resolveSession(sessionId, resolution) {
 			return controller?.resolveSession(sessionId, resolution) ?? false;

@@ -1,10 +1,11 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	buildDocumentBlockSnapshots,
 	formatBlocksAsMarkdown,
 	type DocumentBlockSnapshot,
 	type DocumentContextViewMode,
 } from "./documentContext";
+import { foldAndNormalize, resolveEditorLocale } from "./editorLocale";
 
 export interface RetrievedDocumentSpan {
 	id: string;
@@ -49,7 +50,9 @@ export function retrieveDocumentSpans(
 	editor: Editor,
 	input: RetrieveDocumentSpansInput,
 ): RetrievedDocumentSpan[] {
-	const normalizedQuery = input.query.trim().toLowerCase();
+	const locale = resolveEditorLocale(editor);
+	const trimmedQuery = input.query.trim();
+	const normalizedQuery = foldAndNormalize(trimmedQuery, locale);
 	if (normalizedQuery.length === 0) {
 		return [];
 	}
@@ -58,18 +61,24 @@ export function retrieveDocumentSpans(
 		editor,
 		input.viewMode ?? "resolved",
 	);
-	const tokens = tokenizeQuery(normalizedQuery);
+	const tokens = tokenizeQuery(trimmedQuery).map((token) =>
+		foldAndNormalize(token, locale),
+	);
 	const ranked = snapshots
 		.map((snapshot, index) =>
 			scoreSnapshot(snapshot, snapshots, index, {
 				normalizedQuery,
 				tokens,
+				locale,
 				activeBlockId: input.activeBlockId ?? null,
 				targetBlockId: input.targetBlockId ?? null,
 			}),
 		)
 		.filter((result) => result.score > 0)
-		.sort((left, right) => right.score - left.score || left.index - right.index)
+		.sort(
+			(left, right) =>
+				right.score - left.score || left.index - right.index,
+		)
 		.slice(0, input.maxResults ?? DEFAULT_MAX_RESULTS);
 
 	const spans: RetrievedDocumentSpan[] = [];
@@ -95,23 +104,25 @@ function scoreSnapshot(
 	input: {
 		normalizedQuery: string;
 		tokens: string[];
+		locale: string;
 		activeBlockId: string | null;
 		targetBlockId: string | null;
 	},
 ): {
-		snapshot: DocumentBlockSnapshot;
-		index: number;
-		score: number;
-		rationale: string;
-	} {
-	const searchableText = [
-		snapshot.content,
-		snapshot.markdown,
-		snapshot.type,
-		snapshot.headingPath.join(" "),
-	]
-		.join("\n")
-		.toLowerCase();
+	snapshot: DocumentBlockSnapshot;
+	index: number;
+	score: number;
+	rationale: string;
+} {
+	const searchableText = foldAndNormalize(
+		[
+			snapshot.content,
+			snapshot.markdown,
+			snapshot.type,
+			snapshot.headingPath.join(" "),
+		].join("\n"),
+		input.locale,
+	);
 	let score = 0;
 	const rationale: string[] = [];
 
@@ -126,11 +137,15 @@ function scoreSnapshot(
 			score += TOKEN_MATCH_SCORE;
 			tokenMatches += 1;
 		}
-		if (snapshot.type.toLowerCase().includes(token)) {
+		if (foldAndNormalize(snapshot.type, input.locale).includes(token)) {
 			score += BLOCK_TYPE_MATCH_SCORE;
 			rationale.push(`type:${token}`);
 		}
-		if (snapshot.headingPath.some((heading) => heading.toLowerCase().includes(token))) {
+		if (
+			snapshot.headingPath.some((heading) =>
+				foldAndNormalize(heading, input.locale).includes(token),
+			)
+		) {
 			score += HEADING_PATH_MATCH_SCORE;
 			rationale.push(`heading:${token}`);
 		}
@@ -171,11 +186,18 @@ function isNeighborSnapshot(
 	if (!blockId) {
 		return false;
 	}
-	return snapshots[index - 1]?.id === blockId || snapshots[index + 1]?.id === blockId;
+	return (
+		snapshots[index - 1]?.id === blockId ||
+		snapshots[index + 1]?.id === blockId
+	);
 }
 
 function tokenizeQuery(query: string): string[] {
-	return [...new Set(query.split(/[^a-z0-9]+/i).filter((token) => token.length > 1))];
+	return [
+		...new Set(
+			query.split(/[^a-z0-9]+/i).filter((token) => token.length > 1),
+		),
+	];
 }
 
 function createRetrievedSpan(
@@ -207,7 +229,12 @@ function createRetrievedSpan(
 	const firstSnapshot = spanSnapshots[0]!;
 	const lastSnapshot = spanSnapshots[spanSnapshots.length - 1]!;
 	const previewSource = spanSnapshots
-		.map((spanSnapshot) => spanSnapshot.content || spanSnapshot.markdown || spanSnapshot.type)
+		.map(
+			(spanSnapshot) =>
+				spanSnapshot.content ||
+				spanSnapshot.markdown ||
+				spanSnapshot.type,
+		)
 		.join("\n");
 
 	return {

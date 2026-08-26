@@ -1,4 +1,4 @@
-import type { DocumentOp } from "@pen/types";
+import type { DocumentOp } from "@input/pen-types";
 import type {
 	AIExternalInlineTurnResult,
 	AIInlineHistoryDirection,
@@ -11,20 +11,16 @@ export interface StoredExternalInlineTurnResult extends AIExternalInlineTurnResu
 }
 
 export class ExternalInlineTurnRegistry {
-	private readonly results = new Map<string, StoredExternalInlineTurnResult>();
+	private readonly results = new Map<
+		string,
+		StoredExternalInlineTurnResult
+	>();
 
 	has(historyId: string): boolean {
 		return this.results.has(historyId);
 	}
 
-	get(historyId: string): StoredExternalInlineTurnResult | undefined {
-		return this.results.get(historyId);
-	}
-
-	set(
-		historyId: string,
-		result: StoredExternalInlineTurnResult,
-	): void {
+	set(historyId: string, result: StoredExternalInlineTurnResult): void {
 		this.results.set(historyId, result);
 	}
 
@@ -81,7 +77,8 @@ export class ExternalInlineTurnRegistry {
 
 	turnHasExternalResult(sessionId: string, turnId: string): boolean {
 		return this.values().some(
-			(result) => result.sessionId === sessionId && result.turnId === turnId,
+			(result) =>
+				result.sessionId === sessionId && result.turnId === turnId,
 		);
 	}
 }

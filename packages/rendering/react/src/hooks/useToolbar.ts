@@ -1,5 +1,5 @@
 import { useRef, useSyncExternalStore } from "react";
-import type { Editor, FieldEditor } from "@pen/types";
+import type { Editor, FieldEditor } from "@input/pen-types";
 import {
 	EMPTY_TOOLBAR_STATE,
 	type ToolbarState,
@@ -17,7 +17,7 @@ export function useToolbar(editor: Editor): ToolbarState {
 		(callback) => {
 			const unsubs = [
 				editor.on("selectionChange", callback),
-				editor.onDocumentCommit(callback),
+				editor.on("commit", () => callback()),
 			];
 			const fieldEditorStore = getAttachedFieldEditorStore(editor);
 			if (fieldEditorStore) {

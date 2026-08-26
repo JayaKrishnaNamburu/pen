@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import type { AIStreamingReviewPreview } from "../../types";
 import {
 	normalizeReplacementRange,
@@ -19,7 +19,6 @@ export interface TextRangeStreamingPreviewPlan {
 	blockId: string;
 	deleteFrom: number;
 	deleteTo: number;
-	insertedTextStart: number;
 	insertOffset: number;
 	text: string;
 }
@@ -33,7 +32,6 @@ export interface BlockRangeStreamingPreviewPlan {
 	};
 	deleteFromChar: number;
 	deleteToChar: number;
-	insertedTextStart: number;
 	insertText: string;
 }
 
@@ -81,7 +79,6 @@ function buildTextRangeStreamingPreviewPlan(
 	return buildStreamingTextPreviewPlan({
 		blockId: preview.target.blockId,
 		from,
-		insertedTextStartOffset: 0,
 		originalText,
 		previousTextLength: preview.previousTextLength,
 		replacementText: preview.text,
@@ -97,7 +94,10 @@ function buildBlockRangeStreamingPreviewPlan(
 		return null;
 	}
 
-	const normalizedRange = normalizeStreamingBlockRange(editor, preview.target);
+	const normalizedRange = normalizeStreamingBlockRange(
+		editor,
+		preview.target,
+	);
 	if (!normalizedRange) {
 		return null;
 	}
@@ -130,10 +130,16 @@ function buildBlockRangeStreamingPreviewPlan(
 		return partialPlan;
 	}
 
-	const sharedPrefixLength = countSharedPrefixLength(originalText, preview.text);
+	const sharedPrefixLength = countSharedPrefixLength(
+		originalText,
+		preview.text,
+	);
 	const originalTail = originalText.slice(sharedPrefixLength);
 	const previewTail = preview.text.slice(sharedPrefixLength);
-	const sharedSuffixLength = countSharedSuffixLength(originalTail, previewTail);
+	const sharedSuffixLength = countSharedSuffixLength(
+		originalTail,
+		previewTail,
+	);
 	const deleteFromChar = sharedPrefixLength;
 	const deleteToChar = originalText.length - sharedSuffixLength;
 	const insertText = preview.text.slice(
@@ -155,7 +161,6 @@ function buildBlockRangeStreamingPreviewPlan(
 		normalizedRange,
 		deleteFromChar,
 		deleteToChar,
-		insertedTextStart: sharedPrefixLength,
 		insertText,
 	};
 }
@@ -175,7 +180,10 @@ function buildPartialBlockRangeStreamingPreviewPlan({
 		return null;
 	}
 
-	const sharedPrefixLength = countSharedPrefixLength(originalText, replacementText);
+	const sharedPrefixLength = countSharedPrefixLength(
+		originalText,
+		replacementText,
+	);
 	if (sharedPrefixLength === 0) {
 		return null;
 	}
@@ -186,7 +194,6 @@ function buildPartialBlockRangeStreamingPreviewPlan({
 					normalizedRange,
 					deleteFromChar: sharedPrefixLength,
 					deleteToChar: sharedPrefixLength,
-					insertedTextStart: sharedPrefixLength,
 					insertText: "",
 				}
 			: null;
@@ -194,14 +201,16 @@ function buildPartialBlockRangeStreamingPreviewPlan({
 
 	const originalTail = originalText.slice(sharedPrefixLength);
 	const replacementTail = replacementText.slice(sharedPrefixLength);
-	const anchor = findStreamingPreviewResyncAnchor(originalTail, replacementTail);
+	const anchor = findStreamingPreviewResyncAnchor(
+		originalTail,
+		replacementTail,
+	);
 
 	return {
 		kind: "block-range",
 		normalizedRange,
 		deleteFromChar: sharedPrefixLength,
 		deleteToChar: sharedPrefixLength + (anchor?.originalOffset ?? 0),
-		insertedTextStart: sharedPrefixLength,
 		insertText: replacementTail.slice(
 			0,
 			anchor?.replacementOffset ?? replacementTail.length,
@@ -218,7 +227,9 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 		editor,
 		normalizedRange,
 	);
-	const fragments = resolveSelectedRangeTextFragments(normalizedReplacementRange);
+	const fragments = resolveSelectedRangeTextFragments(
+		normalizedReplacementRange,
+	);
 	const replacementParagraphs = splitReplacementParagraphs(replacementText);
 	if (
 		!replacementParagraphs ||
@@ -228,7 +239,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 		return null;
 	}
 
-	let paragraphStartOffset = 0;
 	const plans: TextRangeStreamingPreviewPlan[] = [];
 	for (let index = 0; index < fragments.length; index += 1) {
 		const fragment = fragments[index]!;
@@ -236,7 +246,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 		const plan = buildStreamingTextPreviewPlan({
 			blockId: fragment.blockId,
 			from: fragment.offset,
-			insertedTextStartOffset: paragraphStartOffset,
 			originalText: fragment.text,
 			previousTextLength: Number.POSITIVE_INFINITY,
 			replacementText: paragraph,
@@ -245,7 +254,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 		if (plan.deleteTo > plan.deleteFrom || plan.text.length > 0) {
 			plans.push(plan);
 		}
-		paragraphStartOffset += paragraph.length + 1;
 	}
 
 	return plans.length > 0 ? { kind: "aligned-block-range", plans } : null;
@@ -254,7 +262,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 function buildStreamingTextPreviewPlan({
 	blockId,
 	from,
-	insertedTextStartOffset,
 	originalText,
 	previousTextLength,
 	replacementText,
@@ -262,7 +269,6 @@ function buildStreamingTextPreviewPlan({
 }: {
 	blockId: string;
 	from: number;
-	insertedTextStartOffset: number;
 	originalText: string;
 	previousTextLength: number;
 	replacementText: string;
@@ -271,7 +277,6 @@ function buildStreamingTextPreviewPlan({
 	const partialPlan = buildPartialStreamingTextPreviewPlan({
 		blockId,
 		from,
-		insertedTextStartOffset,
 		originalText,
 		previousTextLength,
 		replacementText,
@@ -280,10 +285,16 @@ function buildStreamingTextPreviewPlan({
 		return partialPlan;
 	}
 
-	const sharedPrefixLength = countSharedPrefixLength(originalText, replacementText);
+	const sharedPrefixLength = countSharedPrefixLength(
+		originalText,
+		replacementText,
+	);
 	const originalTail = originalText.slice(sharedPrefixLength);
 	const previewTail = replacementText.slice(sharedPrefixLength);
-	const sharedSuffixLength = countSharedSuffixLength(originalTail, previewTail);
+	const sharedSuffixLength = countSharedSuffixLength(
+		originalTail,
+		previewTail,
+	);
 	const insertedTextEnd = replacementText.length - sharedSuffixLength;
 
 	return {
@@ -291,7 +302,6 @@ function buildStreamingTextPreviewPlan({
 		blockId,
 		deleteFrom: from + sharedPrefixLength,
 		deleteTo: to - sharedSuffixLength,
-		insertedTextStart: insertedTextStartOffset + sharedPrefixLength,
 		insertOffset: from + sharedPrefixLength,
 		text: replacementText.slice(sharedPrefixLength, insertedTextEnd),
 	};
@@ -300,14 +310,12 @@ function buildStreamingTextPreviewPlan({
 function buildPartialStreamingTextPreviewPlan({
 	blockId,
 	from,
-	insertedTextStartOffset,
 	originalText,
 	previousTextLength,
 	replacementText,
 }: {
 	blockId: string;
 	from: number;
-	insertedTextStartOffset: number;
 	originalText: string;
 	previousTextLength: number;
 	replacementText: string;
@@ -316,7 +324,10 @@ function buildPartialStreamingTextPreviewPlan({
 		return null;
 	}
 
-	const sharedPrefixLength = countSharedPrefixLength(originalText, replacementText);
+	const sharedPrefixLength = countSharedPrefixLength(
+		originalText,
+		replacementText,
+	);
 	if (sharedPrefixLength === 0) {
 		return null;
 	}
@@ -327,7 +338,6 @@ function buildPartialStreamingTextPreviewPlan({
 					blockId,
 					deleteFrom: from + sharedPrefixLength,
 					deleteTo: from + sharedPrefixLength,
-					insertedTextStart: insertedTextStartOffset + sharedPrefixLength,
 					insertOffset: from + sharedPrefixLength,
 					text: "",
 				}
@@ -336,14 +346,16 @@ function buildPartialStreamingTextPreviewPlan({
 
 	const originalTail = originalText.slice(sharedPrefixLength);
 	const replacementTail = replacementText.slice(sharedPrefixLength);
-	const anchor = findStreamingPreviewResyncAnchor(originalTail, replacementTail);
+	const anchor = findStreamingPreviewResyncAnchor(
+		originalTail,
+		replacementTail,
+	);
 
 	return {
 		kind: "text-range",
 		blockId,
 		deleteFrom: from + sharedPrefixLength,
 		deleteTo: from + sharedPrefixLength + (anchor?.originalOffset ?? 0),
-		insertedTextStart: insertedTextStartOffset + sharedPrefixLength,
 		insertOffset: from + sharedPrefixLength,
 		text: replacementTail.slice(
 			0,
@@ -354,9 +366,14 @@ function buildPartialStreamingTextPreviewPlan({
 
 export function normalizeStreamingBlockRange(
 	editor: Editor,
-	target: Extract<AIStreamingReviewPreview["target"], { kind: "block-range" }>,
+	target: Extract<
+		AIStreamingReviewPreview["target"],
+		{ kind: "block-range" }
+	>,
 ): BlockRangeStreamingPreviewPlan["normalizedRange"] | null {
-	const blockIds = target.blockIds.filter((blockId) => editor.getBlock(blockId));
+	const blockIds = target.blockIds.filter((blockId) =>
+		editor.getBlock(blockId),
+	);
 	const startIndex = blockIds.indexOf(target.start.blockId);
 	const endIndex = blockIds.indexOf(target.end.blockId);
 	if (startIndex < 0 || endIndex < 0) {
@@ -382,7 +399,9 @@ function toNormalizedReplacementRange(
 	const blocks: ReplacementRangeBlock[] = [
 		{
 			id: normalizedRange.start.blockId,
-			text: editor.getBlock(normalizedRange.start.blockId)?.textContent() ?? "",
+			text:
+				editor.getBlock(normalizedRange.start.blockId)?.textContent() ??
+				"",
 		},
 		...normalizedRange.middleBlockIds.map((blockId) => ({
 			id: blockId,
@@ -392,7 +411,9 @@ function toNormalizedReplacementRange(
 	if (normalizedRange.end.blockId !== normalizedRange.start.blockId) {
 		blocks.push({
 			id: normalizedRange.end.blockId,
-			text: editor.getBlock(normalizedRange.end.blockId)?.textContent() ?? "",
+			text:
+				editor.getBlock(normalizedRange.end.blockId)?.textContent() ??
+				"",
 		});
 	}
 

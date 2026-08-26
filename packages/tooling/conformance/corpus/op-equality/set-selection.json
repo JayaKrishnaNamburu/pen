@@ -1,0 +1,148 @@
+{
+	"id": "set-selection",
+	"opType": "set-selection",
+	"family": "typing",
+	"path": "synthetic",
+	"command": null,
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "AAAAA"
+			},
+			{
+				"id": "p2",
+				"type": "paragraph",
+				"text": "BBBBB"
+			}
+		],
+		"selection": {
+			"blockId": "p1",
+			"from": 0,
+			"to": 0
+		}
+	},
+	"ops": [
+		{
+			"type": "set-selection",
+			"selection": {
+				"type": "text",
+				"anchor": {
+					"blockId": "p2",
+					"offset": 2
+				},
+				"focus": {
+					"blockId": "p2",
+					"offset": 5
+				}
+			}
+		}
+	],
+	"updateBytes": "AAEBAQIH",
+	"updateByteLength": 6,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1",
+			"p2"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "AAAAA"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"p2": {
+				"content": {
+					"delta": [
+						{
+							"insert": "BBBBB"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1",
+			"p2"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "AAAAA"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"p2": {
+				"content": {
+					"delta": [
+						{
+							"insert": "BBBBB"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "p2",
+			"offset": 2
+		},
+		"blockRange": [
+			"p2"
+		],
+		"focus": {
+			"blockId": "p2",
+			"offset": 5
+		},
+		"goalX": null,
+		"isCollapsed": false,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

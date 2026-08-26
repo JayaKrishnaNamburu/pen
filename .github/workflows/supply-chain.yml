@@ -1,0 +1,240 @@
+name: Supply chain
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  prod-audit:
+    name: Production audit
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Blocking (SEC7). Root `pnpm audit --prod` is the wrong question: pnpm
+      # audit has no workspace filter, so a root sweep also flags playground
+      # `ws` and examples/vue `postcss`/`nanoid`, which never ship. This step
+      # keeps only advisories whose install path starts at a published package
+      # (a package.json without `"private": true`).
+      # It ran staged until 2026-08-20, when the sanitizer graph
+      # (import-html → isomorphic-dompurify → jsdom) was pinned to
+      # undici 7.29.0 and dompurify 3.4.14 via root pnpm.overrides, clearing
+      # the five undici highs that were the reason for the stage. The published
+      # graph now reports zero advisories; every remaining hit starts at
+      # playground or examples/vue.
+      - name: Audit published production dependencies
+        run: |
+          node --input-type=module <<'EOF'
+          import { spawnSync } from "node:child_process";
+          import { readdirSync, readFileSync, statSync } from "node:fs";
+          import { join } from "node:path";
+
+          const packagesRoot = "packages";
+          const publishedDirs = [];
+
+          function walk(dir) {
+            for (const name of readdirSync(dir)) {
+              if (name === "node_modules" || name === "dist") continue;
+              const full = join(dir, name);
+              if (statSync(full).isDirectory()) {
+                walk(full);
+                continue;
+              }
+              if (name !== "package.json") continue;
+              const pkg = JSON.parse(readFileSync(full, "utf8"));
+              if (pkg.private === true || typeof pkg.name !== "string") continue;
+              publishedDirs.push(dir);
+            }
+          }
+
+          walk(packagesRoot);
+          publishedDirs.sort();
+          if (publishedDirs.length === 0) {
+            console.error("SEC7: no published packages found under packages/");
+            process.exit(1);
+          }
+
+          function pathStartsAtPublished(path) {
+            return publishedDirs.some(
+              (dir) => path === dir || path.startsWith(`${dir} >`),
+            );
+          }
+
+          const result = spawnSync("pnpm", ["audit", "--prod", "--json"], {
+            encoding: "utf8",
+            maxBuffer: 20 * 1024 * 1024,
+          });
+          if (result.error) {
+            console.error("SEC7: pnpm audit failed to start:", result.error.message);
+            process.exit(1);
+          }
+
+          let report;
+          try {
+            report = JSON.parse(result.stdout);
+          } catch {
+            console.error("SEC7: pnpm audit --json did not return JSON");
+            console.error(result.stderr || result.stdout.slice(0, 2000));
+            process.exit(1);
+          }
+
+          const advisories = Object.values(report.advisories ?? {});
+          const published = [];
+          const privateOnly = [];
+
+          for (const advisory of advisories) {
+            const paths = (advisory.findings ?? []).flatMap(
+              (finding) => finding.paths ?? [],
+            );
+            const publishedPaths = paths.filter(pathStartsAtPublished);
+            const row = {
+              module: advisory.module_name,
+              severity: advisory.severity,
+              title: advisory.title,
+              url: advisory.url,
+              patched: advisory.patched_versions,
+              paths: publishedPaths.length > 0 ? publishedPaths : paths,
+            };
+            if (publishedPaths.length > 0) published.push(row);
+            else if (paths.length > 0) privateOnly.push(row);
+          }
+
+          published.sort(
+            (a, b) => a.module.localeCompare(b.module) || a.url.localeCompare(b.url),
+          );
+          privateOnly.sort(
+            (a, b) => a.module.localeCompare(b.module) || a.url.localeCompare(b.url),
+          );
+
+          console.log(
+            `SEC7: ${publishedDirs.length} published packages. Root production audit reported ${advisories.length} advisories.`,
+          );
+
+          if (privateOnly.length > 0) {
+            console.log(
+              `Out of scope (${privateOnly.length}): install paths start only at private workspaces (playground, examples, docs, conformance).`,
+            );
+            for (const row of privateOnly) {
+              console.log(
+                `  ${row.severity} ${row.module} ${row.url}  (${row.paths[0]})`,
+              );
+            }
+          }
+
+          if (published.length === 0) {
+            console.log("SEC7: no production advisories reach a published package");
+            process.exit(0);
+          }
+
+          console.error(
+            `SEC7: ${published.length} production advisories reach published packages:`,
+          );
+          for (const row of published) {
+            console.error(`  ${row.severity} ${row.module}  ${row.title}`);
+            console.error(`    ${row.url}  patched ${row.patched}`);
+            for (const path of row.paths) console.error(`    ${path}`);
+          }
+          process.exit(1);
+          EOF
+
+  no-install-scripts:
+    name: Install scripts
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # Reads manifests with node: builtins only, so there is no workspace
+          # install here. setup-node@v5 would otherwise cache for the pnpm named
+          # in packageManager and fail on the missing binary.
+          package-manager-cache: false
+
+      - name: Fail if published manifests grow install scripts
+        run: node scripts/no-install-scripts.mjs
+
+  sec8-dynamic-code-lint:
+    name: Dynamic-code lint
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # Reads eslint.config.mjs as text; no workspace install, so decline
+          # the package-manager cache for the same reason as above.
+          package-manager-cache: false
+
+      - name: Assert SEC8 rules stay error
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync } from "node:fs";
+
+          const config = readFileSync("eslint.config.mjs", "utf8");
+          const required = [
+            '"no-eval": "error"',
+            '"no-new-func": "error"',
+            '"no-implied-eval": "error"',
+          ];
+          const missing = required.filter((rule) => !config.includes(rule));
+
+          if (missing.length > 0) {
+            console.error(
+              "SEC8: core dynamic-code bans keep Pen functional under script-src 'self'. They must remain \"error\":",
+            );
+            for (const rule of missing) console.error(`  missing ${rule}`);
+            process.exit(1);
+          }
+
+          console.log(
+            "SEC8: no-eval, no-new-func, and no-implied-eval remain error in eslint.config.mjs",
+          );
+          EOF
+
+  supply-chain:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: All audits
+    if: always()
+    needs: [prod-audit, no-install-scripts, sec8-dynamic-code-lint]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require every supply-chain job to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}

@@ -1,4 +1,5 @@
-import type { Editor, FieldEditor, SelectionState } from "@pen/types";
+import { getSelectionBlockRange, isMultiBlock } from "@input/pen-core";
+import type { Editor, FieldEditor, SelectionState } from "@input/pen-types";
 import { getBlockSelectionRoleFromSchema } from "../utils/blockSelectionSemantics";
 
 /**
@@ -8,7 +9,7 @@ import { getBlockSelectionRoleFromSchema } from "../utils/blockSelectionSemantic
  * and managing shared Y.Text observation.
  */
 
-export interface CrossBlockState {
+interface CrossBlockState {
 	isExpanded: boolean;
 	blockIds: readonly string[];
 	anchorBlockId: string | null;
@@ -48,10 +49,9 @@ export function contractFieldEditorRange(
 }
 
 /**
- * Determine whether a block selection should use cross-block contenteditable
- * expansion or switch to BlockSelection mode.
- *
- * Per spec: >50 blocks uses BlockSelection instead of contenteditable expansion.
+ * Surface heuristic: a text range over >50 blocks skips contenteditable
+ * expansion (`mode: "block"`). This is not an authority-type change.
+ * T3: pointer reads never flip to BlockSelection by count.
  */
 export function shouldUseBlockSelection(
 	_editor: Editor,
@@ -81,15 +81,16 @@ export function classifySelectionSurface(
 	}
 
 	if (selection?.type === "text") {
-		if (selection.isMultiBlock) {
+		const blockRange = getSelectionBlockRange(
+			editor.internals.doc,
+			selection,
+		);
+		if (isMultiBlock(selection)) {
 			return {
-				mode: shouldUseBlockSelection(
-					editor,
-					selection.blockRange.length,
-				)
+				mode: shouldUseBlockSelection(editor, blockRange.length)
 					? "block"
 					: "expanded",
-				blockIds: [...selection.blockRange],
+				blockIds: [...blockRange],
 			};
 		}
 
@@ -97,7 +98,7 @@ export function classifySelectionSurface(
 			return { mode: "inactive", blockIds: [] };
 		}
 
-		if (!selection.blockRange.includes(focusBlockId)) {
+		if (!blockRange.includes(focusBlockId)) {
 			return { mode: "single", blockIds: [focusBlockId] };
 		}
 

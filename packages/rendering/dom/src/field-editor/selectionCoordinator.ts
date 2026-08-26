@@ -1,5 +1,6 @@
-import type { SelectionState } from "@pen/types";
+import type { SelectionState } from "@input/pen-types";
 import type { PenFieldEditorFocusOptions } from "./controller";
+import type { GestureEventKind, GestureWindowState } from "./selectionReader";
 import {
 	FieldEditorSelectionAuthority,
 	type FieldEditorSelectionSnapshot,
@@ -28,6 +29,22 @@ export class FieldEditorSelectionCoordinator {
 		this._authority.reset();
 		this._editContextSelection = null;
 		this._projection.reset();
+	}
+
+	get lastProjectedVersion(): number {
+		return this._projection.lastProjectedVersion;
+	}
+
+	recordProjectedVersion(version: number): void {
+		this._projection.recordProjectedVersion(version);
+	}
+
+	get parkedProjectionVersion(): number | null {
+		return this._projection.parkedProjectionVersion;
+	}
+
+	ackBlockMounted(blockId: string, element: HTMLElement): void {
+		this._projection.ackBlockMounted(blockId, element);
 	}
 
 	resetAuthority(): void {
@@ -61,8 +78,8 @@ export class FieldEditorSelectionCoordinator {
 		return this._authority.beginApplyingSelection();
 	}
 
-	applySelectionUntilNextFrame(): void {
-		this._authority.applySelectionUntilNextFrame();
+	withSelectionWrite<T>(write: () => T): T {
+		return this._authority.withSelectionWrite(write);
 	}
 
 	setEditContextSelection(
@@ -71,7 +88,9 @@ export class FieldEditorSelectionCoordinator {
 		this._editContextSelection = selection;
 	}
 
-	getEditContextSelection(blockId?: string | null): FieldEditorSelectionSnapshot | null {
+	getEditContextSelection(
+		blockId?: string | null,
+	): FieldEditorSelectionSnapshot | null {
 		if (
 			!this._editContextSelection ||
 			(blockId && this._editContextSelection.blockId !== blockId)
@@ -89,12 +108,24 @@ export class FieldEditorSelectionCoordinator {
 		this._projection.endPointerSelection();
 	}
 
-	consumeDomSelectionProjectionSuppression(): boolean {
-		return this._projection.consumeDomSelectionProjectionSuppression();
+	notifyGestureEvent(eventKind: GestureEventKind): void {
+		this._projection.notifyGestureEvent(eventKind);
 	}
 
-	suppressNextDomSelectionProjection(): void {
-		this._projection.suppressNextDomSelectionProjection();
+	getGestureWindows(): GestureWindowState {
+		return this._projection.getGestureWindows();
+	}
+
+	isAdmissibleGestureRead(): boolean {
+		return this._projection.isAdmissibleGestureRead();
+	}
+
+	isProjectionInFlight(): boolean {
+		return this._projection.isProjectionInFlight();
+	}
+
+	requestDivergenceProjection(): void {
+		this._projection.requestDivergenceProjection();
 	}
 
 	shouldHandleDomSelectionChange(
@@ -107,30 +138,6 @@ export class FieldEditorSelectionCoordinator {
 		);
 	}
 
-	resolveProgrammaticInputRange(
-		blockId: string | null,
-		liveRange: { start: number; end: number } | null,
-	): { start: number; end: number } | null {
-		return this._projection.resolveProgrammaticInputRange(
-			blockId,
-			liveRange,
-		);
-	}
-
-	shouldIgnoreDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
-	): boolean {
-		return this._projection.shouldIgnoreDomTextSelection(anchor, focus);
-	}
-
-	isProgrammaticDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
-	): boolean {
-		return this._projection.isProgrammaticDomTextSelection(anchor, focus);
-	}
-
 	prepareSyncedTextSelection(
 		currentSelection: SelectionState | null,
 		blockId: string,
@@ -139,18 +146,6 @@ export class FieldEditorSelectionCoordinator {
 	): "skip" | "apply" {
 		return this._projection.prepareSyncedTextSelection(
 			currentSelection,
-			blockId,
-			anchorOffset,
-			focusOffset,
-		);
-	}
-
-	notifyTextSelectionSet(
-		blockId: string,
-		anchorOffset: number,
-		focusOffset: number,
-	): void {
-		this._projection.notifyTextSelectionSet(
 			blockId,
 			anchorOffset,
 			focusOffset,
@@ -195,9 +190,5 @@ export class FieldEditorSelectionCoordinator {
 
 	recordUserSelectionIntent(): void {
 		this._projection.recordUserSelectionIntent();
-	}
-
-	shouldSuppressSelectionSync(): boolean {
-		return this._projection.shouldSuppressSelectionSync();
 	}
 }

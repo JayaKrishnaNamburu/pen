@@ -1,5 +1,12 @@
 import React, { Children, cloneElement, isValidElement, useRef } from "react";
-import type { BlockRenderContext, Decoration } from "@pen/types";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
+import { resolveBlockDirection } from "@input/pen-core";
+import type {
+	BlockHandle,
+	BlockRenderContext,
+	Decoration,
+	Editor,
+} from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useBlockDecorations } from "../../hooks/useBlockDecorations";
@@ -9,7 +16,10 @@ import { useBlockSelectionState } from "../../hooks/useBlockSelectionState";
 import { useBlockSurfaceRole } from "../../hooks/useBlockSurfaceRole";
 import { resolveRenderer } from "../../renderers/index";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import { useBlockDropPreview } from "./dropPreviewContext";
 
 export interface EditorBlockProps extends AsChildProps {
@@ -19,12 +29,7 @@ export interface EditorBlockProps extends AsChildProps {
 
 export function EditorBlock(props: EditorBlockProps) {
 	const { blockId, ...rest } = props;
-	const {
-		editor,
-		readonly,
-		renderers,
-		blockControls,
-	} = useEditorContext();
+	const { editor, readonly, renderers, blockControls } = useEditorContext();
 	const fieldEditor = useFieldEditorContext();
 	const isEditable = useBlockEditingState(fieldEditor, blockId);
 	const blockModel = useBlockModel(editor, blockId);
@@ -33,6 +38,17 @@ export function EditorBlock(props: EditorBlockProps) {
 	const blockDecorations = useBlockDecorations(editor, blockId);
 	const externalDropPosition = useBlockDropPreview(blockId);
 	const blockRef = useRef<HTMLElement>(null);
+
+	useIsomorphicLayoutEffect(() => {
+		const element = blockRef.current;
+		if (!element) {
+			return;
+		}
+		if (!fieldEditor) {
+			return;
+		}
+		fieldEditor.ackBlockMounted(blockId, element);
+	}, [fieldEditor, blockId, blockModel.exists]);
 
 	if (!blockModel.exists) return null;
 
@@ -60,6 +76,7 @@ export function EditorBlock(props: EditorBlockProps) {
 		blockType === "heading" && typeof block.props?.level === "number"
 			? block.props.level
 			: undefined;
+	const dir = resolvedContentDir(editor, block);
 	const blockControl = blockControls?.({
 		blockId,
 		blockType,
@@ -70,22 +87,28 @@ export function EditorBlock(props: EditorBlockProps) {
 		(d: Decoration) =>
 			"attributes" in d &&
 			Boolean(
-				d.attributes[DATA_ATTRS.aiGenerating] ?? d.attributes["ai-generating"],
+				d.attributes[DATA_ATTRS.aiGenerating] ??
+				d.attributes["ai-generating"],
 			),
 	);
-	const blockDecorationAttributes = mergeBlockDecorationAttributes(blockDecorations);
+	const blockDecorationAttributes =
+		mergeBlockDecorationAttributes(blockDecorations);
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorBlock]: "",
 		[DATA_ATTRS.blockId]: blockId,
 		[DATA_ATTRS.blockType]: blockType,
+		dir,
+		style: { unicodeBidi: "isolate" },
 		"data-level": headingLevel,
-		[DATA_ATTRS.selected]: isSelected || undefined,
-		[DATA_ATTRS.focused]: fieldEditor?.focusBlockId === blockId || undefined,
 		[DATA_ATTRS.surfaceRole]: surfaceRole ?? undefined,
-		[DATA_ATTRS.dropTarget]: externalDropPosition ? true : undefined,
 		[DATA_ATTRS.dropPosition]: externalDropPosition,
-		[DATA_ATTRS.aiGenerating]: isAiGenerating || undefined,
+		...buildDataAttributes({
+			selected: isSelected,
+			focused: fieldEditor?.focusBlockId === blockId,
+			"drop-target": Boolean(externalDropPosition),
+			"ai-generating": isAiGenerating,
+		}),
 		tabIndex: -1,
 		contentEditable:
 			surfaceRole != null && surfaceRole !== "editable-inline"
@@ -138,7 +161,11 @@ function injectBlockDecorationsIntoInlineContent(
 
 	if (props.children) {
 		const nextChildren = Children.map(props.children, (child) =>
-			injectBlockDecorationsIntoInlineContent(child, blockId, decorations),
+			injectBlockDecorationsIntoInlineContent(
+				child,
+				blockId,
+				decorations,
+			),
 		);
 		if (nextChildren !== props.children) {
 			nextProps.children = nextChildren;
@@ -162,10 +189,7 @@ function mergeBlockDecorationAttributes(
 		if (decoration.type !== "block") {
 			continue;
 		}
-		if (
-			decoration.position != null &&
-			decoration.position !== "wrap"
-		) {
+		if (decoration.position != null && decoration.position !== "wrap") {
 			continue;
 		}
 		for (const [key, value] of Object.entries(decoration.attributes)) {
@@ -182,4 +206,15 @@ function mergeBlockDecorationAttributes(
 	}
 
 	return attributes;
+}
+
+function resolvedContentDir(
+	editor: Editor,
+	block: BlockHandle,
+): "ltr" | "rtl" | undefined {
+	const resolved = resolveBlockDirection(editor, block);
+	if (block.props.direction === "ltr" || block.props.direction === "rtl") {
+		return resolved;
+	}
+	return resolved === "rtl" ? "rtl" : undefined;
 }

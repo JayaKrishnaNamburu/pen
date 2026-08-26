@@ -1,4 +1,9 @@
-import { defineBlock, prop } from "@pen/types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
+import { directionProp } from "../directionProp";
+import { escapeHtml } from "../escapeHtml";
 
 export const codeBlock = defineBlock("codeBlock", {
   props: {
@@ -6,6 +11,7 @@ export const codeBlock = defineBlock("codeBlock", {
       .string()
       .optional()
       .describe("Programming language for syntax highlighting"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "code",
@@ -24,8 +30,8 @@ export const codeBlock = defineBlock("codeBlock", {
       return `\`\`\`${lang}\n${block.content ?? ""}\n\`\`\``;
     },
     toHTML: (block) => {
-      const lang = block.props.language ?? "";
-      const langAttr = lang ? ` class="language-${lang}"` : "";
+      const lang = String(block.props.language ?? "");
+      const langAttr = lang ? ` class="language-${escapeHtml(lang)}"` : "";
       return `<pre><code${langAttr}>${block.content ?? ""}</code></pre>`;
     },
   },

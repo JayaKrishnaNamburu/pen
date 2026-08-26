@@ -1,12 +1,12 @@
-import type {
-	ApplyOptions,
-	DocumentOp,
-	Editor,
-	FieldEditor,
-	InlineDelta,
-	InlineNodeDeltaInsert,
-} from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+import { fieldEditorHostFacet } from "@input/pen-core";
+import {
+	type ApplyOptions,
+	type DocumentOp,
+	type Editor,
+	type FieldEditor,
+	type InlineDelta,
+	type InlineNodeDeltaInsert,
+} from "@input/pen-types";
 import {
 	pointToEditorSelectionPoint,
 	type SelectionPoint,
@@ -14,7 +14,6 @@ import {
 
 export const INLINE_ATOM_LOGICAL_LENGTH = 1;
 
-const ZERO_WIDTH_SPACE = "\u200B";
 const OBJECT_REPLACEMENT_CHARACTER = "\uFFFC";
 const DEFAULT_APPLY_OPTIONS: ApplyOptions = { origin: "user", undoGroup: true };
 
@@ -36,6 +35,104 @@ export interface InlineAtomSnapshot {
 	type: string;
 	props: Record<string, unknown>;
 	text: string;
+}
+
+export interface InlineAtomRenderInteractionProps {
+	draggable: boolean;
+	dragging: boolean;
+	canDestructure: boolean;
+	destructure?: () => boolean;
+}
+
+export type InlineAtomDestructureHandler = (
+	atom: InlineAtomSnapshot,
+) => string | null | undefined;
+
+export interface InlineAtomMoveEvent {
+	source: InlineAtomSource;
+	target: InlineAtomDropTarget;
+	atom: InlineAtomSnapshot;
+}
+
+export interface InlineAtomMoveRejectedEvent {
+	source: InlineAtomSource;
+	target?: InlineAtomDropTarget;
+	atom?: InlineAtomSnapshot;
+	reason:
+		| "readonly"
+		| "disabled"
+		| "stale-source"
+		| "missing-target"
+		| "schema"
+		| "policy"
+		| "noop";
+}
+
+export interface InlineAtomAfterDestructureEvent {
+	editor: Editor;
+	atom: InlineAtomSnapshot;
+	blockId: string;
+	startOffset: number;
+	endOffset: number;
+	text: string;
+}
+
+export type InlineAtomAfterDestructureObserver = (
+	event: InlineAtomAfterDestructureEvent,
+) => void;
+
+export type InlineAtomMoveObserver = (
+	event: InlineAtomMoveEvent,
+) => boolean | void;
+
+export type InlineAtomMoveRejectedObserver = (
+	event: InlineAtomMoveRejectedEvent,
+) => void;
+
+export type InlineAtomInteractions =
+	| boolean
+	| {
+			drag?: boolean;
+			destructure?:
+				| boolean
+				| InlineAtomDestructureHandler
+				| Partial<Record<string, InlineAtomDestructureHandler>>;
+			onBeforeMove?: InlineAtomMoveObserver;
+			onMove?: InlineAtomMoveObserver;
+			onMoveRejected?: InlineAtomMoveRejectedObserver;
+			onAfterDestructure?: InlineAtomAfterDestructureObserver;
+	  };
+
+export interface ResolvedInlineAtomInteractions {
+	drag: boolean;
+	destructure:
+		| boolean
+		| InlineAtomDestructureHandler
+		| Partial<Record<string, InlineAtomDestructureHandler>>;
+	onBeforeMove?: InlineAtomMoveObserver;
+	onMove?: InlineAtomMoveObserver;
+	onMoveRejected?: InlineAtomMoveRejectedObserver;
+	onAfterDestructure?: InlineAtomAfterDestructureObserver;
+}
+
+export function resolveInlineAtomInteractions(
+	options?: InlineAtomInteractions,
+): ResolvedInlineAtomInteractions {
+	if (options === true) {
+		return { drag: true, destructure: false };
+	}
+	if (!options) {
+		return { drag: false, destructure: false };
+	}
+
+	return {
+		drag: options.drag ?? false,
+		destructure: options.destructure ?? false,
+		onBeforeMove: options.onBeforeMove,
+		onMove: options.onMove,
+		onMoveRejected: options.onMoveRejected,
+		onAfterDestructure: options.onAfterDestructure,
+	};
 }
 
 export interface ResolveInlineAtomDropTargetOptions {
@@ -125,17 +222,21 @@ export function buildMoveInlineAtomOps(
 	const targetOffset = getAdjustedTargetOffset(source, target);
 	return [
 		{
-			type: "delete-text",
+			type: "splice-text",
 			blockId: source.blockId,
-			offset: source.offset,
-			length: INLINE_ATOM_LOGICAL_LENGTH,
+			from: source.offset,
+			to: source.offset + INLINE_ATOM_LOGICAL_LENGTH,
+			insert: "",
 		},
 		{
-			type: "insert-inline-node",
+			type: "splice-text",
 			blockId: target.blockId,
-			offset: targetOffset,
-			nodeType: sourceAtom.type,
-			props: { ...sourceAtom.props },
+			from: targetOffset,
+			to: targetOffset,
+			insert: {
+				nodeType: sourceAtom.type,
+				props: { ...sourceAtom.props },
+			},
 		},
 	];
 }
@@ -165,18 +266,20 @@ export function replaceInlineAtomWithText({
 
 	const ops: DocumentOp[] = [
 		{
-			type: "delete-text",
+			type: "splice-text",
 			blockId: source.blockId,
-			offset: source.offset,
-			length: INLINE_ATOM_LOGICAL_LENGTH,
+			from: source.offset,
+			to: source.offset + INLINE_ATOM_LOGICAL_LENGTH,
+			insert: "",
 		},
 	];
 	if (text.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: source.blockId,
-			offset: source.offset,
-			text,
+			from: source.offset,
+			to: source.offset,
+			insert: text,
 		});
 	}
 
@@ -185,18 +288,14 @@ export function replaceInlineAtomWithText({
 	const endOffset = source.offset + text.length;
 
 	if (selection === "all") {
-		source.editor.selectText(
-			source.blockId,
-			source.offset,
-			endOffset,
-		);
+		source.editor.selectText(source.blockId, source.offset, endOffset);
 	} else if (selection === "end") {
 		source.editor.selectText(source.blockId, endOffset, endOffset);
 	}
 
-	const fieldEditor = source.editor.internals.getSlot<FieldEditor>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = source.editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditor | null;
 	if (fieldEditor && selection !== "none") {
 		if (selection === "all") {
 			if (typeof fieldEditor.activateTextSelection === "function") {
@@ -263,11 +362,14 @@ function moveInlineAtomBetweenEditors({
 	target.editor.apply(
 		[
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId: target.blockId,
-				offset: target.offset,
-				nodeType: sourceAtom.type,
-				props: { ...sourceAtom.props },
+				from: target.offset,
+				to: target.offset,
+				insert: {
+					nodeType: sourceAtom.type,
+					props: { ...sourceAtom.props },
+				},
 			},
 		],
 		applyOptions,
@@ -275,10 +377,11 @@ function moveInlineAtomBetweenEditors({
 	source.editor.apply(
 		[
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId: source.blockId,
-				offset: source.offset,
-				length: INLINE_ATOM_LOGICAL_LENGTH,
+				from: source.offset,
+				to: source.offset + INLINE_ATOM_LOGICAL_LENGTH,
+				insert: "",
 			},
 		],
 		applyOptions,
@@ -321,9 +424,7 @@ function getAdjustedTargetOffset(
 
 function getInlineDeltaLength(delta: InlineDelta): number {
 	return typeof delta.insert === "string"
-		? delta.insert
-				.replaceAll(ZERO_WIDTH_SPACE, "")
-				.replaceAll(OBJECT_REPLACEMENT_CHARACTER, "").length
+		? delta.insert.replaceAll(OBJECT_REPLACEMENT_CHARACTER, "").length
 		: INLINE_ATOM_LOGICAL_LENGTH;
 }
 

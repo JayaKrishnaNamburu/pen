@@ -1,14 +1,13 @@
-import type { SchemaRegistry } from "@pen/types";
+import { resolveA11ySpec } from "@input/pen-core";
+import type { SchemaRegistry } from "@input/pen-types";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import {
-	INLINE_ATOM_CARET_BOUNDARY_TEXT,
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	resolveInlineAtomDisplayText,
 	resolveInlineAtomInsert,
 	type InlineAtomInsert,
 } from "./inlineAtomModel";
 export {
-	INLINE_ATOM_CARET_BOUNDARY_TEXT,
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	resolveInlineAtomInsert,
 } from "./inlineAtomModel";
@@ -27,9 +26,7 @@ export function createInlineAtomCaretBoundaryElement(
 	const element = document.createElement("span");
 	element.setAttribute(DATA_ATTRS.inlineAtomCaretBoundary, "");
 	element.setAttribute(DATA_ATTRS.inlineAtomCaretSide, side);
-	element.appendChild(
-		document.createTextNode(INLINE_ATOM_CARET_BOUNDARY_TEXT),
-	);
+	element.appendChild(document.createElement("br"));
 	return element;
 }
 
@@ -48,9 +45,16 @@ function createInlineAtomChipElement(
 	}
 
 	element.setAttribute(DATA_ATTRS.inlineAtomType, atom.type);
-	element.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(atom.props));
 	const text = resolveInlineAtomDisplayText(atom, registry);
-	element.setAttribute("aria-label", text);
+	const a11y = resolveA11ySpec(
+		registry.resolveInline(atom.type)?.a11y,
+		atom.type,
+		atom.props,
+	);
+	element.setAttribute("aria-label", a11y.label);
+	if (a11y.roleDescription) {
+		element.setAttribute("aria-roledescription", a11y.roleDescription);
+	}
 	element.textContent = text;
 	inlineAtomElementData.set(element, {
 		...atom,
@@ -78,7 +82,10 @@ export function getInlineAtomElementData(
 	if (!chip) {
 		return null;
 	}
-	return inlineAtomElementData.get(chip) ?? deserializeInlineAtomElementData(chip);
+	return (
+		inlineAtomElementData.get(chip) ??
+		deserializeInlineAtomElementData(chip)
+	);
 }
 
 export function copyInlineAtomElementData(
@@ -102,15 +109,13 @@ export function copyInlineAtomElementData(
 		text: data.text,
 	});
 	targetChip.setAttribute(DATA_ATTRS.inlineAtomType, data.type);
-	targetChip.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(data.props));
-	targetChip.setAttribute("aria-label", data.text);
-}
-
-function serializeInlineAtomProps(props: Record<string, unknown>): string {
-	try {
-		return JSON.stringify(props);
-	} catch {
-		return "{}";
+	targetChip.setAttribute(
+		"aria-label",
+		sourceChip.getAttribute("aria-label") ?? data.text,
+	);
+	const roleDescription = sourceChip.getAttribute("aria-roledescription");
+	if (roleDescription) {
+		targetChip.setAttribute("aria-roledescription", roleDescription);
 	}
 }
 
@@ -123,7 +128,9 @@ function deserializeInlineAtomElementData(
 	}
 	return {
 		type,
-		props: parseInlineAtomProps(element.getAttribute(DATA_ATTRS.inlineAtomProps)),
+		props: parseInlineAtomProps(
+			element.getAttribute(DATA_ATTRS.inlineAtomProps),
+		),
 		text: element.getAttribute("aria-label") ?? element.textContent ?? "",
 	};
 }
@@ -138,6 +145,7 @@ function parseInlineAtomProps(value: string | null): Record<string, unknown> {
 			? (props as Record<string, unknown>)
 			: {};
 	} catch {
+		// stored atom props json was unreadable.
 		return {};
 	}
 }
@@ -195,13 +203,29 @@ function shallowEqualRecords(
 		return true;
 	}
 
-	const leftKeys = Object.keys(left);
-	const rightKeys = Object.keys(right);
+	const leftKeys = definedRecordKeys(left);
+	const rightKeys = definedRecordKeys(right);
 	if (leftKeys.length !== rightKeys.length) {
 		return false;
 	}
 
-	return leftKeys.every((key) => Object.is(left[key], right[key]));
+	for (const key of leftKeys) {
+		if (!Object.is(left[key], right[key])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function definedRecordKeys(record: Record<string, unknown>): string[] {
+	const keys: string[] = [];
+	for (const key of Object.keys(record)) {
+		if (record[key] !== undefined) {
+			keys.push(key);
+		}
+	}
+	return keys;
 }
 
 function getInlineAtomChipElement(element: Element): HTMLElement | null {
@@ -219,7 +243,6 @@ function getInlineAtomChipElement(element: Element): HTMLElement | null {
 
 	return null;
 }
-
 
 export {
 	domPointToLogicalOffset,

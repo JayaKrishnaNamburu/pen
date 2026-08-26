@@ -7,6 +7,12 @@ import {
   PenInlineContent,
 } from "./components/index";
 
+/**
+ * Registers the Pen components globally so templates can use
+ * `<PenEditor>`, `<PenContent>`, `<PenBlock>`, `<PenInlineContent>`, and
+ * `<PenFieldEditor>` without importing each one. Installing the plugin
+ * is optional — importing the components directly works the same way.
+ */
 export const PenVuePlugin: Plugin = {
   install(app: App) {
     app.component("PenEditor", PenEditor);

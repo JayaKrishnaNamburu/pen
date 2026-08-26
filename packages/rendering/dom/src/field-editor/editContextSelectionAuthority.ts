@@ -36,7 +36,6 @@ export function resolveEditContextTextUpdateRange(input: {
 	selectionEnd?: number;
 	isLogicallyEmpty: boolean;
 	editorSelectionRange: EditContextRange | null;
-	programmaticInputRange: EditContextRange | null;
 	editContextSelection: EditContextSelection | null;
 	authoritativeTextInputSelection: EditContextSelection | null;
 	editorCaret: number | null;
@@ -70,24 +69,20 @@ export function resolveEditContextTextUpdateRange(input: {
 	const selectedEditorRange = shouldUseEditorSelectionRange
 		? editorSelectionRange
 		: null;
-	const rangeStart = input.programmaticInputRange
-		? input.programmaticInputRange.start
-		: selectedEditorRange
-			? selectedEditorRange.start
-			: shouldClampEmptyRange
-				? 0
-				: shouldUseTrustedCaret
-					? trustedCaret
-					: input.updateRangeStart;
-	const rangeEnd = input.programmaticInputRange
-		? input.programmaticInputRange.end
-		: selectedEditorRange
-			? selectedEditorRange.end
-			: shouldClampEmptyRange
-				? 0
-				: shouldUseTrustedCaret
-					? trustedCaret
-					: input.updateRangeEnd;
+	const rangeStart = selectedEditorRange
+		? selectedEditorRange.start
+		: shouldClampEmptyRange
+			? 0
+			: shouldUseTrustedCaret
+				? trustedCaret
+				: input.updateRangeStart;
+	const rangeEnd = selectedEditorRange
+		? selectedEditorRange.end
+		: shouldClampEmptyRange
+			? 0
+			: shouldUseTrustedCaret
+				? trustedCaret
+				: input.updateRangeEnd;
 	const hasCollapsedEventSelection =
 		typeof input.selectionStart !== "number" ||
 		typeof input.selectionEnd !== "number" ||
@@ -127,7 +122,6 @@ export function resolveEditContextKeyDownRange(input: {
 	liveDomOffsets: DirectionalSelectionOffsets | null;
 	editContextRange: EditContextRange;
 	editorSelectionRange: EditContextRange | null;
-	programmaticInputRange: EditContextRange | null;
 	authoritativeTextInputSelection: EditContextSelection | null;
 	collapsedEditorSelectionRange: EditContextRange | null;
 	projectedTextSelection: EditContextSelection | null;
@@ -140,17 +134,6 @@ export function resolveEditContextKeyDownRange(input: {
 				: input.editContextRange,
 			nextSelection: null,
 			shouldSyncEditContextSelection: false,
-		};
-	}
-
-	if (input.programmaticInputRange) {
-		return {
-			range: input.programmaticInputRange,
-			nextSelection: rangeToSelection(
-				input.blockId,
-				input.programmaticInputRange,
-			),
-			shouldSyncEditContextSelection: true,
 		};
 	}
 
@@ -206,7 +189,7 @@ export function resolveEditContextKeyDownRange(input: {
 	};
 }
 
-export function collapsedSelectionOffset(
+function collapsedSelectionOffset(
 	selection: EditContextSelection | null,
 	blockId: string,
 ): number | null {
@@ -219,7 +202,7 @@ export function collapsedSelectionOffset(
 	return selection.focusOffset;
 }
 
-export function selectionToRange(
+function selectionToRange(
 	selection: EditContextSelection,
 ): EditContextRange {
 	return {
@@ -228,7 +211,7 @@ export function selectionToRange(
 	};
 }
 
-export function directionalSelectionToRange(
+function directionalSelectionToRange(
 	selection: DirectionalSelectionOffsets,
 ): EditContextRange {
 	return {
@@ -237,7 +220,7 @@ export function directionalSelectionToRange(
 	};
 }
 
-export function rangeToSelection(
+function rangeToSelection(
 	blockId: string,
 	range: EditContextRange,
 ): EditContextSelection {

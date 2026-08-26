@@ -1,12 +1,13 @@
-import type { Editor } from "@pen/types";
-import type { AISession } from "@pen/ai";
-import { getAIController } from "@pen/ai";
+import { aiControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import type { AIController, AISession } from "@input/pen-ai";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 const EMPTY_AI_SESSIONS: readonly AISession[] = [];
 
 export function useAISessions(editor: Editor): readonly AISession[] {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStoreWithSelector(
 		(callback) => {

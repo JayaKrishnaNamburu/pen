@@ -1,25 +1,26 @@
 import {
+	isCollapsed,
+	isMultiBlock,
+	usesInlineTextSelection,
+} from "@input/pen-core";
+import {
 	generateId,
 	type Editor,
 	type InteractionModel,
-	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-types";
+import {
+	activateFieldEditorFromSelection,
+	keymapContextFromSelection,
+} from "../field-editor/commandDispatch";
 import type { FieldEditorSession } from "../field-editor/controller";
 import {
 	handleHistoryShortcut,
 	handleSelectAllShortcut,
 } from "../field-editor/keyHandling";
+import { dispatchKeymapEvent } from "../field-editor/keymap";
 import { DATA_ATTRS } from "./dataAttributes";
 import { handleEscapeSelectionTransition } from "./escapeSelection";
-import { getAdjacentVisibleBlockId } from "./parentIdTree";
 import { handleTableCellSelectionKeyDown } from "./tableCellNavigation";
-
-const DATABASE_ROW_SELECTION_SLOT = "database:row-selection";
-const ZERO_WIDTH_SPACE = "\u200B";
-
-type DatabaseRowSelectionController = {
-	deleteSelectedRows: (blockId: string) => boolean;
-};
 
 export function handleEditorDocumentKeyDown(options: {
 	event: KeyboardEvent;
@@ -34,9 +35,7 @@ export function handleEditorDocumentKeyDown(options: {
 		handleEscapeSelectionTransition({ event, editor, fieldEditor, root }) ||
 		handleDeleteSelectionShortcut(event, editor, fieldEditor, root) ||
 		handleTableCellSelectionKeyDown({ event, editor, fieldEditor, root }) ||
-		handleSelectAllShortcut(editor, event, fieldEditor, {
-			rootElement: root,
-		}) ||
+		handleSelectAllShortcut(editor, event, fieldEditor) ||
 		handleBlockSelectionEnter(
 			event,
 			editor,
@@ -54,43 +53,30 @@ function handleBlockSelectionArrow(
 	fieldEditor: FieldEditorSession,
 ): boolean {
 	if (
-		event.altKey ||
-		event.ctrlKey ||
-		event.metaKey ||
-		event.shiftKey ||
-		event.isComposing
+		event.key !== "ArrowUp" &&
+		event.key !== "ArrowDown" &&
+		event.key !== "ArrowLeft" &&
+		event.key !== "ArrowRight"
 	) {
 		return false;
 	}
-
-	const isUp = event.key === "ArrowUp" || event.key === "ArrowLeft";
-	const isDown = event.key === "ArrowDown" || event.key === "ArrowRight";
-	if (!isUp && !isDown) return false;
 
 	const selection = editor.selection;
 	if (selection?.type !== "block" || selection.blockIds.length === 0) {
 		return false;
 	}
 
-	const blockId = isUp
-		? selection.blockIds[0]!
-		: selection.blockIds[selection.blockIds.length - 1]!;
-	const direction = isUp ? "previous" : "next";
-
-	const adjacentId = getAdjacentVisibleBlockId(editor, blockId, direction);
-	if (!adjacentId) return false;
-
-	const adjacentBlock = editor.getBlock(adjacentId);
-	if (!adjacentBlock) return false;
-
-	const schema = editor.schema.resolve(adjacentBlock.type);
-	if (usesInlineTextSelection(schema)) {
-		const offset = isUp ? adjacentBlock.length() : 0;
-		fieldEditor.activateTextSelection(adjacentId, offset, offset);
-		return true;
+	if (
+		!dispatchKeymapEvent(editor, event, {
+			composing: event.isComposing === true,
+			context: keymapContextFromSelection(selection, false),
+		})
+	) {
+		return false;
 	}
 
-	editor.selectBlock(adjacentId);
+	event.preventDefault();
+	activateFieldEditorFromSelection(editor, fieldEditor);
 	return true;
 }
 
@@ -171,23 +157,19 @@ function handleDeleteSelectionShortcut(
 	}
 
 	const selection = editor.selection;
-	if (tryDeleteSelectedDatabaseRows(root, editor)) {
-		fieldEditor.deactivate();
-		return true;
-	}
 	if (!selection) {
 		return false;
 	}
 
-	if (selection.type === "text" && !selection.isCollapsed) {
+	if (selection.type === "text" && !isCollapsed(selection)) {
 		if (
-			!selection.isMultiBlock &&
+			!isMultiBlock(selection) &&
 			!textSelectionContainsInlineAtom(editor, selection) &&
 			!shouldUseDocumentTextDeletionFallback(root, fieldEditor)
 		) {
 			return false;
 		}
-		if (selection.isMultiBlock) {
+		if (isMultiBlock(selection)) {
 			fieldEditor.deactivate();
 		}
 		editor.deleteSelection({ origin: "user" });
@@ -230,7 +212,7 @@ function textSelectionContainsInlineAtom(
 	selection: Extract<NonNullable<Editor["selection"]>, { type: "text" }>,
 ): boolean {
 	if (
-		selection.isMultiBlock ||
+		isMultiBlock(selection) ||
 		selection.anchor.blockId !== selection.focus.blockId
 	) {
 		return false;
@@ -256,9 +238,7 @@ function textSelectionContainsInlineAtom(
 	let offset = 0;
 	for (const delta of block.inlineDeltas()) {
 		const length =
-			typeof delta.insert === "string"
-				? delta.insert.replaceAll(ZERO_WIDTH_SPACE, "").length
-				: 1;
+			typeof delta.insert === "string" ? delta.insert.length : 1;
 		const overlapsSelection =
 			offset < selectionEnd && offset + length > selectionStart;
 		if (typeof delta.insert !== "string" && overlapsSelection) {
@@ -268,39 +248,6 @@ function textSelectionContainsInlineAtom(
 	}
 
 	return false;
-}
-
-function tryDeleteSelectedDatabaseRows(
-	root: HTMLElement,
-	editor: Editor,
-): boolean {
-	const controller = editor.internals.getSlot(DATABASE_ROW_SELECTION_SLOT) as
-		| DatabaseRowSelectionController
-		| undefined;
-	if (!controller) {
-		return false;
-	}
-
-	const activeElement = root.ownerDocument?.activeElement;
-	if (
-		!(activeElement instanceof HTMLElement) ||
-		!root.contains(activeElement)
-	) {
-		return false;
-	}
-
-	const blockElement = activeElement.closest("[data-block-id]");
-	const blockId = blockElement?.getAttribute("data-block-id");
-	if (!blockId) {
-		return false;
-	}
-
-	const block = editor.getBlock(blockId);
-	if (!block || block.type !== "database") {
-		return false;
-	}
-
-	return controller.deleteSelectedRows(blockId);
 }
 
 function shouldUseDocumentTextDeletionFallback(

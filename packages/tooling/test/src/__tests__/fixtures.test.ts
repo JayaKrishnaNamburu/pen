@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
+import { PEN_DOCUMENT_ASSERT_COVERAGE } from "../assertDocEquals";
 import {
 	assertDocumentRoots,
 	createDeterministicYDocFixture,
+	DEFAULT_PEN_ROOTS,
 	encodeFixtureUpdate,
 	normalizeDocumentForSnapshot,
 	runCRDTStateVectorContract,
 	runExportContract,
 	runHeadlessEditorContract,
 } from "../index";
+import { readPenDocumentKeys } from "../penDocumentSourceKeys";
 
 describe("deterministic fixture helpers", () => {
 	it("generates stable updates and normalized snapshots", () => {
@@ -19,6 +22,19 @@ describe("deterministic fixture helpers", () => {
 		expect(first.stateVectorBase64).toBe(second.stateVectorBase64);
 		expect(first.snapshot).toEqual(second.snapshot);
 		expect(encodeFixtureUpdate(first.ydoc)).toBe(first.updateBase64);
+	});
+
+	it("encodeFixtureUpdate differs for an empty Y.Doc and a populated fixture", () => {
+		const fixture = createDeterministicYDocFixture();
+		const empty = new Y.Doc({ gc: false });
+		const populated = encodeFixtureUpdate(fixture.ydoc);
+		const vacant = encodeFixtureUpdate(empty);
+
+		expect(populated.length).toBeGreaterThan(0);
+		expect(populated).not.toBe(vacant);
+
+		empty.destroy();
+		fixture.ydoc.destroy();
 	});
 
 	it("normalizes map keys for snapshots", () => {
@@ -44,6 +60,24 @@ describe("deterministic fixture helpers", () => {
 			assertDocumentRoots(ydoc, [{ name: "metadata", type: "array" }]),
 		).toThrow('root "metadata" must be array');
 	});
+
+	it("DEFAULT_PEN_ROOTS covers every stored PenDocument key", () => {
+		const sourceKeys = readPenDocumentKeys();
+		expect(sourceKeys, "could not parse PenDocument from source").not.toBeNull();
+
+		const storedKeys = Object.entries(PEN_DOCUMENT_ASSERT_COVERAGE)
+			.filter(([, kind]) => kind !== "excluded")
+			.map(([key]) => key)
+			.sort();
+		const rootNames = DEFAULT_PEN_ROOTS.map((root) => root.name);
+
+		expect(sourceKeys!.filter((key) => key !== "adapter").sort()).toEqual(
+			storedKeys,
+		);
+		for (const key of storedKeys) {
+			expect(rootNames).toContain(key);
+		}
+	});
 });
 
 describe("contract helpers", () => {
@@ -62,5 +96,29 @@ describe("contract helpers", () => {
 		expect(runExportContract()).toMatchObject({
 			text: "Deterministic fixture\nStable body text",
 		});
+	});
+
+	it("CRDT state-vector contract fails when the empty document already satisfies", () => {
+		expect(() =>
+			runCRDTStateVectorContract({
+				blocks: [],
+			}),
+		).toThrow(/empty document satisfied a populated fixture/);
+	});
+
+	it("headless editor contract fails when the fixture has no blocks", () => {
+		expect(() =>
+			runHeadlessEditorContract({
+				blocks: [],
+			}),
+		).toThrow(/fixture document has no blocks/);
+	});
+
+	it("export contract fails when the fixture has no blocks", () => {
+		expect(() =>
+			runExportContract({
+				blocks: [],
+			}),
+		).toThrow(/fixture document has no blocks/);
 	});
 });

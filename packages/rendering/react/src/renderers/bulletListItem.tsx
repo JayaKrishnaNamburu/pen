@@ -1,5 +1,5 @@
 import React from "react";
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
+import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { ListItemLayout } from "../utils/listItemLayout";
 
 export function BulletListItemRenderer(
@@ -17,7 +17,11 @@ export function BulletListItemRenderer(
 			selected={ctx.selected}
 			decorations={ctx.decorations}
 			marker={
-				<span data-pen-list-marker="" aria-hidden="true">
+				<span
+					data-pen-list-marker=""
+					// Justified decorative list marker
+					aria-hidden="true"
+				>
 					•
 				</span>
 			}

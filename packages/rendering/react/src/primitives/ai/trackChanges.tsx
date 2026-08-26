@@ -14,13 +14,9 @@ export function AITrackChanges(props: AITrackChangesProps) {
 	const suggestions = useSuggestions(editor);
 	const mode = modeProp ?? (state.suggestMode ? "suggesting" : "editing");
 
-	return renderAsChild(
-		rest,
-		"div",
-		{
-			"data-pen-ai-trackChanges": "",
-			"data-mode": mode,
-			"data-suggestion-count": suggestions.length,
-		},
-	);
+	return renderAsChild(rest, "div", {
+		"data-pen-ai-trackChanges": "",
+		"data-mode": mode,
+		"data-suggestion-count": suggestions.length,
+	});
 }

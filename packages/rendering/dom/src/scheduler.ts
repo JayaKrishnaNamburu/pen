@@ -1,0 +1,305 @@
+import type {
+	ChangeSummary,
+	CommitEvent,
+	DiagnosticEvent,
+	SelectionRecord,
+	StructuralChange,
+} from "@input/pen-types";
+
+export type DomSchedulerPhase = "idle" | "read" | "write";
+
+export type DomSchedulerOwner = string | { readonly rootId: string };
+
+export type GeometryInvalidator = {
+	invalidateBlocks(blockIds: readonly string[], commitId?: number): void;
+};
+
+export type FlushCollect = {
+	readonly commits: readonly CommitEvent[];
+	readonly selection: SelectionRecord | null;
+};
+
+export type SelectionProjector = (record: SelectionRecord) => void | "parked";
+
+export type DomSchedulerOptions = {
+	onDiagnostic?: (event: DiagnosticEvent) => void;
+	onInvalidate?: (blockIds: readonly string[], commitId: number) => void;
+	geometry?: GeometryInvalidator;
+	onProjectSelection?: SelectionProjector;
+};
+
+type ScheduledJob = () => void;
+
+/**
+ * One scheduler per editor root (SCH3). Construct with that root's id or
+ * owner; do not share an instance or its queues across editors.
+ *
+ * Verbatim contract: `read`, `write`, `measureNow`, `phase`.
+ * Standalone module: not wired to editor.apply or React.
+ */
+export class DomScheduler {
+	readonly rootId: string;
+	private _phase: DomSchedulerPhase = "idle";
+	private measureNowCalls = 0;
+	private readonly onDiagnostic?: (event: DiagnosticEvent) => void;
+	private readonly onInvalidate?: (
+		blockIds: readonly string[],
+		commitId: number,
+	) => void;
+	private geometry: GeometryInvalidator | null;
+	private readQueue: ScheduledJob[] = [];
+	private writeQueue: ScheduledJob[] = [];
+	private pendingCommits: CommitEvent[] = [];
+	private selection: SelectionRecord | null = null;
+	private _collect: FlushCollect | null = null;
+	private activeReads: ScheduledJob[] | null = null;
+	private activeWrites: ScheduledJob[] | null = null;
+	private rafHandle: number | null = null;
+	private readAfterWriteForced = false;
+	private onProjectSelection: SelectionProjector | null;
+	private _projectedThisFlush = false;
+
+	constructor(owner: DomSchedulerOwner, options?: DomSchedulerOptions) {
+		this.rootId = typeof owner === "string" ? owner : owner.rootId;
+		this.onDiagnostic = options?.onDiagnostic;
+		this.onInvalidate = options?.onInvalidate;
+		this.geometry = options?.geometry ?? null;
+		this.onProjectSelection = options?.onProjectSelection ?? null;
+	}
+
+	get phase(): DomSchedulerPhase {
+		return this._phase;
+	}
+
+	get diagnostics(): { readonly measureNowCount: number } {
+		return { measureNowCount: this.measureNowCalls };
+	}
+
+	get collect(): FlushCollect | null {
+		return this._collect;
+	}
+
+	get projectedThisFlush(): boolean {
+		return this._projectedThisFlush;
+	}
+
+	setProjector(projector: SelectionProjector | null): void {
+		this.onProjectSelection = projector;
+	}
+
+	acceptCommit(event: CommitEvent): void {
+		this.pendingCommits.push(event);
+		this.scheduleFlush();
+	}
+
+	setSelection(record: SelectionRecord | null): void {
+		this.selection = record;
+		this.scheduleFlush();
+	}
+
+	read<T>(fn: () => T): Promise<T> {
+		return new Promise((resolve, reject) => {
+			this.enqueueRead(() => {
+				try {
+					resolve(fn());
+				} catch (error) {
+					reject(error);
+				}
+			});
+		});
+	}
+
+	write(fn: () => void): Promise<void> {
+		return new Promise((resolve, reject) => {
+			this.enqueueWrite(() => {
+				try {
+					fn();
+					resolve();
+				} catch (error) {
+					reject(error);
+				}
+			});
+		});
+	}
+
+	measureNow<T>(fn: () => T): T {
+		this.measureNowCalls += 1;
+		return fn();
+	}
+
+	private enqueueRead(job: ScheduledJob): void {
+		if (this._phase === "read" && this.activeReads) {
+			this.activeReads.push(job);
+			return;
+		}
+
+		if (this._phase === "write") {
+			this.readQueue.push(job);
+			if (!this.readAfterWriteForced) {
+				this.readAfterWriteForced = true;
+				this.onDiagnostic?.({
+					code: "read-after-write",
+					level: "warn",
+					source: "scheduler",
+					message:
+						"read queued during write phase; routed to a layout-observing next-frame flush",
+				});
+			}
+			this.scheduleFlush();
+			return;
+		}
+
+		this.readQueue.push(job);
+		this.scheduleFlush();
+	}
+
+	private enqueueWrite(job: ScheduledJob): void {
+		if (
+			(this._phase === "read" || this._phase === "write") &&
+			this.activeWrites
+		) {
+			this.activeWrites.push(job);
+			return;
+		}
+
+		this.writeQueue.push(job);
+		this.scheduleFlush();
+	}
+
+	private scheduleFlush(): void {
+		if (this.rafHandle != null) {
+			return;
+		}
+
+		this.rafHandle = globalThis.requestAnimationFrame(() => {
+			this.rafHandle = null;
+			this.flush();
+		});
+	}
+
+	private flush(): void {
+		this._projectedThisFlush = false;
+		// Collect: commits since the last flush, the current selection
+		// record, and pending read/write queues. The field editor feeds
+		// acceptCommit for every commit on its editor; this module only
+		// stores what callers feed it.
+		this._collect = {
+			commits: this.pendingCommits,
+			selection: this.selection,
+		};
+		this.pendingCommits = [];
+		this.activeReads = this.readQueue;
+		this.activeWrites = this.writeQueue;
+		this.readQueue = [];
+		this.writeQueue = [];
+		this.readAfterWriteForced = false;
+
+		this._phase = "read";
+		this.invalidateFromCollect(this._collect);
+		this.drain(this.activeReads);
+
+		this._phase = "write";
+		// renderer DOM updates already committed by construction — the
+		// flush is scheduled after framework commit (mount-ack).
+		this.drain(this.activeWrites);
+		this.projectSelection();
+		this.paintOverlays();
+
+		this.activeReads = null;
+		this.activeWrites = null;
+		this._phase = "idle";
+
+		if (
+			this.readQueue.length > 0 ||
+			this.writeQueue.length > 0 ||
+			this.pendingCommits.length > 0
+		) {
+			this.scheduleFlush();
+		}
+	}
+
+	private invalidateFromCollect(collect: FlushCollect): void {
+		const blockIds = blockIdsFromCommits(collect.commits);
+		const last = collect.commits[collect.commits.length - 1];
+		if (blockIds.length === 0) {
+			return;
+		}
+		this.geometry?.invalidateBlocks(blockIds, last?.commitId);
+		this.onInvalidate?.(blockIds, last?.commitId ?? 0);
+	}
+
+	/**
+	 * Write-phase P1 slot (`spec/rules/dom.md` flush step 3):
+	 * after queued writes, before overlay paints. The field editor
+	 * writes same-turn on `selectionChange`; this slot retries a
+	 * parked record on a later flush. Do not schedule projection
+	 * from timers or rAF retries (S4).
+	 */
+	private projectSelection(): void {
+		const record = this._collect?.selection ?? null;
+		if (record == null) {
+			return;
+		}
+		const queued = this.selection;
+		this._projectedThisFlush = true;
+		const result = this.onProjectSelection?.(record);
+		if (result !== "parked" && this.selection === queued) {
+			this.selection = null;
+		}
+	}
+
+	/**
+	 * Overlay paints run after the projector (OV1). Empty
+	 * until overlays subscribe to flushes.
+	 */
+	private paintOverlays(): void {}
+
+	private drain(jobs: ScheduledJob[]): void {
+		for (const job of jobs) {
+			job();
+		}
+	}
+}
+
+function blockIdsFromCommits(commits: readonly CommitEvent[]): string[] {
+	const ids = new Set<string>();
+	for (const event of commits) {
+		for (const id of blockIdsFromSummary(event.summary)) {
+			ids.add(id);
+		}
+	}
+	return [...ids];
+}
+
+function blockIdsFromSummary(summary: ChangeSummary): string[] {
+	const ids: string[] = [];
+	for (const text of summary.blockText) {
+		ids.push(text.blockId);
+	}
+	for (const change of summary.structural) {
+		ids.push(...blockIdsFromStructural(change));
+	}
+	return ids;
+}
+
+function blockIdsFromStructural(change: StructuralChange): readonly string[] {
+	switch (change.type) {
+		case "block-inserted":
+		case "block-removed":
+		case "block-moved":
+		case "block-props-changed":
+		case "table-changed":
+			return [change.blockId];
+		case "block-split":
+			return [change.blockId, change.newBlockId];
+		case "blocks-merged":
+			return [change.targetBlockId, change.sourceBlockId];
+		case "apps-changed":
+		case "metadata-changed":
+			return [];
+		default: {
+			const _exhaustive: never = change;
+			return _exhaustive;
+		}
+	}
+}

@@ -1,4 +1,8 @@
 import type { FieldEditorTextChangeEvent } from "./crdt";
+import {
+	findEmptyBlockPlaceholder,
+} from "./emptyBlockPlaceholder";
+import { findLogicalDOMPoint } from "./inlineAtomDom";
 
 export type EditContextTextFormat = {
 	rangeStart: number;
@@ -6,8 +10,6 @@ export type EditContextTextFormat = {
 	underlineStyle?: string;
 	underlineThickness?: string;
 };
-
-const ZERO_WIDTH_SPACE = "\u200B";
 
 export function applyEditContextTextFormats(
 	element: HTMLElement,
@@ -62,36 +64,8 @@ export function buildEditContextCharacterBounds(
 export function findTextPosition(
 	container: HTMLElement,
 	charOffset: number,
-): { node: Node; offset: number } | null {
-	const walker = document.createTreeWalker(
-		container,
-		NodeFilter.SHOW_TEXT,
-		null,
-	);
-	let remaining = charOffset;
-	let textNode: Text | null;
-
-	while ((textNode = walker.nextNode() as Text | null)) {
-		const len = textNode.textContent?.length ?? 0;
-		if (remaining <= len) {
-			return { node: textNode, offset: remaining };
-		}
-		remaining -= len;
-	}
-
-	const last = container.lastChild;
-	if (last) {
-		return { node: last, offset: last.textContent?.length ?? 0 };
-	}
-	return { node: container, offset: 0 };
-}
-
-export function isLogicallyEmptyText(text: string): boolean {
-	return text.length === 0 || text === ZERO_WIDTH_SPACE;
-}
-
-export function toEditContextText(text: string): string {
-	return text === ZERO_WIDTH_SPACE ? "" : text;
+): { node: Node; offset: number } {
+	return findLogicalDOMPoint(container, Math.max(0, charOffset));
 }
 
 export function shouldReplaceEditContextText(
@@ -104,7 +78,6 @@ export function shouldReplaceEditContextText(
 			offset += entry.retain;
 			if (offset > editContextTextLength) return true;
 		} else if (typeof entry.insert === "string") {
-			if (entry.insert === ZERO_WIDTH_SPACE) return true;
 			if (offset > editContextTextLength) return true;
 			offset += entry.insert.length;
 		} else if (entry.delete != null) {
@@ -115,37 +88,34 @@ export function shouldReplaceEditContextText(
 }
 
 export function isNavigationSelectionKey(event: KeyboardEvent): boolean {
-	return (
-		event.key === "ArrowLeft" ||
-		event.key === "ArrowRight" ||
-		event.key === "ArrowUp" ||
-		event.key === "ArrowDown" ||
-		event.key === "Home" ||
-		event.key === "End" ||
-		event.key === "PageUp" ||
-		event.key === "PageDown"
-	);
+	switch (event.key) {
+		case "ArrowLeft":
+		case "ArrowRight":
+		case "ArrowUp":
+		case "ArrowDown":
+		case "Home":
+		case "End":
+		case "PageUp":
+		case "PageDown":
+			return true;
+		default:
+			return false;
+	}
 }
 
 function getCharacterRect(element: HTMLElement, charOffset: number): DOMRect {
-	const walker = document.createTreeWalker(
-		element,
-		NodeFilter.SHOW_TEXT,
-		null,
-	);
-	let remaining = charOffset;
-	let textNode: Text | null;
-
-	while ((textNode = walker.nextNode() as Text | null)) {
-		const len = textNode.textContent?.length ?? 0;
-		if (remaining < len) {
-			const range = document.createRange();
-			range.setStart(textNode, remaining);
-			range.setEnd(textNode, remaining + 1);
-			return range.getBoundingClientRect();
-		}
-		remaining -= len;
+	const start = findLogicalDOMPoint(element, Math.max(0, charOffset));
+	const end = findLogicalDOMPoint(element, Math.max(0, charOffset + 1));
+	const range = document.createRange();
+	range.setStart(start.node, start.offset);
+	range.setEnd(end.node, end.offset);
+	const rect = range.getBoundingClientRect();
+	if (rect.width > 0 || rect.height > 0) {
+		return rect;
 	}
-
+	const placeholder = findEmptyBlockPlaceholder(element);
+	if (placeholder) {
+		return placeholder.getBoundingClientRect();
+	}
 	return element.getBoundingClientRect();
 }

@@ -1,0 +1,281 @@
+{
+	"id": "delete-table-column",
+	"opType": "delete-table-column",
+	"family": "tables",
+	"path": "synthetic",
+	"command": null,
+	"setup": {
+		"blocks": [
+			{
+				"id": "tbl",
+				"type": "table",
+				"props": {
+					"hasHeaderRow": true
+				}
+			}
+		],
+		"extraOps": [
+			{
+				"type": "insert-table-row",
+				"blockId": "tbl",
+				"index": 2
+			},
+			{
+				"type": "insert-table-column",
+				"blockId": "tbl",
+				"index": 2
+			},
+			{
+				"type": "insert-table-cell-text",
+				"blockId": "tbl",
+				"row": 0,
+				"col": 0,
+				"offset": 0,
+				"text": "r0c0"
+			},
+			{
+				"type": "insert-table-cell-text",
+				"blockId": "tbl",
+				"row": 0,
+				"col": 1,
+				"offset": 0,
+				"text": "r0c1"
+			},
+			{
+				"type": "insert-table-cell-text",
+				"blockId": "tbl",
+				"row": 1,
+				"col": 0,
+				"offset": 0,
+				"text": "r1c0"
+			},
+			{
+				"type": "insert-table-cell-text",
+				"blockId": "tbl",
+				"row": 2,
+				"col": 2,
+				"offset": 0,
+				"text": "r2c2"
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "delete-table-column",
+			"blockId": "tbl",
+			"index": 1
+		}
+	],
+	"updateBytes": "AAEBBQIHFAMdBCgDOAQ=",
+	"updateByteLength": 14,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"tbl"
+		],
+		"blocks": {
+			"tbl": {
+				"meta": {},
+				"props": {},
+				"tableContent": [
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "r0c0"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000004"
+							},
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "r0c1"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000005"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000c"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000003"
+					},
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "r1c0"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000007"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000008"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000d"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000006"
+					},
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000a"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000b"
+							},
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "r2c2"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000e"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000009"
+					}
+				],
+				"type": "table"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"tbl"
+		],
+		"blocks": {
+			"tbl": {
+				"meta": {},
+				"props": {},
+				"tableContent": [
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "r0c0"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000004"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000c"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000003"
+					},
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "r1c0"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-000000000007"
+							},
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000d"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000006"
+					},
+					{
+						"cells": [
+							{
+								"content": {
+									"delta": [],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000a"
+							},
+							{
+								"content": {
+									"delta": [
+										{
+											"insert": "r2c2"
+										}
+									],
+									"kind": "text"
+								},
+								"id": "00000000-0000-4000-8000-00000000000e"
+							}
+						],
+						"id": "00000000-0000-4000-8000-000000000009"
+					}
+				],
+				"type": "table"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": null
+}

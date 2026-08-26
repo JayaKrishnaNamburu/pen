@@ -1,4 +1,4 @@
-import type { FieldEditorStore } from "../field-editor/store";
+import type { FieldEditorStore } from "@input/pen-dom/field-editor";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 const EMPTY_FIELD_EDITOR_SNAPSHOT = {

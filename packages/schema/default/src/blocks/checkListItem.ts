@@ -1,4 +1,8 @@
-import { defineBlock, prop } from "@pen/types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
+import { directionProp } from "../directionProp";
 
 export const checkListItem = defineBlock("checkListItem", {
   props: {
@@ -8,6 +12,7 @@ export const checkListItem = defineBlock("checkListItem", {
       .boolean()
       .default(false)
       .describe("Whether the item is checked"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "richtext",

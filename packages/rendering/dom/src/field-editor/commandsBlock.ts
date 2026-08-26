@@ -1,24 +1,16 @@
-import { INPUT_RULES_ENGINE_SLOT_KEY, generateId } from "@pen/types";
-import type { DocumentOp, Editor } from "@pen/types";
+import { applySplitBlock, inputRulesEngineFacet } from "@input/pen-core";
+import { generateId } from "@input/pen-types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import {
 	toggleInlineMark as toggleInlineMarkCommand,
 	setInlineMark as setInlineMarkCommand,
-} from "@pen/shortcuts";
+} from "@input/pen-shortcuts";
 import { matchListInputRule } from "../utils/listInputRule";
 import {
-	getLogicalInlineLength,
 	type BlockInputRuleEngine,
-	type InlineTextLike,
 	type SelectionRange,
 	type SelectionTarget,
 } from "./commandsShared";
-
-export function normalizeInlineOffset(
-	ytext: InlineTextLike,
-	offset: number,
-): number {
-	return Math.max(0, Math.min(offset, getLogicalInlineLength(ytext)));
-}
 
 export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	return toggleInlineMarkCommand(editor, markType);
@@ -45,15 +37,14 @@ export function splitBlockAtOffset(
 	const { blockId, offset, newBlockType } = options;
 	const newBlockId = generateId();
 
-	editor.apply([
-		{
-			type: "split-block",
-			blockId,
-			offset,
-			newBlockId,
-			newBlockType,
-		} as DocumentOp,
-	]);
+	applySplitBlock(editor, {
+		blockId,
+		offset,
+		newBlockId,
+		newBlockType,
+		applyOptions: { origin: "user" },
+	});
+	editor.selectText(newBlockId, 0, 0);
 
 	return {
 		blockId: newBlockId,
@@ -90,16 +81,15 @@ export function getConvertBlockOps(
 	const existingParentId = editor.documentState.parentOf(options.blockId);
 	const ops: DocumentOp[] = [
 		{
-			type: "convert-block",
+			type: "set-props",
 			blockId: options.blockId,
-			newType: options.newType,
-			newProps: options.newProps,
+			props: { type: options.newType, ...options.newProps },
 		} as DocumentOp,
 	];
 
 	if (existingParentId) {
 		ops.push({
-			type: "update-block",
+			type: "set-props",
 			blockId: options.blockId,
 			props: { parentId: existingParentId },
 		} as DocumentOp);
@@ -123,19 +113,21 @@ export function insertTextAtRange(
 
 	if (end > start) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId,
-			offset: start,
-			length: end - start,
+			from: start,
+			to: end,
+			insert: "",
 		});
 	}
 
 	if (text.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: start,
-			text,
+			from: start,
+			to: start,
+			insert: text,
 		});
 	}
 
@@ -170,9 +162,8 @@ export function applyListInputRule(
 	}
 
 	const inputRuleEngine =
-		editor.internals.getSlot<BlockInputRuleEngine>(
-			INPUT_RULES_ENGINE_SLOT_KEY,
-		) ?? null;
+		(editor.facet(inputRulesEngineFacet) as BlockInputRuleEngine | null) ??
+		null;
 	if (inputRuleEngine) {
 		const ops = inputRuleEngine.tryMatch(editor, blockId, text, {
 			offset: range.start,
@@ -199,17 +190,17 @@ export function applyListInputRule(
 	editor.apply(
 		[
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId,
-				offset: match.deleteRange.start,
-				length: match.deleteRange.end - match.deleteRange.start,
-			} as DocumentOp,
+				from: match.deleteRange.start,
+				to: match.deleteRange.end,
+				insert: "",
+			},
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: match.blockType,
-				newProps: match.newProps,
-			} as DocumentOp,
+				props: { type: match.blockType, ...match.newProps },
+			},
 		],
 		{ origin: "input-rule" },
 	);

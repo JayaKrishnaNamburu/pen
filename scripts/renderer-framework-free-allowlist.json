@@ -1,0 +1,125 @@
+{
+  "_comment": "API6 (spec/rules/api.md): renderer modules that import neither their framework nor a framework type. Re-export stubs are not listed — they are the P.6 end state. Each entry needs file and reason. Remove an entry in the same PR that relocates the module or adds a framework import.",
+  "modules": [
+    {
+      "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
+      "reason": "Helpers for React suggestion-control hooks; no react import. Candidate for pen-dom or a disable"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useAIActions.ts",
+      "reason": "React hook-named AI controller facade; no react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useAISessionActions.ts",
+      "reason": "React hook-named AI controller facade; no react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useAISessions.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useAISuggestionsMetrics.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useActiveAISession.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useBlockDecorations.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useBlockEditingState.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useBlockList.ts",
+      "reason": "React hook; framework coupling is through useSyncExternalStoreWithSelector, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useBlockSelectionState.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useBlockSurfaceRole.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useEditorMessage.ts",
+      "reason": "React hook; framework coupling is through useEditorContext, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useFieldEditor.ts",
+      "reason": "React hook; framework coupling is through context wrappers, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useFocusController.ts",
+      "reason": "React hook; framework coupling is through useEditorContext, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useGeneration.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useInlineCompletionState.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useParentIdChildBlockIds.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useSuggestMode.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
+      "reason": "DOM geometry with no react import; candidate for @input/pen-dom"
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/editor/inlineAtomTargets.ts",
+      "reason": "Inline-atom target reconcile leftover; candidate for @input/pen-dom"
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/index.ts",
+      "reason": "Pen compound namespace; assembles renderer primitives without a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/renderers/index.ts",
+      "reason": "React renderer registry; assembles JSX renderers without a react import"
+    },
+    {
+      "file": "packages/rendering/react/src/utils/cancelStreamingAIGeneration.ts",
+      "reason": "AI controller helper with no react import; candidate for @input/pen-ai"
+    },
+    {
+      "file": "packages/rendering/react/src/utils/displayCopy.ts",
+      "reason": "Imports @input/pen-schema-default; stays in the renderer until that inversion lands"
+    },
+    {
+      "file": "packages/rendering/react/src/utils/toolbarOptions.ts",
+      "reason": "Depends on displayCopy (schema-default); stays with that leftover"
+    },
+    {
+      "file": "packages/rendering/vue/src/composables/useBlockList.ts",
+      "reason": "Vue composable; framework coupling is through useExternalStore, not a vue import"
+    },
+    {
+      "file": "packages/rendering/vue/src/composables/useDecorations.ts",
+      "reason": "Vue composable; framework coupling is through useExternalStore, not a vue import"
+    },
+    {
+      "file": "packages/rendering/vue/src/composables/useSelection.ts",
+      "reason": "Vue composable; framework coupling is through useExternalStore, not a vue import"
+    },
+    {
+      "file": "packages/rendering/vue/src/internal/displayCopy.ts",
+      "reason": "Vue placeholder copy with no vue import; pair of the React displayCopy leftover"
+    },
+    {
+      "file": "packages/rendering/vue/src/internal/editorState.ts",
+      "reason": "Vue store plumbing; framework coupling is through useExternalStore, not a vue import"
+    }
+  ]
+}

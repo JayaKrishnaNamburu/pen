@@ -1,28 +1,35 @@
-# @pen/core
+# @input/pen-core
 
 ## Purpose
 
-`@pen/core` is the headless runtime authority for Pen. It owns editor creation, document state, selection, extension dispatch, normalization, decorations, and the canonical mutation path.
+`@input/pen-core` is the headless runtime authority for Pen. It owns editor creation, document state, selection, extension dispatch, normalization, decorations, and the canonical mutation path.
 
 ## Public Role
 
-Every higher-level package depends on the contracts and runtime behavior established here. Renderer packages mount the editor, extension packages add behavior, and import/export packages prepare or consume document state, but `@pen/core` remains the place where document truth is created and mutated.
+Every higher-level package depends on the contracts and runtime behavior established here. Renderer packages mount the editor, extension packages add behavior, and import/export packages prepare or consume document state, but `@input/pen-core` remains the place where document truth is created and mutated.
 
 ## Key Exports / Entrypoints
 
 - Export map: `.`
 - Runtime entrypoints such as `createEditor()`, `createHeadlessEditor()`, and `createDocumentSession()`
-- Schema runtime exports such as `SchemaRegistryImpl`, `mergeSchemas`, and `SchemaEngineImpl`
-- Read-model and editor helpers such as `DocumentStateImpl`, `SelectionManagerImpl`, `DocumentRangeImpl`, and `ExtensionManagerImpl`
+- Schema runtime exports such as `defineBlock()`, `defineExtension()`, `prop()`, `SchemaRegistryImpl`, `mergeSchemas`, and `SchemaEngineImpl`
+- Read-model and editor helpers such as `SelectionAuthority`, `DocumentRangeImpl`, and `ExtensionManagerImpl`. `DocumentStateImpl` is the live `DocumentState` implementation but stays off the barrel; hosts read `editor.documentState`.
 - Decoration and inline-completion helpers such as `createDecorationSet()`, `mergeDecorationSets()`, `ensureInlineCompletionController()`, and `getInlineCompletionController()`
-- Import and profile-policy helpers such as `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterOpsForDocumentProfile()`, and related policy-reporting APIs
+- Import and profile-policy helpers such as `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterOpsForDocumentProfile()`, and related policy-reporting APIs. Core owns the implementation and the public export.
+- Block-capability helpers (`getFlowCapabilityFromSchema()`, `shouldExposeBlockInTooling()`, and siblings) and selection-target helpers (`resolveSelectionTargetBlockIds()`, `renderSelectionTargetText()`, `renderSelectionTargetBlockText()`)
+- `mapOffsetThroughSplices()` — the per-block clamp helper for one summary, moved here from `@input/pen-types` by v4 DL12 so types can reach its types-only end state. There is still no compose and no cross-commit mapping form; anchors carry positions across commits.
+- Catalog helpers (`interpolateMessage()`, `resolveMessage()`), mutation-group helpers (`createMutationGroupMetadata()`, `getApplyOptionsGroupId()`, `getOpOriginGroupId()`, `getOpOriginType()`), field-editor helpers (`usesInlineTextSelection()`, `supportsInlineMarks()`, and siblings), and tool-execution helper `collectToolExecutionOutput()`
+- Locale-aware case folding (`foldAndNormalize()`) next to `localeFacet`; search, AI alignment, and suggestions call this instead of `toLowerCase()`
+- Core facets including `keymapFacet` (`pen.keymap`), `inputRulesFacet`, `beforeApplyFacet`, `decorationsFacet`, `commandsFacet`, `ariaReadOnlyFacet`, `clipboardFacet`, `urlPolicyFacet`, `localeFacet` (`pen.locale`), `messagesFacet` (`pen.messages`), `a11yLabelFacet` (`pen.a11yLabel`), and `aiEgressFacet` (`pen.aiEgress`)
+- `streamThroughEgress()` / `aiEgressExtension()` — generation, suggestions, and autocomplete share this single egress seam
+- The SEC1 URL admission policy (`urlPolicy`, `UrlContext`, `UrlPolicy`) next to `urlPolicyFacet`; `@input/pen-dom` re-exports it for renderer hosts, and the exporters read it from here so no extension depends on a renderer
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/content-ops`, `@pen/crdt-yjs`, `@pen/delta-stream`, `@pen/document-ops`, `@pen/markdown-serialization`, `@pen/schema-default`, `@pen/shortcuts`, `@pen/types`, `@pen/undo`
+- Runtime dependencies: `@input/pen-crdt-yjs`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@pen/core` is the runtime center of gravity for Pen and should remain headless.
+- Boundary: `@input/pen-core` is the runtime center of gravity for Pen and should remain headless. It does not depend on shortcuts, undo, `@input/pen-ai/stream`, document-ops, content-ops, or markdown-serialization. Those packages depend on core.
 
 ## Runtime Model
 
@@ -33,7 +40,7 @@ flowchart TD
   HostApp[HostApp]
   Renderer[RendererOrTooling]
   Extension[ExtensionPackage]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
   Editor[Editor]
   Apply["editor.apply(ops, options)"]
   Pipeline[ApplyPipeline]
@@ -51,35 +58,45 @@ flowchart TD
 
 Important rules:
 
-- `DocumentOp[]` is the mutation currency.
+- `DocumentOp[]` is the mutation currency. The union is closed at ten variants: `splice-text`, `format-text`, `insert-block`, `delete-block`, `move-block`, `set-props`, `set-meta`, `grid`, `app`, `stream-open`.
 - Durable document writes go through `editor.apply(...)`.
-- Structured operation origins can carry `groupId`, `requestId`, `actorId`, and `source` metadata so hosts can attribute and group mutations without inventing a parallel apply path.
-- Default feature composition should flow through presets or explicit extensions; legacy `createEditor({ without })` remains deprecated compatibility rather than the preferred way to remove default features.
-- Extensions can prepare work, observe editor events, and register slots, but they do not bypass the core mutation boundary.
+- Structured operation origins can carry `groupId`, `requestId`, `actorId`, `source`, and `intent` so hosts can attribute and group mutations without inventing a parallel apply path. Dispatch stamps `origin.intent` with the command name; a pre-set intent is preserved only when no command is on the dispatch stack. The apply pipeline passes that structured object into `adapter.transact` without copying it; the Yjs adapter matches it with a `TrackedOriginSet` (see `@input/pen-crdt-yjs`).
+- Split and merge are command recipes, not ops. `pen.splitBlock` is one apply of `insert-block` plus two `splice-text` ops, stamped `intent: "pen.splitBlock"`. Merge is `pen.deleteBackward` / `pen.deleteForward` at a block boundary. The summary carries `block-split` / `blocks-merged` from an in-transaction structural tag, not from the intent string.
+- `editor.anchors` is the selection-anchor API: mint, resolve, serialize, deserialize. Resolution returns a live target or `null`. Split/merge content moves are repaired in core (`deriveContentMoves` / `repairAnchor`) before resolve. A position that must survive commits is an anchor; summaries do not map raw points across commits.
+- `editor.lastChangeSummary` is the latest commit's summary, or `null` before the first observable apply. Commit numbering starts at 1. There is no summary ring buffer and no `summaryLog.between`.
+- Empty text-capable `Y.Text` is `""`. `BlockHandle.textContent()` / `textDeltas()` on that block are empty. Load migrates lone stored `"\u200B"` via `strip-empty-block-sentinels`, under the string origin `"migration"` (`MIGRATION_ORIGIN`), emitting `diagnostic { code: "empty-block-sentinels-stripped" }`. The migration runs only when the format stamp is below 3; there is no remote-commit heal. Embedded `\u200B` in longer text is kept.
+- Feature composition is opt-in. Bare `createEditor()` installs the apply pipeline only: no schema (empty registry, `firstBlock()` is `null`), no rich-text shortcuts, no undo, no stream extension, no document-ops. The no-preset fallback list is empty. `createEmptySchema()` still _resolves_ unknown types as passthrough (`onUnknownBlock: "passthrough"`), so `schema.resolve("paragraph")` is not `null` — it is just not a registered type. `defaultPreset()` is the batteries-included path.
+- Without `undoExtension()`, `editor.undoManager` is an inert stub: `canUndo()` / `canRedo()` return `false`, `undo()` / `redo()` return `false`, and the `undo:manager` slot is absent. There is no error. Undo looks present and does nothing. Install `undoExtension()` or `defaultPreset()`.
+- `pen.ariaReadOnly` (`ariaReadOnlyFacet`) some-combines booleans. It does **not** decline typing, does **not** stop `editor.apply`, and does **not** stop the wire. Renderers read it only to set `aria-readonly`. The `readonly` prop on `EditorRoot` / `PenEditor` / `mountEditor` is what declines local typing. That split is shipped and is an open owner decision; this spec records it, it does not resolve it.
+- `editor.blocks()` / `editor.blockCount()` walk nested and layout children, matching `documentState.blocks` / `documentState.blockCount`. `documentState.blockOrder` is the top-level sequence only.
+- Extensions can prepare work, observe `commit` events (`CommitEvent`), and write `internals.assignSlot` (which overrides the mapped core facet). They do not bypass the core mutation boundary.
 - Renderer packages read `DocumentState`, `BlockHandle`, selection, and decorations from the editor; they do not become alternate document authorities.
+- `extension.facets` is the only _contribution_ channel: shortcuts are `keymapFacet` providers, input rules `inputRulesFacet`, decorations `decorationsFacet` (all in `core/src/facets/coreFacets.ts`). It is not the only member of `Extension` — `activateClient`, `activateServer`, `observe`, and `state` are lifecycle and observation hooks, and the extension manager calls all of them. `defineExtension({ setup })` is accepted by the type and called by nothing.
+- The command registry and catalog are settled: dispatch keeps the D/K/B rules. Selection _bridging_ inside `@input/pen-dom` remains unsettled; do not treat that bridging as a finished contract from this spec.
 
 ## Headless Workflows
 
 `createHeadlessEditor()` is the preferred factory for server-side or workflow-only editor use. It keeps Pen headless and applies the same document pipeline to existing CRDT documents without mounting a renderer. Hosts should use it for AI workers, export workers, migrations, and contract tests that need editor semantics without UI behavior.
 
-Headless editors default to the core apply pipeline only. Hosts can opt into default extensions explicitly when a non-rendered workflow needs undo, shortcuts, or delta stream behavior.
+Headless editors default to the core apply pipeline only, same as bare `createEditor()`: empty schema unless one is passed, empty extension list. To get undo, shortcuts, or the stream extension in a non-rendered workflow, pass `preset: defaultPreset(...)` or register those extensions explicitly. `createHeadlessEditor({ useDefaultExtensions: true })` currently does not install any of those packages — it only skips the empty headless preset object. That option is vestigial; the JSDoc on the flag still claims it enables undo/shortcuts/delta-stream. Prefer an explicit preset.
 
 ## Integration Notes
 
 - Path in workspace: `packages/core`
 - Spec path mirrors workspace path: `packages/core.md`
-- Typical adoption starts with `createEditor()` plus `@pen/schema-default` and `@pen/preset-default`
-- Use `createEditor({ preset: defaultPreset(...) })` or explicit `extensions` for feature composition instead of the deprecated `without` option.
-- Server/workflow adoption starts with `createHeadlessEditor()` plus a wrapped CRDT document.
+- Typical adoption starts with `createEditor({ preset: defaultPreset() })`. Bare `createEditor()` is the wrong default for a rich-text host.
+- React and Vue `useEditor()` inject `defaultSchema` and still install no preset. Same empty extension list as bare `createEditor()`.
+- Use `createEditor({ preset: defaultPreset(...) })` or explicit `extensions` for feature composition.
+- Server/workflow adoption starts with `createHeadlessEditor()` plus a wrapped CRDT document, then a preset or extensions when the workflow needs more than apply.
 - Schema composition happens here through the registry/merge APIs, not in renderer packages
 - Serialization packages and tool packages should treat the editor as the authority boundary, even when they export convenience helpers
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. In practice, this is still the package that defines the architecture for the rest of the repo, so churn here has repo-wide impact.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. In practice, this is still the package that defines the architecture for the rest of the repo, so churn here has repo-wide impact.
 
 ## Non-goals
 
-- Do not make `@pen/core` renderer-specific.
+- Do not make `@input/pen-core` renderer-specific.
 - Do not turn it into an application shell, transport layer, or auth surface.
 - Do not let convenience helpers replace the editor as the source of mutation truth.

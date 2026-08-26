@@ -1,0 +1,27 @@
+{
+	"id": "DUR7-unknown-props",
+	"rule": "DUR7",
+	"shape": "unknown props",
+	"kind": "json-export-snapshot",
+	"document": {
+		"version": 1,
+		"blocks": [
+			{
+				"id": "DUR7-annotated-paragraph",
+				"type": "paragraph",
+				"props": {
+					"hostAnnotation": "keep"
+				},
+				"content": {
+					"text": "Known type, unknown prop",
+					"segments": [
+						{
+							"type": "text",
+							"text": "Known type, unknown prop"
+						}
+					]
+				}
+			}
+		]
+	}
+}

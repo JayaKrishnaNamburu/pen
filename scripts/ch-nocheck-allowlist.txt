@@ -1,0 +1,3 @@
+# CH1 remaining @ts-nocheck files (spec/rules/reliability.md).
+# H.2 shrinks this list as each AI module is reassembled and un-suppressed.
+# The gate fails if a listed path is clean (or gone), or if a new file appears.

@@ -1,5 +1,5 @@
 import { inject, provide, type InjectionKey, type Ref } from "vue";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import type { RendererOverrides } from "../types";
 
 export interface PenEditorContextValue {

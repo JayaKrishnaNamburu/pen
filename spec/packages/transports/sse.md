@@ -1,27 +1,32 @@
-# @pen/transport-sse
+# @input/pen-transport-sse
 
 ## Purpose
 
-Server-Sent Events transport for Pen
+Server-Sent Events transport for Pen.
 
 ## Public Role
 
-Provide transport-specific wiring around Pen protocols and sessions.
+Provide transport-specific wiring around Pen protocols and sessions. The live `Editor` is a constructor argument on `createSSEHandler()`, not a field on the wire request.
 
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Server: `createSSEHandler()`. Types: `SSEServerOptions`, `SSEClientOptions`, `SSEEvent`.
+- Client: `sseTransport()` on the same root export
+- `parsePenStreamRequest()` is internal to the handler and deliberately not on the barrel
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/types`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Transport packages should stay below product policy and above raw network wiring.
 
 ## Data Flow / Runtime Model
 
-Transport package packages in Pen should stay package-first and explicit about ownership. Adopt when a host needs the specific transport surface.
+`createSSEHandler` reads the POST body, rejects oversized or malformed JSON with HTTP 400, then runs `parsePenStreamRequest()`. That parser admits only the serializable `PenStreamRequest` keys. `context.editor` is not a valid field and fails the parse, so tool execution never sees a live editor handle from the network. The editor used for tool context is the one passed at handler construction.
+
+Each `toolCalls` entry is authorized with `openAIToolCall()` before `toolRuntime.executeTool()`. A denied call sends `tool-error` and skips execution. The write guard is restored in `finally`, not `catch`, matching the direct transport: a non-throw unwind would otherwise leave the guard patched onto the host editor. `opened.close()` is idempotent and returns its first result on later calls (owned by `@input/pen-ai/tools`).
 
 ## Integration Notes
 
@@ -31,7 +36,7 @@ Transport package packages in Pen should stay package-first and explicit about o
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

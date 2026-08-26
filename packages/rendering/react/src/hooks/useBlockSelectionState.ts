@@ -1,4 +1,5 @@
-import type { Editor, SelectionState } from "@pen/types";
+import { isBlockSelected } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 export function useBlockSelectionState(
@@ -9,13 +10,7 @@ export function useBlockSelectionState(
 		(callback) => editor.on("selectionChange", callback),
 		() => editor.selection,
 		() => null,
-		(selection) => isBlockSelected(selection, blockId),
-	);
-}
-
-function isBlockSelected(selection: SelectionState, blockId: string): boolean {
-	return (
-		(selection?.type === "block" && selection.blockIds.includes(blockId)) ||
-		(selection?.type === "text" && selection.blockRange.includes(blockId))
+		(selection) =>
+			isBlockSelected(editor.documentState.blockOrder, selection, blockId),
 	);
 }

@@ -1,8 +1,13 @@
-import type { BlockDecoration, InlineDecoration } from "@pen/types";
+import type { BlockDecoration, InlineDecoration } from "@input/pen-types";
+import {
+	REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES,
+	REVIEW_SURFACE_CLASSES,
+} from "@input/pen-types";
 import type { AIExtensionConfig } from "../types";
 import {
 	AI_REVIEW_ROLE_ATTRIBUTE,
 	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
+	type AIReviewPresentationRole,
 } from "./reviewPresentationState";
 
 type SuggestionPresentation = NonNullable<
@@ -31,20 +36,17 @@ export function createStreamingDeleteDecoration({
 	};
 }
 
-export function buildStreamingDeleteAttributes(
+function buildStreamingDeleteAttributes(
 	suggestionPresentation: SuggestionPresentation,
 ): DecorationAttributes {
-	if (suggestionPresentation === "final-text") {
-		return {
-			class: "pen-ai-review-preview-original",
-			[AI_REVIEW_ROLE_ATTRIBUTE]: "delete-hidden",
-			[FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true,
-		};
-	}
-
+	const isFinalText = suggestionPresentation === "final-text";
+	const role: AIReviewPresentationRole = isFinalText
+		? "delete-hidden"
+		: "delete";
 	return {
-		class: "pen-ai-review-preview-original pen-suggestion-delete pen-ai-review-delete",
-		[AI_REVIEW_ROLE_ATTRIBUTE]: "delete",
+		class: REVIEW_SURFACE_CLASSES.suggestionDelete,
+		[AI_REVIEW_ROLE_ATTRIBUTE]: role,
+		...(isFinalText ? { [FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true } : {}),
 	};
 }
 
@@ -55,7 +57,10 @@ export function createStreamingDeleteBlockDecoration(
 		type: "block",
 		blockId,
 		attributes: {
-			class: "pen-block-suggestion pen-block-suggestion-delete-block",
+			class: [
+				REVIEW_SURFACE_CLASSES.blockSuggestion,
+				REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES["delete-block"],
+			].join(" "),
 			"data-suggestion-action": "delete-block",
 			[AI_REVIEW_ROLE_ATTRIBUTE]: "block-delete",
 		},

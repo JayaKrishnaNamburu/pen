@@ -1,4 +1,4 @@
-import { defineBlock } from "@pen/types";
+import { defineBlock } from "@input/pen-core";
 
 export const divider = defineBlock("divider", {
   content: "none",

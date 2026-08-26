@@ -1,15 +1,19 @@
-import React from "react";
-import type { BlockHandle, BlockRenderContext, CellSelection } from "@pen/types";
+import React, { useRef } from "react";
+import { resolveEditorMessage } from "@input/pen-core";
+import type {
+	BlockHandle,
+	BlockRenderContext,
+	CellSelection,
+} from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
 import { useFieldEditorContext } from "../context/fieldEditorContext";
 import { useFieldEditorState } from "../hooks/useFieldEditorState";
 import { useSelection } from "../hooks/useSelection";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { isCellInSelection } from "../utils/cellSelection";
 import { TableCellContent } from "../primitives/editor/tableCellContent";
 
-const TABLE_ADD_COLUMN_LABEL = "Add column";
-const TABLE_ADD_ROW_LABEL = "Add row";
+const TABLE_CONTROL_MIN_SIZE_PX = 24;
 
 function TableRendererInner(props: {
 	block: BlockHandle;
@@ -21,9 +25,12 @@ function TableRendererInner(props: {
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const editorSelection = useSelection(editor);
 
-	const rowCount = block.tableRowCount();
-	const colCount = block.tableColumnCount();
+	const table = block.as("table");
+	const rowCount = table?.tableRowCount() ?? 0;
+	const colCount = table?.tableColumnCount() ?? 0;
 	const hasHeaderRow = !!block.props.hasHeaderRow;
+	const addRowRef = useRef<HTMLButtonElement>(null);
+	const addColumnRef = useRef<HTMLButtonElement>(null);
 
 	const cellSelection =
 		editorSelection?.type === "cell" && editorSelection.blockId === block.id
@@ -47,7 +54,10 @@ function TableRendererInner(props: {
 		event.stopPropagation();
 
 		if (event.shiftKey && cellSelection) {
-			editor.selectCellRange(block.id, cellSelection.anchor, { row, col });
+			editor.selectCellRange(block.id, cellSelection.anchor, {
+				row,
+				col,
+			});
 			return;
 		}
 
@@ -68,22 +78,48 @@ function TableRendererInner(props: {
 			`[${DATA_ATTRS.fieldEditorSurface}]`,
 		) as HTMLElement | null;
 		if (cellSurface) {
-			fieldEditor.activateCellFromElement?.(block.id, row, col, cellSurface)
-				?? fieldEditor.activateCell?.(block.id, row, col);
+			fieldEditor.activateCellFromElement?.(
+				block.id,
+				row,
+				col,
+				cellSurface,
+			) ?? fieldEditor.activateCell?.(block.id, row, col);
 		} else {
 			fieldEditor.activateCell?.(block.id, row, col);
 		}
 	}
 
 	function handleAddRow() {
-		editor.apply([{ type: "insert-table-row", blockId: block.id, index: rowCount }]);
+		editor.apply(
+			[
+				{
+					type: "grid",
+					blockId: block.id,
+					change: { kind: "insert-row", index: rowCount },
+				},
+			],
+			{ origin: "user" },
+		);
+		queueMicrotask(() => addRowRef.current?.focus());
 	}
 
 	function handleAddColumn() {
-		editor.apply([{ type: "insert-table-column", blockId: block.id, index: colCount }]);
+		editor.apply(
+			[
+				{
+					type: "grid",
+					blockId: block.id,
+					change: { kind: "insert-column", index: colCount },
+				},
+			],
+			{ origin: "user" },
+		);
+		queueMicrotask(() => addColumnRef.current?.focus());
 	}
 
-	function handleControlMouseDown(event: React.MouseEvent<HTMLButtonElement>) {
+	function handleControlMouseDown(
+		event: React.MouseEvent<HTMLButtonElement>,
+	) {
 		event.preventDefault();
 		event.stopPropagation();
 	}
@@ -92,25 +128,33 @@ function TableRendererInner(props: {
 		[DATA_ATTRS.tableCell]: "",
 		[DATA_ATTRS.tableCellRow]: row,
 		[DATA_ATTRS.tableCellCol]: col,
-		"data-pen-cell-selected": cellSelection && isCellInSelection(cellSelection, row, col) ? "" : undefined,
+		"data-pen-cell-selected":
+			cellSelection && isCellInSelection(cellSelection, row, col)
+				? ""
+				: undefined,
 	});
 
 	const headerCells = hasHeaderRow
 		? Array.from({ length: colCount }, (_, colIdx) => (
-			<th
-				key={`hdr-${colIdx}`}
-				{...cellAttrs(0, colIdx)}
-				onMouseDown={(e) => handleCellMouseDown(e, 0, colIdx)}
-				onDoubleClick={(e) => handleCellDoubleClick(e, 0, colIdx)}
-			>
-				<TableCellContent
-					tableBlockId={block.id}
-					row={0}
-					col={colIdx}
-					placeholder={`Column ${colIdx + 1}`}
-				/>
-			</th>
-		))
+				<th
+					key={`hdr-${colIdx}`}
+					scope="col"
+					{...cellAttrs(0, colIdx)}
+					onMouseDown={(e) => handleCellMouseDown(e, 0, colIdx)}
+					onDoubleClick={(e) => handleCellDoubleClick(e, 0, colIdx)}
+				>
+					<TableCellContent
+						tableBlockId={block.id}
+						row={0}
+						col={colIdx}
+						placeholder={resolveEditorMessage(
+							editor,
+							"pen.table.columnPlaceholder",
+							{ index: colIdx + 1 },
+						)}
+					/>
+				</th>
+			))
 		: null;
 
 	const dataStartRow = hasHeaderRow ? 1 : 0;
@@ -124,7 +168,9 @@ function TableRendererInner(props: {
 					key={`cell-${rowIdx}-${colIdx}`}
 					{...cellAttrs(rowIdx, colIdx)}
 					onMouseDown={(e) => handleCellMouseDown(e, rowIdx, colIdx)}
-					onDoubleClick={(e) => handleCellDoubleClick(e, rowIdx, colIdx)}
+					onDoubleClick={(e) =>
+						handleCellDoubleClick(e, rowIdx, colIdx)
+					}
 				>
 					<TableCellContent
 						tableBlockId={block.id}
@@ -143,9 +189,14 @@ function TableRendererInner(props: {
 
 	const addColumnControl = readonly ? null : (
 		<button
+			ref={addColumnRef}
 			type="button"
 			className="pen-table-add-column-control"
-			aria-label={TABLE_ADD_COLUMN_LABEL}
+			style={{
+				minWidth: TABLE_CONTROL_MIN_SIZE_PX,
+				minHeight: TABLE_CONTROL_MIN_SIZE_PX,
+			}}
+			aria-label={resolveEditorMessage(editor, "pen.table.addColumn")}
 			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 			onMouseDown={handleControlMouseDown}
 			onClick={handleAddColumn}
@@ -156,9 +207,14 @@ function TableRendererInner(props: {
 
 	const addRowControl = readonly ? null : (
 		<button
+			ref={addRowRef}
 			type="button"
 			className="pen-table-add-row-control"
-			aria-label={TABLE_ADD_ROW_LABEL}
+			style={{
+				minWidth: TABLE_CONTROL_MIN_SIZE_PX,
+				minHeight: TABLE_CONTROL_MIN_SIZE_PX,
+			}}
+			aria-label={resolveEditorMessage(editor, "pen.table.addRow")}
 			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 			onMouseDown={handleControlMouseDown}
 			onClick={handleAddRow}
@@ -171,13 +227,13 @@ function TableRendererInner(props: {
 		<div
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			data-block-type="table"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<div className="pen-table-shell">
 				<div className="pen-table-main">
 					<div
 						{...{ [DATA_ATTRS.tableFrame]: "" }}
-						data-selected={ctx.selected || undefined}
+						data-selected={ctx.selected ? "" : undefined}
 					>
 						<table {...{ [DATA_ATTRS.table]: "" }}>
 							{hasHeaderRow && headerCells && (

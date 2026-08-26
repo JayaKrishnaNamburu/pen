@@ -3,15 +3,15 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/index.ts", "src/run.ts"],
   format: ["esm", "cjs"],
-  dts: true,
+  dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
   external: [
-    "@pen/core",
-    "@pen/types",
-    "@pen/crdt-yjs",
-    "@pen/schema-default",
-    "@pen/test",
+    "@input/pen-core",
+    "@input/pen-types",
+    "@input/pen-crdt-yjs",
+    "@input/pen-schema-default",
+    "@input/pen-test",
     "yjs",
   ],
   outExtension({ format }) {

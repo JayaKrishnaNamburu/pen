@@ -8,12 +8,17 @@ import {
 } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import type { AssetProvider, BlockHandle, BlockRenderContext } from "@pen/types";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import type {
+	AssetProvider,
+	BlockHandle,
+	BlockRenderContext,
+} from "@input/pen-types";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { useEditorContext } from "../context/editorContext";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -63,7 +68,7 @@ function CustomImageRenderer(
 		<div
 			ref={ctx.ref as Ref<HTMLDivElement>}
 			data-block-type="image"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 			data-testid={`custom-renderer-${block.id}`}
 		>
 			Custom renderer
@@ -100,7 +105,7 @@ function UploadCard(props: {
 		editor.apply(
 			[
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId: block.id,
 					props: {
 						src: assets.resolve(ref),
@@ -120,7 +125,7 @@ function UploadCard(props: {
 		<div
 			ref={ctx.ref as Ref<HTMLDivElement>}
 			data-block-type="image"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<button
 				type="button"
@@ -138,6 +143,7 @@ function UploadCard(props: {
 
 function createImageEditor() {
 	const editor = createEditor({
+		schema: defaultSchema,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -148,23 +154,22 @@ function createImageEditor() {
 
 	editor.apply([
 		{
-			type: "convert-block",
+			type: "set-props",
 			blockId,
-			newType: "image",
-			newProps: {},
+			props: { type: "image" },
 		},
 	]);
 
 	return { editor, blockId };
 }
 
-describe("@pen/react renderer overrides", () => {
+describe("@input/pen-react renderer overrides", () => {
 	it("scopes custom renderers to a single editor root", async () => {
 		const first = createImageEditor();
 		const second = createImageEditor();
 		second.editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: second.blockId,
 				props: {
 					src: "memory://existing.png",
@@ -254,7 +259,9 @@ describe("@pen/react renderer overrides", () => {
 			const button = container.querySelector("button");
 			expect(button).not.toBeNull();
 
-			const file = new File(["image"], "photo.png", { type: "image/png" });
+			const file = new File(["image"], "photo.png", {
+				type: "image/png",
+			});
 			const dataTransfer = createDataTransfer([file]);
 			const dragOverEvent = createDragEvent("dragover", dataTransfer);
 			const dropEvent = createDragEvent("drop", dataTransfer);

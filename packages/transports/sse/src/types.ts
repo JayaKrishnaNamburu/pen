@@ -1,10 +1,4 @@
-import type {
-	Editor,
-	PenStreamPart,
-	PenStreamRequest,
-	ToolServer,
-	ToolRuntime,
-} from "@pen/types";
+import type { Editor, PenStreamRequest, ToolRuntime } from "@input/pen-types";
 
 export interface SSEEvent {
 	id?: string;
@@ -16,10 +10,6 @@ export interface SSEEvent {
 export interface SSEClientOptions {
 	url: string;
 	headers?: Record<string, string>;
-	reconnect?: boolean;
-	reconnectDelay?: number;
-	maxReconnectAttempts?: number;
-	supportsReplay?: boolean;
 	pingTimeout?: number;
 	signal?: AbortSignal;
 }
@@ -27,18 +17,16 @@ export interface SSEClientOptions {
 export interface SSEServerOptions {
 	toolRuntime?: ToolRuntime;
 	/**
-	 * @deprecated Use `toolRuntime`.
+	 * In-process editor for tool context. The SSE handler never reads an
+	 * editor off the request body — that field is not on the wire type
+	 * (AIB2), and a live `Editor` cannot survive `JSON.parse`.
 	 */
-	toolServer?: ToolServer;
 	editor?: Editor;
+	/**
+	 * Mutating tools the model may invoke on this handler. Default deny.
+	 */
+	allowedMutatingTools?: readonly string[];
 	onRequest?: (request: PenStreamRequest) => void;
 	onError?: (error: unknown) => void;
 	pingInterval?: number;
-	keepAliveComment?: boolean;
-}
-
-export interface SSEStreamState {
-	streamId: string;
-	eventIndex: number;
-	parts: PenStreamPart[];
 }

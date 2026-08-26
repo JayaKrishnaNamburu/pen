@@ -3,12 +3,12 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { searchExtension } from "@pen/search";
+import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { searchExtension } from "@input/pen-search";
 import { Pen } from "../primitives/index";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -22,17 +22,22 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 	}
 }
 
-function getFieldEditor(editor: ReturnType<typeof createEditor>): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(FIELD_EDITOR_SLOT_KEY);
+function getFieldEditor(
+	editor: ReturnType<typeof createEditor>,
+): FieldEditorImpl {
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}
 	return fieldEditor;
 }
 
-describe("@pen/react search primitives", () => {
+describe("@input/pen-react search primitives", () => {
 	it("updates search state from the input and renders results", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
@@ -40,10 +45,11 @@ describe("@pen/react search primitives", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+					to: 0,
+					insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },
@@ -105,6 +111,7 @@ describe("@pen/react search primitives", () => {
 
 	it("keeps focus on the search input while query updates refresh decorations", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -117,10 +124,11 @@ describe("@pen/react search primitives", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+					to: 0,
+					insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },

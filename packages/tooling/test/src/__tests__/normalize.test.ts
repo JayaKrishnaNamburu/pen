@@ -1,27 +1,27 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import * as Y from "yjs";
 import {
-  SchemaEngineImpl,
-  SchemaRegistryImpl,
-  mergeSchemas,
-  sortDeltaAttributes,
-  deepEqual,
-} from "@pen/core";
+	deepEqual,
+	defineBlock,
+	mergeSchemas,
+	SchemaEngineImpl,
+	SchemaRegistryImpl,
+	sortDeltaAttributes,
+} from "@input/pen-core";
 import {
-  defaultSchema,
-  bold,
-  italic,
-  code,
-  link,
-} from "@pen/schema-default";
+	bold,
+	code,
+	defaultSchema,
+	italic,
+	link,
+} from "@input/pen-schema-default";
+import { initBlockMap, wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
+import type { BlockSchema, LayoutSchema } from "@input/pen-types";
 import {
-  createTestDocument,
-  createTestEditor,
-  resetTestIdCounter,
+	createTestDocument,
+	createTestEditor,
+	resetTestIdCounter,
 } from "../index";
-import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
-import type { BlockSchema, LayoutSchema } from "@pen/types";
-import { defineBlock } from "@pen/types";
 
 type YBlockMap = Y.Map<unknown>;
 type YBlocksMap = Y.Map<YBlockMap>;
@@ -307,7 +307,7 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
 
   // ── Rule 3: No empty containers ─────────────────────────
   describe("Rule 3: ensureNonEmptyContent", () => {
-    it("inserts ZWS into empty inline blocks", () => {
+    it("EM1: leaves empty inline blocks as the empty string", () => {
       const editor = createTestEditor({
         blocks: [{ id: "p1", type: "paragraph" }],
       });
@@ -316,7 +316,7 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const blockMap = (ydoc.getMap("blocks").get("p1") as Y.Map<unknown>);
       const content = blockMap.get("content") as Y.Text;
 
-      expect(content.toString()).toBe("\u200B");
+      expect(content.toString()).toBe("");
     });
 
     it("does not insert ZWS into non-empty blocks", () => {

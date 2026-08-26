@@ -1,5 +1,5 @@
 import type React from "react";
-import type { SelectionState } from "@pen/types";
+import { resolveDragBlockIds } from "@input/pen-dom/utils/blockDrag";
 import {
 	BLOCK_DRAG_MIME,
 	LEGACY_BLOCK_ID_DRAG_MIME,
@@ -12,23 +12,7 @@ import {
 	setBlockDragPreviewImage,
 } from "./blockDragPreview";
 
-export function resolveDragBlockIds(args: {
-	blockId: string;
-	selection: SelectionState;
-	documentBlockCount: number;
-	focusBlockId: string | null;
-}): readonly string[] {
-	const { blockId, selection, documentBlockCount, focusBlockId } = args;
-	const isDocumentBlockSelection =
-		selection?.type === "block" &&
-		selection.blockIds.length === documentBlockCount;
-	const shouldDragSelectedBlockSet =
-		selection?.type === "block" &&
-		selection.blockIds.includes(blockId) &&
-		(!isDocumentBlockSelection || focusBlockId === blockId);
-
-	return shouldDragSelectedBlockSet ? selection.blockIds : [blockId];
-}
+export { resolveDragBlockIds };
 
 export function startNativeBlockDrag(args: {
 	event: React.DragEvent<HTMLElement>;
@@ -47,7 +31,10 @@ export function startNativeBlockDrag(args: {
 			dragged,
 		}),
 	);
-	event.dataTransfer.setData(LEGACY_BLOCK_ID_DRAG_MIME, dragged.anchorBlockId);
+	event.dataTransfer.setData(
+		LEGACY_BLOCK_ID_DRAG_MIME,
+		dragged.anchorBlockId,
+	);
 	event.dataTransfer.effectAllowed = "move";
 	setBlockDragPreviewImage({
 		event,

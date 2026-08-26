@@ -5,16 +5,12 @@ import { documentOpsExtension } from "../documentOpsExtension";
 import { ToolRuntimeImpl } from "../toolServer";
 import { getDocumentToolRuntime } from "../utils/toolServer";
 
-describe("@pen/document-ops ToolRuntimeImpl", () => {
+describe("@input/pen-document-ops ToolRuntimeImpl", () => {
 	it("throws for unknown tools", async () => {
 		const runtime = new ToolRuntimeImpl();
 
 		await expect(
-			runtime.executeTool(
-				"missing_tool",
-				{},
-				{} as never,
-			),
+			runtime.executeTool("missing_tool", {}, {} as never),
 		).rejects.toThrow('Unknown tool: "missing_tool"');
 	});
 
@@ -172,13 +168,7 @@ describe("@pen/document-ops ToolRuntimeImpl", () => {
 	it("resolves the registered document tool runtime from editor slots", () => {
 		const runtime = new ToolRuntimeImpl();
 		const editor = {
-			internals: {
-				getSlot<T>(key: string): T | undefined {
-					return key === DOCUMENT_OPS_TOOL_RUNTIME_SLOT
-						? (runtime as T)
-						: undefined;
-				},
-			},
+			facet: () => runtime,
 		} as never;
 
 		expect(getDocumentToolRuntime(editor)).toBe(runtime);
@@ -186,11 +176,7 @@ describe("@pen/document-ops ToolRuntimeImpl", () => {
 
 	it("returns null when the document tool runtime is unavailable", () => {
 		const editor = {
-			internals: {
-				getSlot(): undefined {
-					return undefined;
-				},
-			},
+			facet: () => null,
 		} as never;
 
 		expect(getDocumentToolRuntime(editor)).toBeNull();
@@ -199,16 +185,18 @@ describe("@pen/document-ops ToolRuntimeImpl", () => {
 	it("clears the registered runtime slot on extension deactivation", async () => {
 		const slots = new Map<string, unknown>();
 		const editor = {
+			facet: (facet: { name: string }) =>
+				facet.name === "documentOps.toolRuntime"
+					? (slots.get(DOCUMENT_OPS_TOOL_RUNTIME_SLOT) ?? null)
+					: null,
 			internals: {
-				getSlot<T>(key: string): T | undefined {
-					return slots.get(key) as T | undefined;
-				},
-				setSlot(key: string, value: unknown): void {
+				assignSlot(key: string, value: unknown): void {
 					slots.set(key, value);
 				},
 			},
 			schema: {
 				resolve: () => null,
+				allInlines: () => [],
 			},
 		} as never;
 		const extension = documentOpsExtension();

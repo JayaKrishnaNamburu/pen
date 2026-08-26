@@ -1,9 +1,15 @@
 import React from "react";
-import type { AIContextualPromptAnchor, AISession } from "@pen/ai";
-import { domSelectionToEditor } from "../../field-editor/selectionBridge";
+import { isMultiBlock, resolveEditorMessage } from "@input/pen-core";
+import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
+import type { Editor } from "@input/pen-types";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor";
 import { useAISessionActions } from "../../hooks/useAISessionActions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { resolvePromptHostElement, selectionMatchesSnapshot } from "./contextualPromptGeometry";
+import {
+	resolvePromptHostElement,
+	selectionMatchesSnapshot,
+} from "./contextualPromptGeometry";
 import { useContextualPromptSession } from "./contextualPromptPlacement";
 import { useAIContext } from "./root";
 
@@ -16,8 +22,11 @@ export interface AIContextualPromptComposerProps extends AsChildProps {
 export function AIContextualPromptComposer(
 	props: AIContextualPromptComposerProps,
 ) {
-	const { placeholder = "Edit selection", autoFocus = true, ref, ...rest } = props;
+	const { autoFocus = true, ref, ...rest } = props;
 	const { editor, state } = useAIContext();
+	const placeholder =
+		props.placeholder ??
+		resolveEditorMessage(editor, "pen.ai.prompt.placeholder");
 	const session = useContextualPromptSession(editor);
 	const actions = useAISessionActions(editor);
 	const inputRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -45,7 +54,7 @@ export function AIContextualPromptComposer(
 		return input.ownerDocument.activeElement === input;
 	}, []);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (
 			!autoFocus ||
 			!session?.contextualPrompt?.composer.isOpen ||
@@ -84,12 +93,13 @@ export function AIContextualPromptComposer(
 		return null;
 	}
 	const sessionId = session.id;
-	const selectionSnapshot = session.contextualPrompt?.anchor.selectionSnapshot ?? null;
-	const sessionLabel = resolveInlineSessionLabel(session);
+	const selectionSnapshot =
+		session.contextualPrompt?.anchor.selectionSnapshot ?? null;
+	const sessionLabel = resolveInlineSessionLabel(editor, session);
 	const [targetState, setTargetState] = React.useState<"active" | "pinned">(
 		"active",
 	);
-	const targetHint = resolveInlineSessionTargetHint(targetState);
+	const targetHint = resolveInlineSessionTargetHint(editor, targetState);
 
 	function handleActionPointerDown(event: React.PointerEvent) {
 		event.preventDefault();
@@ -112,14 +122,22 @@ export function AIContextualPromptComposer(
 	}
 
 	function handleAcceptTurn(turnId: string) {
-		const resolved = actions.resolveSessionTurn(sessionId, turnId, "accept");
+		const resolved = actions.resolveSessionTurn(
+			sessionId,
+			turnId,
+			"accept",
+		);
 		if (!resolved) {
 			actions.resolveSession(sessionId, "accept");
 		}
 	}
 
 	function handleRejectTurn(turnId: string) {
-		const resolved = actions.resolveSessionTurn(sessionId, turnId, "reject");
+		const resolved = actions.resolveSessionTurn(
+			sessionId,
+			turnId,
+			"reject",
+		);
 		if (!resolved) {
 			actions.resolveSession(sessionId, "reject");
 		}
@@ -186,12 +204,13 @@ export function AIContextualPromptComposer(
 
 		ownerDocument.addEventListener("keydown", handleDocumentKeyDown, true);
 		return () => {
-			ownerDocument.removeEventListener("keydown", handleDocumentKeyDown, true);
+			ownerDocument.removeEventListener(
+				"keydown",
+				handleDocumentKeyDown,
+				true,
+			);
 		};
-	}, [
-		handleDismiss,
-		session.contextualPrompt?.composer.isOpen,
-	]);
+	}, [handleDismiss, session.contextualPrompt?.composer.isOpen]);
 
 	React.useEffect(() => {
 		if (!session.contextualPrompt?.composer.isOpen) {
@@ -220,7 +239,8 @@ export function AIContextualPromptComposer(
 			const liveCommonAncestor =
 				liveRange?.commonAncestorContainer instanceof Element
 					? liveRange.commonAncestorContainer
-					: liveRange?.commonAncestorContainer?.parentElement ?? null;
+					: (liveRange?.commonAncestorContainer?.parentElement ??
+						null);
 			if (
 				nextTargetState === "pinned" &&
 				!hasSubmittedPrompt &&
@@ -240,9 +260,20 @@ export function AIContextualPromptComposer(
 		ownerDocument.addEventListener("focusin", updateTargetState, true);
 		ownerDocument.addEventListener("focusout", updateTargetState, true);
 		return () => {
-			ownerDocument.removeEventListener("selectionchange", updateTargetState);
-			ownerDocument.removeEventListener("focusin", updateTargetState, true);
-			ownerDocument.removeEventListener("focusout", updateTargetState, true);
+			ownerDocument.removeEventListener(
+				"selectionchange",
+				updateTargetState,
+			);
+			ownerDocument.removeEventListener(
+				"focusin",
+				updateTargetState,
+				true,
+			);
+			ownerDocument.removeEventListener(
+				"focusout",
+				updateTargetState,
+				true,
+			);
 		};
 	}, [
 		actions,
@@ -254,7 +285,7 @@ export function AIContextualPromptComposer(
 	]);
 
 	const turnItems = sessionTurns.map((turn) => {
-		const pendingChangeCount = turn.suggestionIds.length + turn.reviewItemIds.length;
+		const pendingChangeCount = turn.suggestionIds.length;
 		const isTurnRunning =
 			state.activeGeneration?.sessionId === sessionId &&
 			state.activeGeneration.turnId === turn.id &&
@@ -288,6 +319,7 @@ export function AIContextualPromptComposer(
 						data-pen-ai-inline-session-turn-status=""
 					>
 						{resolveInlineSessionTurnStatusLabel(
+							editor,
 							turn.status,
 							pendingChangeCount,
 							isTurnRunning,
@@ -305,7 +337,10 @@ export function AIContextualPromptComposer(
 								onClick={() => handleAcceptTurn(turn.id)}
 								disabled={!canResolveTurn || isTurnRunning}
 							>
-								Accept
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.review.accept",
+								)}
 							</button>
 							<button
 								type="button"
@@ -314,7 +349,10 @@ export function AIContextualPromptComposer(
 								onClick={() => handleRejectTurn(turn.id)}
 								disabled={!canResolveTurn}
 							>
-								Reject
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.review.reject",
+								)}
 							</button>
 						</div>
 					) : null}
@@ -368,7 +406,10 @@ export function AIContextualPromptComposer(
 				value={draftPrompt}
 				onKeyDown={handleComposerKeyDown}
 				onChange={(event) =>
-					actions.updateContextualPromptDraft(sessionId, event.target.value)
+					actions.updateContextualPromptDraft(
+						sessionId,
+						event.target.value,
+					)
 				}
 			/>
 			<div
@@ -380,9 +421,20 @@ export function AIContextualPromptComposer(
 					type="submit"
 					data-pen-ai-inline-session-submit=""
 					onPointerDown={handleActionPointerDown}
-					disabled={draftPrompt.trim().length === 0 || isRunningCurrentSession}
+					disabled={
+						draftPrompt.trim().length === 0 ||
+						isRunningCurrentSession
+					}
 				>
-					{turnItems.length > 0 ? "Add follow-up" : "Run edit"}
+					{turnItems.length > 0
+						? resolveEditorMessage(
+								editor,
+								"pen.ai.session.followUp",
+							)
+						: resolveEditorMessage(
+								editor,
+								"pen.ai.session.runEdit",
+							)}
 				</button>
 			</div>
 		</form>
@@ -396,43 +448,44 @@ export function AIContextualPromptComposer(
 		children: props.children ?? defaultChildren,
 	};
 
-	return renderAsChild(
-		composerProps,
-		"div",
-		{
-			"data-pen-ai-contextual-prompt-composer": "",
-		},
-	);
+	return renderAsChild(composerProps, "div", {
+		"data-pen-ai-contextual-prompt-composer": "",
+	});
 }
 
 function resolveInlineSessionTurnStatusLabel(
+	editor: Editor,
 	status: string,
 	pendingChangeCount: number,
 	isTurnRunning: boolean,
 ): string {
 	if (isTurnRunning || status === "streaming") {
-		return "Working";
+		return resolveEditorMessage(editor, "pen.ai.turn.working");
 	}
 	if (status === "accepted") {
-		return "Accepted";
+		return resolveEditorMessage(editor, "pen.ai.turn.accepted");
 	}
 	if (status === "rejected") {
-		return "Rejected";
+		return resolveEditorMessage(editor, "pen.ai.turn.rejected");
 	}
 	if (status === "error") {
-		return "Error";
+		return resolveEditorMessage(editor, "pen.ai.turn.error");
 	}
 	if (pendingChangeCount > 0) {
-		return `${pendingChangeCount} pending`;
+		return resolveEditorMessage(editor, "pen.ai.turn.pending", {
+			count: pendingChangeCount,
+		});
 	}
-	return "Done";
+	return resolveEditorMessage(editor, "pen.ai.turn.done");
 }
 
-function resolveInlineSessionLabel(session: AISession): string {
+function resolveInlineSessionLabel(editor: Editor, session: AISession): string {
 	if (session.target.kind !== "selection") {
-		return "Inline edit";
+		return resolveEditorMessage(editor, "pen.ai.session.inlineEdit");
 	}
-	return session.target.selection.isMultiBlock ? "Selected range" : "Selected text";
+	return isMultiBlock(session.target.selection)
+		? resolveEditorMessage(editor, "pen.ai.session.selectedRange")
+		: resolveEditorMessage(editor, "pen.ai.session.selectedText");
 }
 
 function resolveInlineSessionTargetState(
@@ -445,7 +498,11 @@ function resolveInlineSessionTargetState(
 		return "active";
 	}
 	const activeElement = ownerDocument.activeElement;
-	if (promptElement && activeElement instanceof Node && promptElement.contains(activeElement)) {
+	if (
+		promptElement &&
+		activeElement instanceof Node &&
+		promptElement.contains(activeElement)
+	) {
 		return "active";
 	}
 	if (!hostElement) {
@@ -455,13 +512,16 @@ function resolveInlineSessionTargetState(
 	if (!domSelection) {
 		return "pinned";
 	}
-	return selectionMatchesSnapshot(domSelection, snapshot) ? "active" : "pinned";
+	return selectionMatchesSnapshot(domSelection, snapshot)
+		? "active"
+		: "pinned";
 }
 
 function resolveInlineSessionTargetHint(
+	editor: Editor,
 	targetState: "active" | "pinned",
 ): string {
 	return targetState === "active"
-		? "AI target is active"
-		: "Pinned to the original selection";
+		? resolveEditorMessage(editor, "pen.ai.session.targetActive")
+		: resolveEditorMessage(editor, "pen.ai.session.targetPinned");
 }

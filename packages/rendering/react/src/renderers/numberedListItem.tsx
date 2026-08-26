@@ -1,5 +1,5 @@
 import React from "react";
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
+import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { useNumberedListItemValue } from "../hooks/useNumberedListItemValue";
 import { ListItemLayout } from "../utils/listItemLayout";
 
@@ -30,7 +30,11 @@ function NumberedListItemView({
 			decorations={ctx.decorations}
 			extraAttributes={{ "data-counter": counterValue }}
 			marker={
-				<span data-pen-list-marker="" aria-hidden="true">
+				<span
+					data-pen-list-marker=""
+					// Justified decorative list marker
+					aria-hidden="true"
+				>
 					{counterValue}.
 				</span>
 			}

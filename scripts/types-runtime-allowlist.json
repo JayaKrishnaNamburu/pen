@@ -1,0 +1,15 @@
+{
+  "_comment": "API3 (spec/rules/api.md): runtime function/class exports still in @input/pen-types. Remove an entry in the same PR that relocates it.",
+  "entries": [
+    {
+      "name": "generateId",
+      "kind": "function",
+      "reason": "P.3: generateId stays; HOST4 requires a single ID helper and crdt-yjs still imports it from types"
+    },
+    {
+      "name": "formatUuidV4",
+      "kind": "helper",
+      "reason": "P.3: private formatter for generateId; counted so unexported helpers cannot hide from the leftover total"
+    }
+  ]
+}

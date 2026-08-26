@@ -1,0 +1,125 @@
+{
+	"id": "insert-block",
+	"opType": "insert-block",
+	"family": "conversions",
+	"path": "command",
+	"command": "pen.duplicateBlock",
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "Hello"
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "insert-block",
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"blockType": "paragraph",
+			"props": {},
+			"position": {
+				"after": "p1"
+			}
+		},
+		{
+			"type": "insert-text",
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"offset": 0,
+			"text": "Hello"
+		}
+	],
+	"updateBytes": "AQcBFCcBBmJsb2NrcyQwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDMBKAABFAR0eXBlAXcJcGFyYWdyYXBoJwABFAVwcm9wcwEnAAEUBG1ldGEBJwABFAdjb250ZW50AsgBDgEHAXckMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAzBAABGAVIZWxsbwEBAQIH",
+	"updateByteLength": 165,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hello"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1",
+			"00000000-0000-4000-8000-000000000003"
+		],
+		"blocks": {
+			"00000000-0000-4000-8000-000000000003": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hello"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hello"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"offset": 0
+		},
+		"blockRange": [
+			"00000000-0000-4000-8000-000000000003"
+		],
+		"focus": {
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"offset": 0
+		},
+		"goalX": null,
+		"isCollapsed": true,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

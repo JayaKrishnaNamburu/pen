@@ -1,10 +1,7 @@
 import { useSyncExternalStore } from "react";
-import type { Editor, Unsubscribe } from "@pen/types";
-import {
-	getHistoryController,
-	type HistoryController,
-	type HistoryState,
-} from "@pen/history";
+import { historyControllerFacet } from "@input/pen-core";
+import type { HistoryController, HistoryState } from "@input/pen-history";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 
 const EMPTY_HISTORY_STATE: HistoryState = {
 	snapshots: [],
@@ -12,7 +9,9 @@ const EMPTY_HISTORY_STATE: HistoryState = {
 };
 
 export function useHistory(editor: Editor): HistoryState {
-	const controller = getHistoryController(editor);
+	const controller =
+		(editor.facet(historyControllerFacet) as HistoryController | null) ??
+		null;
 	const canReadControllerState = isHistoryController(controller);
 
 	return useSyncExternalStore(
@@ -22,7 +21,10 @@ export function useHistory(editor: Editor): HistoryState {
 			}
 			return controller.subscribe(callback);
 		},
-		() => (canReadControllerState ? controller.getState() : EMPTY_HISTORY_STATE),
+		() =>
+			canReadControllerState
+				? controller.getState()
+				: EMPTY_HISTORY_STATE,
 		() => EMPTY_HISTORY_STATE,
 	);
 }

@@ -1,8 +1,4 @@
-import type {
-	Decoration,
-	Editor,
-	InlineDecoration,
-} from "@pen/types";
+import type { Decoration, Editor } from "@input/pen-types";
 import type { AIExtensionConfig, AIStreamingReviewPreview } from "../types";
 import { mapStreamingBlockRangeTextOffset } from "../suggestions/replacementPlan/blockRangeTextOffset";
 import {
@@ -16,9 +12,8 @@ import {
 	createStreamingDeleteDecoration,
 } from "./streamingPreviewDeleteDecorations";
 import {
-	appendVirtualPreviewTextDecorations,
 	resolveStreamingPreviewAnchor,
-	resolveStreamingPreviewInsertedTextStart,
+	virtualPreviewTextDecorations,
 } from "./streamingPreviewVirtualDecorations";
 
 type SuggestionPresentation = NonNullable<
@@ -43,85 +38,70 @@ export function buildStreamingReviewPreviewDecorations({
 		return [];
 	}
 
-	const decorations: Decoration[] = [];
 	const replacementPlan = buildStreamingPreviewPlan(editor, preview);
 	if (replacementPlan) {
-		appendStreamingReplacementPreviewPlanDecorations(decorations, {
+		return decorationsForReplacementPlan({
 			editor,
 			plan: replacementPlan,
 			preview,
 			suggestionPresentation,
 		});
-		return decorations;
 	}
 
-	appendStreamingPreviewDeletionDecorations(decorations, {
-		editor,
-		suggestionPresentation,
-		target: preview.target,
-	});
-	appendVirtualPreviewTextDecorations(decorations, {
-		blockId: anchor.blockId,
-		offset: anchor.offset,
-		preview,
-		text,
-		insertedTextStart: 0,
-	});
-
-	return decorations;
+	return [
+		...deletionDecorationsForTarget({
+			editor,
+			suggestionPresentation,
+			target: preview.target,
+		}),
+		...virtualPreviewTextDecorations({
+			blockId: anchor.blockId,
+			offset: anchor.offset,
+			preview,
+			text,
+		}),
+	];
 }
 
-function appendStreamingReplacementPreviewPlanDecorations(
-	decorations: Decoration[],
-	{
-		editor,
-		plan,
-		preview,
-		suggestionPresentation,
-	}: {
-		editor: Editor;
-		plan: StreamingPreviewPlanResult;
-		preview: AIStreamingReviewPreview;
-		suggestionPresentation: SuggestionPresentation;
-	},
-): void {
+function decorationsForReplacementPlan({
+	editor,
+	plan,
+	preview,
+	suggestionPresentation,
+}: {
+	editor: Editor;
+	plan: StreamingPreviewPlanResult;
+	preview: AIStreamingReviewPreview;
+	suggestionPresentation: SuggestionPresentation;
+}): Decoration[] {
 	if (plan.kind === "text-range") {
-		if (plan.deleteTo > plan.deleteFrom) {
-			decorations.push(
-				createStreamingDeleteDecoration({
-					blockId: plan.blockId,
-					from: plan.deleteFrom,
-					suggestionPresentation,
-					to: plan.deleteTo,
-				}),
-			);
-		}
-		appendVirtualPreviewTextDecorations(decorations, {
-			blockId: plan.blockId,
-			offset: plan.insertOffset,
-			preview,
-			text: plan.text,
-			insertedTextStart: resolveStreamingPreviewInsertedTextStart({
-				decoratedText: plan.text,
-				preview,
-				planInsertedTextStart: plan.insertedTextStart,
+		return [
+			...inlineDeleteDecorations({
+				blockId: plan.blockId,
+				from: plan.deleteFrom,
+				to: plan.deleteTo,
+				suggestionPresentation,
 			}),
-		});
-		return;
+			...virtualPreviewTextDecorations({
+				blockId: plan.blockId,
+				offset: plan.insertOffset,
+				preview,
+				text: plan.text,
+			}),
+		];
 	}
 	if (plan.kind === "aligned-block-range") {
-		for (const textPlan of plan.plans) {
-			appendStreamingReplacementPreviewPlanDecorations(decorations, {
+		return plan.plans.flatMap((textPlan) =>
+			decorationsForReplacementPlan({
 				editor,
 				plan: textPlan,
 				preview,
 				suggestionPresentation,
-			});
-		}
-		return;
+			}),
+		);
 	}
 
-	appendBlockRangeStreamingReplacementPreviewDecorations(decorations, {
+	return decorationsForBlockRangePlan({
 		editor,
 		plan,
 		preview,
@@ -129,243 +109,197 @@ function appendStreamingReplacementPreviewPlanDecorations(
 	});
 }
 
-function appendBlockRangeStreamingReplacementPreviewDecorations(
-	decorations: Decoration[],
-	{
-		editor,
-		plan,
-		preview,
-		suggestionPresentation,
-	}: {
-		editor: Editor;
-		plan: BlockRangeStreamingPreviewPlan;
-		preview: AIStreamingReviewPreview;
-		suggestionPresentation: SuggestionPresentation;
-	},
-): void {
+function decorationsForBlockRangePlan({
+	editor,
+	plan,
+	preview,
+	suggestionPresentation,
+}: {
+	editor: Editor;
+	plan: BlockRangeStreamingPreviewPlan;
+	preview: AIStreamingReviewPreview;
+	suggestionPresentation: SuggestionPresentation;
+}): Decoration[] {
 	const insertPosition = mapStreamingBlockRangeTextOffset(
 		editor,
 		plan.normalizedRange,
 		plan.deleteFromChar,
 	);
-	const deleteStartPosition = insertPosition;
 	const deleteEndPosition = mapStreamingBlockRangeTextOffset(
 		editor,
 		plan.normalizedRange,
 		plan.deleteToChar,
 	);
 
-	if (deleteStartPosition.blockId === deleteEndPosition.blockId) {
-		if (deleteEndPosition.offset > deleteStartPosition.offset) {
-			decorations.push(
-				createStreamingDeleteDecoration({
-					blockId: deleteStartPosition.blockId,
-					from: deleteStartPosition.offset,
-					suggestionPresentation,
-					to: deleteEndPosition.offset,
-				}),
-			);
-		}
-	} else {
-		appendPartialBlockRangeDeletionDecorations(decorations, {
+	return [
+		...crossBlockDeletionDecorations({
 			editor,
-			deleteEndPosition,
-			deleteStartPosition,
-			normalizedRange: plan.normalizedRange,
+			start: insertPosition,
+			end: deleteEndPosition,
+			middleBlockIds: middleBlockIdsBetween(
+				plan.normalizedRange,
+				insertPosition.blockId,
+				deleteEndPosition.blockId,
+			),
 			suggestionPresentation,
-		});
-	}
-
-	appendVirtualPreviewTextDecorations(decorations, {
-		blockId: insertPosition.blockId,
-		offset: insertPosition.offset,
-		preview,
-		text: plan.insertText,
-		insertedTextStart: resolveStreamingPreviewInsertedTextStart({
-			decoratedText: plan.insertText,
-			preview,
-			planInsertedTextStart: plan.insertedTextStart,
 		}),
-	});
+		...virtualPreviewTextDecorations({
+			blockId: insertPosition.blockId,
+			offset: insertPosition.offset,
+			preview,
+			text: plan.insertText,
+		}),
+	];
 }
 
-function appendPartialBlockRangeDeletionDecorations(
-	decorations: Decoration[],
-	{
-		editor,
-		deleteEndPosition,
-		deleteStartPosition,
-		normalizedRange,
-		suggestionPresentation,
-	}: {
-		editor: Editor;
-		deleteEndPosition: { blockId: string; offset: number };
-		deleteStartPosition: { blockId: string; offset: number };
-		normalizedRange: BlockRangeStreamingPreviewPlan["normalizedRange"];
-		suggestionPresentation: SuggestionPresentation;
-	},
-): void {
-	const orderedBlockIds = [
-		normalizedRange.start.blockId,
-		...normalizedRange.middleBlockIds,
-		normalizedRange.end.blockId,
-	].filter((blockId, index, blockIds) => blockIds.indexOf(blockId) === index);
-	const deleteStartIndex = orderedBlockIds.indexOf(
-		deleteStartPosition.blockId,
-	);
-	const deleteEndIndex = orderedBlockIds.indexOf(deleteEndPosition.blockId);
-	if (deleteStartIndex < 0 || deleteEndIndex < 0) {
-		return;
-	}
-
-	const fromIndex = Math.min(deleteStartIndex, deleteEndIndex);
-	const toIndex = Math.max(deleteStartIndex, deleteEndIndex);
-
-	const startBlockTextLength =
-		editor.getBlock(deleteStartPosition.blockId)?.textContent().length ??
-		deleteStartPosition.offset;
-	if (deleteStartPosition.offset < startBlockTextLength) {
-		decorations.push(
-			createStreamingDeleteDecoration({
-				blockId: deleteStartPosition.blockId,
-				from: deleteStartPosition.offset,
+function deletionDecorationsForTarget({
+	editor,
+	suggestionPresentation,
+	target,
+}: {
+	editor: Editor;
+	suggestionPresentation: SuggestionPresentation;
+	target: AIStreamingReviewPreview["target"];
+}): Decoration[] {
+	switch (target.kind) {
+		case "text-range":
+			return inlineDeleteDecorations({
+				blockId: target.blockId,
+				from: Math.min(target.from, target.to),
+				to: Math.max(target.from, target.to),
 				suggestionPresentation,
-				to: startBlockTextLength,
-			}),
-		);
-	}
-
-	for (let index = fromIndex + 1; index < toIndex; index += 1) {
-		const blockId = orderedBlockIds[index];
-		if (!blockId) {
-			continue;
-		}
-		decorations.push(createStreamingDeleteBlockDecoration(blockId));
-	}
-
-	if (
-		deleteEndPosition.blockId !== deleteStartPosition.blockId &&
-		deleteEndPosition.offset > 0
-	) {
-		decorations.push(
-			createStreamingDeleteDecoration({
-				blockId: deleteEndPosition.blockId,
-				from: 0,
-				suggestionPresentation,
-				to: deleteEndPosition.offset,
-			}),
-		);
-	}
-}
-
-function appendStreamingPreviewDeletionDecorations(
-	decorations: Decoration[],
-	input: {
-		editor: Editor;
-		suggestionPresentation: SuggestionPresentation;
-		target: AIStreamingReviewPreview["target"];
-	},
-): void {
-	switch (input.target.kind) {
-		case "text-range": {
-			const from = Math.min(input.target.from, input.target.to);
-			const to = Math.max(input.target.from, input.target.to);
-			if (to > from) {
-				decorations.push(
-					createStreamingDeleteDecoration({
-						blockId: input.target.blockId,
-						from,
-						suggestionPresentation: input.suggestionPresentation,
-						to,
-					}),
-				);
-			}
-			return;
-		}
-		case "block-range":
-			appendStreamingBlockRangeDeletionDecorations(decorations, {
-				editor: input.editor,
-				suggestionPresentation: input.suggestionPresentation,
-				target: input.target,
 			});
-			return;
+		case "block-range": {
+			const normalizedRange = normalizeStreamingBlockRange(
+				editor,
+				target,
+			);
+			if (!normalizedRange) {
+				return [];
+			}
+			if (normalizedRange.start.blockId === normalizedRange.end.blockId) {
+				return inlineDeleteDecorations({
+					blockId: normalizedRange.start.blockId,
+					from: Math.min(
+						normalizedRange.start.offset,
+						normalizedRange.end.offset,
+					),
+					to: Math.max(
+						normalizedRange.start.offset,
+						normalizedRange.end.offset,
+					),
+					suggestionPresentation,
+				});
+			}
+			return crossBlockDeletionDecorations({
+				editor,
+				start: normalizedRange.start,
+				end: normalizedRange.end,
+				middleBlockIds: normalizedRange.middleBlockIds,
+				suggestionPresentation,
+			});
+		}
 		case "insertion-point":
-			return;
+			return [];
 		default: {
-			const exhaustive: never = input.target;
+			const exhaustive: never = target;
 			return exhaustive;
 		}
 	}
 }
 
-function appendStreamingBlockRangeDeletionDecorations(
-	decorations: Decoration[],
-	{
-		editor,
-		suggestionPresentation,
-		target,
-	}: {
-		editor: Editor;
-		suggestionPresentation: SuggestionPresentation;
-		target: Extract<
-			AIStreamingReviewPreview["target"],
-			{ kind: "block-range" }
-		>;
-	},
-): void {
-	const normalizedRange = normalizeStreamingBlockRange(editor, target);
-	if (!normalizedRange) {
-		return;
+function inlineDeleteDecorations({
+	blockId,
+	from,
+	to,
+	suggestionPresentation,
+}: {
+	blockId: string;
+	from: number;
+	to: number;
+	suggestionPresentation: SuggestionPresentation;
+}): Decoration[] {
+	if (to <= from) {
+		return [];
+	}
+	return [
+		createStreamingDeleteDecoration({
+			blockId,
+			from,
+			suggestionPresentation,
+			to,
+		}),
+	];
+}
+
+function crossBlockDeletionDecorations({
+	editor,
+	start,
+	end,
+	middleBlockIds,
+	suggestionPresentation,
+}: {
+	editor: Editor;
+	start: { blockId: string; offset: number };
+	end: { blockId: string; offset: number };
+	middleBlockIds: readonly string[];
+	suggestionPresentation: SuggestionPresentation;
+}): Decoration[] {
+	if (start.blockId === end.blockId) {
+		return inlineDeleteDecorations({
+			blockId: start.blockId,
+			from: Math.min(start.offset, end.offset),
+			to: Math.max(start.offset, end.offset),
+			suggestionPresentation,
+		});
 	}
 
-	if (normalizedRange.start.blockId === normalizedRange.end.blockId) {
-		const from = Math.min(
-			normalizedRange.start.offset,
-			normalizedRange.end.offset,
-		);
-		const to = Math.max(
-			normalizedRange.start.offset,
-			normalizedRange.end.offset,
-		);
-		if (to > from) {
-			decorations.push(
-				createStreamingDeleteDecoration({
-					blockId: normalizedRange.start.blockId,
-					from,
-					suggestionPresentation,
-					to,
-				}),
-			);
-		}
-		return;
-	}
-
+	const decorations: Decoration[] = [];
 	const startBlockTextLength =
-		editor.getBlock(normalizedRange.start.blockId)?.textContent().length ??
-		normalizedRange.start.offset;
-	if (normalizedRange.start.offset < startBlockTextLength) {
+		editor.getBlock(start.blockId)?.textContent().length ?? start.offset;
+	if (start.offset < startBlockTextLength) {
 		decorations.push(
 			createStreamingDeleteDecoration({
-				blockId: normalizedRange.start.blockId,
-				from: normalizedRange.start.offset,
+				blockId: start.blockId,
+				from: start.offset,
 				suggestionPresentation,
 				to: startBlockTextLength,
 			}),
 		);
 	}
-
-	if (normalizedRange.end.offset > 0) {
+	for (const blockId of middleBlockIds) {
+		decorations.push(createStreamingDeleteBlockDecoration(blockId));
+	}
+	if (end.offset > 0) {
 		decorations.push(
 			createStreamingDeleteDecoration({
-				blockId: normalizedRange.end.blockId,
+				blockId: end.blockId,
 				from: 0,
 				suggestionPresentation,
-				to: normalizedRange.end.offset,
+				to: end.offset,
 			}),
 		);
 	}
+	return decorations;
+}
 
-	for (const blockId of normalizedRange.middleBlockIds) {
-		decorations.push(createStreamingDeleteBlockDecoration(blockId));
+function middleBlockIdsBetween(
+	normalizedRange: BlockRangeStreamingPreviewPlan["normalizedRange"],
+	startBlockId: string,
+	endBlockId: string,
+): string[] {
+	const orderedBlockIds = [
+		normalizedRange.start.blockId,
+		...normalizedRange.middleBlockIds,
+		normalizedRange.end.blockId,
+	].filter((blockId, index, blockIds) => blockIds.indexOf(blockId) === index);
+	const fromIndex = orderedBlockIds.indexOf(startBlockId);
+	const toIndex = orderedBlockIds.indexOf(endBlockId);
+	if (fromIndex < 0 || toIndex < 0) {
+		return [];
 	}
+	return orderedBlockIds.slice(
+		Math.min(fromIndex, toIndex) + 1,
+		Math.max(fromIndex, toIndex),
+	);
 }

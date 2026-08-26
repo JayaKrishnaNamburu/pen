@@ -1,17 +1,5 @@
-import type {
-	CRDTAdapter,
-	DeleteTableCellTextOp,
-	DeleteTableColumnOp,
-	DeleteTableRowOp,
-	DocumentOp,
-	FormatTableCellTextOp,
-	InsertTableCellTextOp,
-	InsertTableColumnOp,
-	InsertTableRowOp,
-	TableColumnSchema,
-	UpdateTableColumnsOp,
-} from "@pen/types";
-import { generateId } from "@pen/types";
+import type { CRDTAdapter, GridOp, TableColumnSchema } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,
@@ -30,8 +18,6 @@ import {
 	writeCellDeltas,
 } from "./tableGridCellHelpers";
 
-const ZERO_WIDTH_SPACE = "\u200B";
-
 export type TableCellDelta = {
 	insert: string;
 	attributes?: Record<string, unknown>;
@@ -44,39 +30,32 @@ export class TableGridExecutor {
 		this._adapter = adapter;
 	}
 
-	execute(blockMap: CRDTUnknownMap, op: DocumentOp): string[] {
-		const tableOp = op as { type: string; blockId: string };
-
-		if (op.type === "update-table-columns") {
-			this.setStructuredTableColumns(
-				blockMap,
-				(op as UpdateTableColumnsOp).columns,
-			);
-			return [tableOp.blockId];
-		}
-
+	execute(blockMap: CRDTUnknownMap, op: GridOp): string[] {
 		const tableContent = getTableContent(blockMap);
 		if (!tableContent) {
 			return [];
 		}
 
-		switch (op.type) {
-			case "insert-table-row": {
-				const rowOp = op as InsertTableRowOp;
-				const row = this.createTableRow(this.resolveGridColumnCount(blockMap));
-				tableContent.insert(rowOp.index, [row]);
+		switch (op.change.kind) {
+			case "insert-row": {
+				const row = this.createTableRow(
+					this.resolveGridColumnCount(blockMap),
+				);
+				tableContent.insert(op.change.index, [row]);
 				break;
 			}
-			case "delete-table-row": {
-				const rowOp = op as DeleteTableRowOp;
-				if (rowOp.index < tableContent.length) {
-					tableContent.delete(rowOp.index, 1);
+			case "delete-row": {
+				if (op.change.index < tableContent.length) {
+					tableContent.delete(op.change.index, 1);
 				}
 				break;
 			}
-			case "insert-table-column": {
-				const colOp = op as InsertTableColumnOp;
-				for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
+			case "insert-column": {
+				for (
+					let rowIndex = 0;
+					rowIndex < tableContent.length;
+					rowIndex++
+				) {
 					const row = tableContent.get(rowIndex);
 					if (!row || !isCRDTMap(row)) {
 						continue;
@@ -85,13 +64,16 @@ export class TableGridExecutor {
 					if (!cells) {
 						continue;
 					}
-					cells.insert(colOp.index, [this.createTableCell()]);
+					cells.insert(op.change.index, [this.createTableCell()]);
 				}
 				break;
 			}
-			case "delete-table-column": {
-				const colOp = op as DeleteTableColumnOp;
-				for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
+			case "delete-column": {
+				for (
+					let rowIndex = 0;
+					rowIndex < tableContent.length;
+					rowIndex++
+				) {
 					const row = tableContent.get(rowIndex);
 					if (!row || !isCRDTMap(row)) {
 						continue;
@@ -100,52 +82,23 @@ export class TableGridExecutor {
 					if (!cells) {
 						continue;
 					}
-					if (colOp.index < cells.length) {
-						cells.delete(colOp.index, 1);
+					if (op.change.index < cells.length) {
+						cells.delete(op.change.index, 1);
 					}
 				}
 				break;
 			}
-			case "merge-table-cells":
-			case "split-table-cell":
+			case "merge-cells":
+			case "split-cell":
 				break;
-			case "insert-table-cell-text": {
-				const cellOp = op as InsertTableCellTextOp;
-				const content = ensureCellContent(
-					tableContent.get(cellOp.row),
-					cellOp.col,
-					() => this.createTableCell(),
-				);
-				if (content && typeof content.insert === "function") {
-					content.insert(cellOp.offset, cellOp.text);
-				}
-				break;
-			}
-			case "delete-table-cell-text": {
-				const cellOp = op as DeleteTableCellTextOp;
-				const content = getCellContent(
-					tableContent.get(cellOp.row),
-					cellOp.col,
-				);
-				if (content && typeof content.delete === "function") {
-					content.delete(cellOp.offset, cellOp.length);
-				}
-				break;
-			}
-			case "format-table-cell-text": {
-				const cellOp = op as FormatTableCellTextOp;
-				const content = getCellContent(
-					tableContent.get(cellOp.row),
-					cellOp.col,
-				);
-				if (content && typeof content.format === "function") {
-					content.format(cellOp.offset, cellOp.length, cellOp.marks);
-				}
+			default: {
+				const _exhaustive: never = op.change;
+				void _exhaustive;
 				break;
 			}
 		}
 
-		return [tableOp.blockId];
+		return [op.blockId];
 	}
 
 	seedTableBlock(
@@ -162,7 +115,8 @@ export class TableGridExecutor {
 
 		const rowCount = Math.max(1, options?.rowCount ?? 2);
 		const colCount = Math.max(1, options?.colCount ?? 2);
-		const tableContent = this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
+		const tableContent =
+			this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
 		for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
 			tableContent.insert(rowIndex, [this.createTableRow(colCount)]);
 		}
@@ -187,7 +141,8 @@ export class TableGridExecutor {
 	createTableRow(colCount: number): CRDTUnknownMap {
 		const row = this._adapter.createMap() as CRDTUnknownMap;
 		row.set("id", generateId());
-		const cells = this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
+		const cells =
+			this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
 		for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
 			cells.insert(columnIndex, [this.createTableCell()]);
 		}
@@ -213,8 +168,7 @@ export class TableGridExecutor {
 	readTableCellText(rowMap: CRDTUnknownMap, columnIndex: number): string {
 		const content = getCellContent(rowMap, columnIndex);
 		if (content && typeof content.toString === "function") {
-			const text = content.toString();
-			return text === ZERO_WIDTH_SPACE ? "" : text;
+			return content.toString();
 		}
 		return "";
 	}
@@ -287,7 +241,10 @@ export class TableGridExecutor {
 			return false;
 		}
 
-		const nextIndex = Math.max(0, Math.min(targetIndex, tableContent.length - 1));
+		const nextIndex = Math.max(
+			0,
+			Math.min(targetIndex, tableContent.length - 1),
+		);
 		if (nextIndex === rowIndex) {
 			return true;
 		}
@@ -322,7 +279,11 @@ export class TableGridExecutor {
 			return;
 		}
 
-		for (let columnIndex = 0; columnIndex < snapshot.cells.length; columnIndex++) {
+		for (
+			let columnIndex = 0;
+			columnIndex < snapshot.cells.length;
+			columnIndex++
+		) {
 			const targetCell = targetCells.get(columnIndex);
 			const cellSnapshot = snapshot.cells[columnIndex];
 			if (!targetCell || !cellSnapshot || !isCRDTMap(targetCell)) {
@@ -366,7 +327,8 @@ export class TableGridExecutor {
 		blockMap: CRDTUnknownMap,
 		columns: Array<TableColumnSchema | Record<string, unknown>>,
 	): void {
-		const tableColumns = this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
+		const tableColumns =
+			this._adapter.createArray() as CRDTUnknownArray<CRDTUnknownMap>;
 		tableColumns.insert(
 			0,
 			columns.map((column) => this.createTableColumnMap(column)),
@@ -414,7 +376,11 @@ export class TableGridExecutor {
 		return columnMap;
 	}
 
-	setColumnValue(columnMap: CRDTUnknownMap, key: string, value: unknown): void {
+	setColumnValue(
+		columnMap: CRDTUnknownMap,
+		key: string,
+		value: unknown,
+	): void {
 		if (key === "id") {
 			return;
 		}
@@ -452,7 +418,9 @@ export class TableGridExecutor {
 		columnMap.set(key, value);
 	}
 
-	readColumnIds(tableColumns: CRDTUnknownArray<CRDTUnknownMap> | null): string[] {
+	readColumnIds(
+		tableColumns: CRDTUnknownArray<CRDTUnknownMap> | null,
+	): string[] {
 		if (!tableColumns) {
 			return [];
 		}

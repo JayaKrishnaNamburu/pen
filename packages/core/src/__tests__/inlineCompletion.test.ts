@@ -2,9 +2,10 @@ import {
 	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
 	type BlockDecoration,
 	type InlineDecoration,
-} from "@pen/types";
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { createEditor, ensureInlineCompletionController } from "../index";
+import { defaultSchema } from "./fixtures/testSchema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -14,12 +15,23 @@ const noDefaultExtensionsPreset = {
 
 describe("inline completion decorations", () => {
 	it("marks the suggestion block while an inline suggestion is visible", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const blockId = editor.firstBlock()!.id;
 		const inlineCompletion = ensureInlineCompletionController(editor);
 
 		try {
-			editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);
+			editor.apply([
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello",
+				},
+			]);
 			inlineCompletion.controller.showSuggestion({
 				id: "suggestion-1",
 				blockId,
@@ -51,7 +63,10 @@ describe("inline completion decorations", () => {
 	});
 
 	it("keeps a block marker for block suggestions without inline anchors", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const blockId = editor.firstBlock()!.id;
 		const inlineCompletion = ensureInlineCompletionController(editor);
 

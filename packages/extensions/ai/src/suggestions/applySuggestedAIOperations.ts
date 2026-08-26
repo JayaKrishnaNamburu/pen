@@ -1,8 +1,8 @@
-import type { DocumentOp, Editor, OpOrigin } from "@pen/types";
+import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
 import type { PersistentSuggestion } from "../types";
 import {
 	AI_SESSION_SUGGESTION_ORIGIN,
-	interceptApplyForSuggestModeWithMetadata,
+	transformOpsForSuggestModeWithMetadata,
 } from "./suggestMode";
 
 export type ApplySuggestedAIOperationsOptions = {
@@ -33,7 +33,7 @@ export function applySuggestedAIOperations(
 		return { suggestionIds: [], suggestions: [] };
 	}
 
-	const intercepted = interceptApplyForSuggestModeWithMetadata(
+	const intercepted = transformOpsForSuggestModeWithMetadata(
 		[...options.operations],
 		editor,
 		options.author ?? "assistant",

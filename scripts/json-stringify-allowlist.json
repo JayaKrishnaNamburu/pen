@@ -1,0 +1,50 @@
+{
+  "_comment": "SCALE2 (spec/rules/scale.md): JSON.stringify sites in packages/rendering and packages/core runtime src that produce a wire format, debug display, HOST4 clone, or Intl cache key — not a per-commit / per-render change signature. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes the last call in that symbol.",
+  "entries": [
+    {
+      "file": "packages/core/src/editor/anchors.ts",
+      "symbol": "serialize",
+      "reason": "Anchor wire format — EditorAnchorsImpl.serialize writes the versioned relative-anchor JSON payload."
+    },
+    {
+      "file": "packages/core/src/i18n/formatters.ts",
+      "symbol": "formatterKey",
+      "reason": "Intl cache key — formatterKey stringifies options so PluralRules / NumberFormat / DateTimeFormat can be reused (LOC3/LOC6)."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/clipboardPayload.ts",
+      "symbol": "serializePenClipboardPayload",
+      "reason": "Clipboard wire format — serializePenClipboardPayload writes the versioned Pen clipboard JSON."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/clipboardPayload.ts",
+      "symbol": "ensureClipboardJson",
+      "reason": "Clipboard wire format — re-serialize a parsed payload after migration so HTML meta stays versioned JSON."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/tableCellClipboard.ts",
+      "symbol": "copyCellSelection",
+      "reason": "Clipboard wire format — table-cell copy writes application/x-pen-cells JSON."
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useAIDebugLog.ts",
+      "symbol": "safeStringify",
+      "reason": "Debug display — safeStringify truncates a value for the AI debug log, not a render signature."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/ai/toolStream.tsx",
+      "symbol": "formatToolStreamValue",
+      "reason": "Debug display — formatToolStreamValue pretty-prints a tool payload for the stream UI."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/editor/blockDragSession.tsx",
+      "symbol": "serializeBlockDragPayload",
+      "reason": "Drag wire format — serializeBlockDragPayload writes the HTML5 drag JSON payload."
+    },
+    {
+      "file": "packages/rendering/react/src/renderers/defaultRenderer.tsx",
+      "symbol": "DefaultRenderer",
+      "reason": "Debug display — unknown-block fallback pretty-prints props in development only."
+    }
+  ]
+}

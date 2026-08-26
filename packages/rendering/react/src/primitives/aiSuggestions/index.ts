@@ -1,6 +1,5 @@
 export {
 	AISuggestionsRoot,
-	useAISuggestionsContext,
 	type AISuggestionsRootProps,
 } from "./root";
 export {

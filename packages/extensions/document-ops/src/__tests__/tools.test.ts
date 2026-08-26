@@ -1,5 +1,5 @@
-import { defaultSchema } from "@pen/schema-default";
-import type { ApplyOptions, DocumentOp, Editor } from "@pen/types";
+import { defaultSchema } from "./fixtures/testSchema";
+import type { ApplyOptions, DocumentOp, Editor } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import { ToolContextImpl } from "../toolContext";
 import { ToolRuntimeImpl } from "../toolServer";
@@ -22,20 +22,11 @@ function createFakeEditor(documentProfile: Editor["documentProfile"]): Editor {
 		documentProfile,
 		schema: defaultSchema,
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
+		facet: () => null,
 		internals: {
 			emit: vi.fn(),
 		},
 	} as unknown as Editor;
-}
-
-function createDatabaseMarkdown(): string {
-	return [
-		"<!-- pen-database:%7B%22title%22%3A%22Roadmap%22%2C%22dataSource%22%3A%22local%22%2C%22columns%22%3A%5B%7B%22id%22%3A%22name%22%2C%22title%22%3A%22Name%22%2C%22type%22%3A%22text%22%7D%5D%2C%22rows%22%3A%5B%7B%22id%22%3A%22roadmap-1%22%2C%22values%22%3A%7B%22name%22%3A%22Ship%20importer%22%7D%7D%5D%2C%22primaryViewId%22%3Anull%7D -->",
-		"",
-		"| Name |",
-		"| --- |",
-		"| Ship importer |",
-	].join("\n");
 }
 
 function createMockBlockHandle(input: {
@@ -44,7 +35,10 @@ function createMockBlockHandle(input: {
 	props?: Record<string, unknown>;
 	children?: unknown[];
 	textContent: (options?: { resolved?: boolean }) => string;
-	textDeltas: () => Array<{ insert: string; attributes?: Record<string, unknown> }>;
+	textDeltas: () => Array<{
+		insert: string;
+		attributes?: Record<string, unknown>;
+	}>;
 	prev?: unknown;
 	next?: unknown;
 }): {
@@ -53,19 +47,20 @@ function createMockBlockHandle(input: {
 	props: Record<string, unknown>;
 	children: unknown[];
 	textContent: (options?: { resolved?: boolean }) => string;
-	textDeltas: () => Array<{ insert: string; attributes?: Record<string, unknown> }>;
+	textDeltas: () => Array<{
+		insert: string;
+		attributes?: Record<string, unknown>;
+	}>;
 	tableRowCount: () => number;
 	tableColumnCount: () => number;
 	tableCell: () => null;
 	tableRow: () => null;
 	tableColumns: () => never[];
-	databaseViews: () => never[];
-	databasePrimaryViewId: () => null;
-	databaseActiveView: () => null;
 	prev?: unknown;
 	next?: unknown;
+	as: (capability: string) => unknown;
 } {
-	return {
+	const handle = {
 		props: {},
 		children: [],
 		prev: null,
@@ -76,10 +71,13 @@ function createMockBlockHandle(input: {
 		tableCell: () => null,
 		tableRow: () => null,
 		tableColumns: () => [],
-		databaseViews: () => [],
-		databasePrimaryViewId: () => null,
-		databaseActiveView: () => null,
+		as(capability: string) {
+			return capability === "table" && handle.type === "table"
+				? handle
+				: null;
+		},
 	};
+	return handle;
 }
 
 function createReadDocumentEditor(): Editor {
@@ -102,7 +100,10 @@ function createReadDocumentEditor(): Editor {
 				options?.resolved ? "Second" : "Second draft",
 			textDeltas: () => [
 				{ insert: "Second" },
-				{ insert: " draft", attributes: { suggestion: { action: "delete" } } },
+				{
+					insert: " draft",
+					attributes: { suggestion: { action: "delete" } },
+				},
 			],
 		}),
 		createMockBlockHandle({
@@ -123,19 +124,15 @@ function createReadDocumentEditor(): Editor {
 	return {
 		documentProfile: "structured",
 		schema: defaultSchema,
+		facet: () => null,
 		blockCount: () => 3,
 		blocks: () => blocks,
-		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
+		getBlock: (blockId: string) =>
+			blocks.find((block) => block.id === blockId) ?? null,
 		getSelection: () => ({
 			type: "text",
 			anchor: { blockId: "block-2", offset: 0 },
 			focus: { blockId: "block-2", offset: 6 },
-			isCollapsed: false,
-			toRange: () => ({
-				start: { blockId: "block-2", offset: 0 },
-				end: { blockId: "block-2", offset: 6 },
-				blockRange: ["block-2"],
-			}),
 		}),
 		getSelectedText: () => "Second",
 	} as unknown as Editor;
@@ -145,13 +142,6 @@ function createStructuredTargetEditor(
 	activeBlockId: string,
 	documentProfile: Editor["documentProfile"] = "structured",
 ): Editor {
-	const views = [
-		{
-			id: "view-1",
-			type: "table" as const,
-			title: "Default view",
-		},
-	];
 	const blocks = [
 		{
 			id: "paragraph-1",
@@ -163,9 +153,11 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
+			as(capability: string) {
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
 		},
 		{
 			id: "table-1",
@@ -180,26 +172,11 @@ function createStructuredTargetEditor(
 				{ id: "col-1", title: "Name", type: "text" as const },
 				{ id: "col-2", title: "Status", type: "text" as const },
 			],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
-		},
-		{
-			id: "database-1",
-			type: "database",
-			props: { title: "Roadmap" },
-			children: [],
-			textContent: () => "",
-			textDeltas: () => [],
-			tableRowCount: () => 2,
-			tableColumnCount: () => 2,
-			tableColumns: () => [
-				{ id: "name", title: "Name", type: "text" as const },
-				{ id: "owner", title: "Owner", type: "text" as const },
-			],
-			databaseViews: () => views,
-			databasePrimaryViewId: () => "view-1",
-			databaseActiveView: () => views[0],
+			as(capability: string) {
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
 		},
 		{
 			id: "subdocument-1",
@@ -211,18 +188,22 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
+			as(capability: string) {
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
 		},
 	];
 
 	return {
 		documentProfile,
 		schema: defaultSchema,
+		facet: () => null,
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		blocks: () => blocks,
-		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
+		getBlock: (blockId: string) =>
+			blocks.find((block) => block.id === blockId) ?? null,
 		getSelection: () => ({
 			type: "block",
 			blockIds: [activeBlockId],
@@ -259,13 +240,16 @@ function createNestedDocumentEditor(): Editor {
 			props: {},
 			children: [],
 			textContent: () => "Fast apply preserves stable block identity.",
-			textDeltas: () => [{ insert: "Fast apply preserves stable block identity." }],
+			textDeltas: () => [
+				{ insert: "Fast apply preserves stable block identity." },
+			],
 		}),
 	];
 
 	return {
 		documentProfile: "structured",
 		schema: defaultSchema,
+		facet: () => null,
 		blocks: () => topLevelBlocks,
 		documentState: {
 			allBlocks: () => nestedBlocks,
@@ -276,58 +260,41 @@ function createNestedDocumentEditor(): Editor {
 			type: "text",
 			anchor: { blockId: "paragraph-1", offset: 0 },
 			focus: { blockId: "paragraph-1", offset: 4 },
-			isCollapsed: false,
-			toRange: () => ({
-				start: { blockId: "paragraph-1", offset: 0 },
-				end: { blockId: "paragraph-1", offset: 4 },
-				blockRange: ["paragraph-1"],
-			}),
 		}),
 		getSelectedText: () => "Fast",
 	} as unknown as Editor;
 }
 
-describe("@pen/document-ops tools", () => {
+describe("@input/pen-document-ops tools", () => {
 	it("filters hidden and flow-disallowed block types from list_block_types", async () => {
 		const structuredEditor = createFakeEditor("structured");
 		const flowEditor = createFakeEditor("flow");
 
-		const structuredTypes = (await listBlockTypesTool(structuredEditor).handler(
-			{},
-			{} as never,
-		)) as Array<{ type: string }>;
+		const structuredTypes = (await listBlockTypesTool(
+			structuredEditor,
+		).handler({}, {} as never)) as Array<{ type: string }>;
 		const flowTypes = (await listBlockTypesTool(flowEditor).handler(
 			{},
 			{} as never,
 		)) as Array<{ type: string }>;
 
-		expect(structuredTypes.map((entry) => entry.type)).toContain("database");
-		expect(structuredTypes.map((entry) => entry.type)).not.toContain("subdocument");
-		expect(flowTypes.map((entry) => entry.type)).not.toContain("database");
-		expect(flowTypes.map((entry) => entry.type)).not.toContain("subdocument");
-		expect(structuredTypes.find((entry) => entry.type === "table")).toMatchObject({
+		expect(structuredTypes.map((entry) => entry.type)).toContain("table");
+		expect(structuredTypes.map((entry) => entry.type)).not.toContain(
+			"subdocument",
+		);
+		expect(flowTypes.map((entry) => entry.type)).toContain("table");
+		expect(flowTypes.map((entry) => entry.type)).not.toContain(
+			"subdocument",
+		);
+		expect(
+			structuredTypes.find((entry) => entry.type === "table"),
+		).toMatchObject({
 			type: "table",
 			content: "table",
 			fieldEditor: "table",
 			flowCapability: "flow-delegated",
 			selectionRole: "delegated",
 		});
-	});
-
-	it("rejects inserting flow-disallowed block types in flow documents", async () => {
-		const editor = createFakeEditor("flow");
-
-		await expect(
-			insertBlockTool(editor).handler(
-				{
-					position: "last",
-					blockType: "database",
-				},
-				{} as never,
-			),
-		).rejects.toThrow('Block type "database" is not available in flow documents.');
-
-		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
 	it("rejects hidden block types in structured documents before applying", async () => {
@@ -348,98 +315,78 @@ describe("@pen/document-ops tools", () => {
 		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
-	it("rejects hidden and flow-disallowed block types in write_document", async () => {
-		const flowEditor = createFakeEditor("flow");
+	it("rejects hidden block types in write_document", async () => {
+		const editor = createFakeEditor("structured");
 
 		await expect(
-			writeDocumentTool(flowEditor).handler(
+			writeDocumentTool(editor).handler(
 				{
-					blocks: [{ blockType: "database", content: "Rows" }],
+					blocks: [{ blockType: "subdocument", content: "Rows" }],
 				},
 				{} as never,
 			),
-		).rejects.toThrow('Block type "database" is not available in flow documents.');
+		).rejects.toThrow(
+			'Block type "subdocument" is not available in structured documents.',
+		);
 
-		expect(flowEditor.apply).not.toHaveBeenCalled();
+		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
 	it("validates all blocks before write_document mutates the document", async () => {
-		const flowEditor = createFakeEditor("flow");
+		const editor = createFakeEditor("structured");
 
 		await expect(
-			writeDocumentTool(flowEditor).handler(
+			writeDocumentTool(editor).handler(
 				{
 					blocks: [
 						{ blockType: "paragraph", content: "Allowed" },
-						{ blockType: "database", content: "Blocked" },
+						{ blockType: "subdocument", content: "Blocked" },
 					],
 				},
 				{} as never,
 			),
-		).rejects.toThrow('Block type "database" is not available in flow documents.');
+		).rejects.toThrow(
+			'Block type "subdocument" is not available in structured documents.',
+		);
 
-		expect(flowEditor.apply).not.toHaveBeenCalled();
+		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
 	it("writes markdown content as structured blocks", async () => {
 		const editor = createFakeEditor("structured");
 
-		const result = await writeDocumentTool(editor).handler(
+		const result = (await writeDocumentTool(editor).handler(
 			{
 				format: "markdown",
 				content: "# Heading\n\n- Item",
 				position: "last",
 			},
 			{} as never,
-		) as {
+		)) as {
 			blockIds: string[];
 		};
 		const appliedOps = vi.mocked(editor.apply).mock.calls[0]?.[0] ?? [];
 
 		expect(result.blockIds).toHaveLength(2);
-		expect(appliedOps.filter((op) => op.type === "insert-block")).toHaveLength(2);
+		expect(
+			appliedOps.filter((op) => op.type === "insert-block"),
+		).toHaveLength(2);
 		expect(appliedOps[0]).toMatchObject({
 			type: "insert-block",
 			blockType: "heading",
 			position: "last",
 		});
 		expect(appliedOps[1]).toMatchObject({
-			type: "insert-text",
-			text: "Heading",
+			type: "splice-text",
+			insert: "Heading",
 		});
 		expect(appliedOps[2]).toMatchObject({
 			type: "insert-block",
 			blockType: "bulletListItem",
 		});
 		expect(appliedOps[3]).toMatchObject({
-			type: "insert-text",
-			text: "Item",
+			type: "splice-text",
+			insert: "Item",
 		});
 	});
-
-	it("filters flow-disallowed markdown blocks before write_document mutates", async () => {
-		const flowEditor = createFakeEditor("flow");
-		const markdown = createDatabaseMarkdown();
-
-		const result = await writeDocumentTool(flowEditor).handler(
-			{
-				format: "markdown",
-				content: `${markdown}\n\n## Allowed`,
-				position: "last",
-			},
-			{} as never,
-		) as {
-			blockIds: string[];
-		};
-		const appliedOps = vi.mocked(flowEditor.apply).mock.calls[0]?.[0] ?? [];
-
-		expect(result.blockIds).toHaveLength(1);
-		expect(appliedOps.filter((op) => op.type === "insert-block")).toHaveLength(1);
-		expect(appliedOps[0]).toMatchObject({
-			type: "insert-block",
-			blockType: "heading",
-		});
-		expect(flowEditor.internals.emit).toHaveBeenCalled();
-	});
-
 });

@@ -4,7 +4,9 @@ export class AICommandRegistry {
 	private _commands: AICommandBinding[] = [];
 
 	register(command: AICommandBinding): void {
-		const existing = this._commands.findIndex((item) => item.id === command.id);
+		const existing = this._commands.findIndex(
+			(item) => item.id === command.id,
+		);
 		if (existing >= 0) {
 			this._commands[existing] = command;
 			return;

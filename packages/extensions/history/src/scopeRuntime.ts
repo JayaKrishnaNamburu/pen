@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { HistoryControllerImpl } from "./controller";
 import type { HistoryConfig } from "./types";
 
@@ -54,6 +54,7 @@ class HistoryScopeRuntime {
 			persistence: config.persistence,
 			docId: config.docId,
 			autoSnapshot: config.autoSnapshot,
+			resolveAuthor: config.resolveAuthor,
 		});
 		this.ready = this.controller.listSnapshots().then(() => {});
 	}

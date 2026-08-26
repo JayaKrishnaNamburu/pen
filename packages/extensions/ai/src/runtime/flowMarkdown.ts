@@ -1,4 +1,4 @@
-import type { AIApplyStrategy } from "./contracts";
+import { stripBlockAnnotations } from "@input/pen-document-ops";
 import type { AIWorkingSetEnvelope, AIWorkingSetRetrievedSpan } from "../types";
 
 const FLOW_MARKDOWN_ALLOWED_FEATURES = [
@@ -11,22 +11,18 @@ const FLOW_MARKDOWN_ALLOWED_FEATURES = [
 	"GFM tables",
 ] as const;
 
-export const MARKDOWN_FAST_APPLY_ROOT_TAG = "pen-fast-apply";
-export const MARKDOWN_FAST_APPLY_OMISSION_MARKER =
-	"<!-- ... existing markdown ... -->";
-
 export interface FlowMarkdownPromptInput {
 	prompt: string;
 	workingSet: AIWorkingSetEnvelope | null;
-	applyStrategy: AIApplyStrategy;
+	editsArriveAsToolCalls: boolean;
 }
 
 export function buildFlowMarkdownRequestPrompt(
 	input: FlowMarkdownPromptInput,
 ): string {
 	const contextSummary = serializeWorkingSetContext(input.workingSet);
-	if (input.applyStrategy === "markdown-fast-apply") {
-		return buildFlowMarkdownFastApplyPrompt(input.prompt, contextSummary);
+	if (input.editsArriveAsToolCalls) {
+		return buildFlowMarkdownToolEditPrompt(input.prompt, contextSummary);
 	}
 
 	return [
@@ -34,7 +30,7 @@ export function buildFlowMarkdownRequestPrompt(
 		"Return only markdown content. Do not add commentary, JSON, or conversational lead-ins.",
 		`Allowed markdown subset: ${FLOW_MARKDOWN_ALLOWED_FEATURES.join(", ")}.`,
 		"Use a GFM table when the user asks for a table.",
-		"Do not emit raw HTML or database schemas in this lane.",
+		"Do not emit raw HTML in this lane.",
 		"",
 		"Context summary:",
 		contextSummary,
@@ -45,61 +41,44 @@ export function buildFlowMarkdownRequestPrompt(
 }
 
 export function normalizeFlowMarkdownOutput(value: string): string {
-	const normalized = value.replace(/\r\n?/g, "\n").trim();
+	const normalized = stripBlockAnnotations(
+		value.replace(/\r\n?/g, "\n").trim(),
+	);
 	if (!normalized.startsWith("```")) {
 		return normalized;
 	}
-	const fencedMatch = normalized.match(/^```[a-zA-Z0-9_-]*\n([\s\S]*?)\n```$/);
+	const fencedMatch = normalized.match(
+		/^```[a-zA-Z0-9_-]*\n([\s\S]*?)\n```$/,
+	);
 	if (!fencedMatch) {
 		return normalized;
 	}
 	return fencedMatch[1]?.trim() ?? "";
 }
 
-function buildFlowMarkdownFastApplyPrompt(
+/**
+ * The tool channel's prompt.
+ *
+ * Without this branch the tool channel fell through to the generic instructions
+ * below, which tell the model to return markdown content — on this channel that
+ * content is never applied (EC1), so the model was being asked for the one thing
+ * that cannot become an edit. It complied, and the turn changed nothing. The
+ * operation schema is the tool's own description; this says how to use it.
+ */
+function buildFlowMarkdownToolEditPrompt(
 	prompt: string,
 	contextSummary: string,
 ): string {
 	return [
-		`You are editing existing Pen flow content using the <${MARKDOWN_FAST_APPLY_ROOT_TAG}> contract.`,
-		"Return only XML. Do not return prose, markdown explanations, or code fences outside the XML payload.",
-		"Use the provided block ids and retrieved span metadata as the primary locator for edits.",
-		"Prefer the smallest valid edit plan that preserves existing block identity.",
-		"Use `replace_text` or `append_text` for local text-only edits inside one block.",
-		"Use `insert_before`, `insert_after`, or `replace_blocks` with markdown only when structure changes.",
+		"You are editing an existing Pen document.",
+		"Make every change by calling the `edit_document` tool. Text you write is shown to the user as your reply and is never applied, so a change you only describe does not happen.",
+		"The context below annotates each block with `<!-- block:<id> <type> -->`. Those ids are what your operations target. Never repeat an annotation comment inside a payload.",
+		"Handle every part of the request: one operation per distinct change, all in the same call.",
+		"Prefer the smallest edit that keeps a block's identity — reword a block in place rather than replacing it, and replace it only when its type has to change.",
+		"Styling, colour, and emphasis go through format_text with marks; block type and block props (heading level, and so on) go through set_block_props. Text and markdown payloads are never HTML.",
+		"If an operation is rejected, read the reason and the outline it returns, then call the tool again with corrected ids.",
 		"",
-		`Expected XML schema:`,
-		`<${MARKDOWN_FAST_APPLY_ROOT_TAG}>`,
-		"<instructions>I am ...</instructions>",
-		"<scope>single-block</scope>",
-		"<targetSpanId>span:...</targetSpanId>",
-		"<edit>",
-		"<operation>replace_text</operation>",
-		"<blockId>target-block-id</blockId>",
-		"<expectedBlockType>paragraph</expectedBlockType>",
-		"<text><![CDATA[Final block text]]></text>",
-		"</edit>",
-		"<edit>",
-		"<operation>insert_after</operation>",
-		"<blockId>target-block-id</blockId>",
-		"<markdown><![CDATA[## New heading",
-		"",
-		"New paragraph",
-		"]]></markdown>",
-		"</edit>",
-		`</${MARKDOWN_FAST_APPLY_ROOT_TAG}>`,
-		"",
-		"Rules:",
-		"- `instructions` must be a short first-person summary of the exact edit.",
-		"- `scope` must be one of `single-block`, `adjacent-blocks`, or `section`.",
-		"- Include one or more `<edit>` entries.",
-		"- Each edit must use a provided block id when possible.",
-		"- Use `<blockId>` for a single target or repeated `<block>` tags when replacing/deleting multiple blocks.",
-		"- `replace_text` and `append_text` use `<text>`. Structural edits use `<markdown>`.",
-		`- Use ${MARKDOWN_FAST_APPLY_OMISSION_MARKER} only inside markdown when you truly need to signal omitted unchanged content.`,
-		"- Preserve valid Pen flow markdown. Use a GFM table when the user asks for a table.",
-		"",
-		"Scoped markdown context:",
+		"Context summary:",
 		contextSummary,
 		"",
 		"User request:",

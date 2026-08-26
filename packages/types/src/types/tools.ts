@@ -19,12 +19,6 @@ export interface ToolRuntime extends ToolRegistry {
 		ctx: ToolContext,
 	): Promise<unknown> | AsyncIterable<unknown>;
 }
-
-/**
- * @deprecated Use `ToolRuntime`.
- */
-export interface ToolServer extends ToolRuntime {}
-
 export type ToolExecutionResult = Promise<unknown> | AsyncIterable<unknown>;
 
 export interface ToolDefinition {
@@ -35,14 +29,33 @@ export interface ToolDefinition {
 		input: unknown,
 		ctx: ToolContext,
 	) => Promise<unknown> | AsyncIterable<unknown>;
+	/**
+	 * Tool authority (AIB3). A tool that writes to the document declares
+	 * `mutating: true` and is default-denied unless the grant allowlists it;
+	 * `destructive: true` additionally marks irreversible effects.
+	 *
+	 * Left undefined, authority falls back to name-based classification, which
+	 * is a heuristic — declare these on any tool whose name is not obviously
+	 * read-only.
+	 */
+	mutating?: boolean;
+	destructive?: boolean;
 }
 
 // ── Model Adapter ───────────────────────────────────────────
 
+export type ModelToolChoice =
+	| { type: "auto" }
+	| { type: "any" }
+	| { type: "tool"; name: string };
+
+export interface ModelAdapterCapabilities {
+	partialToolInput?: boolean;
+	forcedToolChoice?: boolean;
+}
+
 export interface ModelAdapter {
-	capabilities?: {
-		structuredIntent?: boolean;
-	};
+	capabilities?: ModelAdapterCapabilities;
 	stream(options: {
 		messages: ModelMessage[];
 		tools: ToolSchema[];
@@ -52,6 +65,7 @@ export interface ModelAdapter {
 		sessionId?: string;
 		turnId?: string;
 		generationId?: string;
+		toolChoice?: ModelToolChoice;
 	}): AsyncIterable<ModelStreamEvent>;
 }
 
@@ -60,12 +74,6 @@ export type ModelOperationKind =
 	| "rewrite-block"
 	| "continue-block"
 	| "document-transform";
-
-export type ModelOperationApplyPolicy =
-	| "selection-replace"
-	| "block-replace"
-	| "block-continue"
-	| "document-review";
 
 export interface ModelOperationSelectionTarget {
 	kind: "selection";
@@ -84,6 +92,16 @@ export interface ModelOperationScopedRangeTarget {
 	blockIds: readonly string[];
 	contentFormat: "text" | "markdown";
 	scope: "block" | "paragraph" | "document" | "heading";
+}
+
+export type ModelOperationRangeTarget =
+	| ModelOperationSelectionTarget
+	| ModelOperationScopedRangeTarget;
+
+export function isScopedSelectionTarget(
+	target: ModelOperationRangeTarget,
+): target is ModelOperationScopedRangeTarget {
+	return target.kind === "scoped-range";
 }
 
 export interface ModelOperationBlockTarget {
@@ -111,7 +129,6 @@ export interface ModelOperationProvenance {
 
 export interface ModelRequestedOperation {
 	kind: ModelOperationKind;
-	applyPolicy: ModelOperationApplyPolicy;
 	target:
 		| ModelOperationSelectionTarget
 		| ModelOperationScopedRangeTarget
@@ -153,6 +170,16 @@ export type ModelStreamEvent =
 			contract?: "grid" | "app";
 			data: unknown;
 			final?: boolean;
+	  }
+	| {
+			type: "tool-input-start";
+			toolCallId: string;
+			toolName: string;
+	  }
+	| {
+			type: "tool-input-delta";
+			toolCallId: string;
+			inputTextDelta: string;
 	  }
 	| {
 			type: "tool-call";
@@ -223,28 +250,4 @@ export function isAsyncIterable(
 		typeof value === "object" &&
 		Symbol.asyncIterator in (value as object)
 	);
-}
-
-export async function resolveToolExecution(
-	result: ToolExecutionResult,
-): Promise<unknown | AsyncIterable<unknown>> {
-	return await result;
-}
-
-export async function collectToolExecutionOutput(
-	result: ToolExecutionResult,
-	onPart?: (part: unknown, output: unknown) => void,
-): Promise<unknown> {
-	const resolved = await resolveToolExecution(result);
-	if (!isAsyncIterable(resolved)) {
-		return resolved;
-	}
-
-	const parts: unknown[] = [];
-	for await (const part of resolved) {
-		parts.push(part);
-		onPart?.(part, parts.length <= 1 ? parts[0] : [...parts]);
-	}
-
-	return parts.length <= 1 ? parts[0] : parts;
 }

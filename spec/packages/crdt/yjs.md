@@ -1,4 +1,4 @@
-# @pen/crdt-yjs
+# @input/pen-crdt-yjs
 
 ## Purpose
 
@@ -12,17 +12,29 @@ Bridge Pen contracts to a specific CRDT implementation.
 
 - Export map: `.`
 - CRDT adapter and document helpers such as `yjsAdapter()`, `wrapYjsDocument()`, `initBlockMap()`, and `getYjsDoc()`
+- `PenDocumentUnreadableError`, thrown by `loadDocument` when `minReader` is too new or a shared type has the wrong Yjs constructor
 - Collaboration helpers such as `createYjsProviderSession()`, `createYjsAwareness()`, and `getYjsAwareness()`
 - State-vector helpers such as `encodeYjsStateVectorBase64()`, `compareYjsStateVectors()`, and `isYjsStateVectorBase64Satisfied()`
 - Generic field adapters such as `createYTextFieldAdapter()` and `createYArrayFieldAdapter()`
 - Extension-root helpers such as `ensureExtensionRoot()` and `readExtensionRoot()`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Anchor methods `createRelativePosition(doc, target, assoc)` and `resolveRelativePosition(doc, encoded, options?)` live on the `CRDTAdapter` object returned by `yjsAdapter()`, not on the package barrel. `editor.anchors` is the host surface; these methods are the CRDT implementation behind it. `loadDocument()` is adapter-scoped the same way.
+- Summary and origin plumbing: `createSummarySource()`, `STRUCTURAL_ORIGIN_META_KEY`, `createRemoteUpdateOrigin()`, `originToOpOrigin()`
+- Document lifecycle: `validateDocument()`, `createYjsSubdocument()`, `getDocumentProfile()` / `setDocumentProfile()`, `getDocumentLoadReport()`, `readFormatStamp()` / `refreshFormatStamp()`
+- Awareness wire helpers `encodeYjsAwarenessUpdate()` and `applyYjsAwarenessUpdate()`
+- Format stamp helpers; new documents stamp `PEN_DOCUMENT_FORMAT` (`3`)
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`, `y-protocols`, `yjs`
-- Peer dependencies: No peer dependencies declared.
+- Runtime dependencies: `@input/pen-types`
+- Peer dependencies: `y-protocols`, `yjs`
 - Boundary: Adapters must respect the editor authority boundary while exposing persistence and sync integration points.
+
+## Undo Origin Matching
+
+The apply pipeline passes a freshly built structured origin object into `adapter.transact` so `groupId` / `requestId` survive on the Yjs transaction. `Y.UndoManager` matches `trackedOrigins` by identity, so neither the bare type string (`"user"`) nor an interned canonical object is the same reference as that transaction origin.
+
+`createYjsUndoManager()` therefore installs a `TrackedOriginSet` (`packages/crdt/yjs/src/undo.ts`) that extends `Set` and overrides `has()`: identity still wins, and a structured object also matches when its `type` string is in the set. Default tracked types are `"user"` and `"ai"`. The class is adapter-local, not a public export.
 
 ## Data Flow / Runtime Model
 
@@ -34,6 +46,8 @@ Field adapters cover host-owned non-body fields that live next to Pen document r
 
 Extension-root helpers reserve namespaced Yjs maps under the document `apps` root. They provide version checks and deterministic field initialization for app-owned collaboration data without teaching Pen product-specific schema.
 
+Empty text-capable `Y.Text` is `""`. Relative-position mint and resolve walk `penDocument.blocks` (and nested table cells) for the resolved `Y.Text`; a missing or deleted type is `null`. The adapter never throws on hostile or stale encoded positions.
+
 ## Integration Notes
 
 - Path in workspace: `packages/crdt/yjs`
@@ -44,7 +58,7 @@ Extension-root helpers reserve namespaced Yjs maps under the document `apps` roo
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

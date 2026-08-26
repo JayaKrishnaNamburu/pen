@@ -1,29 +1,68 @@
+import { buildTableChildren, sortDeltaAttributes } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import { resolveEditorUrl } from "../security/resolveEditorUrl";
 import {
-	buildTableChildren,
-	sortDeltaAttributes,
-} from "@pen/core";
-import type { Editor } from "@pen/types";
-import {
+	PEN_CLIPBOARD_JSON_MIME,
+	PEN_CLIPBOARD_JSON_MIME_LEGACY,
 	encodePenBlocksForHtml,
+	serializePenClipboardPayload,
 	type Delta,
 	type PenBlock,
 } from "./clipboardPayload";
+
+const HTML_ESCAPE_PATTERN = /[&<>"']/g;
+
+const HTML_ESCAPE_REPLACEMENTS: Record<string, string> = {
+	"&": "&amp;",
+	"<": "&lt;",
+	">": "&gt;",
+	'"': "&quot;",
+	"'": "&apos;",
+};
+
+function escapeHtmlText(value: string): string {
+	return value.replace(
+		HTML_ESCAPE_PATTERN,
+		(character) => HTML_ESCAPE_REPLACEMENTS[character] ?? character,
+	);
+}
+
+function emitClipboardWriteFailed(
+	editor: Editor | undefined,
+	error: unknown,
+): void {
+	if (!editor) {
+		return;
+	}
+	editor.internals.emit("diagnostic", {
+		code: "PEN_CLIPBOARD_002",
+		level: "warn",
+		source: "clipboard",
+		message: "Clipboard write failed",
+		remediation:
+			"Grant clipboard permission or copy while the editor is focused.",
+		error,
+	});
+}
 
 export function writePenClipboard(
 	penBlocks: PenBlock[],
 	htmlContent: string,
 	plainText: string,
 	event?: ClipboardEvent,
+	editor?: Editor,
 ): void {
-	const penBlocksJson = JSON.stringify(penBlocks);
+	const penBlocksJson = serializePenClipboardPayload(penBlocks);
 	const encodedPenBlocks = encodePenBlocksForHtml(penBlocksJson);
 	const htmlWithPenData = `<meta data-pen-blocks="${encodedPenBlocks}" />${htmlContent}`;
+	const clipboardPlainText = plainText;
 
 	if (event?.clipboardData) {
-		event.clipboardData.setData("text/plain", plainText);
+		event.clipboardData.setData("text/plain", clipboardPlainText);
 		event.clipboardData.setData("text/html", htmlWithPenData);
+		event.clipboardData.setData(PEN_CLIPBOARD_JSON_MIME, penBlocksJson);
 		event.clipboardData.setData(
-			"application/x-pen-blocks",
+			PEN_CLIPBOARD_JSON_MIME_LEGACY,
 			penBlocksJson,
 		);
 		return;
@@ -32,33 +71,45 @@ export function writePenClipboard(
 	navigator.clipboard
 		.write([
 			new ClipboardItem({
-				"application/x-pen-blocks": new Blob([penBlocksJson], {
-					type: "application/x-pen-blocks",
+				[PEN_CLIPBOARD_JSON_MIME]: new Blob([penBlocksJson], {
+					type: PEN_CLIPBOARD_JSON_MIME,
+				}),
+				[PEN_CLIPBOARD_JSON_MIME_LEGACY]: new Blob([penBlocksJson], {
+					type: PEN_CLIPBOARD_JSON_MIME_LEGACY,
 				}),
 				"text/html": new Blob([htmlWithPenData], {
 					type: "text/html",
 				}),
-				"text/plain": new Blob([plainText], {
+				"text/plain": new Blob([clipboardPlainText], {
 					type: "text/plain",
 				}),
 			}),
 		])
-		.catch(() => {
-			navigator.clipboard.writeText(plainText).catch(() => { });
+		.catch((error: unknown) => {
+			navigator.clipboard
+				.writeText(clipboardPlainText)
+				.catch((fallbackError: unknown) => {
+					// CH5: terminal clipboard write — no remaining copy fallback.
+					emitClipboardWriteFailed(editor, fallbackError ?? error);
+				});
 		});
 }
 
-export function sliceDeltas(deltas: Delta[], from: number, to: number): Delta[] {
+export function sliceDeltas(
+	deltas: Delta[],
+	from: number,
+	to: number,
+): Delta[] {
 	const result: Delta[] = [];
 	let offset = 0;
 
 	for (const delta of deltas) {
-		const text = delta.insert;
-		const len = text.length;
+		const text = typeof delta.insert === "string" ? delta.insert : null;
+		const len = text?.length ?? 1;
 		const segStart = offset;
 		const segEnd = offset + len;
 
-		if (segEnd <= from || segStart >= to) {
+		if (text == null || segEnd <= from || segStart >= to) {
 			offset += len;
 			continue;
 		}
@@ -88,20 +139,31 @@ export function serializeDeltasToFormat(
 
 	let result = "";
 	for (const delta of deltas) {
+		if (typeof delta.insert !== "string") continue;
 		let text = delta.insert;
-		if (text === "\u200B") continue;
+		if (!text) continue;
+		if (format === "html") {
+			text = escapeHtmlText(text);
+		}
 
 		if (delta.attributes) {
-			const ordered = sortDeltaAttributes(delta.attributes, editor.schema);
+			const ordered = sortDeltaAttributes(
+				delta.attributes,
+				editor.schema,
+			);
 			for (const [mark, props] of Object.entries(ordered)) {
 				const inlineSchema = editor.schema.resolveInline(mark);
 				if (format === "html") {
 					if (!inlineSchema?.serialize?.toHTML) continue;
-					text = inlineSchema.serialize.toHTML(
-						text,
+					const rawProps =
 						typeof props === "object"
 							? (props as Record<string, unknown>)
-							: {},
+							: {};
+					text = inlineSchema.serialize.toHTML(
+						text,
+						mark === "link"
+							? admitClipboardLinkProps(editor, rawProps)
+							: rawProps,
 					);
 				} else {
 					if (!inlineSchema?.serialize?.toMarkdown) continue;
@@ -121,5 +183,16 @@ export function serializeDeltasToFormat(
 	return result;
 }
 
-export { buildTableChildren };
+function admitClipboardLinkProps(
+	editor: Editor,
+	props: Record<string, unknown>,
+): Record<string, unknown> {
+	const href = resolveEditorUrl(editor, props.href, "link");
+	if (href === null) {
+		const admitted = { ...props };
+		delete admitted.href;
+		return admitted;
+	}
+	return { ...props, href };
+}
 

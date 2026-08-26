@@ -1,18 +1,21 @@
-import { deltaStreamExtension } from "@pen/delta-stream";
-import type { DeltaStreamOptions } from "@pen/delta-stream";
-import { documentOpsExtension } from "@pen/document-ops";
+import { deltaStreamExtension } from "@input/pen-ai/stream";
+import type { DeltaStreamOptions } from "@input/pen-ai/stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	richTextShortcutsExtension,
 	type RichTextShortcutsOptions,
-} from "@pen/shortcuts";
-import type { EditorPreset, Extension } from "@pen/types";
-import { undoExtension } from "@pen/undo";
+} from "@input/pen-shortcuts";
+import type { EditorPreset, Extension } from "@input/pen-types";
+import { undoExtension } from "@input/pen-undo";
+import { htmlClipboardExtension } from "./htmlClipboard";
 
 export interface DefaultPresetOptions {
 	documentOps?: boolean;
 	deltaStream?: boolean | DeltaStreamOptions;
 	undo?: boolean;
 	shortcuts?: boolean | RichTextShortcutsOptions;
+	htmlClipboard?: boolean;
 }
 
 export function defaultPreset(
@@ -41,7 +44,14 @@ export function defaultPreset(
 				extensions.push(richTextShortcutsExtension(shortcutsOptions));
 			}
 
-			return { extensions };
+			if (options.htmlClipboard !== false) {
+				extensions.push(htmlClipboardExtension());
+			}
+
+			return {
+				schema: createDefaultSchema(),
+				extensions,
+			};
 		},
 	};
 }

@@ -1,11 +1,16 @@
 import React, { useRef, useEffect, useState } from "react";
-import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+import {
+	ariaReadOnlyFacet,
+	clipboardFacet,
+	resolveEditorA11yLabel,
+} from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {
 	AssetProvider,
 	Editor,
 	EditorViewMode,
 	InteractionModel,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	EditorContext,
 	type BlockControlsRenderer,
@@ -21,26 +26,27 @@ import {
 	resolveInteractionModel,
 } from "../../context/editorContext";
 import { FieldEditorContext } from "../../context/fieldEditorContext";
-import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor";
 import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,
+	registerVerticalCaretMeasure,
 	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
 	type FieldEditorSession,
 	type PenFocusLifecycleListener,
 	type PenFocusPolicy,
-} from "@pen/dom";
+} from "@input/pen-dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
-import { domSelectionToEditor } from "../../field-editor/selectionBridge";
-import {
-	EditorRegionSelectionContext,
-	RegionSelectionStore,
-} from "./regionSelectionState";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor";
+import { RegionSelectionStore } from "@input/pen-dom";
+import { EditorRegionSelectionContext } from "./regionSelectionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import { BlockDragSessionProvider } from "./blockDragSession";
-import { registerInlineAtomInteractionRoot } from "./inlineAtomInteraction";
+import { registerInlineAtomInteractionRoot } from "@input/pen-dom";
 
 export interface EditorRootProps extends AsChildProps {
 	editor: Editor;
@@ -97,6 +103,7 @@ export function EditorRoot(props: EditorRootProps) {
 	const fieldEditorRef = useRef<FieldEditorSession | null>(null);
 	const regionSelectionStoreRef = useRef<RegionSelectionStore | null>(null);
 	const rootRef = useRef<HTMLElement | null>(null);
+	const mountedEditorRef = useRef<Editor>(editor);
 	const resolvedAssets = assets ?? importers?.assets;
 
 	if (!fieldEditorRef.current) {
@@ -131,7 +138,7 @@ export function EditorRoot(props: EditorRootProps) {
 	}, [onFocusLifecycle]);
 
 	useEffect(() => {
-		const root = rootRef.current;
+		const root = rootElement;
 		const fieldEditor = fieldEditorRef.current;
 		if (!root || !fieldEditor) {
 			return;
@@ -158,29 +165,71 @@ export function EditorRoot(props: EditorRootProps) {
 			root.removeEventListener("focusin", handleFocusIn);
 			root.removeEventListener("focusout", handleFocusOut);
 		};
-	}, [editor]);
+	}, [editor, rootElement]);
 
 	useEffect(() => {
-		editor.internals.setSlot("paste:importers", importers);
-		editor.internals.setSlot("paste:assetProvider", resolvedAssets);
+		let previousImporters: unknown;
+		let wroteImporters = false;
+		if (importers) {
+			previousImporters = editor.facet(clipboardFacet);
+			const base =
+				previousImporters && !Array.isArray(previousImporters)
+					? previousImporters
+					: {};
+			const host = Object.fromEntries(
+				Object.entries(importers).filter(([, value]) => value != null),
+			);
+			editor.internals.assignSlot("paste:importers", {
+				...base,
+				...host,
+			});
+			wroteImporters = true;
+		}
+		editor.internals.assignSlot("paste:assetProvider", resolvedAssets);
 
 		return () => {
-			editor.internals.setSlot("paste:importers", undefined);
-			editor.internals.setSlot("paste:assetProvider", undefined);
+			if (wroteImporters) {
+				editor.internals.assignSlot(
+					"paste:importers",
+					previousImporters,
+				);
+			}
+			editor.internals.assignSlot("paste:assetProvider", undefined);
 		};
 	}, [editor, importers, resolvedAssets]);
 
 	useEffect(() => {
-		editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditorRef.current);
-		editor.internals.setSlot(
-			CORE_FIELD_EDITOR_SLOT_KEY,
+		editor.internals.assignSlot(
+			FIELD_EDITOR_SLOT_KEY,
 			fieldEditorRef.current,
 		);
 		return () => {
-			editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, undefined);
-			editor.internals.setSlot(CORE_FIELD_EDITOR_SLOT_KEY, undefined);
+			editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
 			fieldEditorRef.current?.destroy();
 		};
+	}, [editor]);
+
+	/*
+	 * One root, one editor. The field editor and the rendered DOM below it are
+	 * built for the instance this root mounted with, so a swapped-in editor gets
+	 * driven by the previous one — dead keystrokes and selections projected into
+	 * a document that has never heard of those block ids. There is no silent
+	 * recovery, so say so instead of leaving the host to find it by hand.
+	 */
+	useEffect(() => {
+		if (mountedEditorRef.current === editor) {
+			return;
+		}
+		mountedEditorRef.current = editor;
+		editor.internals.emit("diagnostic", {
+			code: "editor-root-editor-replaced",
+			level: "error",
+			source: "rendering",
+			message:
+				"Pen.Editor.Root received a different editor than it mounted with.",
+			remediation:
+				"Give Pen.Editor.Root a key tied to the editor instance so it remounts, for example key={editor.internals.viewId}.",
+		});
 	}, [editor]);
 
 	useEffect(() => {
@@ -206,7 +255,16 @@ export function EditorRoot(props: EditorRootProps) {
 	}, [editor, readonly, resolvedInlineAtomInteractions, rootElement]);
 
 	useEffect(() => {
-		const root = rootRef.current;
+		const root = rootElement;
+		if (!root) {
+			return;
+		}
+
+		return registerVerticalCaretMeasure(editor, root);
+	}, [editor, rootElement]);
+
+	useEffect(() => {
+		const root = rootElement;
 		const fieldEditor = fieldEditorRef.current;
 		if (!root || !fieldEditor) {
 			return;
@@ -252,15 +310,22 @@ export function EditorRoot(props: EditorRootProps) {
 				true,
 			);
 		};
-	}, [editor, resolvedInteractionModel.model]);
+	}, [editor, resolvedInteractionModel.model, rootElement]);
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorRoot]: "",
 		[DATA_ATTRS.viewId]: editor.internals.viewId,
-		[DATA_ATTRS.focused]: focused || undefined,
-		[DATA_ATTRS.readonly]: readonly || undefined,
-		[DATA_ATTRS.empty]: isEmpty || undefined,
+		...buildDataAttributes({
+			[DATA_ATTRS.focused]: focused,
+			[DATA_ATTRS.readonly]: readonly,
+			[DATA_ATTRS.empty]: isEmpty,
+		}),
 		tabIndex: -1,
+		role: "textbox",
+		"aria-multiline": true,
+		...resolveEditorA11yLabel(editor),
+		"aria-readonly":
+			readonly || editor.facet(ariaReadOnlyFacet) || undefined,
 	};
 
 	return (

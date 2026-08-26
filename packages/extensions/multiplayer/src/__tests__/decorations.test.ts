@@ -1,9 +1,11 @@
-import { createEditor } from "@pen/core";
-import { createTestDocument } from "@pen/test";
+import { createEditor } from "@input/pen-core";
+import { createTestDocument } from "@input/pen-test";
 import { describe, expect, it } from "vitest";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 import type { MultiplayerAwarenessState } from "../types";
 import { MultiplayerControllerImpl } from "../controller";
+import { defaultSchema } from "@input/pen-schema-default";
+import { serializePoint, wireCursor } from "./presenceAnchors";
 
 describe("multiplayer decorations", () => {
 	it("renders remote cursor decorations", () => {
@@ -11,7 +13,7 @@ describe("multiplayer decorations", () => {
 			{ id: "b1", type: "paragraph", content: "Hello" },
 		]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -33,7 +35,7 @@ describe("multiplayer decorations", () => {
 					77,
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
-						cursor: { blockId, offset: 2, clock: 10 },
+						cursor: wireCursor(editor, 2, 10, blockId),
 					},
 				],
 			]),
@@ -64,7 +66,7 @@ describe("multiplayer decorations", () => {
 				{ id: "b3", type: "paragraph", content: "world" },
 			]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -86,8 +88,9 @@ describe("multiplayer decorations", () => {
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
 						selection: {
-							anchor: { blockId: "b1", offset: 2 },
-							head: { blockId: "b3", offset: 3 },
+							kind: "text",
+							anchor: serializePoint(editor, "b1", 2),
+							head: serializePoint(editor, "b3", 3),
 							clock: 11,
 						},
 					},
@@ -128,7 +131,7 @@ describe("multiplayer decorations", () => {
 				{ id: "b3", type: "paragraph", content: "world" },
 			]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -150,8 +153,9 @@ describe("multiplayer decorations", () => {
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
 						selection: {
-							anchor: { blockId: "b3", offset: 4 },
-							head: { blockId: "b1", offset: 1 },
+							kind: "text",
+							anchor: serializePoint(editor, "b3", 4),
+							head: serializePoint(editor, "b1", 1),
 							clock: 12,
 						},
 					},
@@ -188,7 +192,7 @@ describe("multiplayer decorations", () => {
 			{ id: "b2", type: "paragraph", content: "world" },
 		]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },

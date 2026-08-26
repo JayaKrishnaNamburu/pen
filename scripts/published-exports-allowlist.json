@@ -1,0 +1,330 @@
+{
+  "_comment": "API4 (spec/rules/api.md): extra public exports keys besides `.` and `./package.json`. Each entry needs package, key, and a reason. Remove an entry in the same PR that deletes the export.",
+  "entries": [
+    {
+      "package": "@input/pen-ai",
+      "key": "./autocomplete",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-autocomplete package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./skills",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-skills package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./stream",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-delta-stream package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./suggestions",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-suggestions package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./tools",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-tools package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./constants/selectAll",
+      "reason": "P.6 / E.3 first-class field-editor surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor",
+      "reason": "P.6 / E.3 first-class field-editor surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/beforeinputMap",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/clipboard",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/commands",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/contenteditableBackend",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/crdt",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/dropResolver",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/editContextBackend",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/expandedContentEditableBackend",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/fieldEditorImpl",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/inlineAtomDom",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/inlineAtomInteraction",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/inlineAtomModel",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/keyHandling",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/reconciler",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/selectionBridge",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/store",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/transfer",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/transferImages",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/aiDomScope",
+      "reason": "P.6 relocated aiDomScope, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/aiKeyboardScope",
+      "reason": "P.6 relocated aiKeyboardScope, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/autocompleteController",
+      "reason": "P.6 relocated autocompleteController, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/blockDrag",
+      "reason": "P.6 relocated blockDrag, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/blockSelectionSemantics",
+      "reason": "P.6 relocated blockSelectionSemantics, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/cellSelection",
+      "reason": "P.6 relocated cellSelection, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/clipboardPayload",
+      "reason": "P.6 / T.1 first-class clipboard payload, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/dataAttributes",
+      "reason": "P.6 relocated dataAttributes, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/editorEmptyState",
+      "reason": "P.6 relocated editorEmptyState, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/editorInteractionModel",
+      "reason": "P.6 relocated editorInteractionModel, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/environment",
+      "reason": "P.6 relocated environment, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/fieldEditor",
+      "reason": "P.6 relocated fieldEditor, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/fieldEditorTextEntryAttrs",
+      "reason": "P.6 relocated fieldEditorTextEntryAttrs, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/placeholderVisibility",
+      "reason": "P.6 relocated placeholderVisibility, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/pointerSelection",
+      "reason": "P.6 relocated pointerSelection, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/flowCapabilities",
+      "reason": "P.6 relocated flowCapabilities, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineAtomDragPreview",
+      "reason": "P.6 relocated inlineAtomDragPreview, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineAtomSelection",
+      "reason": "P.6 relocated inlineAtomSelection, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineInputRule",
+      "reason": "P.6 relocated inlineInputRule, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/listInputRule",
+      "reason": "P.6 relocated listInputRule, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/menuPosition",
+      "reason": "P.6 relocated menuPosition, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/selectionFormation",
+      "reason": "P.6 relocated selectionFormation, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/selectionPlacement",
+      "reason": "P.6 relocated selectionPlacement, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineDecorations",
+      "reason": "P.6 first-class decoration helpers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/parentIdTree",
+      "reason": "P.6 relocated parentIdTree, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/replaceElementChildren",
+      "reason": "P.6 relocated replaceElementChildren, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/slashMenuPopupAria",
+      "reason": "P.6 relocated slashMenuPopupAria, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/suggestionMenuPopupAria",
+      "reason": "P.6 relocated suggestionMenuPopupAria, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/tableDefaults",
+      "reason": "P.6 relocated tableDefaults, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./html",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-import-html and @input/pen-export-html packages, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./json",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-import-json and @input/pen-export-json packages, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./markdown",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-import-markdown and @input/pen-export-markdown packages, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./xml",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-export-xml package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./ai",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./ai-suggestions",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./history",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./multiplayer",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./search",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-schema-default",
+      "key": "./defs",
+      "reason": "Schema definition subpath; first-class public surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-vue",
+      "key": "./plugin",
+      "reason": "Vue plugin entry; first-class public surface, not a src/dist escape hatch."
+    }
+  ]
+}

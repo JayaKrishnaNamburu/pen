@@ -1,12 +1,16 @@
 import React from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { EditorRoot, type EditorRootProps } from "./primitives/editor/root";
-import { EditorContent, type EditorContentProps } from "./primitives/editor/content";
+import {
+	EditorContent,
+	type EditorContentProps,
+} from "./primitives/editor/content";
 import { EditorCaretOverlay } from "./primitives/editor/caretOverlay";
 
 export interface PenEditorProps
-	extends Omit<EditorRootProps, "children">,
-	Omit<EditorContentProps, "children"> {
+	extends
+		Omit<EditorRootProps, "children">,
+		Omit<EditorContentProps, "children"> {
 	children?: React.ReactNode;
 	customCaret?: boolean;
 }
@@ -20,7 +24,6 @@ export function PenEditor(props: PenEditorProps) {
 		renderers,
 		editorViewMode,
 		interactionModel,
-		virtualize,
 		emptyPlaceholder,
 		children,
 		customCaret = false,
@@ -37,11 +40,7 @@ export function PenEditor(props: PenEditorProps) {
 			editorViewMode={editorViewMode}
 			interactionModel={interactionModel}
 		>
-			<EditorContent
-				virtualize={virtualize}
-				emptyPlaceholder={emptyPlaceholder}
-				{...rest}
-			>
+			<EditorContent emptyPlaceholder={emptyPlaceholder} {...rest}>
 				{children}
 			</EditorContent>
 			{customCaret ? <EditorCaretOverlay /> : null}

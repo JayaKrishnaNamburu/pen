@@ -1,0 +1,68 @@
+# Aggregation check for a workflow's matrix and conditional jobs.
+#
+# Branch protection can only require check names it already knows. A matrix
+# that grows a leg, or a gate added to scripts/gates.json, produces a check
+# that runs and reports but cannot block a merge until somebody edits the
+# repository settings. Every workflow that fans out therefore ends in one
+# job that depends on all the others and calls this, and that single name is
+# what branch protection requires.
+#
+# The caller must set `if: always()` on the job. Without it a failed
+# dependency skips this job entirely, and a skipped required check is not a
+# failed one — the pull request would go green by omission, which is the
+# exact hole this closes.
+
+name: Require jobs
+description: Fail unless every dependency job succeeded.
+
+inputs:
+  needs:
+    # Plain prose on purpose. The runner evaluates expressions while it parses
+    # this manifest, and `needs` is not a context that exists here, so writing
+    # the example as a live `${{ }}` fails the whole action at load time.
+    description: >-
+      The calling job's needs context, serialized by the caller with
+      toJSON(needs).
+    required: true
+  allow-skipped:
+    description: >-
+      Whitespace-separated job ids that are allowed to report `skipped`,
+      for jobs behind a deliberate path filter or event condition. Any
+      other skip is treated as a job that failed to run.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Check dependency results
+      shell: bash
+      env:
+        NEEDS: ${{ inputs.needs }}
+        ALLOW_SKIPPED: ${{ inputs.allow-skipped }}
+      run: |
+        status=0
+        while read -r job result; do
+          case "$result" in
+            success)
+              echo "  ok        $job"
+              ;;
+            skipped)
+              if printf '%s\n' $ALLOW_SKIPPED | grep -qxF "$job"; then
+                echo "  skipped   $job (allowed)"
+              else
+                echo "  NOT RUN   $job was skipped but is required"
+                status=1
+              fi
+              ;;
+            *)
+              echo "  FAILED    $job ($result)"
+              status=1
+              ;;
+          esac
+        done < <(jq -r 'to_entries[] | "\(.key) \(.value.result)"' <<<"$NEEDS")
+
+        if [ "$status" -ne 0 ]; then
+          echo "::error::One or more required jobs did not succeed."
+        fi
+        exit "$status"

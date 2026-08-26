@@ -6,13 +6,26 @@ declare const process: {
 
 import { access, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { getCriticalBenchFailures, runSuite } from "./bench";
+import { fileURLToPath } from "node:url";
+import {
+	BENCH_GATE_SAMPLE_SIZE,
+	getCriticalBenchFailures,
+	runSuite,
+} from "./bench";
+import { anchorsBenchmarks } from "./suites/anchors.bench";
 import { crdtBenchmarks } from "./suites/crdt.bench";
 import { schemaBenchmarks } from "./suites/schema.bench";
 import { streamingBenchmarks } from "./suites/streaming.bench";
 import { editorBenchmarks } from "./suites/editor.bench";
 import { extensionBenchmarks } from "./suites/extension.bench";
 import { aiBenchmarks } from "./suites/ai.bench";
+import { scale3Benchmarks } from "./suites/scale3.bench";
+import {
+	SCALE2_PLUS8_BASE_ID,
+	SCALE2_PLUS8_ID,
+	compareScale2Plus8Tolerance,
+	formatScale2Plus8Tolerance,
+} from "./constants/scale3";
 import { reportConsole } from "./reporters/console";
 import { reportJSON } from "./reporters/json";
 import type { BenchDefinition, BenchResult, BenchWaiver } from "./bench";
@@ -37,12 +50,25 @@ export interface RunAllSuitesOptions {
 export function createBenchSuites(): BenchSuite[] {
 	return [
 		{ name: "CRDT", benchmarks: crdtBenchmarks },
+		{ name: "Anchors", benchmarks: anchorsBenchmarks },
 		{ name: "Schema", benchmarks: schemaBenchmarks },
 		{ name: "Editor", benchmarks: editorBenchmarks },
 		{ name: "Streaming", benchmarks: streamingBenchmarks },
 		{ name: "Extensions", benchmarks: extensionBenchmarks },
 		{ name: "AI", benchmarks: aiBenchmarks },
+		{ name: "SCALE3", benchmarks: scale3Benchmarks },
 	];
+}
+
+export function runningBenchPopulation(): Array<{ id: string; name: string }> {
+	return createBenchSuites().flatMap((suite) =>
+		suite.benchmarks.map((benchmark) => {
+			if (!benchmark.id) {
+				throw new Error(`running bench missing id: ${benchmark.name}`);
+			}
+			return { id: benchmark.id, name: benchmark.name };
+		}),
+	);
 }
 
 export function assertCriticalBenchmarkTargets(
@@ -56,23 +82,57 @@ export function assertCriticalBenchmarkTargets(
 	}
 
 	const summary = failures
-		.map((result) => `${result.name} (p95 ${result.p95Ms.toFixed(2)}ms)`)
+		.map(
+			(result) =>
+				`${result.name} (median ${result.p50Ms.toFixed(2)}ms over ${result.iterations}; p95 ${result.p95Ms.toFixed(2)}ms, max ${result.maxMs.toFixed(2)}ms trend)`,
+		)
 		.join(", ");
 	throw new Error(`Critical benchmark targets failed: ${summary}`);
+}
+
+export function assertScale2Plus8Tolerance(
+	results: readonly BenchResult[],
+): void {
+	const base = results.find((result) => result.id === SCALE2_PLUS8_BASE_ID);
+	const plus8 = results.find((result) => result.id === SCALE2_PLUS8_ID);
+	if (!base || !plus8) {
+		throw new Error(
+			"SCALE2 plus8 tolerance: missing same-run medians for the 1000-block shipped stack and the plus8 decorating stack",
+		);
+	}
+	const compared = compareScale2Plus8Tolerance(plus8.p50Ms, base.p50Ms);
+	if (!compared.ok) {
+		throw new Error(formatScale2Plus8Tolerance(compared));
+	}
 }
 
 export function parseBenchCLIArgs(args: readonly string[]): {
 	reporter: "console" | "json";
 	waiverFile?: string;
+	envelope?: boolean;
+	writeEnvelope?: boolean;
 } {
 	let reporter: "console" | "json" = "console";
 	let waiverFile: string | undefined;
+	let envelope: boolean | undefined;
+	let writeEnvelope: boolean | undefined;
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
 
 		if (arg === "--json") {
 			reporter = "json";
+			continue;
+		}
+
+		if (arg === "--envelope") {
+			envelope = true;
+			continue;
+		}
+
+		if (arg === "--write-envelope") {
+			writeEnvelope = true;
+			envelope = true;
 			continue;
 		}
 
@@ -90,14 +150,21 @@ export function parseBenchCLIArgs(args: readonly string[]): {
 		}
 	}
 
-	return { reporter, waiverFile };
+	return {
+		reporter,
+		...(waiverFile ? { waiverFile } : {}),
+		...(envelope ? { envelope } : {}),
+		...(writeEnvelope ? { writeEnvelope } : {}),
+	};
 }
 
 export async function loadBenchWaivers(
 	waiverFile?: string,
 ): Promise<BenchWaiver[]> {
 	const resolvedWaiverFile =
-		waiverFile ?? (await resolveDefaultWaiverFilePath(process.cwd()));
+		waiverFile ??
+		(await resolveDefaultWaiverFilePath(process.cwd())) ??
+		(await resolvePackageWaiverFilePath());
 	if (!resolvedWaiverFile) {
 		return [];
 	}
@@ -142,6 +209,24 @@ export async function resolveDefaultWaiverFilePath(
 			return undefined;
 		}
 		current = parent;
+	}
+}
+
+/** SCALE3 / API10: committed file lives in this package when cwd has no `spec/`. */
+export async function resolvePackageWaiverFilePath(): Promise<
+	string | undefined
+> {
+	const candidate = resolve(
+		dirname(fileURLToPath(import.meta.url)),
+		"..",
+		DEFAULT_BENCH_WAIVER_FILE,
+	);
+	try {
+		await access(candidate);
+		return candidate;
+	} catch {
+		// no waiver file at this path.
+		return undefined;
 	}
 }
 
@@ -197,7 +282,7 @@ export async function runAllSuites(
 
 	for (const suite of suites) {
 		const results = await runSuite(suite.name, suite.benchmarks, {
-			iterations: options.iterations ?? 50,
+			iterations: options.iterations ?? BENCH_GATE_SAMPLE_SIZE,
 			warmup: options.warmup ?? 3,
 			reporter,
 		});
@@ -216,29 +301,10 @@ export async function runAllSuites(
 	}
 
 	if (enforceTargets) {
-		assertCriticalBenchmarkTargets(
-			allResults.flatMap((suite) => suite.results),
-			waivers,
-		);
+		const results = allResults.flatMap((suite) => suite.results);
+		assertCriticalBenchmarkTargets(results, waivers);
+		assertScale2Plus8Tolerance(results);
 	}
 
 	return allResults;
 }
-
-async function main() {
-	const { reporter, waiverFile } = parseBenchCLIArgs(process.argv.slice(2));
-
-	await runAllSuites({
-		iterations: 50,
-		warmup: 3,
-		reporter,
-		reportResults: true,
-		enforceTargets: true,
-		waiverFile,
-	});
-}
-
-main().catch((err) => {
-	console.error("Benchmark failed:", err);
-	process.exit(1);
-});

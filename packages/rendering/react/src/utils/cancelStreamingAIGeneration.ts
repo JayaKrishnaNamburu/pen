@@ -1,4 +1,4 @@
-import type { AIController, PersistentSuggestion } from "@pen/ai";
+import type { AIController, PersistentSuggestion } from "@input/pen-ai";
 
 interface CancelStreamingAIGenerationOptions {
 	sessionId?: string | null;
@@ -19,12 +19,17 @@ export function cancelStreamingAIGenerationAfterResolution(
 	}
 	if (options.suggestionIds && options.suggestionIds.length > 0) {
 		const suggestionIdSet = new Set(options.suggestionIds);
-		const matchesResolvedSuggestion = (options.suggestions ?? []).some((suggestion) => {
-			if (!suggestionIdSet.has(suggestion.id)) {
-				return false;
-			}
-			return options.sessionId == null || suggestion.sessionId === options.sessionId;
-		});
+		const matchesResolvedSuggestion = (options.suggestions ?? []).some(
+			(suggestion) => {
+				if (!suggestionIdSet.has(suggestion.id)) {
+					return false;
+				}
+				return (
+					options.sessionId == null ||
+					suggestion.sessionId === options.sessionId
+				);
+			},
+		);
 		if (!matchesResolvedSuggestion) {
 			return;
 		}

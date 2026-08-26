@@ -1,9 +1,5 @@
-import type {
-	Editor,
-	PenStreamPart,
-	ToolContext,
-} from "@pen/types";
-import { ToolContextImpl } from "@pen/document-ops";
+import type { Editor, PenStreamPart, ToolContext } from "@input/pen-types";
+import { ToolContextImpl } from "@input/pen-document-ops";
 
 export function buildToolContext(
 	editor: Editor,

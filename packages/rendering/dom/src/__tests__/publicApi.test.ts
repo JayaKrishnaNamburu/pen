@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	DEFAULT_SELECT_ALL_BEHAVIOR,
 	handleEditorDocumentKeyDown,
+	handleFieldEditorPointerActivate,
 	isActiveFieldEditorTextEntryTarget,
 	isFieldEditorTextEditingKey,
 	isFieldEditorTextEntryTarget,
 	isNativeTextEntryTarget,
+	mountEditor,
 	resolveSelectAllBehavior,
 	shouldHandleEditorKeyboardEvent,
 } from "../index";
@@ -17,7 +19,39 @@ import {
 	penDataAttr,
 } from "../utils/dataAttributes";
 
-describe("@pen/dom public helpers", () => {
+function collapsedTextSelection() {
+	return {
+		type: "text" as const,
+		anchor: { blockId: "a", offset: 0 },
+		focus: { blockId: "a", offset: 0 },
+	};
+}
+
+function multiBlockTextSelection() {
+	return {
+		type: "text" as const,
+		anchor: { blockId: "a", offset: 0 },
+		focus: { blockId: "b", offset: 1 },
+	};
+}
+
+function expandedTextSelection() {
+	return {
+		type: "text" as const,
+		anchor: { blockId: "a", offset: 0 },
+		focus: { blockId: "a", offset: 3 },
+	};
+}
+
+describe("@input/pen-dom public helpers", () => {
+	it("exports mountEditor as the document-shell composition", () => {
+		expect(typeof mountEditor).toBe("function");
+	});
+
+	it("exports handleFieldEditorPointerActivate for host click-to-edit", () => {
+		expect(typeof handleFieldEditorPointerActivate).toBe("function");
+	});
+
 	it("resolves select-all behavior from the interaction model", () => {
 		expect(DEFAULT_SELECT_ALL_BEHAVIOR).toBe("document-first");
 		expect(resolveSelectAllBehavior("block-first")).toBe("block-first");
@@ -29,6 +63,15 @@ describe("@pen/dom public helpers", () => {
 	it("builds DOM data attributes predictably", () => {
 		expect(penDataAttr("editor-root")).toBe("data-pen-editor-root");
 		expect(DATA_ATTRS.editorRoot).toBe("data-pen-editor-root");
+		expect(DATA_ATTRS.inlineAtomCaretBoundary).toBe(
+			"data-pen-inline-atom-caret-boundary",
+		);
+		expect(DATA_ATTRS.inlineAtomCaretSide).toBe(
+			"data-pen-inline-atom-caret-side",
+		);
+		expect(DATA_ATTRS.inlineAtomDragging).toBe(
+			"data-pen-inline-atom-dragging",
+		);
 		expect(
 			buildDataAttributes({
 				role: "editor",
@@ -36,11 +79,13 @@ describe("@pen/dom public helpers", () => {
 				hidden: false,
 				index: 2,
 				empty: undefined,
+				[DATA_ATTRS.focused]: true,
 			}),
 		).toEqual({
 			"data-role": "editor",
 			"data-active": "",
 			"data-index": "2",
+			"data-focused": "",
 		});
 	});
 
@@ -61,6 +106,13 @@ describe("@pen/dom public helpers", () => {
 		expect(isNativeTextEntryTarget(input)).toBe(true);
 		expect(isNativeTextEntryTarget(checkbox)).toBe(false);
 		expect(isNativeTextEntryTarget(textbox)).toBe(true);
+		const editorRoot = document.createElement("div");
+		editorRoot.setAttribute("role", "textbox");
+		editorRoot.setAttribute(DATA_ATTRS.editorRoot, "");
+		const insideEditor = document.createElement("div");
+		editorRoot.append(insideEditor);
+		expect(isNativeTextEntryTarget(editorRoot)).toBe(false);
+		expect(isNativeTextEntryTarget(insideEditor)).toBe(false);
 		expect(isFieldEditorTextEntryTarget(fieldSurface)).toBe(true);
 		expect(isActiveFieldEditorTextEntryTarget(activeFieldSurface)).toBe(
 			true,
@@ -107,11 +159,7 @@ describe("@pen/dom public helpers", () => {
 				shouldHandleCollapsedText = shouldHandleEditorKeyboardEvent({
 					root,
 					event,
-					selection: {
-						type: "text",
-						isCollapsed: true,
-						isMultiBlock: false,
-					},
+					selection: collapsedTextSelection(),
 				});
 			},
 			{ once: true },
@@ -128,11 +176,7 @@ describe("@pen/dom public helpers", () => {
 				shouldHandleMultiBlockText = shouldHandleEditorKeyboardEvent({
 					root,
 					event,
-					selection: {
-						type: "text",
-						isCollapsed: false,
-						isMultiBlock: true,
-					},
+					selection: multiBlockTextSelection(),
 				});
 			},
 			{ once: true },
@@ -160,11 +204,7 @@ describe("@pen/dom public helpers", () => {
 					key: "z",
 					metaKey: true,
 				}),
-				selection: {
-					type: "text",
-					isCollapsed: true,
-					isMultiBlock: false,
-				},
+				selection: collapsedTextSelection(),
 			}),
 		).toBe(true);
 
@@ -178,11 +218,7 @@ describe("@pen/dom public helpers", () => {
 					key: "z",
 					metaKey: true,
 				}),
-				selection: {
-					type: "text",
-					isCollapsed: true,
-					isMultiBlock: false,
-				},
+				selection: collapsedTextSelection(),
 			}),
 		).toBe(false);
 		externalInput.remove();
@@ -235,6 +271,38 @@ describe("@pen/dom public helpers", () => {
 		otherRoot.remove();
 	});
 
+	it("does not route document keys while a detached surface holds focus", () => {
+		const root = document.createElement("div");
+		root.setAttribute(DATA_ATTRS.editorRoot, "");
+		root.setAttribute("role", "textbox");
+		const toolbar = document.createElement("div");
+		toolbar.setAttribute("role", "toolbar");
+		const button = document.createElement("button");
+		toolbar.append(button);
+		root.append(toolbar);
+		document.body.append(root);
+		button.focus();
+
+		let shouldHandle = true;
+		button.addEventListener(
+			"keydown",
+			(event) => {
+				shouldHandle = shouldHandleEditorKeyboardEvent({
+					root,
+					event,
+					selection: expandedTextSelection(),
+				});
+			},
+			{ once: true },
+		);
+		button.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+		);
+		expect(shouldHandle).toBe(false);
+
+		root.remove();
+	});
+
 	it("deletes document selections through the shared keydown handler with user origin", () => {
 		const root = document.createElement("div");
 		const deleteSelection = vi.fn();
@@ -246,9 +314,7 @@ describe("@pen/dom public helpers", () => {
 			},
 			deleteSelection,
 			firstBlock: () => null,
-			internals: {
-				getSlot: () => undefined,
-			},
+			internals: {},
 		};
 		const fieldEditor = {
 			deactivate,

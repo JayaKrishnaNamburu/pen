@@ -1,4 +1,4 @@
-# `@pen/crdt-yjs`
+# `@input/pen-crdt-yjs`
 
 Yjs integration for Pen.
 
@@ -13,15 +13,26 @@ This package provides:
 
 It does **not** implement WebSocket transport or a custom Yjs sync provider.
 
+## Install
+
+```bash
+pnpm add @input/pen-crdt-yjs yjs y-protocols
+```
+
+Required peers are `yjs` (`^13.6`) and `y-protocols` (`^1.0.7`). `engines.node` is `>=22`.
+
 ## State barriers
 
 ```ts
+import * as Y from "yjs";
 import {
   encodeYjsStateVectorBase64,
   isYjsStateVectorBase64Satisfied,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 
+const ydoc = new Y.Doc();
 const required = encodeYjsStateVectorBase64(ydoc);
+const currentStateVector = encodeYjsStateVectorBase64(ydoc);
 const ready = isYjsStateVectorBase64Satisfied(currentStateVector, required);
 ```
 
@@ -30,10 +41,13 @@ Use state-vector helpers when a host workflow needs to wait until a synced docum
 ## Field adapters
 
 ```ts
+import * as Y from "yjs";
 import {
   createYArrayFieldAdapter,
   createYTextFieldAdapter,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
+
+const ydoc = new Y.Doc();
 
 const title = createYTextFieldAdapter({
   doc: ydoc,
@@ -42,7 +56,7 @@ const title = createYTextFieldAdapter({
   normalize: (value) => value.trim(),
 });
 
-const tags = createYArrayFieldAdapter({
+const tags = createYArrayFieldAdapter<{ id: string }>({
   doc: ydoc,
   root: ydoc.getMap("app"),
   key: "tags",
@@ -55,7 +69,10 @@ Adapters are storage helpers only. Product validation, labels, contacts, auth, a
 ## Extension roots
 
 ```ts
-import { ensureExtensionRoot, readExtensionRoot } from "@pen/crdt-yjs";
+import * as Y from "yjs";
+import { ensureExtensionRoot, readExtensionRoot } from "@input/pen-crdt-yjs";
+
+const ydoc = new Y.Doc();
 
 const root = ensureExtensionRoot({
   doc: ydoc,
@@ -77,16 +94,18 @@ Extension roots give host apps a predictable place for CRDT-backed data that tra
 
 ## Collaboration boundary
 
+What Pen guarantees versus what the host owns is stated in [COLLABORATION.md](./COLLABORATION.md). `pen.ariaReadOnly` the facet only sets `aria-readonly`. It does not decline typing or stop `editor.apply`. The renderer `readonly` prop is what declines typing. Neither stops the wire.
+
 When using multiplayer with Yjs, Pen expects the application to choose the provider and hand Pen a `MultiplayerSession`.
 
-`@pen/crdt-yjs` exposes the minimal helpers needed for that:
+`@input/pen-crdt-yjs` exposes the minimal helpers needed for that:
 
 ```ts
 import {
   createYjsProviderSession,
   getYjsAwareness,
   getYjsDoc,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 ```
 
 ## Canonical `y-websocket` setup
@@ -94,13 +113,13 @@ import {
 This is the recommended setup when using [`y-websocket`](https://docs.yjs.dev/ecosystem/connection-provider/y-websocket):
 
 ```ts
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import {
   createYjsProviderSession,
   getYjsAwareness,
   getYjsDoc,
-} from "@pen/crdt-yjs";
-import { multiplayerExtension } from "@pen/multiplayer";
+} from "@input/pen-crdt-yjs";
+import { multiplayerExtension } from "@input/pen-multiplayer";
 import { WebsocketProvider } from "y-websocket";
 
 const editor = createEditor({
@@ -166,7 +185,7 @@ setup.
 
 ## Why `getYjsAwareness()` exists
 
-Pen exposes a generic awareness interface through `@pen/types`, but Yjs providers such as `y-websocket` expect the underlying native Yjs `Awareness` instance.
+Pen exposes a generic awareness interface through `@input/pen-types`, but Yjs providers such as `y-websocket` expect the underlying native Yjs `Awareness` instance.
 
 Use:
 
@@ -182,3 +201,37 @@ Use:
 - `getStatus()` and `getIsSynced()` when the provider may already be active before Pen wraps it
 
 If `onSync()` is omitted, a connected provider is treated as fully connected rather than `syncing`.
+
+## Compaction
+
+Pen reports document growth and does not compact documents. On load, a document whose encoded size meets a stated byte threshold emits a `document-size` diagnostic carrying encoded byte size, block count, and whether GC is enabled. That measurement is not taken per commit.
+
+`PenPersistence.compact()` is host-implemented: Pen never calls it. Three mechanisms exist, and they do different things:
+
+- **`mergeUpdates` / `mergeYjsUpdates`.** `Y.mergeUpdates` folds a sequence of Yjs updates into one update that encodes the same document state. That shrinks an _update log_ a host has been appending. It does not remove tombstones — deleted blocks and characters stay in the CRDT until GC collects them.
+- **Snapshot retention.** `@input/pen-history` writes version snapshots through `PenPersistence.saveVersionSnapshot` and restores them with `loadVersion`. Pen does not delete snapshots. A host that drops older snapshot rows reclaims that snapshot storage and cannot restore those versions.
+- **`gc: true`.** `yjsAdapter()` defaults to `gc: false` so deleted Yjs content stays restorable for undo and history. Passing `yjsAdapter({ gc: true })` lets Yjs collect deleted items and gives up restore of those old deletions.
+
+Which combination a host uses depends on whether it ships version history. Pen does not pick one.
+
+## Options
+
+`yjsAdapter(options?)` accepts:
+
+| Option         | Default | Effect                                                                          |
+| -------------- | ------- | ------------------------------------------------------------------------------- |
+| `gc`           | `false` | Y.Doc GC. `false` keeps deleted content restorable for undo and history         |
+| `onDiagnostic` | no-op   | Receives CRDT diagnostics (malformed updates, document-size, unlabeled origins) |
+| `onRecovered`  | unset   | Called with `"repair"` when `loadDocument` recovers a document                  |
+
+`createYjsProviderSession()` takes a `YjsProviderAdapter` (`connect`, `disconnect`, `destroy`, `onStatusChange`; optional `getStatus`, `getIsSynced`, `onSync`). That is a required adapter object, not a defaults table.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Collaboration page (`#/collaboration`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

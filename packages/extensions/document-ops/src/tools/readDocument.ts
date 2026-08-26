@@ -1,6 +1,7 @@
-import type { Editor, ToolDefinition } from "@pen/types";
+import type { Editor, ToolDefinition } from "@input/pen-types";
 import {
 	exportDocumentRangeAsMarkdown,
+	formatBlocksAsAnnotatedMarkdown,
 	normalizeContextToolOptions,
 	resolveDocumentBlocks,
 	summarizeBlocks,
@@ -9,7 +10,9 @@ import {
 export function readDocumentTool(editor: Editor): ToolDefinition {
 	return {
 		name: "read_document",
-		description: "Read document content in the specified format.",
+		description:
+			"Read document content. Use format markdown with annotateBlocks before editing: every block is prefixed with a `<!-- block:<id> <type> -->` comment, and those ids are the ones update_block, delete_block, move_block, and write_document expect.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -17,6 +20,10 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
 					type: "string",
 					enum: ["json", "markdown", "summary"],
 					default: "summary",
+				},
+				annotateBlocks: {
+					type: "boolean",
+					default: false,
 				},
 				range: {
 					type: "object",
@@ -34,7 +41,11 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
 		handler: async (input: unknown) => {
 			const options = normalizeContextToolOptions(input);
 			const viewMode = options.includeSuggestions ? "raw" : "resolved";
-			const blocks = resolveDocumentBlocks(editor, options.range, viewMode);
+			const blocks = resolveDocumentBlocks(
+				editor,
+				options.range,
+				viewMode,
+			);
 
 			if (options.format === "summary") {
 				return {
@@ -51,7 +62,13 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
 			}
 
 			if (options.format === "markdown") {
-				return exportDocumentRangeAsMarkdown(editor, options.range, viewMode);
+				return options.annotateBlocks
+					? formatBlocksAsAnnotatedMarkdown(blocks)
+					: exportDocumentRangeAsMarkdown(
+							editor,
+							options.range,
+							viewMode,
+						);
 			}
 
 			return {

@@ -2,11 +2,21 @@ import {
 	findBenchMetadataById,
 	findBenchMetadataByName,
 } from "./constants/benchmarks";
+import {
+	assertObservedCount,
+	assertPublishedObservation,
+	type PublishedObservation,
+} from "./harness/observe";
 
 export interface BenchContext {
 	start(): void;
 	end(): void;
 	setMetrics(metrics: BenchMetrics): void;
+	/**
+	 * Post-clock named count. A no-op cannot satisfy `expected`.
+	 * `runSuite` refuses to publish without this.
+	 */
+	observe(name: string, actual: number, expected: number): void;
 }
 
 export type BenchMetricValue = string | number | boolean;
@@ -27,6 +37,12 @@ export interface BenchResult {
 	targetMs?: number;
 	isCritical: boolean;
 	metrics?: BenchMetrics;
+	/** Timed with Pen removed. Absent means the wall-clock is not attributed. */
+	floorP50Ms?: number;
+	/** max(0, p50Ms - floorP50Ms). Absent when there is no floor. */
+	attributedP50Ms?: number;
+	/** Post-clock named count. Absent means the bench did not observe. */
+	observation?: PublishedObservation;
 }
 
 export interface BenchOptions {
@@ -39,8 +55,18 @@ export interface BenchDefinition {
 	id?: string;
 	name: string;
 	fn: (b: BenchContext) => void | Promise<void>;
+	/**
+	 * Same start/end loop as `fn` with Pen removed. `runSuite` times it
+	 * alongside and records `floorP50Ms` / `attributedP50Ms`. A wall-clock
+	 * without this is not attributed to Pen.
+	 */
+	floor?: (b: BenchContext) => void | Promise<void>;
+	teardown?: () => void | Promise<void>;
 	targetMs?: number;
 	critical?: boolean;
+	/** SCALE3: isolated axis, when the suite can vary one. */
+	axis?: string;
+	axisPoint?: number;
 }
 
 export interface BenchWaiver {
@@ -59,6 +85,9 @@ export interface BenchEvaluation {
 	waiverExpired: boolean;
 }
 
+/** CH8: critical budgets are judged on the median of this many measured iterations. */
+export const BENCH_GATE_SAMPLE_SIZE = 50;
+
 export async function bench(
 	name: string,
 	fn: (b: BenchContext) => void | Promise<void>,
@@ -68,6 +97,7 @@ export async function bench(
 	const warmup = options?.warmup ?? 5;
 	const times: number[] = [];
 	let metrics: BenchMetrics | undefined;
+	let observation: PublishedObservation | undefined;
 
 	for (let i = 0; i < warmup; i++) {
 		const ctx = createBenchContext();
@@ -82,6 +112,9 @@ export async function bench(
 		}
 		if (ctx._metrics) {
 			metrics = { ...ctx._metrics };
+		}
+		if (ctx._observation) {
+			observation = ctx._observation;
 		}
 	}
 
@@ -106,6 +139,7 @@ export async function bench(
 		opsPerSecond,
 		isCritical: false,
 		metrics,
+		observation,
 	};
 }
 
@@ -121,10 +155,56 @@ export async function runSuite(
 		result.id = benchmark.id ?? benchmark.name;
 		result.targetMs = benchmark.targetMs;
 		result.isCritical = benchmark.critical ?? false;
+		if (benchmark.axis != null) {
+			result.metrics = {
+				axis: benchmark.axis,
+				...(benchmark.axisPoint != null
+					? { axisPoint: benchmark.axisPoint }
+					: {}),
+				...result.metrics,
+			};
+		}
+		if (benchmark.floor) {
+			const floor = await bench(
+				`${benchmark.name} harness floor`,
+				benchmark.floor,
+				options,
+			);
+			result.floorP50Ms = floor.p50Ms;
+			result.attributedP50Ms = attributeBenchResult(result);
+			if (floor.metrics) {
+				result.metrics = {
+					...result.metrics,
+					...prefixFloorMetrics(floor.metrics),
+				};
+			}
+		}
+		assertPublishedObservation(
+			result.id,
+			result.observation ?? null,
+			typeof benchmark.floor === "function",
+		);
 		results.push(result);
+		await benchmark.teardown?.();
 	}
 
 	return results;
+}
+
+/**
+ * A wall-clock without a recorded floor is not Pen. The 12.8x streaming
+ * "regression" was 100 `setTimeout(0)` yields attributed to apply.
+ */
+export function attributeBenchResult(result: BenchResult): number {
+	if (
+		typeof result.floorP50Ms !== "number" ||
+		!Number.isFinite(result.floorP50Ms)
+	) {
+		throw new Error(
+			`harness floor missing for ${result.id}; a wall-clock without a floor is not attributed to Pen`,
+		);
+	}
+	return Math.max(0, result.p50Ms - result.floorP50Ms);
 }
 
 export function getBenchTarget(name: string): number {
@@ -140,10 +220,12 @@ export function evaluateBenchResult(
 	waivers: readonly BenchWaiver[] = [],
 ): BenchEvaluation {
 	const metadata =
-		findBenchMetadataById(result.id) ?? findBenchMetadataByName(result.name);
+		findBenchMetadataById(result.id) ??
+		findBenchMetadataByName(result.name);
 	const targetMs = result.targetMs ?? metadata?.targetMs;
 	const isCritical = result.isCritical || metadata?.critical === true;
-	const meetsTarget = targetMs === undefined || result.p95Ms <= targetMs;
+	// CH8: gate on the median. P95 and Max stay on the result for trend output only.
+	const meetsTarget = targetMs === undefined || result.p50Ms <= targetMs;
 	const waiver = waivers.find((candidate) => candidate.benchId === result.id);
 	const waiverExpired = waiver ? isBenchWaiverExpired(waiver) : false;
 
@@ -185,11 +267,13 @@ export function isBenchWaiverExpired(
 function createBenchContext(): BenchContext & {
 	_elapsed: number | null;
 	_metrics: BenchMetrics | null;
+	_observation: PublishedObservation | null;
 } {
 	let startTime = 0;
 	const ctx = {
 		_elapsed: null as number | null,
 		_metrics: null as BenchMetrics | null,
+		_observation: null as PublishedObservation | null,
 		start() {
 			startTime = performance.now();
 		},
@@ -197,10 +281,31 @@ function createBenchContext(): BenchContext & {
 			ctx._elapsed = performance.now() - startTime;
 		},
 		setMetrics(metrics: BenchMetrics) {
-			ctx._metrics = { ...metrics };
+			ctx._metrics = { ...ctx._metrics, ...metrics };
+		},
+		observe(name: string, actual: number, expected: number) {
+			assertObservedCount(name, actual, expected);
+			ctx._observation = { name, actual, expected };
+			ctx._metrics = {
+				...ctx._metrics,
+				observation: name,
+				[name]: actual,
+			};
 		},
 	};
 	return ctx;
+}
+
+function prefixFloorMetrics(metrics: BenchMetrics): BenchMetrics {
+	const prefixed: BenchMetrics = {};
+	for (const [key, value] of Object.entries(metrics)) {
+		if (key.startsWith("floor")) {
+			prefixed[key] = value;
+			continue;
+		}
+		prefixed[`floor${key.charAt(0).toUpperCase()}${key.slice(1)}`] = value;
+	}
+	return prefixed;
 }
 
 function percentile(values: number[], percentileRank: number): number {

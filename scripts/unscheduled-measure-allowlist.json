@@ -1,0 +1,165 @@
+{
+  "_comment": "SCH1 (spec/rules/dom.md): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a site that cannot move onto GeometryReader. Each entry needs file, enclosing symbol, and a reason that names why this site cannot move. Remove an entry in the same PR that deletes or reschedules the last call in that symbol.",
+  "entries": [
+    {
+      "file": "packages/rendering/dom/src/field-editor/contenteditableDomHelpers.ts",
+      "symbol": "collapsedCaretRect",
+      "reason": "M3 visual line-start needs the collapsed-Range caret-x the conformance ink probe uses; GeometryReader.caretRect disagrees with Firefox by one offset at a bidi space. Already inside measureWithRoot — measureVisualLineEdge:322 wraps the caretXAt/caretYAt callers, so this is the checker's call-chain blind spot, not an unscheduled read."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/editContextDom.ts",
+      "symbol": "getCharacterRect",
+      "reason": "EditContext characterboundsupdate must return a DOMRect[] for the requested range in the same callback; GeometryReader G1 forbids per-character spans."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/inlineAtomLogicalDom.ts",
+      "symbol": "getInlineAtomPointerOffset",
+      "reason": "Pointer-to-atom offset is returned into the same hit-test; GeometryReader has no atom-host rect API."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
+      "symbol": "resolveBoundarySideFromPointer",
+      "reason": "Pointer-down boundary side is returned into the same click handler; the selection redesign deletes this module."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
+      "symbol": "getClosestBlockElementFromPoint",
+      "reason": "elementFromPoint plus nearest-block walk run inside the pointer hit-test that must return a node now; the selection redesign deletes this module."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
+      "symbol": "pointToEditorSelectionPoint",
+      "reason": "caretPositionFromPoint types and fallbacks feed a synchronous pointer-to-point API; the selection redesign deletes this module."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
+      "symbol": "resolveInlineAtomPoint",
+      "reason": "elementFromPoint typeof guard inside the inline-atom pointer hit-test; the selection redesign deletes this module."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
+      "symbol": "getSelectionPointRect",
+      "reason": "Range.getBoundingClientRect type used by the selection-bridge caret helper; the selection redesign deletes this module."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
+      "symbol": "getTextSelectionClientRects",
+      "reason": "Range.getClientRects type for multi-rect offset mapping consumed by GeometryReader until the selection redesign replaces the seam."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
+      "symbol": "getCharacterRectAtOffset",
+      "reason": "Per-character Range.getBoundingClientRect for offset-from-point; the selection redesign deletes this module."
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
+      "symbol": "getInlineCaretRectFromOffset",
+      "reason": "Empty-inline caret uses the inline host box inside the selection-bridge offset mapper; the selection redesign deletes this module."
+    },
+    {
+      "file": "packages/rendering/dom/src/geometry/geometryMeasure.ts",
+      "symbol": "readClientRects",
+      "reason": "SCH1 geometry — GeometryReader G1 Range.getClientRects type."
+    },
+    {
+      "file": "packages/rendering/dom/src/geometry/geometryMeasure.ts",
+      "symbol": "caretFromElementRect",
+      "reason": "SCH1 geometry — GeometryReader caretFromElementRect uses the host box."
+    },
+    {
+      "file": "packages/rendering/dom/src/geometry/geometryMeasure.ts",
+      "symbol": "elementRect",
+      "reason": "SCH1 geometry — GeometryReader elementRect uses the host box."
+    },
+    {
+      "file": "packages/rendering/dom/src/geometry/geometryHitTest.ts",
+      "symbol": "hitTestCaretFromPoint",
+      "reason": "SCH1 geometry — GeometryReader G4 caretPositionFromPoint type."
+    },
+    {
+      "file": "packages/rendering/dom/src/geometry/geometryHitTest.ts",
+      "symbol": "isInsideAnyBlock",
+      "reason": "SCH1 geometry — GeometryReader pointAt inside-block test uses block boxes."
+    },
+    {
+      "file": "packages/rendering/dom/src/geometry/geometryHitTest.ts",
+      "symbol": "nearestBlockEdge",
+      "reason": "SCH1 geometry — GeometryReader G4 nearest-block-edge uses block boxes."
+    },
+    {
+      "file": "packages/rendering/dom/src/host/pointerActivation.ts",
+      "symbol": "resolveHostChromeFallbackBlock",
+      "reason": "Host chrome click-above/below compares each text-block box to clientY in the same pointer handler; GeometryReader.pointAt (G4) is the scheduled replacement once this host path is wired."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/inlineAtomDragPreview.ts",
+      "symbol": "createInlineAtomDragPreview",
+      "reason": "HTML5 dragstart must size the ghost from the source atom box before setDragImage; not a document block."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/menuPosition.ts",
+      "symbol": "resolveAnchoredMenuPosition",
+      "reason": "Menu chrome width/height is the mounted surface box, not a GeometryReader document query; already inside measureWithRoot."
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
+      "symbol": "scrollSuggestionIntoView",
+      "reason": "Scroll-into-view compares the suggestion span and its scroll container in the same turn; neither is a GeometryReader block."
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
+      "symbol": "resolveVisibleSuggestionAnchors",
+      "reason": "Visibility filter reads each suggestion span box; those are decoration hosts, not blocks."
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
+      "symbol": "toSuggestionControlPosition",
+      "reason": "Control placement subtracts the editor-content host box; GeometryReader has no element-rect API."
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useAISuggestionPopover.ts",
+      "symbol": "useAISuggestionPopover",
+      "reason": "Popover open path sets position from the suggestion element box in the same callback; not a block id."
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useSelectionToolbar.ts",
+      "symbol": "resolveNativeSelectionRect",
+      "reason": "Toolbar prefers the live window.Selection range so it can place before a root/GeometryReader is available; resolveSelectionRect is the GeometryReader fallback already."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
+      "symbol": "resolveLiveSelectionRect",
+      "reason": "Floating prompt tracks the live window.Selection range while the user is still selecting; snapshot rangeRects would lag the native range."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/ai/contextualPromptPlacement.ts",
+      "symbol": "measureLayout",
+      "reason": "Flip/shift reads the prompt surface, content host, and scroll container boxes — chrome, not document blocks."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/ai/contextualPromptSurface.tsx",
+      "symbol": "AIContextualPromptSurface",
+      "reason": "Inserted-mode spacing needs the mounted surface height in the same layout effect that writes marginTop."
+    },
+    {
+			"file": "packages/rendering/dom/src/field-editor/inlineAtomWrapperInteractions.ts",
+			"symbol": "resolveTargetFromPoint",
+      "reason": "elementFromPoint finds which editor root is under the pointer before any GeometryReader exists for that root."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/editor/useTransferSession.ts",
+      "symbol": "useTransferSession",
+      "reason": "Dragenter/over hit-tests the editor root and content boxes; GeometryReader has no element-rect API. Already inside measureWithRoot."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/selection-toolbar/content.tsx",
+      "symbol": "SelectionToolbarContent",
+      "reason": "Flip/shift measures the toolbar's own mounted box after it is in the DOM."
+    },
+    {
+      "file": "packages/rendering/react/src/utils/blockDragPreview.ts",
+      "symbol": "setBlockDragPreviewImage",
+      "reason": "HTML5 dragstart sizes the ghost from the source block element before setDragImage."
+    }
+  ]
+}

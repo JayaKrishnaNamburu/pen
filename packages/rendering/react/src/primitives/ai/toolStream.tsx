@@ -1,5 +1,5 @@
 import React from "react";
-import type { AIStreamEvent } from "@pen/ai";
+import type { AIStreamEvent } from "@input/pen-ai";
 import { useAIStreamEvents } from "../../hooks/useAIStreamEvents";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAIContext } from "./root";
@@ -71,7 +71,11 @@ function buildToolCallViews(
 		if (activeGenerationId && event.generationId !== activeGenerationId) {
 			continue;
 		}
-		if (event.type !== "tool-call" && event.type !== "tool-output" && event.type !== "tool-result") {
+		if (
+			event.type !== "tool-call" &&
+			event.type !== "tool-output" &&
+			event.type !== "tool-result"
+		) {
 			continue;
 		}
 		const toolCallView = ensureToolCallView(
@@ -100,7 +104,10 @@ function buildToolCallViews(
 
 	return toolCallOrder
 		.map((toolCallId) => toolCallViewById.get(toolCallId))
-		.filter((toolCallView): toolCallView is ToolCallView => toolCallView != null);
+		.filter(
+			(toolCallView): toolCallView is ToolCallView =>
+				toolCallView != null,
+		);
 }
 
 function ensureToolCallView(

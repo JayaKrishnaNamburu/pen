@@ -3,19 +3,48 @@ export type {
 	TestEditorOptions,
 	TestEditor,
 	TestCollaboration,
+	TestMarkDelta,
+	TestTableCell,
+	TestTableRow,
 	DeterministicYDocFixture,
 	DeterministicYDocFixtureOptions,
 	NormalizedYDocSnapshot,
 	NormalizedYjsValue,
 	YjsRootExpectation,
 	YjsRootType,
+	TwoPeer,
+	TwoPeerHarness,
+	TwoPeerHarnessOptions,
+	TwoPeerId,
+	TwoPeerInterleaving,
 } from "./types";
 export { createTestDocument, populateYDoc } from "./createTestDocument";
 export { createTestEditor } from "./createTestEditor";
-export { assertDocEquals } from "./assertDocEquals";
+export { ASSERT_DOC_EQUALS_FIELDS, assertDocEquals } from "./assertDocEquals";
+export { assertPeerEditsSurvive } from "./assertPeerEditsSurvive";
+export type { AssertPeerEditsSurviveOptions } from "./assertPeerEditsSurvive";
 export { createTestCollaboration } from "./createTestCollaboration";
-export { simulateKeypress, simulateTyping } from "./simulation";
-export { resetTestIdCounter, toYMap } from "./helpers";
+export {
+	createTwoPeerHarness,
+	runBothInterleavings,
+	TWO_PEER_INTERLEAVINGS,
+} from "./twoPeerHarness";
+export {
+	collectInlineText,
+	concatenatedInlineText,
+	countEmptyInlineBlocks,
+	countMemberships,
+	findParentCycle,
+	getChildrenIds,
+	getParentId,
+	hasParentCycle,
+	listBlockIds,
+	parentsOf,
+	visibleText,
+} from "./twoPeerInspect";
+// simulateKeypress / simulateTyping stay off the barrel. Hosts call
+// those methods on the TestEditor returned by createTestEditor.
+export { resetTestIdCounter } from "./helpers";
 export {
 	DEFAULT_PEN_ROOTS,
 	PenFixtureError,
@@ -37,3 +66,19 @@ export type {
 	HeadlessEditorContractOptions,
 	HeadlessEditorContractResult,
 } from "./contracts";
+export {
+	createModelDouble,
+	abortHalfwayGenerationParts,
+	failingToolCallParts,
+	hostileMutatingTurnCalls,
+} from "./modelDouble";
+export type {
+	ModelDouble,
+	ModelDoubleEvent,
+	ModelDoubleFeature,
+	ModelDoubleMalformedPart,
+	ModelDoubleOptions,
+	ModelDoublePart,
+	ModelDoubleResponse,
+	ModelDoubleToolCall,
+} from "./modelDouble";

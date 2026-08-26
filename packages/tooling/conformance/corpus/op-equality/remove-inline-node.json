@@ -1,0 +1,98 @@
+{
+	"id": "remove-inline-node",
+	"opType": "remove-inline-node",
+	"family": "atoms",
+	"path": "synthetic",
+	"command": null,
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "Hi ",
+				"mention": {
+					"offset": 3,
+					"props": {
+						"id": "ada",
+						"label": "Ada"
+					}
+				}
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "remove-inline-node",
+			"blockId": "p1",
+			"offset": 3
+		}
+	],
+	"updateBytes": "AAEBAgIHEgE=",
+	"updateByteLength": 8,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hi "
+						},
+						{
+							"insert": {
+								"id": "ada",
+								"label": "Ada",
+								"type": "mention"
+							}
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hi "
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": null
+}

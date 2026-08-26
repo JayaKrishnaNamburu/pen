@@ -1,18 +1,26 @@
 import {
 	createEditor,
 	getInlineCompletionController,
-} from "@pen/core";
-import { FIELD_EDITOR_SLOT_KEY, defineExtension } from "@pen/types";
-import { aiExtension } from "@pen/ai";
+	} from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY,
+} from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
+import { aiExtension } from "@input/pen-ai";
+import { deltaStreamExtension } from "@input/pen-ai/stream";
+import { undoExtension } from "@input/pen-undo";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
 	getAutocompleteController,
-} from "@pen/ai-autocomplete";
-import type { AutocompleteContextProvider } from "@pen/ai-autocomplete";
-import { createTestEditor } from "@pen/test";
-import type { ToolRuntime } from "@pen/types";
-import { buildDocumentWriteOps } from "@pen/document-ops";
+} from "@input/pen-ai/autocomplete";
+import type { AutocompleteContextProvider } from "@input/pen-ai/autocomplete";
+import { createTestEditor } from "@input/pen-test";
+import type { ToolRuntime } from "@input/pen-types";
+import {
+	buildDocumentWriteOps,
+	documentOpsExtension,
+	getDocumentToolRuntime,
+} from "@input/pen-document-ops";
 
 export const AI_BENCH_BLOCK_COUNT = 200;
 export const AI_RANGE_START_BLOCK_ID = "block-90";
@@ -26,6 +34,7 @@ export function createAIBenchEditor() {
 				`Benchmark block ${index}. ` +
 				"This is representative playground context for AI read latency measurement.",
 		})),
+		extensions: [documentOpsExtension()],
 	});
 	const targetBlockId = AI_RANGE_START_BLOCK_ID;
 	editor.selectTextRange(
@@ -36,7 +45,7 @@ export function createAIBenchEditor() {
 }
 
 export function getToolRuntime(editor: ReturnType<typeof createTestEditor>): ToolRuntime {
-	const toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime");
+	const toolRuntime = getDocumentToolRuntime(editor);
 	if (!toolRuntime) {
 		throw new Error("AI bench editor is missing the document-ops tool runtime.");
 	}
@@ -53,8 +62,12 @@ export function createAutocompleteCancelChurnBenchEditor() {
 		isComposing: false,
 		activeCellCoord: null,
 	};
-	const editor = createEditor({
+	const editor = createTestEditor({
+		blocks: [{ id: "bench-first-block", type: "paragraph", content: "" }],
 		extensions: [
+			undoExtension(),
+			deltaStreamExtension(),
+			documentOpsExtension(),
 			aiExtension(),
 			autocompleteExtension({
 				debounceMs: 10,
@@ -70,10 +83,10 @@ export function createAutocompleteCancelChurnBenchEditor() {
 				name: "bench-field-editor-slot",
 				activateClient: async ({ editor: nextEditor }) => {
 					activeEditor = nextEditor;
-					nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+					nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 				},
 				deactivateClient: async () => {
-					activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+					activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 					activeEditor = null;
 				},
 			}),
@@ -90,10 +103,11 @@ export function createAutocompleteCancelChurnBenchEditor() {
 			position: { after: firstBlockId },
 		},
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId: codeBlockId,
-			offset: 0,
-			text: "const answer =",
+			from: 0,
+				to: 0,
+				insert: "const answer =",
 		},
 	]);
 	fieldEditor.focusBlockId = codeBlockId;
@@ -158,8 +172,8 @@ export function createAutocompleteProviderBudgetBenchEditor() {
 	const benchEditor = createAutocompleteBenchEditor({
 		benchExtensionName: "bench-provider-budget-field-editor-slot",
 		debounceMs: 0,
-		maxProviderChars: 48,
-		maxProviderTimeMs: 5,
+		maxProviderChars: AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS,
+		maxProviderTimeMs: AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS,
 		blockId: "bench-provider-budget-block",
 		initialText: "Hello",
 		cursorOffset: 5,
@@ -256,8 +270,12 @@ export function createAutocompleteBenchEditor(input: {
 		isComposing: false,
 		activeCellCoord: null,
 	};
-	const editor = createEditor({
+	const editor = createTestEditor({
+		blocks: [{ id: "bench-first-block", type: "paragraph", content: "" }],
 		extensions: [
+			undoExtension(),
+			deltaStreamExtension(),
+			documentOpsExtension(),
 			aiExtension(),
 			autocompleteExtension({
 				debounceMs: input.debounceMs,
@@ -273,10 +291,10 @@ export function createAutocompleteBenchEditor(input: {
 				name: input.benchExtensionName,
 				activateClient: async ({ editor: nextEditor }) => {
 					activeEditor = nextEditor;
-					nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+					nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 				},
 				deactivateClient: async () => {
-					activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+					activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 					activeEditor = null;
 				},
 			}),
@@ -293,19 +311,21 @@ export function createAutocompleteBenchEditor(input: {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: input.blockId,
-				offset: 0,
-				text: input.initialText,
+				from: 0,
+				to: 0,
+				insert: input.initialText,
 			},
 		]);
 	} else {
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: input.initialText,
+				from: 0,
+				to: 0,
+				insert: input.initialText,
 			},
 		]);
 	}
@@ -325,9 +345,83 @@ export function createAutocompleteBenchEditor(input: {
 	};
 }
 
+export const AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES = 10;
+export const AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS = 48;
+export const AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS = 5;
+export const AUTOCOMPLETE_SLOW_PROVIDER_ID = "slow-timeout";
+export const AUTOCOMPLETE_LOCAL_PROVIDER_ID = "local-shape";
+export const AUTOCOMPLETE_CLIPPED_PROVIDER_ID = "consumer-clipped";
+
 export function expectControllerRequest(value: boolean): void {
 	if (!value) {
 		throw new Error("Autocomplete bench operation unexpectedly returned false.");
+	}
+}
+
+/**
+ * After the clock: each cycle must have requested and cancelled.
+ * A skipped loop still publishes a fast time without this check.
+ */
+export function assertRequestingCancelObserved(input: {
+	cycleCount: number;
+	requestCount: number;
+	cancelCount: number;
+	modelCallCount: number;
+}): void {
+	if (input.requestCount !== input.cycleCount) {
+		throw new Error(
+			`autocomplete requesting-cancel bench requestCount ${input.requestCount} !== cycleCount ${input.cycleCount}`,
+		);
+	}
+	if (input.cancelCount < input.cycleCount) {
+		throw new Error(
+			`autocomplete requesting-cancel bench cancelCount ${input.cancelCount} < cycleCount ${input.cycleCount}`,
+		);
+	}
+	if (input.modelCallCount !== input.cycleCount) {
+		throw new Error(
+			`autocomplete requesting-cancel bench modelCallCount ${input.modelCallCount} !== cycleCount ${input.cycleCount}`,
+		);
+	}
+}
+
+/**
+ * After the clock: named providers must have been consulted. A
+ * request that never ran still publishes without this check.
+ */
+export function assertProviderBudgetObserved(input: {
+	providerTimings: readonly { id: string; chars: number }[];
+	modelCallCount: number;
+	maxProviderChars: number;
+}): void {
+	if (input.modelCallCount < 1) {
+		throw new Error(
+			"autocomplete provider-budget bench model was never called",
+		);
+	}
+	if (input.providerTimings.length === 0) {
+		throw new Error(
+			"autocomplete provider-budget bench recorded no provider timings",
+		);
+	}
+	const ids = input.providerTimings.map((timing) => timing.id);
+	if (!ids.includes(AUTOCOMPLETE_LOCAL_PROVIDER_ID)) {
+		throw new Error(
+			`autocomplete provider-budget bench missing ${AUTOCOMPLETE_LOCAL_PROVIDER_ID}: ${JSON.stringify(ids)}`,
+		);
+	}
+	if (ids.includes(AUTOCOMPLETE_SLOW_PROVIDER_ID)) {
+		throw new Error(
+			`autocomplete provider-budget bench included ${AUTOCOMPLETE_SLOW_PROVIDER_ID} after the timeout budget`,
+		);
+	}
+	const clipped = input.providerTimings.find(
+		(timing) => timing.id === AUTOCOMPLETE_CLIPPED_PROVIDER_ID,
+	);
+	if (clipped && clipped.chars > input.maxProviderChars) {
+		throw new Error(
+			`autocomplete provider-budget bench ${AUTOCOMPLETE_CLIPPED_PROVIDER_ID} kept ${clipped.chars} chars over ${input.maxProviderChars}`,
+		);
 	}
 }
 

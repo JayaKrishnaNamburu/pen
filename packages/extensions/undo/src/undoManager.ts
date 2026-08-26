@@ -3,30 +3,44 @@ import type {
   UndoManager,
   OpOrigin,
   Unsubscribe,
-} from "@pen/types";
-import { getOpOriginType } from "@pen/types";
+} from "@input/pen-types";
+import { getOpOriginType } from "./origin";
 
 const EXPLICIT_GROUP_CAPTURE_TIMEOUT_MS = 2_147_483_647;
+
+export interface UndoManagerImplOptions {
+  onListenerError?: (error: unknown) => void;
+}
 
 export class UndoManagerImpl implements UndoManager {
   private readonly _crdtUndo: CRDTUndoManager;
   private readonly _trackedOriginTypes = new Map<string, number>();
   private readonly _listeners = new Set<() => void>();
+  private readonly _onListenerError?: (error: unknown) => void;
   private _idleTimer: ReturnType<typeof setTimeout> | null = null;
   private _groupTimeout = 1000;
   private _baseCaptureTimeout = 1000;
   private _explicitUndoGroupId: string | null = null;
+  private _destroyed = false;
   _onCaptureBoundary: (() => void) | null = null;
   _isHistoryOperation = false;
 
-  constructor(crdtUndo: CRDTUndoManager, trackedOrigins?: Iterable<OpOrigin>) {
+  constructor(
+    crdtUndo: CRDTUndoManager,
+    trackedOrigins?: Iterable<OpOrigin>,
+    options?: UndoManagerImplOptions,
+  ) {
     this._crdtUndo = crdtUndo;
+    this._onListenerError = options?.onListenerError;
     for (const origin of trackedOrigins ?? []) {
       this._trackedOriginTypes.set(getOpOriginType(origin), 1);
     }
   }
 
   undo(): boolean {
+    if (this._destroyed) {
+      return false;
+    }
     this._explicitUndoGroupId = null;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._clearIdleTimer();
@@ -40,6 +54,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   redo(): boolean {
+    if (this._destroyed) {
+      return false;
+    }
     this._explicitUndoGroupId = null;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._clearIdleTimer();
@@ -53,14 +70,17 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   canUndo(): boolean {
-    return this._crdtUndo.canUndo();
+    return !this._destroyed && this._crdtUndo.canUndo();
   }
 
   canRedo(): boolean {
-    return this._crdtUndo.canRedo();
+    return !this._destroyed && this._crdtUndo.canRedo();
   }
 
   stopCapturing(): void {
+    if (this._destroyed) {
+      return;
+    }
     this._explicitUndoGroupId = null;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._stopCapturingWithBoundary();
@@ -69,6 +89,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   syncExplicitUndoGroup(groupId: string | null): void {
+    if (this._destroyed) {
+      return;
+    }
     if (this._explicitUndoGroupId === groupId) {
       if (groupId !== null) {
         this._clearIdleTimer();
@@ -91,6 +114,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   setGroupTimeout(ms: number): void {
+    if (this._destroyed) {
+      return;
+    }
     this._groupTimeout = ms;
     this._baseCaptureTimeout = ms;
     if (this._explicitUndoGroupId === null) {
@@ -99,6 +125,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   registerTrackedOrigins(origins: OpOrigin[]): Unsubscribe {
+    if (this._destroyed) {
+      return () => {};
+    }
     const registeredOrigins = new Set<OpOrigin>();
     let didDispose = false;
     for (const origin of origins) {
@@ -124,6 +153,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   onStackChange(callback: () => void): Unsubscribe {
+    if (this._destroyed) {
+      return () => {};
+    }
     this._listeners.add(callback);
     return () => {
       this._listeners.delete(callback);
@@ -131,7 +163,7 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   resetIdleTimer(): void {
-    if (this._explicitUndoGroupId !== null) {
+    if (this._destroyed || this._explicitUndoGroupId !== null) {
       return;
     }
     this._clearIdleTimer();
@@ -145,17 +177,22 @@ export class UndoManagerImpl implements UndoManager {
     for (const cb of this._listeners) {
       try {
         cb();
-      } catch {
-        /* ignore */
+      } catch (error) {
+        this._onListenerError?.(error);
       }
     }
   }
 
   destroy(): void {
+    if (this._destroyed) {
+      return;
+    }
+    this._destroyed = true;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._explicitUndoGroupId = null;
     this._clearIdleTimer();
     this._listeners.clear();
+    this._crdtUndo.destroy();
   }
 
   private _incrementTrackedOrigin(origin: OpOrigin): void {

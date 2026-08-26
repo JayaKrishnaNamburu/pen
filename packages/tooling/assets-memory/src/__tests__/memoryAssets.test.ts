@@ -44,15 +44,86 @@ describe("AC 20 — memoryAssets", () => {
     expect(provider.resolve(ref)).toBe(ref.url);
   });
 
-  it("calls onProgress with 1", async () => {
+  it("IOP4 API10 successful upload is unchanged", async () => {
     const provider = memoryAssets();
     const blob = new Blob(["hello"], { type: "text/plain" });
-    let progress: number | undefined;
+    const ref = await provider.upload(blob, { mimeType: "text/plain" });
+
+    expect(ref.mimeType).toBe("text/plain");
+    expect(ref.size).toBe(blob.size);
+    expect(provider.resolve(ref)).toBeTruthy();
+  });
+
+  it("IOP4 API10 observes onProgress during upload", async () => {
+    const provider = memoryAssets();
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const progress: number[] = [];
     await provider.upload(blob, {
       onProgress: (p) => {
-        progress = p;
+        progress.push(p);
       },
     });
-    expect(progress).toBe(1);
+    expect(progress).toEqual([0, 1]);
+  });
+
+  it("IOP4 API10 rejects oversize uploads naming the limit and actual size", async () => {
+    const provider = memoryAssets({ maxSize: 4 });
+    const blob = new Blob(["hello-world"], { type: "text/plain" });
+
+    await expect(provider.upload(blob, { maxSize: 4 })).rejects.toThrow(
+      /11.*maxSize 4/,
+    );
+  });
+
+  it("IOP4 API10 rejectUpload is a failure double and does not store", async () => {
+    const provider = memoryAssets({
+      rejectUpload: new Error("storage down"),
+    });
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const progress: number[] = [];
+
+    await expect(
+      provider.upload(blob, {
+        onProgress: (value) => {
+          progress.push(value);
+        },
+      }),
+    ).rejects.toThrow("storage down");
+    expect(progress).toEqual([]);
+  });
+
+  it("IOP4 mid-transfer rejectAfterProgress fires onProgress(0) and does not store", async () => {
+    const provider = memoryAssets({
+      rejectAfterProgress: new Error("socket reset"),
+    });
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const progress: number[] = [];
+
+    await expect(
+      provider.upload(blob, {
+        onProgress: (value) => {
+          progress.push(value);
+        },
+      }),
+    ).rejects.toThrow("socket reset");
+    expect(progress).toEqual([0]);
+
+    const leaked = {
+      id: "missing",
+      url: "https://example.com/leaked",
+      mimeType: "text/plain",
+      size: blob.size,
+    };
+    expect(provider.resolve(leaked)).toBe("https://example.com/leaked");
+  });
+
+  it("IOP4 uploadUrl override is stored as-is (importer admits, this double does not)", async () => {
+    const provider = memoryAssets({
+      uploadUrl: "javascript:alert(1)",
+    });
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const ref = await provider.upload(blob);
+    expect(ref.url).toBe("javascript:alert(1)");
+    expect(provider.resolve(ref)).toBe("javascript:alert(1)");
   });
 });

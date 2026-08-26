@@ -1,8 +1,8 @@
-# @pen/vue
+# @input/pen-vue
 
 ## Purpose
 
-`@pen/vue` provides Vue rendering primitives for Pen. It is the shipped proof that Pen's editor lifecycle, field-editor integration, selection model, and renderer overrides work outside React.
+`@input/pen-vue` provides Vue rendering primitives for Pen. It is the shipped proof that Pen's editor lifecycle, field-editor integration, selection model, and renderer overrides work outside React.
 
 ## Public Role
 
@@ -11,7 +11,7 @@ This package gives Vue applications a lean but real renderer surface: core edito
 ## Key Exports / Entrypoints
 
 - Export map: `.`, `./plugin`
-- Root exports such as `PenEditor`, `PenContent`, `PenBlock`, `PenInlineContent`, `PenFieldEditor`, and `PenEditorProps`
+- Root exports such as `PenEditor`, `PenContent`, `PenBlock`, `PenInlineContent`, and `PenFieldEditor`. The `PenEditorProps` interface is declared on the component but is not on the barrel; `PenTableCellContent` is likewise internal.
 - Composables such as `useEditor`, `useSelection`, `useBlockList`, and `useDecorations`
 - Plugin export: `PenVuePlugin`
 - Public renderer and paste-importer types such as `RendererOverrides` and `PasteImporters`
@@ -19,9 +19,9 @@ This package gives Vue applications a lean but real renderer surface: core edito
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/dom`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-interop`, `@input/pen-schema-default`, `@input/pen-types`
 - Peer dependencies: `vue`
-- Boundary: `@pen/vue` depends on `@pen/dom` and `@pen/core` and should stay lean.
+- Boundary: `@input/pen-vue` depends on `@input/pen-dom` and `@input/pen-core` and should stay lean.
 
 ## Runtime Model
 
@@ -32,8 +32,8 @@ flowchart TD
   VueApp[VueApp]
   Components[VueComponents]
   Composables[VueComposables]
-  Dom["@pen/dom"]
-  Core["@pen/core"]
+  Dom["@input/pen-dom"]
+  Core["@input/pen-core"]
 
   VueApp --> Components
   Components --> Composables
@@ -46,7 +46,12 @@ Important responsibilities:
 
 - Mount the editor and shared field-editor engine in a Vue host
 - Expose key editor-derived state through composables instead of duplicating state inside components
-- Register the shared field-editor slots, paste importer/assets slots, focused/read-only/empty root attributes, and captured document-keyboard handling from `@pen/dom`
+- Register the field editor and paste assets with `internals.assignSlot`. When the host omits `importers`, `PenEditor` still defaults `paste:importers.html` to `htmlImporter` from `@input/pen-interop/html`. Also wires focused/read-only/empty root attributes and captured document-keyboard handling from `@input/pen-dom`.
+- Pointer activation listens on the editor root and resolves through `handleFieldEditorPointerActivate()` against the blocks host. It does not listen only on the inline-content span (that surface is zero-width on an empty document). Host-chrome clicks above the first block or below the last use the same fallback as vanilla: that inline-text block at start or end. The gap between blocks stays inactive.
+- Idle `PenInlineContent` and `PenTableCellContent` pass `{ editor }` into `fullReconcileDeltasToDOM` so `pen.urlPolicy` cannot be skipped by omitting a policy. The image fallback on `PenBlock` resolves `src` with `resolveEditorUrl(editor, src, "image")`. Denied URLs omit the attribute and set `data-pen-blocked-url`.
+- `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })`. It injects the default schema and still installs no preset. Pass `preset: defaultPreset()` or explicit `extensions` when the host wants undo, shortcuts, document-ops, or the stream extension.
+- The `readonly` prop on `PenEditor` is what declines pointer activation and local typing. `pen.ariaReadOnly` is read only for `aria-readonly` and does not set `data-readonly`. The facet does not decline typing, `editor.apply`, or the wire. That split is an open owner decision.
+- Boolean `data-*` attributes use the same valueless form as `@input/pen-dom` (`data-readonly=""`). ARIA booleans remain `"true"` / `"false"`.
 - Support renderer overrides so host apps can customize block rendering without forking the runtime
 - Validate that keyboard routing, Escape selection transitions, select-all behavior, clipboard, and table-editing behavior stay portable across frameworks
 
@@ -55,15 +60,15 @@ Important responsibilities:
 - Path in workspace: `packages/rendering/vue`
 - Spec path mirrors workspace path: `packages/rendering/vue.md`
 - `PenEditor` is the main integration entrypoint; it renders default `PenContent` when no default slot is provided, and `PenVuePlugin` is optional convenience for global registration
-- The package intentionally exposes fewer primitives than `@pen/react`; that is a design choice, not necessarily a gap
+- The package intentionally exposes fewer primitives than `@input/pen-react`; that is a design choice, not necessarily a gap
 - Use this package when a Vue host needs Pen without rebuilding the editing engine
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. The package is intentionally lean, but it is now important enough that regressions here should be treated as architectural regressions, not just renderer-specific bugs.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. The package is intentionally lean, but it is now important enough that regressions here should be treated as architectural regressions, not just renderer-specific bugs.
 
 ## Non-goals
 
 - Do not force full React surface parity before the shared cross-framework boundaries are stable.
-- Do not move shared editing behavior from `@pen/dom` into Vue-only code.
+- Do not move shared editing behavior from `@input/pen-dom` into Vue-only code.
 - Do not let Vue component-local state become the authority for selection, decorations, or document mutations.

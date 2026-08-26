@@ -3,22 +3,27 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor, ensureInlineCompletionController } from "@pen/core";
+import {
+	createEditor,
+	ensureInlineCompletionController,
+} from "@input/pen-core";
 import {
 	aiExtension,
 	applySuggestedAIOperations,
 	getAIController,
-} from "@pen/ai";
-import { defaultPreset } from "@pen/preset-default";
+} from "@input/pen-ai";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-describe("@pen/react suggestion rendering", () => {
+describe("@input/pen-react suggestion rendering", () => {
 	it("renders suggestion marks with DOM attributes for diff styling and controls", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
@@ -30,16 +35,17 @@ describe("@pen/react suggestion rendering", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hello world",
+				from: 0,
+				to: 0,
+				insert: "Hello world",
 			},
 			{
 				type: "format-text",
 				blockId,
-				offset: 0,
-				length: 5,
+				from: 0,
+				to: 0 + 5,
 				marks: {
 					suggestion: {
 						id: "suggestion-insert-1",
@@ -53,8 +59,8 @@ describe("@pen/react suggestion rendering", () => {
 			{
 				type: "format-text",
 				blockId,
-				offset: 6,
-				length: 5,
+				from: 6,
+				to: 6 + 5,
 				marks: {
 					suggestion: {
 						id: "suggestion-delete-1",
@@ -111,6 +117,7 @@ describe("@pen/react suggestion rendering", () => {
 
 	it("renders final-text review suggestions without visible deleted text", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			extensions: [
 				aiExtension({
@@ -123,18 +130,31 @@ describe("@pen/react suggestion rendering", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Thanks for joining us",
+					from: 0,
+					to: 0,
+					insert: "Thanks for joining us",
 				},
 			],
 			{ origin: "system" },
 		);
 		applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "delete-text", blockId, offset: 11, length: 7 },
-				{ type: "insert-text", blockId, offset: 18, text: "meeting" },
+				{
+					type: "splice-text",
+					blockId,
+					from: 11,
+					to: 11 + 7,
+					insert: "",
+				},
+				{
+					type: "splice-text",
+					blockId,
+					from: 18,
+					to: 18,
+					insert: "meeting",
+				},
 			],
 			suggestionIds: ["suggestion-delete-1", "suggestion-insert-1"],
 		});
@@ -173,6 +193,7 @@ describe("@pen/react suggestion rendering", () => {
 
 	it("renders streaming review preview text without mutating document text", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			extensions: [
 				aiExtension({
@@ -185,10 +206,11 @@ describe("@pen/react suggestion rendering", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Hello world",
+					from: 0,
+					to: 0,
+					insert: "Hello world",
 				},
 			],
 			{ origin: "system" },
@@ -224,6 +246,12 @@ describe("@pen/react suggestion rendering", () => {
 			);
 		});
 
+		// Preview updates are coalesced to one per frame, so a burst of stream
+		// fragments costs one reconcile rather than one each.
+		await act(async () => {
+			await new Promise((resolve) => requestAnimationFrame(resolve));
+		});
+
 		expect(container.textContent).toContain("Hi there world");
 		expect(container.textContent).not.toContain("Hello world");
 		expect(editor.firstBlock()?.textContent()).toBe("Hello world");
@@ -238,8 +266,9 @@ describe("@pen/react suggestion rendering", () => {
 		editor.destroy();
 	});
 
-	it("does not merge affected-range styling onto final-text inserted suggestions", async () => {
+	it("suppresses affected-range styling once final-text suggestions exist", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			extensions: [
 				aiExtension({
@@ -252,10 +281,11 @@ describe("@pen/react suggestion rendering", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Sounds great",
+					from: 0,
+					to: 0,
+					insert: "Sounds great",
 				},
 			],
 			{ origin: "system" },
@@ -267,7 +297,13 @@ describe("@pen/react suggestion rendering", () => {
 		});
 		applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "insert-text", blockId, offset: 4, text: " good" },
+				{
+					type: "splice-text",
+					blockId,
+					from: 4,
+					to: 4,
+					insert: " good",
+				},
 			],
 			suggestionIds: ["suggestion-insert-1"],
 		});
@@ -297,9 +333,11 @@ describe("@pen/react suggestion rendering", () => {
 		expect(insertSuggestion?.getAttribute("style") ?? "").not.toContain(
 			"pen-ai-affected-range",
 		);
+		// `shouldShowSelectionContext`: in final-text presentation the selection context highlight is
+		// suppressed entirely once suggestions exist, so nothing renders it — not just the insert.
 		expect(
-			container.querySelectorAll("[data-ai-affected-range]").length,
-		).toBeGreaterThan(0);
+			container.querySelectorAll("[data-ai-affected-range]"),
+		).toHaveLength(0);
 
 		await act(async () => {
 			root.unmount();
@@ -310,6 +348,7 @@ describe("@pen/react suggestion rendering", () => {
 
 	it("renders block suggestion decorations on the block DOM node", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			extensions: [aiExtension({ author: "tester" })],
 			preset: defaultPreset({}),
@@ -318,10 +357,11 @@ describe("@pen/react suggestion rendering", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Delete me",
+				from: 0,
+				to: 0,
+				insert: "Delete me",
 			},
 			{
 				type: "set-meta",
@@ -371,6 +411,7 @@ describe("@pen/react suggestion rendering", () => {
 
 	it("renders autocomplete preview blocks after the anchor block", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
@@ -381,10 +422,11 @@ describe("@pen/react suggestion rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hello world",
+				from: 0,
+				to: 0,
+				insert: "Hello world",
 			},
 		]);
 
@@ -433,8 +475,13 @@ describe("@pen/react suggestion rendering", () => {
 			"This should render as a second ghost paragraph.",
 		);
 		expect(
-			previewBlocks[0]?.classList.contains("pen-block-suggestion"),
+			previewBlocks[0]?.classList.contains(
+				"pen-autocomplete-preview-block",
+			),
 		).toBe(true);
+		expect(
+			previewBlocks[0]?.classList.contains("pen-block-suggestion"),
+		).toBe(false);
 
 		await act(async () => {
 			root.unmount();
@@ -445,6 +492,7 @@ describe("@pen/react suggestion rendering", () => {
 
 	it("renders markdown-shaped autocomplete preview blocks from preview metadata", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
@@ -455,10 +503,11 @@ describe("@pen/react suggestion rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Trip",
+				from: 0,
+				to: 0,
+				insert: "Trip",
 			},
 		]);
 
@@ -525,6 +574,7 @@ describe("@pen/react suggestion rendering", () => {
 
 	it("renders list-shaped autocomplete preview blocks for numbered lists", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
@@ -535,20 +585,21 @@ describe("@pen/react suggestion rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "numberedListItem",
+				props: { type: "numberedListItem" },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { indent: 1 },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "First item",
+				from: 0,
+				to: 0,
+				insert: "First item",
 			},
 		]);
 
@@ -612,6 +663,7 @@ describe("@pen/react suggestion rendering", () => {
 
 	it("renders container-shaped autocomplete preview blocks for toggles and subdocuments", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
@@ -623,20 +675,21 @@ describe("@pen/react suggestion rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "convert-block",
+					type: "set-props",
 					blockId,
-					newType: "toggle",
+					props: { type: "toggle" },
 				},
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId,
 					props: { open: true },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Toggle title",
+					from: 0,
+					to: 0,
+					insert: "Toggle title",
 				},
 			]);
 		});
@@ -697,9 +750,9 @@ describe("@pen/react suggestion rendering", () => {
 
 			editor.apply([
 				{
-					type: "convert-block",
+					type: "set-props",
 					blockId,
-					newType: "subdocument",
+					props: { type: "subdocument" },
 				},
 			]);
 		});

@@ -1,18 +1,28 @@
-import { getInlineCompletionController } from "@pen/core";
-import type { Editor } from "@pen/types";
+import {
+	caretDown,
+	caretLeft,
+	caretRight,
+	caretUp,
+	getInlineCompletionController,
+	historyRedo,
+	historyUndo,
+	isCollapsed,
+	isMultiBlock,
+	setCellCaretFocus,
+} from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import type { FieldEditorKeyboardController } from "./controller";
 import {
-	applyDeleteBehavior,
-	applyEnterBehavior,
-	applyListTabBehavior,
-	moveCaretAcrossBlocks,
-	type SelectionRange,
-} from "./commands";
+	activateFieldEditorFromSelection,
+	dispatchEditorCommand,
+	keymapContextFromSelection,
+	syncEditorTextSelection,
+} from "./commandDispatch";
+import type { SelectionRange } from "./commands";
 import { getAutocompleteController } from "../utils/autocompleteController";
 import { selectInlineAtomWithArrowKey } from "./keyHandlingInlineAtoms";
 import {
 	collectKeyBindings,
-	getDocumentTextRange,
 	isRedoShortcut,
 	isSelectAllShortcut,
 	isUndoShortcut,
@@ -20,6 +30,31 @@ import {
 	matchesKey,
 	tryHandleHistoryOverrideBinding,
 } from "./keyBindingShortcuts";
+import { dispatchKeymapEvent } from "./keymap";
+import {
+	isNavigationSelectionKey,
+	measureVisualLineEdge,
+} from "./contenteditableDomHelpers";
+
+const LINE_EDGE_SEAM = Symbol.for("pen.lineEdgeSeam");
+
+type LineEdgeMeasure = (
+	editor: Editor,
+	current: { blockId: string; offset: number },
+	edge: "start" | "end",
+) => { blockId: string; offset: number } | null;
+
+function ensureLineEdgeMeasure(editor: Editor): void {
+	const host = editor as unknown as Record<
+		symbol,
+		LineEdgeMeasure | undefined
+	>;
+	if (host[LINE_EDGE_SEAM]) {
+		return;
+	}
+	host[LINE_EDGE_SEAM] = (_ed, current, edge) =>
+		measureVisualLineEdge(current, edge);
+}
 
 export function handleFieldEditorKeyDown(options: {
 	event: KeyboardEvent;
@@ -55,76 +90,52 @@ export function handleFieldEditorKeyDown(options: {
 	}
 
 	if (fieldEditor.activeCellCoord) {
-		if (
-			event.key === "Tab" &&
-			!event.metaKey &&
-			!event.ctrlKey &&
-			!event.altKey
-		) {
-			event.preventDefault();
-			const coord = fieldEditor.activeCellCoord;
-			if (!coord) return true;
-			const block = editor.getBlock(coord.blockId);
-			if (block) {
-				const rowCount = block.tableRowCount();
-				const colCount = block.tableColumnCount();
-				let nextRow = coord.row;
-				let nextCol = coord.col;
-
-				if (event.shiftKey) {
-					nextCol--;
-					if (nextCol < 0) {
-						nextRow--;
-						nextCol = colCount - 1;
-					}
-					if (nextRow < 0) {
-						nextRow = 0;
-						nextCol = 0;
-					}
-				} else {
-					nextCol++;
-					if (nextCol >= colCount) {
-						nextRow++;
-						nextCol = 0;
-					}
-					if (nextRow >= rowCount) {
-						nextRow = rowCount - 1;
-						nextCol = colCount - 1;
-					}
-				}
-
-				fieldEditor.activateCell(coord.blockId, nextRow, nextCol);
-			}
-			return true;
+		const tableHandled = handleTableCellKey(
+			event,
+			editor,
+			fieldEditor,
+			range,
+		);
+		if (tableHandled !== null) {
+			return tableHandled;
 		}
+	}
 
-		if (
-			event.key === "Enter" &&
-			!event.shiftKey &&
-			!event.metaKey &&
-			!event.ctrlKey &&
-			!event.altKey
-		) {
-			event.preventDefault();
-			const coord = fieldEditor.activeCellCoord;
-			if (!coord) return true;
-			const block = editor.getBlock(coord.blockId);
-			if (block) {
-				const rowCount = block.tableRowCount();
-				const nextRow = Math.min(coord.row + 1, rowCount - 1);
-				fieldEditor.activateCell(coord.blockId, nextRow, coord.col);
-			}
-			return true;
-		}
+	if (
+		(event.key === "ArrowLeft" || event.key === "ArrowRight") &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey &&
+		selectInlineAtomWithArrowKey({
+			blockId,
+			editor,
+			event,
+			fieldEditor,
+			range,
+			ytext,
+		})
+	) {
+		return true;
+	}
 
-		if (
-			event.key === "ArrowLeft" ||
-			event.key === "ArrowRight" ||
-			event.key === "ArrowUp" ||
-			event.key === "ArrowDown"
-		) {
-			return false;
-		}
+	if (range && editor.selection?.type !== "cell") {
+		syncEditorTextSelection(editor, blockId, range);
+	}
+
+	ensureLineEdgeMeasure(editor);
+
+	if (
+		dispatchKeymapEvent(editor, event, {
+			composing: event.isComposing === true,
+			context: keymapContextFromSelection(
+				editor.selection,
+				!!fieldEditor.activeCellCoord,
+			),
+		})
+	) {
+		event.preventDefault();
+		activateFieldEditorFromSelection(editor, fieldEditor);
+		return true;
 	}
 
 	if (
@@ -133,21 +144,6 @@ export function handleFieldEditorKeyDown(options: {
 		!event.ctrlKey &&
 		!event.altKey
 	) {
-		const target = applyListTabBehavior(editor, {
-			blockId,
-			ytext,
-			range,
-			shiftKey: event.shiftKey,
-		});
-		if (target) {
-			fieldEditor.activateTextSelection(
-				target.blockId,
-				target.anchorOffset,
-				target.focusOffset,
-			);
-			return true;
-		}
-
 		const inlineCompletion = getInlineCompletionController(editor);
 		if (inlineCompletion?.hasVisibleSuggestion()) {
 			event.preventDefault();
@@ -169,144 +165,164 @@ export function handleFieldEditorKeyDown(options: {
 		}
 	}
 
+	if (handleEditorKeyBindings(editor, event, { includeSelectAll: false })) {
+		return true;
+	}
+
+	if (event.isComposing === true) {
+		return false;
+	}
+	if (isNavigationSelectionKey(event)) {
+		event.preventDefault();
+		return true;
+	}
+
+	return false;
+}
+
+function handleTableCellKey(
+	event: KeyboardEvent,
+	editor: Editor,
+	fieldEditor: FieldEditorKeyboardController,
+	range: SelectionRange | null,
+): boolean | null {
 	if (
-		(event.key === "Backspace" || event.key === "Delete") &&
+		event.key === "Tab" &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
+		event.preventDefault();
+		const coord = fieldEditor.activeCellCoord;
+		if (!coord) return true;
+		const block = editor.getBlock(coord.blockId);
+		if (block) {
+			const table = block.as("table");
+			const rowCount = table?.tableRowCount() ?? 0;
+			const colCount = table?.tableColumnCount() ?? 0;
+			let nextRow = coord.row;
+			let nextCol = coord.col;
+
+			if (event.shiftKey) {
+				nextCol--;
+				if (nextCol < 0) {
+					nextRow--;
+					nextCol = colCount - 1;
+				}
+				if (nextRow < 0) {
+					nextRow = 0;
+					nextCol = 0;
+				}
+			} else {
+				nextCol++;
+				if (nextCol >= colCount) {
+					nextRow++;
+					nextCol = 0;
+				}
+				if (nextRow >= rowCount) {
+					nextRow = rowCount - 1;
+					nextCol = colCount - 1;
+				}
+			}
+
+			fieldEditor.activateCell(coord.blockId, nextRow, nextCol);
+		}
+		return true;
+	}
+
+	if (
+		event.key === "Enter" &&
 		!event.shiftKey &&
 		!event.metaKey &&
 		!event.ctrlKey &&
 		!event.altKey
 	) {
-		const target = applyDeleteBehavior(editor, {
-			blockId,
-			ytext,
-			range,
-			direction: event.key === "Backspace" ? "backward" : "forward",
-		});
-		if (target) {
-			if (target.selectBlock) {
-				fieldEditor.deactivate();
-				editor.selectBlock(target.blockId);
-			} else {
-				fieldEditor.activateTextSelection(
-					target.blockId,
-					target.anchorOffset,
-					target.focusOffset,
-				);
-			}
-			return true;
+		event.preventDefault();
+		const coord = fieldEditor.activeCellCoord;
+		if (!coord) return true;
+		const block = editor.getBlock(coord.blockId);
+		if (block) {
+			const rowCount = block.as("table")?.tableRowCount() ?? 0;
+			const nextRow = Math.min(coord.row + 1, rowCount - 1);
+			fieldEditor.activateCell(coord.blockId, nextRow, coord.col);
 		}
-	}
-
-	if (event.key === "Enter" && !event.shiftKey) {
-		const target = applyEnterBehavior(editor, {
-			blockId,
-			inputMode: fieldEditor.inputMode,
-			ytext,
-			range,
-		});
-		if (!target) return false;
-
-		fieldEditor.activateTextSelection(
-			target.blockId,
-			target.anchorOffset,
-			target.focusOffset,
-		);
 		return true;
 	}
 
 	if (
-		(event.key === "ArrowLeft" || event.key === "ArrowUp") &&
+		isCellArrowKey(event.key) &&
 		!event.metaKey &&
 		!event.ctrlKey &&
 		!event.altKey
 	) {
-		if (
-			event.key === "ArrowLeft" &&
-			selectInlineAtomWithArrowKey({
-				blockId,
-				editor,
-				event,
-				fieldEditor,
-				range,
-				ytext,
-			})
-		) {
+		const coord = fieldEditor.activeCellCoord;
+		if (!coord) {
 			return true;
 		}
-
-		if (event.shiftKey) {
+		const command = caretCommandForCellArrow(event.key);
+		setCellCaretFocus(
+			editor,
+			{
+				blockId: coord.blockId,
+				row: coord.row,
+				col: coord.col,
+				start: range?.start ?? 0,
+				end: range?.end ?? 0,
+			},
+			(next) => {
+				fieldEditor.commitCellTextSelection?.(
+					coord.blockId,
+					coord.row,
+					coord.col,
+					next.start,
+					next.end,
+				);
+			},
+		);
+		const handled = dispatchEditorCommand(
+			editor,
+			command,
+			{ extend: event.shiftKey },
+			{ origin: "user", fromKeymap: true },
+		);
+		setCellCaretFocus(editor, null);
+		if (!handled) {
 			return false;
 		}
-
-		const target = moveCaretAcrossBlocks(editor, {
-			blockId,
-			ytext,
-			range,
-			direction: "previous",
-		});
-		if (target) {
-			if (target.selectBlock) {
-				fieldEditor.deactivate();
-				editor.selectBlock(target.blockId);
-			} else {
-				fieldEditor.activateTextSelection(
-					target.blockId,
-					target.anchorOffset,
-					target.focusOffset,
-				);
-			}
-			return true;
-		}
+		event.preventDefault();
+		return true;
 	}
 
-	if (
-		(event.key === "ArrowRight" || event.key === "ArrowDown") &&
-		!event.metaKey &&
-		!event.ctrlKey &&
-		!event.altKey
-	) {
-		if (
-			event.key === "ArrowRight" &&
-			selectInlineAtomWithArrowKey({
-				blockId,
-				editor,
-				event,
-				fieldEditor,
-				range,
-				ytext,
-			})
-		) {
-			return true;
-		}
-
-		if (event.shiftKey) {
-			return false;
-		}
-
-		const target = moveCaretAcrossBlocks(editor, {
-			blockId,
-			ytext,
-			range,
-			direction: "next",
-		});
-		if (target) {
-			if (target.selectBlock) {
-				fieldEditor.deactivate();
-				editor.selectBlock(target.blockId);
-			} else {
-				fieldEditor.activateTextSelection(
-					target.blockId,
-					target.anchorOffset,
-					target.focusOffset,
-				);
-			}
-			return true;
-		}
-	}
-
-	return handleEditorKeyBindings(editor, event, { includeSelectAll: false });
+	return null;
 }
 
+type CellArrowKey = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown";
+
+function isCellArrowKey(key: string): key is CellArrowKey {
+	return (
+		key === "ArrowLeft" ||
+		key === "ArrowRight" ||
+		key === "ArrowUp" ||
+		key === "ArrowDown"
+	);
+}
+
+function caretCommandForCellArrow(key: CellArrowKey) {
+	switch (key) {
+		case "ArrowLeft":
+			return caretLeft;
+		case "ArrowRight":
+			return caretRight;
+		case "ArrowUp":
+			return caretUp;
+		case "ArrowDown":
+			return caretDown;
+		default: {
+			const _exhaustive: never = key;
+			return _exhaustive;
+		}
+	}
+}
 
 function syncAcceptedInlineCompletionSelection(
 	editor: Editor,
@@ -315,8 +331,8 @@ function syncAcceptedInlineCompletionSelection(
 	const selection = editor.selection;
 	if (
 		selection?.type !== "text" ||
-		!selection.isCollapsed ||
-		selection.isMultiBlock
+		!isCollapsed(selection) ||
+		isMultiBlock(selection)
 	) {
 		return;
 	}
@@ -385,21 +401,15 @@ export function handleSelectAllShortcut(
 	editor: Editor,
 	event: KeyboardEvent,
 	fieldEditor?: FieldEditorKeyboardController,
-	options?: { rootElement?: HTMLElement | null },
 ): boolean {
 	if (!isSelectAllShortcut(event)) {
 		return false;
 	}
 
+	editor.selectAll(fieldEditor?.selectAllBehavior);
 	if (fieldEditor) {
-		return fieldEditor.selectAll(options?.rootElement);
+		activateFieldEditorFromSelection(editor, fieldEditor);
 	}
-
-	const range = getDocumentTextRange(editor);
-	if (!range) {
-		return true;
-	}
-	editor.selectTextRange(range.start, range.end);
 	return true;
 }
 
@@ -412,11 +422,27 @@ export function handleHistoryShortcut(
 	}
 
 	if (isUndoShortcut(event)) {
+		if (
+			dispatchEditorCommand(editor, historyUndo, undefined, {
+				origin: "user",
+				fromKeymap: true,
+			})
+		) {
+			return true;
+		}
 		editor.undoManager.undo();
 		return true;
 	}
 
 	if (isRedoShortcut(event)) {
+		if (
+			dispatchEditorCommand(editor, historyRedo, undefined, {
+				origin: "user",
+				fromKeymap: true,
+			})
+		) {
+			return true;
+		}
 		editor.undoManager.redo();
 		return true;
 	}

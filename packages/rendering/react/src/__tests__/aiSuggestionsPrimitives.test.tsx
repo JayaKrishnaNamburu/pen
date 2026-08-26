@@ -3,12 +3,13 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import {
 	aiSuggestionsExtension,
 	getAISuggestionsController,
-} from "@pen/ai-suggestions";
+} from "@input/pen-ai/suggestions";
 import { Pen } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -35,6 +36,7 @@ async function waitForCondition(
 describe("Pen.AISuggestions primitives", () => {
 	it("opens the popover from a marked suggestion and applies it", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
@@ -64,10 +66,11 @@ describe("Pen.AISuggestions primitives", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Ths sentence works.",
+					from: 0,
+					to: 0,
+					insert: "Ths sentence works.",
 				},
 			],
 			{ origin: "user" },
@@ -75,7 +78,8 @@ describe("Pen.AISuggestions primitives", () => {
 
 		await waitForCondition(
 			() =>
-				(getAISuggestionsController(editor)?.getState().suggestions.length ?? 0) > 0,
+				(getAISuggestionsController(editor)?.getState().suggestions
+					.length ?? 0) > 0,
 		);
 
 		const container = document.createElement("div");
@@ -94,7 +98,8 @@ describe("Pen.AISuggestions primitives", () => {
 		});
 
 		const suggestion =
-			getAISuggestionsController(editor)?.getState().suggestions[0] ?? null;
+			getAISuggestionsController(editor)?.getState().suggestions[0] ??
+			null;
 		expect(suggestion).toBeTruthy();
 
 		const anchor = document.createElement("button");

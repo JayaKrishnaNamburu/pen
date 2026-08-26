@@ -1,11 +1,13 @@
-# `@pen/transport-direct`
+# `@input/pen-transport-direct`
 
-In-process transport for Pen.
+**Grade: development-only.** Support status: experimental. This is a single-process, in-process only, no-network transport for tests and demos. It never opens a socket and cannot reach a runtime in another process. It is non-resumable: there is no stream history and nothing to reconnect. Do not ship it.
+
+A host can rely on `directTransport({ toolRuntime, editor }).stream(request)` running `toolCalls` in-process against the construction-time runtime and editor and yielding `PenStreamPart`s until `done`. A host cannot rely on a socket, resume, `reconnect`, or `onConnectionChange`.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/transport-direct
+pnpm add @input/pen-core @input/pen-transport-direct
 ```
 
 ## What It Provides
@@ -16,18 +18,48 @@ pnpm add @pen/core @pen/transport-direct
 ## Usage
 
 ```ts
-import { directTransport } from "@pen/transport-direct";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { getAIToolRuntime } from "@input/pen-ai/tools";
+import { directTransport } from "@input/pen-transport-direct";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
+const toolRuntime = getAIToolRuntime(editor);
+
+if (!toolRuntime) {
+  throw new Error("AI tools are unavailable.");
+}
 
 const transport = directTransport({
   toolRuntime,
+  editor,
   onError(error) {
     console.error(error);
   },
 });
 ```
 
-## Integration Notes
+A live `Editor` is passed at construction. It is not a field on `PenStreamRequest` — that type is the wire shape, and direct does not smuggle a handle through it.
 
-- This transport requires a Pen `toolRuntime`.
-- It is useful for local agent loops, embedded runtime execution, and tests where the host app and tool runtime live in the same process.
-- Use `@pen/transport-sse` or another external transport when the tool runtime lives outside the current process.
+Mutating `toolCalls` are default-deny. Set `allowedMutatingTools` to grant specific names.
+
+## Options
+
+| Option                 | Default | Effect                                           |
+| ---------------------- | ------- | ------------------------------------------------ |
+| `toolRuntime`          | none    | Required. In-process tool execution              |
+| `editor`               | unset   | In-process editor handed to `ToolContext.editor` |
+| `allowedMutatingTools` | `[]`    | Mutating tools the request may run. Default deny |
+| `onError`              | unset   | Called with tool-execution errors                |
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the AI features page (`#/ai`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

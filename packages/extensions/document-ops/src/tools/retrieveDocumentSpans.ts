@@ -1,4 +1,4 @@
-import type { Editor, ToolDefinition } from "@pen/types";
+import type { Editor, ToolDefinition } from "@input/pen-types";
 import {
 	DEFAULT_RETRIEVE_SPANS_MAX_RESULTS,
 	MAX_TOOL_RESULT_LIMIT,
@@ -11,6 +11,7 @@ export function retrieveDocumentSpansTool(editor: Editor): ToolDefinition {
 		name: "retrieve_document_spans",
 		description:
 			"Retrieve ranked document spans relevant to a natural-language query.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			required: ["query"],
@@ -37,7 +38,9 @@ export function retrieveDocumentSpansTool(editor: Editor): ToolDefinition {
 			};
 			const query = opts.query.trim();
 			if (query.length === 0) {
-				throw new Error("retrieve_document_spans query must be non-empty.");
+				throw new Error(
+					"retrieve_document_spans query must be non-empty.",
+				);
 			}
 			return {
 				query,

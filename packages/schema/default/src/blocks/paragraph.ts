@@ -1,6 +1,10 @@
-import { defineBlock } from "@pen/types";
+import { defineBlock } from "@input/pen-core";
+import { directionProp } from "../directionProp";
 
 export const paragraph = defineBlock("paragraph", {
+	props: {
+		direction: directionProp,
+	},
 	content: "inline",
 	fieldEditor: "richtext",
 	placeholder: "Text",

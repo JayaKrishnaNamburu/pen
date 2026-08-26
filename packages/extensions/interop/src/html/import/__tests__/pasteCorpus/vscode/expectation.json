@@ -1,0 +1,44 @@
+{
+  "id": "vscode",
+  "source": "VS Code",
+  "provenance": "synthetic-until-capture",
+  "approximates": "VS Code styled editor copy: nested divs with per-token <span style=color> and no <pre>/<code>. Dark+ token colors.",
+  "markers": ["Menlo, Monaco, Consolas", "span style=color", "background-color: #1e1e1e"],
+  "imageCount": 0,
+  "outcomes": {
+    "headings": "none",
+    "lists": "none",
+    "tables": "none",
+    "code": "flattened to one paragraph per token span",
+    "links": "none",
+    "images": "none",
+    "marks": "none",
+    "colors": "token colors kept as textColor"
+  },
+  "intentionalLosses": [
+    "Styled VS Code copy has no pre/code wrapper, so it does not become a codeBlock",
+    "Each colored span becomes its own paragraph"
+  ],
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "const",
+      "marks": [{ "type": "textColor", "text": "const" }]
+    },
+    {
+      "type": "paragraph",
+      "text": " x = ",
+      "marks": [{ "type": "textColor", "text": " x = " }]
+    },
+    {
+      "type": "paragraph",
+      "text": "1",
+      "marks": [{ "type": "textColor", "text": "1" }]
+    },
+    {
+      "type": "paragraph",
+      "text": ";",
+      "marks": [{ "type": "textColor", "text": ";" }]
+    }
+  ]
+}

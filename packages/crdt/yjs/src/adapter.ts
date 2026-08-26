@@ -2,7 +2,8 @@ import type {
 	AttributionRange,
 	CRDTAdapter,
 	CRDTDocument,
-} from "@pen/types";
+	LoadDocumentOptions,
+} from "@input/pen-types";
 import * as Y from "yjs";
 
 import { createYjsAwareness } from "./awareness";
@@ -12,10 +13,20 @@ import {
 	getDocumentProfile as getPersistedDocumentProfile,
 	initBlockMap,
 	setDocumentProfile as setPersistedDocumentProfile,
-	validateDocument,
 } from "./document";
 import type { BlockContentType } from "./document";
-import { createObserver } from "./events";
+import {
+	createObserver,
+	createRemoteUpdateOrigin,
+	normalizeTransactionOrigin,
+} from "./events";
+import { refreshFormatStamp } from "./formatStamp";
+import type { CRDTDiagnostic, RecoveredMethod } from "./loadDocument";
+import { loadYjsDocument } from "./loadDocument";
+import {
+	documentSizeDiagnosticFields,
+	sampleDocumentSizeIfDue,
+} from "./documentSize";
 import {
 	createYjsSnapshot,
 	forkDocument,
@@ -23,19 +34,18 @@ import {
 	mergeYjsUpdates,
 	restoreYjsSnapshot,
 } from "./snapshots";
+import {
+	createRelativePosition,
+	resolveRelativePosition,
+} from "./relativePosition";
 import { createYjsUndoManager } from "./undo";
 
-export interface CRDTDiagnostic {
-	code: string;
-	message: string;
-	severity: "error" | "warning" | "info";
-	updateSize?: number;
-	timestamp: number;
-}
+export type { CRDTDiagnostic } from "./loadDocument";
 
 export interface YjsAdapterOptions {
 	gc?: boolean;
 	onDiagnostic?: (diagnostic: CRDTDiagnostic) => void;
+	onRecovered?: (method: RecoveredMethod) => void;
 }
 
 interface YTextItem {
@@ -45,30 +55,34 @@ interface YTextItem {
 	deleted: boolean;
 }
 
+function maybeEmitDocumentSizeOnCadence(
+	ydoc: Y.Doc,
+	emitDiagnostic: (diagnostic: CRDTDiagnostic) => void,
+): void {
+	const size = sampleDocumentSizeIfDue(ydoc);
+	if (!size) {
+		return;
+	}
+	emitDiagnostic(documentSizeDiagnosticFields(size));
+}
+
 export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
-	const emitDiagnostic = options?.onDiagnostic ?? (() => { });
+	const emitDiagnostic = options?.onDiagnostic ?? (() => {});
 
 	const adapter: CRDTAdapter = {
 		createDocument() {
-			return createYjsDocument(adapter, options);
+			const doc = createYjsDocument(adapter, options);
+			refreshFormatStamp(doc);
+			return doc;
 		},
 
-		loadDocument(binary: Uint8Array) {
-			const doc = createYjsDocument(adapter, options);
-			Y.applyUpdate(doc.ydoc, binary);
-
-			const validation = validateDocument(doc.ydoc);
-
-			if (!validation.valid) {
-				emitDiagnostic({
-					code: "LOAD_VALIDATION_FAILED",
-					message: `Document failed validation with ${validation.errors.length} error(s): ${validation.errors.map((e) => e.message).join("; ")}`,
-					severity: "error",
-					timestamp: Date.now(),
-				});
-			}
-
-			return doc;
+		loadDocument(binary: Uint8Array, loadOptions?: LoadDocumentOptions) {
+			return loadYjsDocument(adapter, binary, {
+				gc: options?.gc,
+				repair: loadOptions?.repair,
+				onDiagnostic: emitDiagnostic,
+				onRecovered: options?.onRecovered,
+			});
 		},
 
 		encodeState(doc) {
@@ -83,8 +97,9 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 		},
 
 		applyUpdate(doc, update) {
+			const ydoc = asYjsDoc(doc).ydoc;
 			try {
-				Y.applyUpdate(asYjsDoc(doc).ydoc, update);
+				Y.applyUpdate(ydoc, update, createRemoteUpdateOrigin());
 			} catch (err) {
 				emitDiagnostic({
 					code: "MALFORMED_UPDATE",
@@ -94,14 +109,25 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 					timestamp: Date.now(),
 				});
 			}
+			maybeEmitDocumentSizeOnCadence(ydoc, emitDiagnostic);
 		},
 
 		transact(doc, fn, origin?) {
-			asYjsDoc(doc).ydoc.transact(fn, origin ?? "user");
+			refreshFormatStamp(doc);
+			const normalized = normalizeTransactionOrigin(
+				origin ?? "user",
+				true,
+			);
+			if (normalized.diagnostic) {
+				emitDiagnostic(normalized.diagnostic);
+			}
+			const ydoc = asYjsDoc(doc).ydoc;
+			ydoc.transact(fn, normalized.origin);
+			maybeEmitDocumentSizeOnCadence(ydoc, emitDiagnostic);
 		},
 
 		observe(doc, callback) {
-			return createObserver(asYjsDoc(doc), callback);
+			return createObserver(asYjsDoc(doc), callback, emitDiagnostic);
 		},
 
 		getClientId(doc) {
@@ -113,6 +139,7 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 		},
 
 		setDocumentProfile(doc, profile) {
+			refreshFormatStamp(doc);
 			setPersistedDocumentProfile(doc, profile);
 		},
 
@@ -181,7 +208,8 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 
 			const ranges: AttributionRange[] = [];
 			let offset = 0;
-			let item = (content as unknown as { _start: YTextItem | null })._start;
+			let item = (content as unknown as { _start: YTextItem | null })
+				._start;
 
 			while (item) {
 				if (!item.deleted) {
@@ -191,7 +219,8 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 						if (
 							previousRange &&
 							previousRange.clientId === item.id.client &&
-							previousRange.offset + previousRange.length === offset
+							previousRange.offset + previousRange.length ===
+								offset
 						) {
 							previousRange.length += length;
 						} else {
@@ -208,6 +237,14 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 			}
 
 			return ranges;
+		},
+
+		createRelativePosition(doc, target, assoc) {
+			return createRelativePosition(doc, target, assoc);
+		},
+
+		resolveRelativePosition(doc, encoded, options) {
+			return resolveRelativePosition(doc, encoded, options);
 		},
 	};
 

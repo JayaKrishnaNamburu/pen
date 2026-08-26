@@ -1,4 +1,4 @@
-import type { Editor, Unsubscribe } from "@pen/types";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 import type {
 	FieldEditorFocusReason,
 	FieldEditorFocusRequest,
@@ -19,12 +19,6 @@ type FocusControllerOptions = {
 	getAttachedElement: () => HTMLElement | null;
 };
 
-type AttachmentWaiter = {
-	check: () => void;
-	resolve: (attached: boolean) => void;
-	done: boolean;
-};
-
 const ALLOW_FOCUS_DECISION: PenFocusDecision = { type: "allow" };
 
 export class FocusController {
@@ -35,7 +29,6 @@ export class FocusController {
 	private _focusPolicy: PenFocusPolicy | undefined;
 	private readonly _focusLifecycleListeners =
 		new Set<PenFocusLifecycleListener>();
-	private readonly _attachmentWaiters = new Set<AttachmentWaiter>();
 
 	constructor(options: FocusControllerOptions) {
 		this._editor = options.editor;
@@ -133,61 +126,14 @@ export class FocusController {
 		});
 	}
 
-	resolveAttachmentWaiters(): void {
-		for (const waiter of this._attachmentWaiters) {
-			waiter.check();
-		}
-	}
-
 	waitForAttachment(
 		blockId: string | null = this._getFocusBlockId(),
 	): Promise<boolean> {
-		const isAttached = () => {
-			const attachedElement = this._getAttachedElement();
-			return (
-				attachedElement?.isConnected === true &&
-				(blockId == null || this._getFocusBlockId() === blockId)
-			);
-		};
-
-		if (isAttached()) {
-			return Promise.resolve(true);
-		}
-		return new Promise((resolve) => {
-			let frame = 0;
-			const complete = (waiter: AttachmentWaiter, attached: boolean) => {
-				if (waiter.done) {
-					return;
-				}
-				waiter.done = true;
-				this._attachmentWaiters.delete(waiter);
-				waiter.resolve(attached);
-			};
-			const waiter: AttachmentWaiter = {
-				check: () => {
-					if (waiter.done) {
-						return;
-					}
-					if (isAttached()) {
-						complete(waiter, true);
-						return;
-					}
-					if (frame >= 4) {
-						complete(waiter, false);
-						return;
-					}
-					frame += 1;
-					requestAnimationFrame(waiter.check);
-				},
-				resolve,
-				done: false,
-			};
-			const check = () => {
-				waiter.check();
-			};
-			this._attachmentWaiters.add(waiter);
-			requestAnimationFrame(check);
-		});
+		const attachedElement = this._getAttachedElement();
+		const attached =
+			attachedElement?.isConnected === true &&
+			(blockId == null || this._getFocusBlockId() === blockId);
+		return Promise.resolve(attached);
 	}
 
 	onFocusLifecycle(listener: PenFocusLifecycleListener): Unsubscribe {
@@ -202,13 +148,6 @@ export class FocusController {
 	}
 
 	destroy(): void {
-		for (const waiter of this._attachmentWaiters) {
-			if (!waiter.done) {
-				waiter.done = true;
-				waiter.resolve(false);
-			}
-		}
-		this._attachmentWaiters.clear();
 		this._focusLifecycleListeners.clear();
 	}
 

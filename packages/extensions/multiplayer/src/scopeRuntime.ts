@@ -2,19 +2,24 @@ import type {
 	Awareness,
 	Editor,
 	MultiplayerSession,
+	SelectionRecord,
 	SelectionState,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import { MultiplayerControllerImpl } from "./controller";
 import { AuthorLedger } from "./presence/authorLedger";
 import { ClientIdentityMap } from "./presence/identityMap";
+import { LocalPresenceWriter } from "./presence/localPresenceWriter";
 import type {
 	MultiplayerAwarenessState,
 	MultiplayerConfig,
 	MultiplayerUser,
 } from "./types";
 
-const runtimesByOwner = new WeakMap<object, Map<string, MultiplayerScopeRuntime>>();
+const runtimesByOwner = new WeakMap<
+	object,
+	Map<string, MultiplayerScopeRuntime>
+>();
 
 export interface MultiplayerScopeRuntimeHandle {
 	readonly controller: MultiplayerControllerImpl;
@@ -26,8 +31,9 @@ export function attachMultiplayerScopeRuntime(
 	config: MultiplayerConfig,
 	user: MultiplayerUser,
 	buildLocalAwarenessState: (
+		editor: Editor,
 		user: MultiplayerAwarenessState["user"],
-		selection: SelectionState,
+		selection: SelectionState | SelectionRecord["state"],
 	) => MultiplayerAwarenessState,
 ): MultiplayerScopeRuntimeHandle {
 	const scopeOwner = resolveScopeOwner(editor);
@@ -64,29 +70,34 @@ export function attachMultiplayerScopeRuntime(
 	};
 }
 
+type BuildLocalAwarenessState = (
+	editor: Editor,
+	user: MultiplayerAwarenessState["user"],
+	selection: SelectionState | SelectionRecord["state"],
+) => MultiplayerAwarenessState;
+
 interface MultiplayerScopeRuntimeOptions {
 	editor: Editor;
 	config: MultiplayerConfig;
 	user: MultiplayerUser;
-	buildLocalAwarenessState: (
-		user: MultiplayerAwarenessState["user"],
-		selection: SelectionState,
-	) => MultiplayerAwarenessState;
+	buildLocalAwarenessState: BuildLocalAwarenessState;
 }
 
 class MultiplayerScopeRuntime {
 	readonly controller: MultiplayerControllerImpl;
 
 	private readonly awareness: Awareness;
-	private readonly buildLocalAwarenessState: (
-		user: MultiplayerAwarenessState["user"],
-		selection: SelectionState,
-	) => MultiplayerAwarenessState;
+	private readonly buildLocalAwarenessState: BuildLocalAwarenessState;
 	private readonly editors = new Set<Editor>();
 	private readonly selectionUnsubscribers = new Map<Editor, Unsubscribe>();
+	private readonly commitUnsubscribers = new Map<Editor, Unsubscribe>();
+	private readonly presenceWriter: LocalPresenceWriter;
 	private readonly session: MultiplayerSession | null;
 	private readonly unsubscribeSessionState: Unsubscribe | null;
 	private readonly user: MultiplayerUser;
+
+	/** The editor whose selection local presence currently describes. */
+	private presenceTarget: Editor | null;
 
 	constructor(options: MultiplayerScopeRuntimeOptions) {
 		const { editor, config, user, buildLocalAwarenessState } = options;
@@ -98,6 +109,12 @@ class MultiplayerScopeRuntime {
 		this.awareness = awareness;
 		this.user = user;
 		this.buildLocalAwarenessState = buildLocalAwarenessState;
+		this.presenceTarget = editor;
+		this.presenceWriter = new LocalPresenceWriter({
+			publish: () => {
+				this.writeLocalPresence();
+			},
+		});
 		this.controller = new MultiplayerControllerImpl({
 			editor,
 			config: {
@@ -109,11 +126,12 @@ class MultiplayerScopeRuntime {
 				resolvePeerIdentity: config.resolvePeerIdentity,
 			}),
 		});
-		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(user, editor.selection),
-		);
+		this.writeLocalPresence();
 		this.controller.handleAwarenessChange(
-			this.awareness.getStates() as Map<number, MultiplayerAwarenessState>,
+			this.awareness.getStates() as Map<
+				number,
+				MultiplayerAwarenessState
+			>,
 		);
 
 		this.awareness.on("change", this.handleAwarenessChange);
@@ -151,10 +169,19 @@ class MultiplayerScopeRuntime {
 		this.editors.add(editor);
 		this.selectionUnsubscribers.set(
 			editor,
-			editor.onSelectionChange((selection) => {
-				this.awareness.setLocalState(
-					this.buildLocalAwarenessState(this.user, selection),
-				);
+			editor.onSelectionChange(() => {
+				this.presenceTarget = editor;
+				this.presenceWriter.request();
+			}),
+		);
+		this.commitUnsubscribers.set(
+			editor,
+			editor.on("commit", (event) => {
+				if (event.summary.structural.length === 0) {
+					return;
+				}
+				this.presenceTarget = editor;
+				this.presenceWriter.request();
 			}),
 		);
 		editor.requestDecorationUpdate();
@@ -163,18 +190,21 @@ class MultiplayerScopeRuntime {
 	detachEditor(editor: Editor): void {
 		this.selectionUnsubscribers.get(editor)?.();
 		this.selectionUnsubscribers.delete(editor);
+		this.commitUnsubscribers.get(editor)?.();
+		this.commitUnsubscribers.delete(editor);
 		this.editors.delete(editor);
+		this.presenceWriter.cancel();
 
 		const remainingEditor = this.editors.values().next().value as
 			| Editor
 			| undefined;
 		if (!remainingEditor) {
+			this.presenceTarget = null;
 			this.awareness.setLocalState(null);
 			return;
 		}
-		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(this.user, remainingEditor.selection),
-		);
+		this.presenceTarget = remainingEditor;
+		this.writeLocalPresence();
 	}
 
 	isIdle(): boolean {
@@ -182,11 +212,17 @@ class MultiplayerScopeRuntime {
 	}
 
 	destroy(): void {
+		this.presenceWriter.cancel();
+		this.presenceTarget = null;
 		this.awareness.setLocalState(null);
 		for (const unsubscribe of this.selectionUnsubscribers.values()) {
 			unsubscribe();
 		}
 		this.selectionUnsubscribers.clear();
+		for (const unsubscribe of this.commitUnsubscribers.values()) {
+			unsubscribe();
+		}
+		this.commitUnsubscribers.clear();
 		this.editors.clear();
 		this.unsubscribeSessionState?.();
 		this.session?.destroy();
@@ -194,9 +230,22 @@ class MultiplayerScopeRuntime {
 		this.controller.destroy();
 	}
 
+	private writeLocalPresence(): void {
+		const target = this.presenceTarget;
+		if (!target) {
+			return;
+		}
+		this.awareness.setLocalState(
+			this.buildLocalAwarenessState(target, this.user, target.selection),
+		);
+	}
+
 	private readonly handleAwarenessChange = (): void => {
 		this.controller.handleAwarenessChange(
-			this.awareness.getStates() as Map<number, MultiplayerAwarenessState>,
+			this.awareness.getStates() as Map<
+				number,
+				MultiplayerAwarenessState
+			>,
 		);
 		for (const editor of this.editors) {
 			editor.requestDecorationUpdate();

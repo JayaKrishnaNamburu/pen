@@ -1,10 +1,7 @@
-import type { ConnectionState } from "@pen/types";
+import type { ConnectionState } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
-import {
-	createYjsProviderSession,
-	type YjsProviderAdapter,
-} from "../index";
+import { createYjsProviderSession, type YjsProviderAdapter } from "../index";
 
 describe("createYjsProviderSession", () => {
 	it("maps provider status changes into multiplayer connection state", () => {
@@ -87,7 +84,7 @@ class FakeProvider {
 			initialStatus?: "disconnected" | "connecting" | "connected";
 			initialSynced?: boolean;
 		} = {},
-	) { }
+	) {}
 
 	connect(): void {
 		this.connectCalls += 1;
@@ -146,9 +143,9 @@ function createProviderWithoutSync(): YjsProviderAdapter & {
 	>();
 
 	return {
-		connect() { },
-		disconnect() { },
-		destroy() { },
+		connect() {},
+		disconnect() {},
+		destroy() {},
 		onStatusChange(listener) {
 			statusListeners.add(listener);
 			return () => {

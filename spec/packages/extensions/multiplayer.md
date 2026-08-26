@@ -1,8 +1,8 @@
-# @pen/multiplayer
+# @input/pen-multiplayer
 
 ## Purpose
 
-`@pen/multiplayer` provides multiplayer presence and sync primitives for Pen. It manages connection state, peer identity resolution, remote cursor and selection state, author ledgers, and renderer-facing remote decorations.
+`@input/pen-multiplayer` provides multiplayer presence and sync primitives for Pen. It manages connection state, peer identity resolution, remote cursor and selection state, author ledgers, and renderer-facing remote decorations.
 
 ## Public Role
 
@@ -12,30 +12,30 @@ This package adds collaboration awareness around the editor without turning itse
 
 - Export map: `.`
 - Primary extension entrypoint: `multiplayerExtension()`
-- Controller slot and accessors such as `MULTIPLAYER_CONTROLLER_SLOT` and `getMultiplayerController()`
-- Runtime controller: `MultiplayerControllerImpl`
-- Presence helpers such as `AuthorLedger`, `ClientIdentityMap`, `assignMultiplayerColor()`, and `normalizeMultiplayerColor()`
+- Controller lookup: `getMultiplayerController()` reads `editor.facet(multiplayerControllerFacet)`. Activate still `assignSlot`s `MULTIPLAYER_CONTROLLER_SLOT` (defined on `@input/pen-types`), which overrides that facet.
+- `MultiplayerControllerImpl` is the runtime controller; it is reached through `multiplayerExtension()` / `getMultiplayerController()`, not the barrel
+- Presence helpers such as `assignMultiplayerColor()` and `normalizeMultiplayerColor()`
 - Public multiplayer state and snapshot types covering users, peers, cursors, selections, and session context
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns collaboration awareness and renderer-facing remote state, but it does not replace core mutation authority or the underlying CRDT transport.
 
 ## Runtime Model
 
-`@pen/multiplayer` turns awareness state into Pen controller state and remote decorations:
+`@input/pen-multiplayer` turns awareness state into Pen controller state and remote decorations:
 
 ```mermaid
 flowchart TD
   Transport[CRDTOrTransportAwareness]
-  Multiplayer["@pen/multiplayer"]
+  Multiplayer["@input/pen-multiplayer"]
   Controller[MultiplayerController]
   Presence[PeersCursorsSelections]
   Decorations[RemoteDecorations]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
 
   Transport --> Multiplayer
   Multiplayer --> Controller
@@ -48,6 +48,8 @@ Important rules:
 
 - Remote presence is collaboration state, not document truth.
 - Remote cursor and selection visuals are derived from controller state and emitted as decorations.
+- Peers put serialized `editor.anchors` payloads on the awareness wire. Receivers `deserialize` them as `provenance: "wire"` and resolve per flush. A `null` resolve hides the caret until the next awareness frame or catch-up.
+- Local presence is coalesced to a 50ms minimum interval (`LOCAL_PRESENCE_MIN_INTERVAL_MS`, internal), not published per selection change. Receivers cap ingest at `MAX_PRESENCE_UPDATES_PER_SECOND` (30, exported). The two numbers are a pair: a sender that outruns the receive cap is rate-limited by its peers, and a rate-limited peer keeps the sender's previous caret — so the caret freezes and then jumps rather than trailing smoothly. Coalescing below the receive budget is what keeps that from happening.
 - Identity resolution and author ledgers should enrich collaboration state without coupling the package to one transport provider.
 
 ## Integration Notes
@@ -60,7 +62,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. It is already an important architectural layer because it defines how collaboration presence becomes editor-visible state without collapsing transport and rendering into one package.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. It is already an important architectural layer because it defines how collaboration presence becomes editor-visible state without collapsing transport and rendering into one package.
 
 ## Non-goals
 

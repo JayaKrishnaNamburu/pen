@@ -1,13 +1,16 @@
 import type {
 	Editor,
 	Extension,
+	SelectionRecord,
 	SelectionState,
-} from "@pen/types";
+} from "@input/pen-types";
+import { MULTIPLAYER_CONTROLLER_SLOT } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import {
-	defineExtension,
-	MULTIPLAYER_CONTROLLER_SLOT,
-} from "@pen/types";
-import { createDecorationSet } from "@pen/core";
+	createDecorationSet,
+	decorationsFacet,
+	multiplayerControllerFacet,
+} from "@input/pen-core";
 import type { MultiplayerControllerImpl } from "./controller";
 import { buildRemoteCursorDecorations } from "./decorations/remoteCursors";
 import { buildRemoteSelectionDecorations } from "./decorations/remoteSelections";
@@ -28,7 +31,6 @@ import type {
 } from "./types";
 
 export const MULTIPLAYER_EXTENSION_NAME = "multiplayer";
-export { MULTIPLAYER_CONTROLLER_SLOT };
 
 export function multiplayerExtension(config: MultiplayerConfig): Extension {
 	let activeEditor: Editor | null = null;
@@ -37,6 +39,21 @@ export function multiplayerExtension(config: MultiplayerConfig): Extension {
 
 	return defineExtension({
 		name: MULTIPLAYER_EXTENSION_NAME,
+		facets: [
+			decorationsFacet.of((_state, editor) => {
+				const cursorDecorations = buildRemoteCursorDecorations(
+					controller?.getRemoteCursors() ?? [],
+				);
+				const selectionDecorations = buildRemoteSelectionDecorations(
+					editor,
+					controller?.getRemoteSelections() ?? [],
+				);
+				return createDecorationSet([
+					...cursorDecorations,
+					...selectionDecorations,
+				]);
+			}),
+		],
 
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
@@ -48,29 +65,15 @@ export function multiplayerExtension(config: MultiplayerConfig): Extension {
 				buildLocalAwarenessState,
 			);
 			controller = runtimeHandle.controller;
-			editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, controller);
+			editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, controller);
 		},
 
 		deactivateClient: async () => {
 			runtimeHandle?.dispose();
 			runtimeHandle = null;
-			activeEditor?.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, null);
 			controller = null;
 			activeEditor = null;
-		},
-
-		decorations: (_state, editor) => {
-			const cursorDecorations = buildRemoteCursorDecorations(
-				controller?.getRemoteCursors() ?? [],
-			);
-			const selectionDecorations = buildRemoteSelectionDecorations(
-				editor,
-				controller?.getRemoteSelections() ?? [],
-			);
-			return createDecorationSet([
-				...cursorDecorations,
-				...selectionDecorations,
-			]);
 		},
 	});
 }
@@ -79,30 +82,38 @@ export function getMultiplayerController(
 	editor: Editor,
 ): MultiplayerController | null {
 	return (
-		editor.internals.getSlot<MultiplayerController>(
-			MULTIPLAYER_CONTROLLER_SLOT,
-		) ?? null
+		(editor.facet(multiplayerControllerFacet) as MultiplayerController | null) ??
+		null
 	);
 }
 
 function buildLocalAwarenessState(
+	editor: Editor,
 	user: MultiplayerAwarenessState["user"],
-	selection: SelectionState,
+	selection: SelectionState | SelectionRecord["state"],
 ): MultiplayerAwarenessState {
 	if (selection?.type === "text") {
+		const collapsed =
+			selection.anchor.blockId === selection.focus.blockId &&
+			selection.anchor.offset === selection.focus.offset;
+		const cursorAnchor = editor.anchors.create(selection.focus, 1);
+		const rangeAnchor = editor.anchors.create(
+			selection.anchor,
+			collapsed ? 1 : -1,
+		);
+		const rangeHead = editor.anchors.create(selection.focus, 1);
+		if (!cursorAnchor || !rangeAnchor || !rangeHead) {
+			return { user, cursor: null, selection: null };
+		}
 		return {
 			user,
 			cursor: {
-				blockId: selection.focus.blockId,
-				offset: selection.focus.offset,
+				anchor: editor.anchors.serialize(cursorAnchor),
 				clock: Date.now(),
 			},
 			selection: {
-				anchor: selection.anchor,
-				head: {
-					blockId: selection.focus.blockId,
-					offset: selection.focus.offset,
-				},
+				anchor: editor.anchors.serialize(rangeAnchor),
+				head: editor.anchors.serialize(rangeHead),
 				clock: Date.now(),
 			},
 		};

@@ -1,30 +1,34 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
 export interface SearchNavigationButtonProps
-	extends AsChildProps,
+	extends
+		AsChildProps,
 		Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
 	ref?: React.Ref<HTMLElement>;
 }
 
 export function SearchNext(props: SearchNavigationButtonProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchNavigationButton
 			{...props}
 			dataOption="next"
-			label="Next match"
+			label={resolveEditorMessage(editor, "pen.search.next")}
 			onAction={(controller) => controller?.next()}
 		/>
 	);
 }
 
 export function SearchPrevious(props: SearchNavigationButtonProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchNavigationButton
 			{...props}
 			dataOption="previous"
-			label="Previous match"
+			label={resolveEditorMessage(editor, "pen.search.previous")}
 			onAction={(controller) => controller?.previous()}
 		/>
 	);
@@ -33,7 +37,9 @@ export function SearchPrevious(props: SearchNavigationButtonProps) {
 type SearchNavigationButtonInternalProps = SearchNavigationButtonProps & {
 	dataOption: "next" | "previous";
 	label: string;
-	onAction: (controller: ReturnType<typeof useSearchContext>["controller"]) => void;
+	onAction: (
+		controller: ReturnType<typeof useSearchContext>["controller"],
+	) => void;
 };
 
 function SearchNavigationButton(props: SearchNavigationButtonInternalProps) {

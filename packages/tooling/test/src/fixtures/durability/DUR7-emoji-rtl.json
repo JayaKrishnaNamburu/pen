@@ -1,0 +1,25 @@
+{
+	"id": "DUR7-emoji-rtl",
+	"rule": "DUR7",
+	"shape": "emoji + RTL text",
+	"kind": "json-export-snapshot",
+	"document": {
+		"version": 1,
+		"blocks": [
+			{
+				"id": "DUR7-bidi",
+				"type": "paragraph",
+				"props": {},
+				"content": {
+					"text": "שלום 🌍 مرحبا",
+					"segments": [
+						{
+							"type": "text",
+							"text": "שלום 🌍 مرحبا"
+						}
+					]
+				}
+			}
+		]
+	}
+}

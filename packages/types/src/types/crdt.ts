@@ -1,3 +1,8 @@
+import type {
+	AnchorTarget,
+	Assoc,
+	ResolveRelativePositionOptions,
+} from "./anchors";
 import type { DocumentOp, OpOrigin } from "./ops";
 import type { Unsubscribe } from "./utility";
 import type { DocumentRange } from "./documentRange";
@@ -23,9 +28,18 @@ export interface CRDTMap<T> {
 
 // ── CRDT Adapter ────────────────────────────────────────────
 
+export interface LoadDocumentOptions {
+	/**
+	 * Apply structural repairs (duplicate `blockOrder` entries, dangling
+	 * references, orphans). Defaults to `true`. The diagnostic list from
+	 * `onDiagnostic` / `getDocumentLoadReport` is the API for what changed.
+	 */
+	repair?: boolean;
+}
+
 export interface CRDTAdapter {
 	createDocument(): CRDTDocument;
-	loadDocument(binary: Uint8Array): CRDTDocument;
+	loadDocument(binary: Uint8Array, options?: LoadDocumentOptions): CRDTDocument;
 
 	encodeState(doc: CRDTDocument): Uint8Array;
 	encodeUpdate(doc: CRDTDocument, since?: Uint8Array): Uint8Array;
@@ -72,7 +86,6 @@ export interface CRDTAdapter {
 			| "inline"
 			| "nested"
 			| "table"
-			| "database"
 			| "subdocument"
 			| "none",
 	): unknown;
@@ -82,6 +95,26 @@ export interface CRDTAdapter {
 		doc: CRDTDocument,
 		blockId: string,
 	): AttributionRange[];
+
+	/** Mint an encoded relative position for `target`, or `null` if it is missing. */
+	createRelativePosition(
+		doc: CRDTDocument,
+		target: AnchorTarget,
+		assoc: Assoc,
+	): Uint8Array | null;
+
+	/**
+	 * Resolve an encoded relative position (AN1).
+	 *
+	 * `options.followUndoneDeletions` is the AN13 path flag, never a constant.
+	 * The three-argument form is shipped; a two-arg adapter was never frozen.
+	 * Host policy lives on `editor.anchors.resolve` (provenance), not here.
+	 */
+	resolveRelativePosition(
+		doc: CRDTDocument,
+		encoded: Uint8Array,
+		options?: ResolveRelativePositionOptions,
+	): AnchorTarget | null;
 }
 
 export interface AttributionRange {
@@ -178,6 +211,12 @@ export interface PenDocument {
 export interface UndoManagerOptions {
 	trackedOriginTypes?: string[];
 	captureTimeout?: number;
+	/**
+	 * Maximum undo/redo stack items to retain.
+	 * Defaults to 500 (CH7). Y.UndoManager has no native cap; the Yjs
+	 * adapter trims oldest items on `stack-item-added`.
+	 */
+	maxDepth?: number;
 }
 
 export interface CRDTUndoManager {
@@ -189,6 +228,7 @@ export interface CRDTUndoManager {
 	setCaptureTimeout?(ms: number): void;
 	addTrackedOrigin(originType: string): void;
 	removeTrackedOrigin(originType: string): void;
+	destroy(): void;
 	onStackItemAdded?(
 		callback: (stackItem: CRDTUndoStackItem, kind: "undo" | "redo") => void,
 	): Unsubscribe;
@@ -245,4 +285,6 @@ export interface CRDTEvent {
 	ops: readonly DocumentOp[];
 	timestamp: number;
 	scope?: DocumentScopeInfo;
+	/** Pipeline-stamped commit source; observer-originated events omit this. */
+	readonly source?: "apply" | "remote" | "undo" | "redo" | "stream";
 }

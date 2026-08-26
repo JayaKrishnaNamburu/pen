@@ -1,4 +1,4 @@
-import { createDefaultSchema } from "@pen/schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import { describe, expect, it, vi } from "vitest";
 import { parseMarkdownToBlocks } from "../markdown";
 import { buildDocumentWriteOps } from "../writeContent";
@@ -15,7 +15,7 @@ function createEditorStub(documentProfile: "structured" | "flow") {
 	};
 }
 
-describe("@pen/content-ops", () => {
+describe("@input/pen-content-ops", () => {
 	it("builds structured ops from markdown content", () => {
 		const editor = createEditorStub("structured");
 
@@ -33,10 +33,9 @@ describe("@pen/content-ops", () => {
 		expect(result.ops.filter((op) => op.type === "insert-block")).toHaveLength(2);
 	});
 
-	it("filters flow-disallowed markdown blocks during normalization", () => {
+	it("keeps flow-delegated table blocks during markdown normalization", () => {
 		const editor = createEditorStub("flow");
-		const markdown =
-			"<!-- pen-database:%7B%22columns%22%3A%5B%7B%22id%22%3A%22name%22%2C%22title%22%3A%22Name%22%2C%22type%22%3A%22text%22%7D%5D%2C%22rows%22%3A%5B%7B%22id%22%3A%22row-1%22%2C%22values%22%3A%7B%22name%22%3A%22Ship%22%7D%7D%5D%7D -->\n\n| Name |\n| --- |\n| Ship |\n\n## Allowed";
+		const markdown = "| Name |\n| --- |\n| Ship |\n\n## Allowed";
 
 		const result = buildDocumentWriteOps(editor, {
 			format: "markdown",
@@ -45,24 +44,10 @@ describe("@pen/content-ops", () => {
 			surface: "test",
 		});
 
-		expect(result.blocks.map((block) => block.type)).toEqual(["heading"]);
-		expect(editor.internals.emit).toHaveBeenCalled();
-	});
-
-	it("parses database markers into database blocks", () => {
-		const markdown =
-			"<!-- pen-database:%7B%22title%22%3A%22Roadmap%22%2C%22columns%22%3A%5B%7B%22id%22%3A%22name%22%2C%22title%22%3A%22Name%22%2C%22type%22%3A%22text%22%7D%5D%2C%22rows%22%3A%5B%7B%22id%22%3A%22row-1%22%2C%22values%22%3A%7B%22name%22%3A%22Ship%22%7D%7D%5D%7D -->\n\n| Name |\n| --- |\n| Ship |";
-
-		const blocks = parseMarkdownToBlocks(markdown, { schema });
-
-		expect(blocks).toHaveLength(1);
-		expect(blocks[0]).toMatchObject({
-			type: "database",
-			props: {
-				title: "Roadmap",
-				dataSource: "local",
-			},
-		});
+		expect(result.blocks.map((block) => block.type)).toEqual([
+			"table",
+			"heading",
+		]);
 	});
 
 	it("lifts image-only paragraphs into image blocks", () => {
@@ -81,5 +66,138 @@ describe("@pen/content-ops", () => {
 				}),
 			}),
 		]);
+	});
+
+	it("keeps heading and list item text, not just block types", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "markdown",
+			content: "# Heading\n\n- Item",
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([
+			expect.objectContaining({
+				type: "heading",
+				content: "Heading",
+			}),
+			expect.objectContaining({
+				type: "bulletListItem",
+				content: "Item",
+			}),
+		]);
+		expect(
+			result.ops.filter((op) => op.type === "splice-text").map((op) => op.insert),
+		).toEqual(["Heading", "Item"]);
+	});
+
+	it("keeps bold and italic marks from markdown inline nodes", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "markdown",
+			content: "**bold** and *italic*",
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([
+			expect.objectContaining({
+				type: "paragraph",
+				content: "bold and italic",
+				marks: [
+					{ type: "bold", start: 0, end: 4 },
+					{ type: "italic", start: 9, end: 15 },
+				],
+			}),
+		]);
+	});
+
+	it("keeps table cell text from GFM tables", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "markdown",
+			content: "| Name |\n| --- |\n| Ship |",
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([
+			expect.objectContaining({
+				type: "table",
+				children: [
+					expect.objectContaining({
+						type: "__table_row",
+						children: [
+							expect.objectContaining({
+								type: "__table_cell",
+								content: "Name",
+							}),
+						],
+					}),
+					expect.objectContaining({
+						type: "__table_row",
+						children: [
+							expect.objectContaining({
+								type: "__table_cell",
+								content: "Ship",
+							}),
+						],
+					}),
+				],
+			}),
+		]);
+	});
+
+	it("returns no ops when any block type is hidden from tooling", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "blocks",
+			blocks: [
+				{ blockType: "paragraph", content: "Allowed" },
+				{ blockType: "subdocument", content: "Blocked" },
+			],
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([]);
+		expect(result.ops).toEqual([]);
+		expect(editor.internals.emit).toHaveBeenCalledWith(
+			"diagnostic",
+			expect.objectContaining({
+				code: "content-ops-unexposed-block",
+				source: "content-ops",
+				message:
+					'Block type "subdocument" is not available in structured documents.',
+			}),
+		);
+	});
+
+	it("returns no ops when an unknown type is mixed with an allowed sibling", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "blocks",
+			blocks: [
+				{ blockType: "paragraph", content: "Allowed sibling" },
+				{ blockType: "not-a-real-type", content: "Dropped by normalize" },
+			],
+			position: "last",
+		});
+
+		// Normalize would strip the unknown type and keep the paragraph.
+		// The write path must not treat that as a successful partial apply.
+		expect(result.blocks).toEqual([]);
+		expect(result.ops).toEqual([]);
+		expect(editor.internals.emit).toHaveBeenCalledWith(
+			"diagnostic",
+			expect.objectContaining({
+				code: "content-ops-unexposed-block",
+				source: "content-ops",
+				message:
+					'Block type "not-a-real-type" is not available in structured documents.',
+			}),
+		);
 	});
 });

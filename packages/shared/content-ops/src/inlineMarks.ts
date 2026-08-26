@@ -94,5 +94,20 @@ export function collectInlineContent(nodes: MdastNode[]): {
 }
 
 function stripHTMLTags(html: string): string {
-  return html.replace(/<[^>]*>/g, "");
+  let text = "";
+  let inTag = false;
+  for (const ch of html) {
+    if (ch === "<") {
+      inTag = true;
+      continue;
+    }
+    if (ch === ">") {
+      inTag = false;
+      continue;
+    }
+    if (!inTag) {
+      text += ch;
+    }
+  }
+  return text;
 }

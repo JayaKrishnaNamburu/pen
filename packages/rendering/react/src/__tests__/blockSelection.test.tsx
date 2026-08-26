@@ -3,9 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -13,6 +14,7 @@ import { Pen } from "../primitives/index";
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: defaultSchema,
 		...options,
 		preset: defaultPreset({
 			documentOps: false,
@@ -62,7 +64,10 @@ function createCaretRangeResolver(
 	};
 }
 
-function getInlineSurface(container: HTMLElement, blockId: string): HTMLElement {
+function getInlineSurface(
+	container: HTMLElement,
+	blockId: string,
+): HTMLElement {
 	const inlineSurface = container.querySelector(
 		`[data-block-id="${blockId}"] [data-pen-inline-content]`,
 	) as HTMLElement | null;
@@ -72,14 +77,20 @@ function getInlineSurface(container: HTMLElement, blockId: string): HTMLElement 
 	return inlineSurface;
 }
 
-describe("@pen/react block selection", () => {
+describe("@input/pen-react block selection", () => {
 	it("prevents region selector block selection when root block selection is disabled", async () => {
 		const editor = createEditor({ documentProfile: "flow" });
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Alpha" },
+			{
+				type: "splice-text",
+				blockId: firstBlockId,
+				from: 0,
+				to: 0,
+				insert: "Alpha",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -87,7 +98,13 @@ describe("@pen/react block selection", () => {
 				props: {},
 				position: { after: firstBlockId },
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "Beta" },
+			{
+				type: "splice-text",
+				blockId: secondBlockId,
+				from: 0,
+				to: 0,
+				insert: "Beta",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -160,7 +177,13 @@ describe("@pen/react block selection", () => {
 		const secondBlockId = crypto.randomUUID();
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Alpha" },
+			{
+				type: "splice-text",
+				blockId: firstBlockId,
+				from: 0,
+				to: 0,
+				insert: "Alpha",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -168,7 +191,13 @@ describe("@pen/react block selection", () => {
 				props: {},
 				position: { after: firstBlockId },
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "Beta" },
+			{
+				type: "splice-text",
+				blockId: secondBlockId,
+				from: 0,
+				to: 0,
+				insert: "Beta",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -256,7 +285,9 @@ describe("@pen/react block selection", () => {
 	it("hides the selection rectangle when root block selection is disabled", async () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Alpha" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Alpha" },
+		]);
 		editor.selectBlock(blockId);
 
 		const container = document.createElement("div");
@@ -265,10 +296,7 @@ describe("@pen/react block selection", () => {
 
 		await act(async () => {
 			root.render(
-				<Pen.Editor.Root
-					editor={editor}
-					blockSelection={false}
-				>
+				<Pen.Editor.Root editor={editor} blockSelection={false}>
 					<Pen.Editor.Content />
 					<Pen.Editor.SelectionRect />
 				</Pen.Editor.Root>,

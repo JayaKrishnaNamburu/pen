@@ -1,5 +1,9 @@
-import { defineBlock, prop } from "@pen/types";
-import type { HTMLImportElement } from "@pen/types";
+import type { HTMLImportElement } from "@input/pen-types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
+import { directionProp } from "../directionProp";
 
 export const toggle = defineBlock("toggle", {
   props: {
@@ -8,6 +12,7 @@ export const toggle = defineBlock("toggle", {
       .default(false)
       .describe("Whether the toggle content is expanded"),
     parentId: prop.string().optional().describe("Container parent block"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "richtext",
@@ -24,14 +29,20 @@ export const toggle = defineBlock("toggle", {
       if (node.type !== "html") return null;
       const val = (node.value ?? "").trim();
       const match = val.match(
-        /^<details[^>]*>\s*<summary>([\s\S]*?)<\/summary>/i,
+        /^<details[^>]*>\s*<summary>([\s\S]*?)<\/summary>([\s\S]*)$/i,
       );
       if (!match) return null;
+      const leftover = (match[2] ?? "")
+        .replace(/<\/details>\s*$/i, "")
+        .trim();
       return {
         type: "toggle",
         props: { open: /\bopen\b/.test(val) },
         importContentSource: {
           markdownHtml: match[1].trim(),
+          ...(leftover
+            ? { markdownNodes: [{ type: "html", value: leftover }] }
+            : {}),
         },
       };
     },

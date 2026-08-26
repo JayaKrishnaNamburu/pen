@@ -1,4 +1,8 @@
-import type { BlockHandle, CellSelection } from "@pen/types";
+import type {
+	BlockHandle,
+	CellSelection,
+	TableBlockHandle,
+} from "@input/pen-types";
 
 export interface ResolvedCellSelectionCell {
 	row: number;
@@ -10,7 +14,9 @@ export interface ResolvedCellSelectionCell {
 export function hasIndexedCellSelectionMetadata(
 	selection: CellSelection,
 ): boolean {
-	return Array.isArray(selection.rowIds) && Array.isArray(selection.columnIds);
+	return (
+		Array.isArray(selection.rowIds) && Array.isArray(selection.columnIds)
+	);
 }
 
 export function resolveCellSelectionCoord(
@@ -102,9 +108,13 @@ export function resolveCellSelectionMatrix(
 }
 
 function createRowIndexById(block: BlockHandle): Map<string, number> {
+	const table = asTable(block);
 	const rowIndexById = new Map<string, number>();
-	for (let index = 0; index < block.tableRowCount(); index++) {
-		const row = block.tableRow(index);
+	if (!table) {
+		return rowIndexById;
+	}
+	for (let index = 0; index < table.tableRowCount(); index++) {
+		const row = table.tableRow(index);
 		if (row) {
 			rowIndexById.set(row.id, index);
 		}
@@ -113,14 +123,22 @@ function createRowIndexById(block: BlockHandle): Map<string, number> {
 }
 
 function createColumnIndexById(block: BlockHandle): Map<string, number> {
+	const table = asTable(block);
+	if (!table) {
+		return new Map();
+	}
 	return new Map(
-		block.tableColumns().map((column, index) => [column.id, index]),
+		table.tableColumns().map((column, index) => [column.id, index]),
 	);
 }
 
 function findRowIndexById(block: BlockHandle, rowId: string): number {
-	for (let index = 0; index < block.tableRowCount(); index++) {
-		if (block.tableRow(index)?.id === rowId) {
+	const table = asTable(block);
+	if (!table) {
+		return -1;
+	}
+	for (let index = 0; index < table.tableRowCount(); index++) {
+		if (table.tableRow(index)?.id === rowId) {
 			return index;
 		}
 	}
@@ -128,5 +146,13 @@ function findRowIndexById(block: BlockHandle, rowId: string): number {
 }
 
 function findColumnIndexById(block: BlockHandle, columnId: string): number {
-	return block.tableColumns().findIndex((column) => column.id === columnId);
+	return (
+		asTable(block)
+			?.tableColumns()
+			.findIndex((column) => column.id === columnId) ?? -1
+	);
+}
+
+function asTable(block: BlockHandle): TableBlockHandle | null {
+	return block.as("table");
 }

@@ -1,31 +1,32 @@
-import React, { useRef, useLayoutEffect, useState } from "react";
-import {
-	getOpOriginType,
-	type Decoration,
-	type Editor,
-	type InlineDecoration,
-} from "@pen/types";
-import { getLogicalTextContent } from "@pen/dom/field-editor/inlineAtomDom";
-import { INLINE_ATOM_REPLACEMENT_TEXT } from "@pen/dom/field-editor/inlineAtomModel";
+import React, { useRef, useState } from "react";
+import { getOpOriginType, isCollapsed } from "@input/pen-core";
+import type { Decoration, InlineDecoration } from "@input/pen-types";
+import { getLogicalTextContent } from "@input/pen-dom/field-editor/inlineAtomDom";
+import { INLINE_ATOM_REPLACEMENT_TEXT } from "@input/pen-dom/field-editor/inlineAtomModel";
+import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import { useEditorContentContext } from "../../context/editorContentContext";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
-import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
 import { useBlockEditingState } from "../../hooks/useBlockEditingState";
 import { useBlockCommitState } from "../../hooks/useBlockCommitState";
 import { useBlockDecorations } from "../../hooks/useBlockDecorations";
 import { useSelection } from "../../hooks/useSelection";
 import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useInlineCompletionState } from "../../hooks/useInlineCompletionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
 import {
 	applyInlineDecorationsToDeltas,
 	filterVisibleInlineDecorationDeltas,
+	retainRenderedTextDeltas,
+	type TextDelta,
 } from "../../utils/inlineDecorations";
 import { isInlineContentEmpty } from "../../utils/editorEmptyState";
+import { resolveEditorSchemaPlaceholder } from "../../utils/displayCopy";
 import { resolveInlinePlaceholderVisibility } from "../../utils/placeholderVisibility";
 import { InlineAtomPortalLayer } from "./InlineAtomPortalLayer";
 import {
@@ -64,7 +65,7 @@ export function InlineContent(props: InlineContentProps) {
 	const visibleInlineCompletion = useInlineCompletionState(editor);
 	const elementRef = useRef<HTMLElement>(null);
 	const previousCommitRevisionRef = useRef(blockCommit.revision);
-	const previousRenderedDeltasSignatureRef = useRef<string | null>(null);
+	const previousRenderedDeltasRef = useRef<readonly TextDelta[] | null>(null);
 	const inlineAtomTargetsRef = useRef<InlineAtomRenderTarget[]>([]);
 	const [inlineAtomTargets, setInlineAtomTargets] = useState<
 		InlineAtomRenderTarget[]
@@ -74,11 +75,11 @@ export function InlineContent(props: InlineContentProps) {
 		fieldEditorState.activeBlockIds.includes(blockId);
 
 	const isFirstBlock = editor.documentState.blockOrder[0] === blockId;
-	const schemaPlaceholder = resolveSchemaPlaceholder(editor, blockId);
+	const schemaPlaceholder = resolveEditorSchemaPlaceholder(editor, blockId);
 	const isFocusedBlock =
 		isActive ||
 		(selection?.type === "text" &&
-			selection.isCollapsed &&
+			isCollapsed(selection) &&
 			selection.focus.blockId === blockId);
 
 	const blockTextEmpty = isInlineContentEmpty(textSnapshot.deltas);
@@ -122,11 +123,13 @@ export function InlineContent(props: InlineContentProps) {
 					inlineDecorations,
 				)
 			: textSnapshot.deltas;
-	const renderedDeltas = filterVisibleInlineDecorationDeltas(decoratedDeltas);
+	const renderedDeltas = retainRenderedTextDeltas(
+		previousRenderedDeltasRef.current,
+		filterVisibleInlineDecorationDeltas(decoratedDeltas),
+	);
 	const renderedDeltasText = getDeltaText(renderedDeltas);
-	const renderedDeltasSignature = getDeltaSignature(renderedDeltas);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (fieldEditorState.mode === "expanded") {
 			return;
 		}
@@ -135,7 +138,7 @@ export function InlineContent(props: InlineContentProps) {
 		}
 	}, [isActive, fieldEditor, fieldEditorState.mode, blockId]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		const syncInlineAtomTargets = () => {
 			const nextTargets = resolveNextInlineAtomTargets(
 				elementRef.current,
@@ -168,12 +171,13 @@ export function InlineContent(props: InlineContentProps) {
 
 		if (isExpandedOwnedBlock || isActive) {
 			if (!elementRef.current || fieldEditorState.isComposing) {
+				previousRenderedDeltasRef.current = renderedDeltas;
 				syncInlineAtomTargets();
 				return;
 			}
 			if (!textSnapshot.exists) {
-				elementRef.current.replaceChildren();
-				previousRenderedDeltasSignatureRef.current = null;
+				replaceElementChildren(elementRef.current);
+				previousRenderedDeltasRef.current = null;
 				syncInlineAtomTargets();
 				return;
 			}
@@ -181,8 +185,7 @@ export function InlineContent(props: InlineContentProps) {
 				!shouldForceCommitReconcile &&
 				getLogicalTextContent(elementRef.current) ===
 					renderedDeltasText &&
-				previousRenderedDeltasSignatureRef.current ===
-					renderedDeltasSignature
+				previousRenderedDeltasRef.current === renderedDeltas
 			) {
 				syncInlineAtomTargets();
 				return;
@@ -191,10 +194,12 @@ export function InlineContent(props: InlineContentProps) {
 				[...renderedDeltas],
 				elementRef.current,
 				editor.schema,
-				{ preserveSelection: true },
+				{
+					editor,
+					preserveSelection: true,
+				},
 			);
-			previousRenderedDeltasSignatureRef.current =
-				renderedDeltasSignature;
+			previousRenderedDeltasRef.current = renderedDeltas;
 			syncInlineAtomTargets();
 			return;
 		}
@@ -206,12 +211,13 @@ export function InlineContent(props: InlineContentProps) {
 			!shouldForceCommitReconcile &&
 			(isBackendOwned || fieldEditorState.isComposing)
 		) {
+			previousRenderedDeltasRef.current = renderedDeltas;
 			syncInlineAtomTargets();
 			return;
 		}
 		if (!textSnapshot.exists) {
-			elementRef.current.replaceChildren();
-			previousRenderedDeltasSignatureRef.current = null;
+			replaceElementChildren(elementRef.current);
+			previousRenderedDeltasRef.current = null;
 			syncInlineAtomTargets();
 			return;
 		}
@@ -219,9 +225,12 @@ export function InlineContent(props: InlineContentProps) {
 			[...renderedDeltas],
 			elementRef.current,
 			editor.schema,
-			{ preserveSelection: false },
+			{
+				editor,
+				preserveSelection: false,
+			},
 		);
-		previousRenderedDeltasSignatureRef.current = renderedDeltasSignature;
+		previousRenderedDeltasRef.current = renderedDeltas;
 		syncInlineAtomTargets();
 	}, [
 		editor,
@@ -233,13 +242,12 @@ export function InlineContent(props: InlineContentProps) {
 		blockCommit,
 		isActive,
 		renderedDeltas,
-		renderedDeltasSignature,
 		renderedDeltasText,
 		textSnapshot,
 		inlineAtomRenderers,
 	]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		inlineAtomTargetsRef.current = inlineAtomTargets;
 	}, [inlineAtomTargets]);
 
@@ -252,7 +260,7 @@ export function InlineContent(props: InlineContentProps) {
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.inlineContent]: "",
 		[DATA_ATTRS.fieldEditorSurface]: "",
-		...fieldEditorTextEntryAttrs(isActiveSurface),
+		...fieldEditorTextEntryAttrs(isActiveSurface, editor),
 		className: getInlineContentClassName(
 			className,
 			emptyInlineCompletionText,
@@ -269,11 +277,12 @@ export function InlineContent(props: InlineContentProps) {
 			: undefined,
 		[DATA_ATTRS.placeholderVisible]: showPlaceholder ? "" : undefined,
 		"data-placeholder": showPlaceholder ? placeholder : undefined,
-		style: showPlaceholder
-			? {
-					position: "relative" as const,
-				}
-			: undefined,
+		// RI1: unicode-bidi does not inherit, so the block host's isolate does not
+		// reach this surface and it needs its own.
+		style: {
+			position: showPlaceholder ? ("relative" as const) : undefined,
+			unicodeBidi: "isolate" as const,
+		},
 	};
 	return (
 		<>
@@ -305,15 +314,6 @@ function getInlineContentClassName(
 	return [className, "pen-ephemeral-suggestion"].filter(Boolean).join(" ");
 }
 
-function resolveSchemaPlaceholder(
-	editor: Pick<Editor, "getBlock" | "schema">,
-	blockId: string,
-): string | undefined {
-	const block = editor.getBlock(blockId);
-	if (!block) return undefined;
-	return editor.schema.resolve(block.type)?.placeholder;
-}
-
 function getDeltaText(
 	deltas: readonly { insert: string | Record<string, unknown> }[],
 ): string {
@@ -324,17 +324,6 @@ function getDeltaText(
 				: getInlineNodeText(delta.insert),
 		)
 		.join("");
-}
-
-function getDeltaSignature(
-	deltas: readonly {
-		attributes?: Record<string, unknown>;
-		insert: string | Record<string, unknown>;
-	}[],
-): string {
-	return JSON.stringify(
-		deltas.map((delta) => [delta.insert, delta.attributes ?? null]),
-	);
 }
 
 function getInlineNodeText(insert: Record<string, unknown>): string {

@@ -1,103 +1,3 @@
-export {
-	CARET,
-	EditorRoot,
-	EditorContent,
-	EditorBlock,
-	InlineContent,
-	EditorCaretOverlay,
-	EditorBlockHandle,
-	EditorDragOverlay,
-	EditorRegionSelector,
-	EditorSelectionRect,
-	EditorFieldEditor,
-} from "./editor/index";
-
-export {
-	ToolbarRoot,
-	ToolbarGroup,
-	ToolbarButton,
-	ToolbarToggle,
-	ToolbarSelect,
-	ToolbarSeparator,
-} from "./toolbar/index";
-
-export {
-	SlashMenuRoot,
-	SlashMenuContent,
-	SlashMenuInput,
-	SlashMenuList,
-	SlashMenuGroup,
-	SlashMenuItem,
-	SlashMenuEmpty,
-} from "./slash-menu/index";
-export {
-	SuggestionMenuRoot,
-	SuggestionMenuContent,
-	SuggestionMenuList,
-	SuggestionMenuGroup,
-	SuggestionMenuItem,
-	SuggestionMenuEmpty,
-} from "./suggestion-menu/index";
-
-export {
-	SelectionToolbarRoot,
-	SelectionToolbarContent,
-} from "./selection-toolbar/index";
-
-export {
-	SearchRoot,
-	SearchInput,
-	SearchResults,
-	SearchNext,
-	SearchPrevious,
-	SearchReplaceInput,
-	SearchReplace,
-	SearchReplaceAll,
-	SearchCaseSensitive,
-	SearchRegExpToggle,
-	SearchWholeWord,
-} from "./search/index";
-
-export {
-	AIRoot,
-	AITrigger,
-	AISelectionTrigger,
-	AICommandMenu,
-	AICommandInput,
-	AICommandList,
-	AICommandItem,
-	AIGenerationZone,
-	AIStructuredTargetPreview,
-	AIActionBar,
-	AIAcceptButton,
-	AIRejectButton,
-	AIRetryButton,
-	AISuggestion,
-	AITrackChanges,
-	AIDiffView,
-	AIChangeList,
-	AIProgress,
-	AIToolStream,
-	AIContextualPromptTrigger,
-	AIContextualPromptSurface,
-	AIContextualPromptComposer,
-	AIInlineSuggestionControls,
-	AIInlineSuggestionFloatingSurface,
-	AIInlineSuggestionCount,
-	AIInlineSuggestionPreviousButton,
-	AIInlineSuggestionNextButton,
-	AIInlineSuggestionAcceptButton,
-	AIInlineSuggestionRejectButton,
-	AIInlineSession,
-	AIInlineSessionActions,
-} from "./ai/index";
-export { AISuggestionsRoot, AISuggestionsPopover } from "./aiSuggestions/index";
-export {
-	MultiplayerPresenceList,
-	MultiplayerRemoteCursors,
-	MultiplayerCaretOverlay,
-} from "./multiplayer/index";
-
 // ── Pen.* namespace for compound component API ──────────────
 
 import {
@@ -169,7 +69,6 @@ import {
 	AICommandList,
 	AICommandItem,
 	AIGenerationZone,
-	AIStructuredTargetPreview,
 	AIActionBar,
 	AIAcceptButton,
 	AIRejectButton,
@@ -271,7 +170,6 @@ export const Pen = {
 		CommandList: AICommandList,
 		CommandItem: AICommandItem,
 		GenerationZone: AIGenerationZone,
-		StructuredTargetPreview: AIStructuredTargetPreview,
 		ActionBar: AIActionBar,
 		Accept: AIAcceptButton,
 		Reject: AIRejectButton,

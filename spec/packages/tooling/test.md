@@ -1,4 +1,4 @@
-# @pen/test
+# @input/pen-test
 
 ## Purpose
 
@@ -11,11 +11,17 @@ Support development, testing, benchmarking, or local integration workflows aroun
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Editor harness: `createTestEditor()`, `createTestDocument()`, `populateYDoc()`
+- Collaboration harness: `createTestCollaboration()`, `createTwoPeerHarness()`, `runBothInterleavings()`, plus two-peer inspection helpers such as `visibleText()` and `listBlockIds()`
+- Assertions: `assertDocEquals()`, `assertPeerEditsSurvive()`, `assertDocumentRoots()`
+- Fixtures: `encodeFixtureUpdate()`, `normalizeDocumentForSnapshot()`, `DEFAULT_PEN_ROOTS`, `PenFixtureError`
+- AI doubles: `createModelDouble()` and its types, used by the AI and transport suites
+- `simulateTyping()` / `simulateKeypress()` are methods on `TestEditor` rather than barrel exports
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/crdt-yjs`, `@pen/export-json`, `@pen/schema-default`, `@pen/types`, `yjs`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-interop`, `@input/pen-schema-default`, `@input/pen-types`, `yjs`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Tooling packages serve the workspace and advanced integrators more than standard runtime embedding.
 
@@ -23,7 +29,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 
 Tooling packages in Pen should stay package-first and explicit about ownership. Use these packages in development flows, tests, or benchmarks.
 
-`@pen/test` provides deterministic Yjs fixtures and opt-in contract helpers for host apps and Pen packages. Fixture helpers generate stable updates, state vectors, and normalized snapshots without relying on product data. Contract helpers exercise CRDT state-vector satisfaction, headless editor creation, and export behavior while leaving the choice of test runner to the host.
+`@input/pen-test` provides deterministic Yjs fixtures and opt-in contract helpers for host apps and Pen packages. Fixture helpers generate stable updates, state vectors, and normalized snapshots without relying on product data. Contract helpers exercise CRDT state-vector satisfaction, headless editor creation, and export behavior while leaving the choice of test runner to the host.
 
 ## Integration Notes
 
@@ -35,7 +41,7 @@ Tooling packages in Pen should stay package-first and explicit about ownership. 
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

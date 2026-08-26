@@ -7,9 +7,9 @@ alwaysApply: true
 
 - Default to safe boundaries: sanitize untrusted HTML, validate tool inputs, and enforce transport/payload checks.
 - Never assume trust for external, network, or process input; validate early and fail safely.
-- Keep changes aligned with acceptance criteria in `spec/` wave docs for the touched area.
+- Keep changes aligned with the current-state specs in `spec/` for the touched area. Read `spec/README.md` for the load map.
 - For substantive changes, run the monorepo quality checks before completion:
   - `pnpm build`
   - `pnpm typecheck`
   - `pnpm test`
-- For perf-sensitive paths, avoid regressions and respect benchmark expectations in `@pen/bench`.
+- For perf-sensitive paths, avoid regressions and respect benchmark expectations in `@input/pen-bench`.

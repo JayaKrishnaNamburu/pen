@@ -1,12 +1,15 @@
 import {
 	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
 	INLINE_COMPLETION_SLOT,
+	generateId,
 	type Decoration,
 	type Editor,
 	type InlineCompletionController,
 	type InlineCompletionState,
 	type InlineCompletionSuggestion,
-} from "@pen/types";
+} from "@input/pen-types";
+
+import { aiInlineCompletionFacet } from "../facets/controllerFacets";
 
 const inlineCompletionLeases = new WeakMap<
 	Editor,
@@ -19,7 +22,7 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 	};
 	private readonly _listeners = new Set<() => void>();
 
-	constructor(private readonly _editor: Editor) { }
+	constructor(private readonly _editor: Editor) {}
 
 	getState(): InlineCompletionState {
 		return {
@@ -68,12 +71,15 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 		if (suggestion.type === "inline") {
 			const nextOffset = suggestion.offset + suggestion.text.length;
 			this._editor.apply(
-				[{
-					type: "insert-text",
-					blockId: suggestion.blockId,
-					offset: suggestion.offset,
-					text: suggestion.text,
-				}],
+				[
+					{
+						type: "splice-text",
+						blockId: suggestion.blockId,
+						from: suggestion.offset,
+						to: suggestion.offset,
+						insert: suggestion.text,
+					},
+				],
 				{ origin: "ai", undoGroup: true },
 			);
 			this._editor.selectText(suggestion.blockId, nextOffset, nextOffset);
@@ -81,7 +87,7 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 			return true;
 		}
 
-		const blockId = crypto.randomUUID();
+		const blockId = generateId();
 		this._editor.apply(
 			[
 				{
@@ -92,10 +98,11 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 					position: { after: suggestion.blockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: suggestion.text,
+					from: 0,
+					to: 0,
+					insert: suggestion.text,
 				},
 			],
 			{ origin: "ai", undoGroup: true },
@@ -168,14 +175,14 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 export function getInlineCompletionController(
 	editor: Editor,
 ): InlineCompletionController | null {
-	return editor.internals.getSlot<InlineCompletionController>(
-		INLINE_COMPLETION_SLOT,
-	) ?? null;
+	return (
+		(editor.facet(
+			aiInlineCompletionFacet,
+		) as InlineCompletionController | null) ?? null
+	);
 }
 
-export function ensureInlineCompletionController(
-	editor: Editor,
-): {
+export function ensureInlineCompletionController(editor: Editor): {
 	controller: InlineCompletionController;
 	isOwner: boolean;
 	release: () => void;
@@ -186,7 +193,10 @@ export function ensureInlineCompletionController(
 		return {
 			controller: existingLease.controller,
 			isOwner: false,
-			release: createInlineCompletionRelease(editor, existingLease.controller),
+			release: createInlineCompletionRelease(
+				editor,
+				existingLease.controller,
+			),
 		};
 	}
 
@@ -204,7 +214,7 @@ export function ensureInlineCompletionController(
 	}
 
 	const controller = new InlineCompletionControllerImpl(editor);
-	editor.internals.setSlot(INLINE_COMPLETION_SLOT, controller);
+	editor.internals.assignSlot(INLINE_COMPLETION_SLOT, controller);
 	inlineCompletionLeases.set(editor, {
 		controller,
 		refCount: 1,
@@ -235,8 +245,8 @@ function createInlineCompletionRelease(
 			return;
 		}
 		inlineCompletionLeases.delete(editor);
-		if (editor.internals.getSlot(INLINE_COMPLETION_SLOT) === controller) {
-			editor.internals.setSlot(INLINE_COMPLETION_SLOT, null);
+		if (getInlineCompletionController(editor) === controller) {
+			editor.internals.assignSlot(INLINE_COMPLETION_SLOT, null);
 		}
 		controller.destroy();
 	};
@@ -246,7 +256,8 @@ function resolveInlineSuggestionAnchor(
 	editor: Editor,
 	suggestion: InlineCompletionSuggestion,
 ): { from: number; to: number; placement: "before" | "after" } | null {
-	const blockTextLength = editor.getBlock(suggestion.blockId)?.textContent().length ?? 0;
+	const blockTextLength =
+		editor.getBlock(suggestion.blockId)?.textContent().length ?? 0;
 	if (blockTextLength <= 0) {
 		return null;
 	}

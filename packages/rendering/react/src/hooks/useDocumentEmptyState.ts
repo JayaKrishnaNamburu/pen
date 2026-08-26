@@ -1,5 +1,5 @@
 import { useRef, useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	computeDocumentEmpty,
 	computeDocumentPlaceholderVisible,
@@ -9,7 +9,7 @@ export function useDocumentEmptyState(editor: Editor): boolean {
 	const snapshotRef = useRef(computeDocumentEmpty(editor));
 
 	return useSyncExternalStore(
-		(callback) => editor.onDocumentCommit(() => callback()),
+		(callback) => editor.on("commit", () => callback()),
 		() => {
 			const nextSnapshot = computeDocumentEmpty(editor);
 			if (snapshotRef.current === nextSnapshot) {
@@ -26,7 +26,7 @@ export function useDocumentPlaceholderState(editor: Editor): boolean {
 	const snapshotRef = useRef(computeDocumentPlaceholderVisible(editor));
 
 	return useSyncExternalStore(
-		(callback) => editor.onDocumentCommit(() => callback()),
+		(callback) => editor.on("commit", () => callback()),
 		() => {
 			const nextSnapshot = computeDocumentPlaceholderVisible(editor);
 			if (snapshotRef.current === nextSnapshot) {

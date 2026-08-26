@@ -1,0 +1,28 @@
+name: Dependencies
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Review
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      # Fails the pull request on a known-vulnerable dependency added by the
+      # diff, which is the one thing a fork can introduce that no amount of
+      # test coverage will catch. Severity threshold is left at the action's
+      # default (`low`) on purpose: this reviews only the dependencies the
+      # pull request actually changes, so it is narrow enough to stay strict.
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4

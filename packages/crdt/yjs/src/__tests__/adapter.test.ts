@@ -33,9 +33,14 @@ describe("adapter", () => {
 			const binary = adapter.encodeState(doc);
 			const restored = adapter.loadDocument(binary) as YjsCRDTDocument;
 
-			expect(restored.penDocument.blockOrder.toArray()).toEqual(["b1", "b2"]);
+			expect(restored.penDocument.blockOrder.toArray()).toEqual([
+				"b1",
+				"b2",
+			]);
 			const restoredB1 = restored.penDocument.blocks.get("b1")!;
-			expect((restoredB1.get("content") as Y.Text).toString()).toBe("Hello");
+			expect((restoredB1.get("content") as Y.Text).toString()).toBe(
+				"Hello",
+			);
 		});
 
 		it("initializes missing shared roots when loading partial updates", () => {
@@ -47,7 +52,9 @@ describe("adapter", () => {
 			ydoc.getMap("blocks");
 			const binary = Y.encodeStateAsUpdate(ydoc);
 
-			const restored = adapterWithDiagnostics.loadDocument(binary) as YjsCRDTDocument;
+			const restored = adapterWithDiagnostics.loadDocument(
+				binary,
+			) as YjsCRDTDocument;
 
 			expect(restored).toBeTruthy();
 			expect(diagnostics).toEqual([]);
@@ -60,6 +67,7 @@ describe("adapter", () => {
 		it("produces only the delta since the state vector", () => {
 			const doc = adapter.createDocument() as YjsCRDTDocument;
 			const stateVector = Y.encodeStateVector(doc.ydoc);
+			const base = adapter.encodeState(doc);
 
 			doc.ydoc.transact(() => {
 				doc.penDocument.blockOrder.push(["b1"]);
@@ -69,8 +77,12 @@ describe("adapter", () => {
 			});
 
 			const delta = adapter.encodeUpdate(doc, stateVector);
+			expect(delta.byteLength).toBeLessThan(
+				adapter.encodeState(doc).byteLength,
+			);
 
 			const fresh = new Y.Doc();
+			Y.applyUpdate(fresh, base);
 			Y.applyUpdate(fresh, delta);
 			expect(fresh.getArray("blockOrder").toArray()).toEqual(["b1"]);
 		});
@@ -142,13 +154,18 @@ describe("adapter", () => {
 			const remote = adapter.loadDocument(
 				adapter.encodeState(local),
 			) as YjsCRDTDocument;
-			const remoteBlock = remote.penDocument.blocks.get("b1") as Y.Map<unknown>;
+			const remoteBlock = remote.penDocument.blocks.get(
+				"b1",
+			) as Y.Map<unknown>;
 			const remoteText = remoteBlock.get("content") as Y.Text;
 			remoteText.insert(5, " world");
 
 			Y.applyUpdate(
 				local.ydoc,
-				Y.encodeStateAsUpdate(remote.ydoc, Y.encodeStateVector(local.ydoc)),
+				Y.encodeStateAsUpdate(
+					remote.ydoc,
+					Y.encodeStateVector(local.ydoc),
+				),
 			);
 
 			expect(adapter.getAttributionRanges?.(local, "b1")).toEqual([

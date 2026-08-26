@@ -1,101 +1,104 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  applyYjsAwarenessUpdate,
-  encodeYjsAwarenessUpdate,
-} from "../index";
+import { applyYjsAwarenessUpdate, encodeYjsAwarenessUpdate } from "../index";
 import { yjsAdapter } from "../adapter";
 import { createYjsDocument } from "../document";
 import { createYjsAwareness } from "../awareness";
+import { createPeerDoc } from "./createPeerDoc";
 
 describe("awareness", () => {
-  const adapter = yjsAdapter();
+	const adapter = yjsAdapter();
 
-  it("setLocalState and getStates include local client", () => {
-    const doc = createYjsDocument(adapter);
-    const awareness = createYjsAwareness(doc);
+	it("setLocalState and getStates include local client", () => {
+		const doc = createYjsDocument(adapter);
+		const awareness = createYjsAwareness(doc);
 
-    awareness.setLocalState({ cursor: { blockId: "b1", offset: 5 } });
-    const states = awareness.getStates();
-    expect(states.size).toBeGreaterThanOrEqual(1);
+		awareness.setLocalState({ cursor: { blockId: "b1", offset: 5 } });
+		const states = awareness.getStates();
+		expect(states.size).toBeGreaterThanOrEqual(1);
 
-    const localState = awareness.getLocalState();
-    expect(localState).toEqual({ cursor: { blockId: "b1", offset: 5 } });
+		const localState = awareness.getLocalState();
+		expect(localState).toEqual({ cursor: { blockId: "b1", offset: 5 } });
 
-    awareness.destroy();
-  });
+		awareness.destroy();
+	});
 
-  it("on('change') fires when state changes", () => {
-    const doc = createYjsDocument(adapter);
-    const awareness = createYjsAwareness(doc);
+	it("on('change') fires when state changes", () => {
+		const doc = createYjsDocument(adapter);
+		const awareness = createYjsAwareness(doc);
 
-    const changes: unknown[] = [];
-    const cb = (event: unknown) => changes.push(event);
+		const changes: unknown[] = [];
+		const cb = (event: unknown) => changes.push(event);
 
-    awareness.on("change", cb);
-    awareness.setLocalState({ cursor: { blockId: "b1", offset: 0 } });
+		awareness.on("change", cb);
+		awareness.setLocalState({ cursor: { blockId: "b1", offset: 0 } });
 
-    expect(changes.length).toBeGreaterThanOrEqual(1);
+		expect(changes.length).toBeGreaterThanOrEqual(1);
 
-    awareness.off("change", cb);
-    awareness.destroy();
-  });
+		awareness.off("change", cb);
+		awareness.destroy();
+	});
 
-  it("off('change') removes the listener", () => {
-    const doc = createYjsDocument(adapter);
-    const awareness = createYjsAwareness(doc);
+	it("off('change') removes the listener", () => {
+		const doc = createYjsDocument(adapter);
+		const awareness = createYjsAwareness(doc);
 
-    const changes: unknown[] = [];
-    const cb = (event: unknown) => changes.push(event);
+		const changes: unknown[] = [];
+		const cb = (event: unknown) => changes.push(event);
 
-    awareness.on("change", cb);
-    awareness.off("change", cb);
+		awareness.on("change", cb);
+		awareness.off("change", cb);
 
-    awareness.setLocalState({ cursor: { blockId: "b2", offset: 0 } });
-    expect(changes).toHaveLength(0);
+		awareness.setLocalState({ cursor: { blockId: "b2", offset: 0 } });
+		expect(changes).toHaveLength(0);
 
-    awareness.destroy();
-  });
+		awareness.destroy();
+	});
 
-  it("destroy cleans up the awareness instance", () => {
-    const doc = createYjsDocument(adapter);
-    const awareness = createYjsAwareness(doc);
+	it("destroy cleans up the awareness instance", () => {
+		const doc = createYjsDocument(adapter);
+		const awareness = createYjsAwareness(doc);
 
-    awareness.setLocalState({ initial: true });
+		const changes: unknown[] = [];
+		awareness.on("change", (event) => changes.push(event));
+		awareness.setLocalState({ initial: true });
+		expect(changes.length).toBeGreaterThanOrEqual(1);
 
-    const changes: unknown[] = [];
-    const cb = (event: unknown) => changes.push(event);
-    awareness.on("change", cb);
+		awareness.destroy();
+		const afterDestroy = changes.length;
 
-    awareness.destroy();
+		try {
+			awareness.setLocalState({ after: true });
+		} catch {
+			// destroyed instances may reject later writes
+		}
 
-    const postDestroy: unknown[] = [];
-    awareness.on("change", (e) => postDestroy.push(e));
-    expect(postDestroy).toHaveLength(0);
-  });
+		expect(changes.length).toBe(afterDestroy);
+		expect(awareness.getLocalState()).not.toEqual({ after: true });
+	});
 
-  it("encodes and applies awareness updates across instances", () => {
-    const sourceDoc = createYjsDocument(adapter);
-    const targetDoc = createYjsDocument(adapter);
-    const sourceAwareness = createYjsAwareness(sourceDoc);
-    const targetAwareness = createYjsAwareness(targetDoc);
+	it("encodes and applies awareness updates across instances", () => {
+		const sourceDoc = createPeerDoc(adapter, 1);
+		const targetDoc = createPeerDoc(adapter, 2);
+		const sourceAwareness = createYjsAwareness(sourceDoc);
+		const targetAwareness = createYjsAwareness(targetDoc);
 
-    sourceAwareness.setLocalState({
-      user: { id: "u1", name: "Ada" },
-      cursor: { blockId: "b1", offset: 2 },
-    });
-    const update = encodeYjsAwarenessUpdate(
-      sourceAwareness,
-      Array.from(sourceAwareness.getStates().keys()),
-    );
+		sourceAwareness.setLocalState({
+			user: { id: "u1", name: "Ada" },
+			cursor: { blockId: "b1", offset: 2 },
+		});
+		const update = encodeYjsAwarenessUpdate(
+			sourceAwareness,
+			Array.from(sourceAwareness.getStates().keys()),
+		);
 
-    applyYjsAwarenessUpdate(targetAwareness, update);
+		applyYjsAwarenessUpdate(targetAwareness, update);
 
-    expect(Array.from(targetAwareness.getStates().values())).toContainEqual(
-      expect.objectContaining({
-        user: { id: "u1", name: "Ada" },
-        cursor: { blockId: "b1", offset: 2 },
-      }),
-    );
-  });
+		expect(Array.from(targetAwareness.getStates().values())).toContainEqual(
+			expect.objectContaining({
+				user: { id: "u1", name: "Ada" },
+				cursor: { blockId: "b1", offset: 2 },
+			}),
+		);
+	});
 });

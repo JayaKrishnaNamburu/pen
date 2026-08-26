@@ -1,0 +1,109 @@
+/* Contents of the document-state sheet. */
+
+.inspector-summary {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: var(--spacing-xs) var(--spacing-md);
+	margin: 0;
+	padding: var(--spacing-md) var(--spacing-lg);
+	border-bottom: 1px solid var(--line-faded);
+	font-size: var(--font-size-sm);
+}
+
+.inspector-summary dt {
+	color: var(--palette-b40);
+	font-weight: 500;
+}
+
+.inspector-summary dd {
+	margin: 0;
+	color: var(--palette-b80);
+	font-family: var(--font-family-mono);
+}
+
+.inspector-view {
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
+	overflow: auto;
+	padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* ── Block tree ────────────────────────────────────────────── */
+
+.block-tree {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* Nested children sit indented under their parent. */
+.block-node .block-tree {
+	margin-top: var(--spacing-sm);
+	padding-left: var(--spacing-md);
+	border-left: 1px solid var(--line-default);
+}
+
+/*
+ * A row in a list, so it takes the flat `--card-background` fill rather than a
+ * tile — cards that stack want less edge, not more.
+ */
+.block-node {
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius-md);
+	background: var(--card-background);
+}
+
+.block-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--spacing-sm);
+}
+
+.block-type {
+	color: var(--palette-purple);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+}
+
+.block-id {
+	color: var(--palette-b40);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-xs);
+}
+
+.block-text {
+	margin: var(--spacing-xs) 0 0;
+	color: var(--palette-b60);
+	font-size: var(--font-size-sm);
+	line-height: 1.5;
+	/* Long paragraphs should not stretch the panel. */
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.block-props {
+	margin: var(--spacing-xs) 0 0;
+	color: var(--palette-b40);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-xs);
+}
+
+/* ── JSON view ─────────────────────────────────────────────── */
+
+.inspector-json {
+	margin: 0;
+	max-width: 100%;
+	overflow: auto;
+	color: var(--palette-b80);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-xs);
+	line-height: 1.5;
+}

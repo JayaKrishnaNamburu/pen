@@ -57,7 +57,10 @@ function nodesStructurallyEqual(a: Node, b: Node): boolean {
 		const elementA = a as Element;
 		const elementB = b as Element;
 		if (isInlineAtomHostNode(elementA) || isInlineAtomHostNode(elementB)) {
-			if (!isInlineAtomHostNode(elementA) || !isInlineAtomHostNode(elementB)) {
+			if (
+				!isInlineAtomHostNode(elementA) ||
+				!isInlineAtomHostNode(elementB)
+			) {
 				return false;
 			}
 			if (!areInlineAtomElementDataEqual(elementA, elementB)) {
@@ -72,14 +75,16 @@ function nodesStructurallyEqual(a: Node, b: Node): boolean {
 			}
 		}
 		if (elementA.tagName !== elementB.tagName) return false;
-		if (elementA.attributes.length !== elementB.attributes.length) return false;
+		if (elementA.attributes.length !== elementB.attributes.length)
+			return false;
 		for (let index = 0; index < elementA.attributes.length; index++) {
 			const attribute = elementA.attributes[index];
 			if (elementB.getAttribute(attribute.name) !== attribute.value) {
 				return false;
 			}
 		}
-		if (elementA.childNodes.length !== elementB.childNodes.length) return false;
+		if (elementA.childNodes.length !== elementB.childNodes.length)
+			return false;
 		for (let index = 0; index < elementA.childNodes.length; index++) {
 			if (
 				!nodesStructurallyEqual(
@@ -114,7 +119,10 @@ function updateTextContent(target: Node, source: Node): void {
 			return;
 		}
 		for (let index = 0; index < target.childNodes.length; index++) {
-			updateTextContent(target.childNodes[index], source.childNodes[index]);
+			updateTextContent(
+				target.childNodes[index],
+				source.childNodes[index],
+			);
 		}
 	}
 }

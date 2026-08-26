@@ -4,8 +4,8 @@ import {
 	encodeYjsStateVectorBase64,
 	yjsAdapter,
 	wrapYjsDocument,
-} from "@pen/crdt-yjs";
-import type { CRDTDocument, PenDocument } from "@pen/types";
+} from "@input/pen-crdt-yjs";
+import type { CRDTDocument, PenDocument } from "@input/pen-types";
 import { populateYDoc } from "./createTestDocument";
 import { resetTestIdCounter } from "./helpers";
 import type {

@@ -1,0 +1,56 @@
+{
+	"id": "DUR7-table",
+	"rule": "DUR7",
+	"shape": "table",
+	"kind": "json-export-snapshot",
+	"document": {
+		"version": 1,
+		"blocks": [
+			{
+				"id": "DUR7-table-block",
+				"type": "table",
+				"props": {
+					"hasHeaderRow": true,
+					"hasHeaderColumn": false,
+					"columnWidths": []
+				},
+				"children": [
+					{
+						"id": "row-0",
+						"type": "__table_row",
+						"props": {},
+						"children": [
+							{
+								"id": "cell-0-0",
+								"type": "__table_cell",
+								"props": {}
+							},
+							{
+								"id": "cell-0-1",
+								"type": "__table_cell",
+								"props": {}
+							}
+						]
+					},
+					{
+						"id": "row-1",
+						"type": "__table_row",
+						"props": {},
+						"children": [
+							{
+								"id": "cell-1-0",
+								"type": "__table_cell",
+								"props": {}
+							},
+							{
+								"id": "cell-1-1",
+								"type": "__table_cell",
+								"props": {}
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+}

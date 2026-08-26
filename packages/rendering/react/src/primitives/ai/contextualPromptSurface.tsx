@@ -1,6 +1,7 @@
 import React from "react";
-import type { AISession } from "@pen/ai";
-import { queryBlockElement } from "../../field-editor/selectionBridge";
+import type { AISession } from "@input/pen-ai";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
+import { queryBlockElement } from "@input/pen-dom/field-editor/selectionBridge";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import {
 	areRectListsEqual,
@@ -60,7 +61,7 @@ export function AIContextualPromptSurface(
 		containerRef,
 	});
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		const previousAnchorSpacing = previousAnchorSpacingRef.current;
 		if (previousAnchorSpacing) {
 			previousAnchorSpacing.block.style.marginTop =
@@ -137,9 +138,7 @@ export function AIContextualPromptSurface(
 		return null;
 	}
 
-	const pendingReviewCount =
-		session.pendingSuggestionIds.length +
-		session.pendingReviewItemIds.length;
+	const pendingReviewCount = session.pendingSuggestionIds.length;
 	const selectionOverlay =
 		mode !== "inserted" && pendingReviewCount === 0 ? (
 			<ContextualPromptSelectionOverlay
@@ -246,7 +245,7 @@ function ContextualPromptSelectionOverlay(
 	const { editor } = useAIContext();
 	const [segments, setSegments] = React.useState<readonly DOMRect[]>([]);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (!session.contextualPrompt?.composer.isOpen) {
 			setSegments([]);
 			return;
@@ -305,6 +304,7 @@ function ContextualPromptSelectionOverlay(
 			key={`${index}-${segment.top}-${segment.left}-${segment.width}-${segment.height}`}
 			data-pen-ai-contextual-prompt-selection-segment=""
 			data-pen-ai-inline-session-selection-segment=""
+			// AX7 overlay — selection segment is presentation
 			aria-hidden="true"
 			style={{
 				position: "fixed",
@@ -313,10 +313,14 @@ function ContextualPromptSelectionOverlay(
 				width: `${segment.width}px`,
 				height: `${segment.height}px`,
 				pointerEvents: "none",
-				background: "color-mix(in srgb, #2563eb 12%, transparent)",
+				backgroundColor:
+					"var(--pen-ai-contextual-prompt-selection-background, #2563eb)",
+				background:
+					"var(--pen-ai-contextual-prompt-selection-background, color-mix(in srgb, #2563eb 12%, transparent))",
 				boxShadow:
-					"inset 0 0 0 1px rgba(96, 165, 250, 0.72), inset 0 -1px 0 rgba(147, 197, 253, 0.92)",
-				borderRadius: "4px",
+					"var(--pen-ai-contextual-prompt-selection-box-shadow, inset 0 0 0 1px rgba(96, 165, 250, 0.72), inset 0 -1px 0 rgba(147, 197, 253, 0.92))",
+				borderRadius:
+					"var(--pen-ai-contextual-prompt-selection-border-radius, 4px)",
 				zIndex: 44,
 			}}
 		/>
@@ -326,6 +330,7 @@ function ContextualPromptSelectionOverlay(
 		<div
 			data-pen-ai-contextual-prompt-selection-overlay=""
 			data-pen-ai-inline-session-selection-overlay=""
+			// AX7 overlay — selection layer is presentation
 			aria-hidden="true"
 			style={{ pointerEvents: "none" }}
 		>

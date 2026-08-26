@@ -1,0 +1,5 @@
+{
+  "_comment": "CH9 (spec/rules/reliability.md): quarantine for tests that fail on an unchanged tree. Each entry needs name, issue, and reason. The flake job reports these; it does not re-run them. Geometry and synthetic-beforeinput assertions belong to the conformance suite, not in-place jsdom stabilization.",
+  "testTimeoutMs": 10000,
+  "tests": []
+}

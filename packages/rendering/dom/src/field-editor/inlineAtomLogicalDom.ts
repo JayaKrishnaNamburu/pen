@@ -1,4 +1,5 @@
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import { isEmptyBlockPlaceholder } from "./emptyBlockPlaceholder";
 import { INLINE_ATOM_REPLACEMENT_TEXT } from "./inlineAtomModel";
 import {
 	isInlineAtomCaretBoundaryNode,
@@ -52,14 +53,9 @@ function getInlineAtomCaretBoundaryTextPoint(
 		return null;
 	}
 
-	const textNode = boundary.firstChild;
-	if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
-		return null;
-	}
-
 	return {
-		node: textNode,
-		offset: side === "before" ? 0 : (textNode.textContent?.length ?? 0),
+		node: boundary,
+		offset: 0,
 	};
 }
 
@@ -72,7 +68,7 @@ function resolveLogicalInlineAtomUnit(node: HTMLElement): HTMLElement {
 }
 
 export function getLogicalNodeLength(node: Node): number {
-	if (isVirtualInlineDecorationNode(node)) {
+	if (isEmptyBlockPlaceholder(node) || isVirtualInlineDecorationNode(node)) {
 		return 0;
 	}
 	if (
@@ -197,7 +193,7 @@ export function findLogicalDOMPoint(
 }
 
 function getLogicalNodeText(node: Node): string {
-	if (isVirtualInlineDecorationNode(node)) {
+	if (isEmptyBlockPlaceholder(node) || isVirtualInlineDecorationNode(node)) {
 		return "";
 	}
 	if (
@@ -311,9 +307,15 @@ function resolveLogicalOffset(
 	targetOffset: number,
 ): number | null {
 	if (isVirtualInlineDecorationNode(current)) {
-		return current === targetNode || current.contains(targetNode) ? 0 : null;
+		return current === targetNode || current.contains(targetNode)
+			? 0
+			: null;
 	}
 	if (current === targetNode) {
+		if (isEmptyBlockPlaceholder(current)) {
+			return 0;
+		}
+
 		if (isInlineAtomHostNode(current)) {
 			return targetOffset <= 0 ? 0 : 1;
 		}
@@ -392,6 +394,12 @@ function findLogicalDOMPointInElement(
 					return boundaryPoint;
 				}
 			}
+			if (isEmptyBlockPlaceholder(child)) {
+				return { node: element, offset: index };
+			}
+			if (child.nodeType === Node.TEXT_NODE) {
+				return { node: child, offset: 0 };
+			}
 			return { node: element, offset: index };
 		}
 
@@ -426,7 +434,10 @@ function findLogicalDOMPointInElement(
 			continue;
 		}
 
-		if (isInlineAtomCaretBoundaryNode(child)) {
+		if (
+			isInlineAtomCaretBoundaryNode(child) ||
+			isEmptyBlockPlaceholder(child)
+		) {
 			continue;
 		}
 

@@ -1,13 +1,13 @@
 import type {
 	Extension,
-	CRDTEvent,
+	CommitEvent,
 	Editor,
 	DocumentState,
 	DecorationSet,
-	InputRule,
 	KeyBinding,
 	SchemaRegistry,
-} from "@pen/types";
+} from "@input/pen-types";
+import { decorationsFacet, keymapFacet } from "../facets/coreFacets";
 import { EventEmitter } from "./events";
 import { emptyDecorationSet, mergeDecorationSets } from "./decorations";
 
@@ -34,8 +34,8 @@ export class ExtensionManagerImpl {
 			message: `Extension "${ext.name}" ${phase} failed`,
 			remediation:
 				phase === "activation"
-					? `Fix the "${ext.name}" activateClient() implementation so rejected async startup does not leave the editor in a partial state.`
-					: `Fix the "${ext.name}" deactivateClient() implementation so rejected async teardown does not leave stale extension resources behind.`,
+					? `Fix the "${ext.name}" activateClient() implementation so a throw or rejected startup does not leave the editor in a partial state.`
+					: `Fix the "${ext.name}" deactivateClient() implementation so a throw or rejected teardown does not leave stale extension resources behind.`,
 			error,
 			extension: ext.name,
 		});
@@ -107,8 +107,10 @@ export class ExtensionManagerImpl {
 					this._stateMap.set(ext.name, ext.state.init(editor));
 				}
 			} catch (err) {
-				console.error(
-					`Extension "${ext.name}" activation failed:`,
+				this._emitLifecycleDiagnostic(
+					"PEN_EXT_004",
+					ext,
+					"activation",
 					err,
 				);
 			}
@@ -143,8 +145,10 @@ export class ExtensionManagerImpl {
 					}
 				}
 			} catch (err) {
-				console.error(
-					`Extension "${ext.name}" deactivation failed:`,
+				this._emitLifecycleDiagnostic(
+					"PEN_EXT_005",
+					ext,
+					"deactivation",
 					err,
 				);
 			}
@@ -158,7 +162,7 @@ export class ExtensionManagerImpl {
 
 	// ── Dispatch ─────────────────────────────────────────────
 
-	dispatchObserve(events: CRDTEvent[], editor: Editor): void {
+	dispatchObserve(events: readonly CommitEvent[], editor: Editor): void {
 		for (const ext of this._sorted) {
 			if (!ext.observe) continue;
 			try {
@@ -202,10 +206,12 @@ export class ExtensionManagerImpl {
 
 	collectDecorations(state: DocumentState, editor: Editor): DecorationSet {
 		const sets: DecorationSet[] = [];
-		for (const ext of this._sorted) {
-			if (!ext.decorations) continue;
+		for (const source of editor.facet(decorationsFacet)) {
 			try {
-				const set = ext.decorations(state, editor);
+				const set =
+					typeof source === "function"
+						? source(state, editor)
+						: source;
 				if (set && set.decorations.length > 0) {
 					sets.push(set);
 				}
@@ -214,9 +220,9 @@ export class ExtensionManagerImpl {
 					code: "PEN_EXT_003",
 					level: "error",
 					source: "extension",
-					message: `Extension "${ext.name}" decorations() threw`,
+					message: "A decorations facet source threw",
 					remediation:
-						`Fix the "${ext.name}" decorations() implementation to return a valid decoration set ` +
+						"Fix the decorations facet provider to return a valid decoration set " +
 						"for the current document state.",
 					error: err,
 				});
@@ -228,48 +234,13 @@ export class ExtensionManagerImpl {
 		return mergeDecorationSets(...sets);
 	}
 
-	// ── Input Rules & Key Bindings ───────────────────────────
+	// ── Key Bindings ─────────────────────────────────────────
 
-	collectInputRules(): readonly InputRule[] {
-		const rules: InputRule[] = [];
-		for (const ext of this._sorted) {
-			if (ext.inputRules) {
-				rules.push(...ext.inputRules);
-			}
-		}
-		return rules;
-	}
-
-	collectKeyBindings(registry: SchemaRegistry): readonly KeyBinding[] {
-		const bindings: KeyBinding[] = [];
-
-		for (const ext of this._sorted) {
-			if (ext.keyBindings) {
-				bindings.push(...ext.keyBindings);
-			}
-		}
-
-		for (const schema of registry.allBlocks()) {
-			if (schema.keyBindings) {
-				for (const binding of schema.keyBindings) {
-					bindings.push({
-						...binding,
-						context: {
-							...binding.context,
-							blockType: [schema.type],
-						},
-					});
-				}
-			}
-		}
-
-		bindings.sort((a, b) => {
-			const pA = (a as { priority?: number }).priority ?? 0;
-			const pB = (b as { priority?: number }).priority ?? 0;
-			return pB - pA;
-		});
-
-		return bindings;
+	collectKeyBindings(
+		registry: SchemaRegistry,
+		extensionBindings: readonly KeyBinding[] = [],
+	): readonly KeyBinding[] {
+		return mergeKeyBindings(registry, extensionBindings);
 	}
 
 	// ── State ────────────────────────────────────────────────
@@ -331,4 +302,33 @@ export class ExtensionManagerImpl {
 
 		this._sorted = sorted;
 	}
+}
+
+export function collectEditorKeyBindings(
+	editor: Editor,
+): readonly KeyBinding[] {
+	return mergeKeyBindings(editor.schema, editor.facet(keymapFacet));
+}
+
+function mergeKeyBindings(
+	registry: SchemaRegistry,
+	extensionBindings: readonly KeyBinding[],
+): readonly KeyBinding[] {
+	const bindings: KeyBinding[] = [...extensionBindings];
+
+	for (const schema of registry.allBlocks()) {
+		if (schema.keyBindings) {
+			for (const binding of schema.keyBindings) {
+				bindings.push({
+					...binding,
+					context: {
+						...binding.context,
+						blockType: [schema.type],
+					},
+				});
+			}
+		}
+	}
+
+	return bindings;
 }

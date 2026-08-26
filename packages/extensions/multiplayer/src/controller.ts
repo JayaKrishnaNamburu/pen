@@ -1,4 +1,5 @@
-import type { ConnectionState, Unsubscribe } from "@pen/types";
+import { announceEditorA11y } from "@input/pen-core";
+import type { ConnectionState, Editor, Unsubscribe } from "@input/pen-types";
 import type {
 	AuthorLedgerLike,
 	ClientIdentityMapLike,
@@ -11,29 +12,45 @@ import type {
 	RemoteCursorState,
 	RemoteSelectionState,
 } from "./types";
+import { PRESENCE_REJECTED_CODE } from "./presence/constants";
 import { RemoteCursorManager } from "./presence/cursorManager";
+import { PresenceIngest } from "./presence/presenceIngest";
 import { RemoteSelectionManager } from "./presence/selectionManager";
 
 export class MultiplayerControllerImpl implements MultiplayerController {
+	private readonly editor: Editor;
 	private readonly localClientId: number;
 	private readonly authorLedger: AuthorLedgerLike;
 	private readonly identityMap: ClientIdentityMapLike;
+	private readonly ingest: PresenceIngest;
 	private readonly listeners = new Set<() => void>();
 	private readonly cursorManager: RemoteCursorManager;
 	private readonly selectionManager: RemoteSelectionManager;
 	private connectHandler: (() => void) | null = null;
 	private disconnectHandler: (() => void) | null = null;
 
-	private remoteCursors: readonly RemoteCursorState[] = [];
-	private remoteSelections: readonly RemoteSelectionState[] = [];
+	private lastAccepted: Map<number, MultiplayerAwarenessState> | null = null;
 	private peers: readonly PeerState[] = [];
-
+	private mappedCursors: readonly RemoteCursorState[] = [];
+	private mappedSelections: readonly RemoteSelectionState[] = [];
+	private mappedPeers: readonly PeerState[] = [];
+	private resolvedGeneration = -1;
+	private resolveGeneration = 0;
+	private mappedAccepted: Map<number, MultiplayerAwarenessState> | null =
+		null;
+	private readonly unsubscribeCommit: Unsubscribe;
 	private state: MultiplayerState;
 
 	constructor(options: MultiplayerControllerOptions) {
+		this.editor = options.editor;
 		this.localClientId = options.editor.clientId;
 		this.authorLedger = options.authorLedger;
 		this.identityMap = options.identityMap;
+		this.ingest = new PresenceIngest({
+			editor: options.editor,
+			localClientId: this.localClientId,
+			now: options.now,
+		});
 		this.cursorManager = new RemoteCursorManager(this.localClientId);
 		this.selectionManager = new RemoteSelectionManager(this.localClientId);
 		this.state = {
@@ -42,9 +59,21 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 			localUser: options.config.user,
 			isConnected: false,
 		};
+		this.unsubscribeCommit = options.editor.on("commit", () => {
+			this.resolveGeneration += 1;
+			this.invalidateMapped();
+			this.ensureMapped();
+			if (this.state.peers !== this.mappedPeers) {
+				this.setState({
+					...this.state,
+					peers: this.mappedPeers,
+				});
+			}
+		});
 	}
 
 	getState(): MultiplayerState {
+		this.ensureMapped();
 		return this.state;
 	}
 
@@ -80,28 +109,33 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 	}
 
 	getPeers(): readonly PeerState[] {
-		return this.peers;
+		this.ensureMapped();
+		return this.mappedPeers;
 	}
 
 	getRemoteCursors(): readonly RemoteCursorState[] {
-		return this.remoteCursors;
+		this.ensureMapped();
+		return this.mappedCursors;
 	}
 
 	getRemoteSelections(): readonly RemoteSelectionState[] {
-		return this.remoteSelections;
+		this.ensureMapped();
+		return this.mappedSelections;
 	}
 
 	snapshot(): MultiplayerSnapshot {
 		return {
 			state: this.state,
-			remoteCursors: this.remoteCursors,
-			remoteSelections: this.remoteSelections,
+			remoteCursors: this.getRemoteCursors(),
+			remoteSelections: this.getRemoteSelections(),
 		};
 	}
 
 	destroy(): void {
+		this.unsubscribeCommit();
 		this.connectHandler = null;
 		this.disconnectHandler = null;
+		this.ingest.destroy();
 		this.listeners.clear();
 	}
 
@@ -122,21 +156,66 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 	}
 
 	handleAwarenessChange(states: Map<number, MultiplayerAwarenessState>): void {
-		this.identityMap.updateFromAwareness(states);
-		for (const [clientId, user] of this.identityMap.entries()) {
-			this.authorLedger.record(clientId, user);
+		try {
+			const previousPeers = this.peers;
+			const accepted = this.ingest.ingest(states);
+			this.identityMap.updateFromAwareness(accepted);
+			for (const [clientId, user] of this.identityMap.entries()) {
+				this.authorLedger.record(clientId, user);
+			}
+			this.lastAccepted = accepted;
+			this.cursorManager.ingest(this.editor, accepted, (clientId) =>
+				this.identityMap.resolve(clientId),
+			);
+			this.selectionManager.ingest(this.editor, accepted, (clientId) =>
+				this.identityMap.resolve(clientId),
+			);
+			this.invalidateMapped();
+			this.ensureMapped();
+			this.announcePeerChanges(previousPeers, this.mappedPeers);
+			this.peers = this.mappedPeers;
+			this.setState({
+				...this.state,
+				peers: this.mappedPeers,
+			});
+		} catch (error) {
+			this.editor.internals.emit("diagnostic", {
+				code: PRESENCE_REJECTED_CODE,
+				level: "warn",
+				source: "multiplayer",
+				extension: "multiplayer",
+				message: "Presence ingest failed.",
+				error,
+			});
 		}
-		this.remoteCursors = this.cursorManager.build(states, (clientId) =>
-			this.identityMap.resolve(clientId),
+	}
+
+	private announcePeerChanges(
+		previous: readonly PeerState[],
+		next: readonly PeerState[],
+	): void {
+		const previousIds = new Set(previous.map((peer) => peer.clientId));
+		const previousEditing = new Set(
+			previous
+				.filter((peer) => peer.cursor !== null || peer.selection !== null)
+				.map((peer) => peer.clientId),
 		);
-		this.remoteSelections = this.selectionManager.build(states, (clientId) =>
-			this.identityMap.resolve(clientId),
-		);
-		this.peers = this.buildPeers(states);
-		this.setState({
-			...this.state,
-			peers: this.peers,
-		});
+		for (const peer of next) {
+			if (!previousIds.has(peer.clientId)) {
+				announceEditorA11y(this.editor, "collaboratorJoined", {
+					name: peer.user.name,
+				});
+				continue;
+			}
+			if (
+				(peer.cursor !== null || peer.selection !== null) &&
+				!previousEditing.has(peer.clientId)
+			) {
+				announceEditorA11y(this.editor, "collaboratorEditing", {
+					name: peer.user.name,
+				});
+			}
+		}
 	}
 
 	private setState(nextState: MultiplayerState): void {
@@ -146,14 +225,46 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 		}
 	}
 
+	private invalidateMapped(): void {
+		this.resolvedGeneration = -1;
+		this.mappedAccepted = null;
+	}
+
+	private ensureMapped(): void {
+		if (
+			this.resolvedGeneration === this.resolveGeneration &&
+			this.mappedAccepted === this.lastAccepted
+		) {
+			return;
+		}
+
+		const nextCursors = this.cursorManager.resolve(this.editor);
+		const nextSelections = this.selectionManager.resolve(this.editor);
+		this.mappedCursors = reuseIfSame(this.mappedCursors, nextCursors);
+		this.mappedSelections = reuseIfSame(
+			this.mappedSelections,
+			nextSelections,
+		);
+
+		const nextPeers = this.lastAccepted
+			? this.buildPeers(this.lastAccepted)
+			: this.peers;
+		this.mappedPeers = reuseIfSame(this.mappedPeers, nextPeers);
+		this.resolvedGeneration = this.resolveGeneration;
+		this.mappedAccepted = this.lastAccepted;
+	}
+
 	private buildPeers(
 		states: Map<number, MultiplayerAwarenessState>,
 	): readonly PeerState[] {
 		const cursorMap = new Map(
-			this.remoteCursors.map((cursor) => [cursor.clientId, cursor]),
+			this.mappedCursors.map((cursor) => [cursor.clientId, cursor]),
 		);
 		const selectionMap = new Map(
-			this.remoteSelections.map((selection) => [selection.clientId, selection]),
+			this.mappedSelections.map((selection) => [
+				selection.clientId,
+				selection,
+			]),
 		);
 		const peers: PeerState[] = [];
 
@@ -178,4 +289,19 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 
 		return peers;
 	}
+}
+
+function reuseIfSame<T>(prev: readonly T[], next: readonly T[]): readonly T[] {
+	if (prev === next) {
+		return prev;
+	}
+	if (prev.length !== next.length) {
+		return next;
+	}
+	for (let i = 0; i < prev.length; i++) {
+		if (prev[i] !== next[i]) {
+			return next;
+		}
+	}
+	return prev;
 }

@@ -16,7 +16,7 @@ export default defineConfig({
 		trace: "on-first-retry",
 	},
 	webServer: {
-		command: "pnpm --filter @pen/playground dev:e2e",
+		command: "pnpm --filter @input/pen-playground run dev:e2e",
 		url: PLAYGROUND_BASE_URL,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,
@@ -26,6 +26,18 @@ export default defineConfig({
 			name: "chromium",
 			use: {
 				...devices["Desktop Chrome"],
+			},
+		},
+		{
+			name: "webkit",
+			use: {
+				...devices["Desktop Safari"],
+			},
+		},
+		{
+			name: "firefox",
+			use: {
+				...devices["Desktop Firefox"],
 			},
 		},
 	],

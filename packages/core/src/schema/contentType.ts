@@ -1,10 +1,9 @@
-import type { BlockSchema, ContentType } from "@pen/types";
+import type { BlockSchema, ContentType } from "@input/pen-types";
 
 type RuntimeContentType =
 	| "inline"
 	| "none"
 	| "table"
-	| "database"
 	| "subdocument"
 	| "nested";
 

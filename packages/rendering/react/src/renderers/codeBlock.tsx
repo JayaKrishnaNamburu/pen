@@ -1,23 +1,26 @@
 import React from "react";
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
+import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { InlineContent } from "../primitives/editor/inlineContent";
 
 export function CodeBlockRenderer(
-  block: BlockHandle,
-  ctx: BlockRenderContext,
+	block: BlockHandle,
+	ctx: BlockRenderContext,
 ): React.ReactElement {
-  const language = (block.props?.language as string) ?? "";
+	const language = (block.props?.language as string) ?? "";
 
-  return (
-    <pre
-      ref={ctx.ref as React.Ref<HTMLPreElement>}
-      data-block-type="codeBlock"
-      data-language={language || undefined}
-      data-selected={ctx.selected || undefined}
-    >
-      <code className={language ? `language-${language}` : undefined}>
-        <InlineContent blockId={block.id} decorations={ctx.decorations} />
-      </code>
-    </pre>
-  );
+	return (
+		<pre
+			ref={ctx.ref as React.Ref<HTMLPreElement>}
+			data-block-type="codeBlock"
+			data-language={language || undefined}
+			data-selected={ctx.selected ? "" : undefined}
+		>
+			<code className={language ? `language-${language}` : undefined}>
+				<InlineContent
+					blockId={block.id}
+					decorations={ctx.decorations}
+				/>
+			</code>
+		</pre>
+	);
 }

@@ -2,7 +2,10 @@ import React from "react";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 
 export interface FieldEditorWrapperProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
@@ -23,11 +26,13 @@ export function EditorFieldEditor(props: FieldEditorWrapperProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.fieldEditor]: "",
-		[DATA_ATTRS.active]: isActive || undefined,
 		[DATA_ATTRS.inputMode]: isActive ? inputMode : undefined,
 		[DATA_ATTRS.surfaceMode]: isActive ? fieldEditorState.mode : undefined,
-		[DATA_ATTRS.expanded]: isExpanded || undefined,
 		[DATA_ATTRS.blockCount]: isExpanded ? blockCount : undefined,
+		...buildDataAttributes({
+			active: isActive,
+			expanded: isExpanded,
+		}),
 	};
 
 	return renderAsChild(props, "div", primitiveProps);

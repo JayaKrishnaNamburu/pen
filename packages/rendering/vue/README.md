@@ -1,30 +1,29 @@
-# `@pen/vue`
+# `@input/pen-vue`
 
 Vue rendering primitives for Pen.
 
-`@pen/vue` is the first non-React renderer in the Pen monorepo. It is intentionally lean: it proves that editor lifecycle, rendering, selection, decorations, and field-editor integration are not tied to React.
+`@input/pen-vue` is the first non-React renderer in the Pen monorepo. It is intentionally lean: it proves that editor lifecycle, rendering, selection, decorations, and field-editor integration are not tied to React.
+
+This package does not ship a stylesheet or a preset. `PenEditor` mounts the shared DOM field-editor engine from `@input/pen-dom`.
 
 ## Install
 
 ```bash
-pnpm add @pen/vue vue
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-vue vue yjs
 ```
+
+`vue` is a peer of this package. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
 
 ## Quick Start
 
 ```ts
-import { createApp } from "vue";
-import { PenVuePlugin, useEditor } from "@pen/vue";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor } from "@input/pen-vue";
 
-const app = createApp({
-  setup() {
-    const editor = useEditor();
-    return { editor };
-  },
+const editor = createEditor({
+  preset: defaultPreset(),
 });
-
-app.use(PenVuePlugin);
-app.mount("#app");
 ```
 
 ```vue
@@ -33,11 +32,7 @@ app.mount("#app");
 </template>
 ```
 
-You can also import the components directly instead of registering the plugin:
-
-```ts
-import { PenEditor, useEditor } from "@pen/vue";
-```
+`useEditor()` still exists. With no argument it calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `document-ops`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack. `PenVuePlugin` only registers the components.
 
 ## Public Surface
 
@@ -50,13 +45,17 @@ import { PenEditor, useEditor } from "@pen/vue";
 
 ```ts
 import { defineComponent, h } from "vue";
-import { PenEditor, useEditor } from "@pen/vue";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor } from "@input/pen-vue";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
 
 export const PenExample = defineComponent({
   name: "PenExample",
   setup() {
-    const editor = useEditor();
-
     return () =>
       h(PenEditor, {
         editor,
@@ -66,8 +65,38 @@ export const PenExample = defineComponent({
 });
 ```
 
+## Capabilities
+
+The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. Vue's column, in short:
+
+- `supported`: single-block fields, expanded (multi-block) fields, table-cell editing, document mutation, paste import (the HTML importer is wired by default), the review-surface styling contract.
+- `bring-your-own-ui`: AI review, streaming preview, autocomplete, multiplayer, search, undo, history, input rules, overlays. The state and behavior reach Vue — AI decorations paint through `useDecorations` like any other decoration — and this package ships no components for them.
+- `not-supported`: nothing. Every capability reaches Vue.
+
+That second list is not a to-do list. Pen's capabilities live in `@input/pen-core`, `@input/pen-dom`, and the extensions; React ships more chrome over the same state, and Vue reaching React's component count is not a goal.
+
 ## Notes
 
-- `PenEditor` installs the shared DOM field-editor engine from `@pen/dom`.
+- Client-only mount: Vue has no `"use client"` directive, so this package does not emit one — mount `PenEditor` in the browser.
+- Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke. The HOST6 styling contract is [STYLING.md](./STYLING.md).
+- `PenEditor` installs the shared DOM field-editor engine from `@input/pen-dom`.
 - Renderer overrides let host apps customize block rendering without forking the editor runtime.
 - Paste importers can be passed through the `importers` prop on `PenEditor`.
+
+## Options
+
+`PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional; when omitted, the editor uses the message-catalog string for `pen.schema.document.emptyPlaceholder` (`Start writing...`). `importers` is optional.
+
+`readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`.
+
+`engines.node` is `>=22`. The required peer is `vue` (`^3.4.0`).
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Getting started page (`#/getting-started`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

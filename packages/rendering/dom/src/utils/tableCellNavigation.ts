@@ -4,16 +4,14 @@ import {
 	isPasteShortcut,
 	pasteCellSelection,
 } from "./tableCellClipboard";
-import type { CellSelection, DocumentOp, Editor } from "@pen/types";
+import type { CellSelection, DocumentOp, Editor } from "@input/pen-types";
 import {
+	delegatesToGridEditing,
 	hasIndexedCellSelectionMetadata,
 	resolveCellSelectionCoord,
 	resolveCellSelectionMatrix,
-} from "@pen/core";
-import {
-	delegatesToGridEditing,
 	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-core";
 import type { FieldEditorTableNavigationController } from "../field-editor/controller";
 import { getAdjacentVisibleBlockId } from "./parentIdTree";
 
@@ -46,33 +44,17 @@ export function handleTableCellSelectionKeyDown(options: {
 		return false;
 	}
 
-	const cellKeyDownSlot = editor.internals.getSlot("database:cell-keydown") as
-		| ((
-				event: KeyboardEvent,
-				context: { blockId: string; row: number; col: number; root: HTMLElement },
-		  ) => boolean)
-		| undefined;
-	const slotCoord = resolveCellSelectionCoord(block, selection, {
-		row: head.row,
-		col: head.col,
-	});
+	const table = block.as("table");
+	const rowCount = selection.rowIds?.length ?? table?.tableRowCount() ?? 0;
+	const colCount =
+		selection.columnIds?.length ?? table?.tableColumnCount() ?? 0;
+
 	if (
-		cellKeyDownSlot &&
-		slotCoord &&
-		cellKeyDownSlot(event, {
-			blockId,
-			row: slotCoord.row,
-			col: slotCoord.col,
-			root,
-		})
+		isArrowKey(event.key) &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
 	) {
-		return true;
-	}
-
-	const rowCount = selection.rowIds?.length ?? block.tableRowCount();
-	const colCount = selection.columnIds?.length ?? block.tableColumnCount();
-
-	if (isArrowKey(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey) {
 		event.preventDefault();
 		const delta = arrowDelta(event.key);
 		if (event.shiftKey) {
@@ -89,7 +71,12 @@ export function handleTableCellSelectionKeyDown(options: {
 				(event.key === "ArrowDown" && head.row === rowCount - 1) ||
 				(event.key === "ArrowRight" && head.col === colCount - 1);
 			if (exitsGrid) {
-				moveSelectionToAdjacentBlock(editor, fieldEditor, blockId, event.key);
+				moveSelectionToAdjacentBlock(
+					editor,
+					fieldEditor,
+					blockId,
+					event.key,
+				);
 				return true;
 			}
 			const next = wrapCoord(
@@ -102,7 +89,12 @@ export function handleTableCellSelectionKeyDown(options: {
 		return true;
 	}
 
-	if (event.key === "Tab" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+	if (
+		event.key === "Tab" &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
 		event.preventDefault();
 		const direction = event.shiftKey ? -1 : 1;
 		const linearIdx = head.row * colCount + head.col + direction;
@@ -114,13 +106,33 @@ export function handleTableCellSelectionKeyDown(options: {
 		return true;
 	}
 
-	if ((event.key === "Enter" || event.key === "F2") && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
+	if (
+		(event.key === "Enter" || event.key === "F2") &&
+		!event.shiftKey &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
 		event.preventDefault();
-		activateCellEditing(editor, fieldEditor, blockId, selection, head.row, head.col, root);
+		activateCellEditing(
+			editor,
+			fieldEditor,
+			blockId,
+			selection,
+			head.row,
+			head.col,
+			root,
+		);
 		return true;
 	}
 
-	if ((event.key === "Backspace" || event.key === "Delete") && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+	if (
+		(event.key === "Backspace" || event.key === "Delete") &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey &&
+		!event.shiftKey
+	) {
 		event.preventDefault();
 		editor.deleteSelection({ origin: "user" });
 		return true;
@@ -158,9 +170,30 @@ export function handleTableCellSelectionKeyDown(options: {
 	if (isPrintableKey(event)) {
 		event.preventDefault();
 		const cellCoord = head;
-		clearCellContent(editor, selection, blockId, cellCoord.row, cellCoord.col);
-		activateCellEditing(editor, fieldEditor, blockId, selection, cellCoord.row, cellCoord.col, root);
-		insertCharInActiveCell(editor, selection, blockId, cellCoord.row, cellCoord.col, event.key);
+		clearCellContent(
+			editor,
+			selection,
+			blockId,
+			cellCoord.row,
+			cellCoord.col,
+		);
+		activateCellEditing(
+			editor,
+			fieldEditor,
+			blockId,
+			selection,
+			cellCoord.row,
+			cellCoord.col,
+			root,
+		);
+		insertCharInActiveCell(
+			editor,
+			selection,
+			blockId,
+			cellCoord.row,
+			cellCoord.col,
+			event.key,
+		);
 		return true;
 	}
 
@@ -191,11 +224,14 @@ function moveSelectionToAdjacentBlock(
 
 	const schema = editor.schema.resolve(adjacentBlock.type);
 	if (delegatesToGridEditing(schema)) {
+		const adjacentTable = adjacentBlock.as("table");
 		const targetRow =
-			direction === "previous" ? Math.max(adjacentBlock.tableRowCount() - 1, 0) : 0;
+			direction === "previous"
+				? Math.max((adjacentTable?.tableRowCount() ?? 0) - 1, 0)
+				: 0;
 		const targetCol =
 			direction === "previous"
-				? Math.max(adjacentBlock.tableColumnCount() - 1, 0)
+				? Math.max((adjacentTable?.tableColumnCount() ?? 0) - 1, 0)
 				: 0;
 		editor.selectCell(adjacentId, targetRow, targetCol);
 		fieldEditor.deactivate();
@@ -231,7 +267,10 @@ function isActiveCellInputHandlingKeys(
 		return false;
 	}
 
-	const resolvedCoord = resolveCellSelectionCoord(block, selection, { row, col });
+	const resolvedCoord = resolveCellSelectionCoord(block, selection, {
+		row,
+		col,
+	});
 	if (!resolvedCoord) {
 		return false;
 	}
@@ -247,9 +286,7 @@ function isActiveCellInputHandlingKeys(
 		return true;
 	}
 
-	return !!target.closest(
-		"[data-pen-db-widget-trigger], input, button, select, textarea",
-	);
+	return !!target.closest("input, button, select, textarea");
 }
 
 function setCellSelection(
@@ -303,9 +340,18 @@ function activateCellEditing(
 			resolvedCoord.row,
 			resolvedCoord.col,
 			cellSurface,
-		) ?? fieldEditor.activateCell?.(blockId, resolvedCoord.row, resolvedCoord.col);
+		) ??
+			fieldEditor.activateCell?.(
+				blockId,
+				resolvedCoord.row,
+				resolvedCoord.col,
+			);
 	} else {
-		fieldEditor.activateCell?.(blockId, resolvedCoord.row, resolvedCoord.col);
+		fieldEditor.activateCell?.(
+			blockId,
+			resolvedCoord.row,
+			resolvedCoord.col,
+		);
 	}
 }
 
@@ -318,20 +364,30 @@ function clearCellContent(
 ): void {
 	const block = editor.getBlock(blockId);
 	if (!block) return;
-	const resolvedCoord = resolveCellSelectionCoord(block, selection, { row, col });
+	const resolvedCoord = resolveCellSelectionCoord(block, selection, {
+		row,
+		col,
+	});
 	if (!resolvedCoord) return;
-	const cell = block.tableCell(resolvedCoord.row, resolvedCoord.col);
+	const cell = block
+		.as("table")
+		?.tableCell(resolvedCoord.row, resolvedCoord.col);
 	if (!cell) return;
 	const length = cell.length();
 	if (length > 0) {
-		editor.apply([{
-			type: "delete-table-cell-text",
-			blockId,
-			row: resolvedCoord.row,
-			col: resolvedCoord.col,
-			offset: 0,
-			length,
-		}], { origin: "user" });
+		editor.apply(
+			[
+				{
+					type: "splice-text",
+					blockId,
+					cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+					from: 0,
+					to: length,
+					insert: "",
+				},
+			],
+			{ origin: "user" },
+		);
 	}
 }
 
@@ -347,31 +403,49 @@ function insertCharInActiveCell(
 	if (!block) {
 		return;
 	}
-	const resolvedCoord = resolveCellSelectionCoord(block, selection, { row, col });
+	const resolvedCoord = resolveCellSelectionCoord(block, selection, {
+		row,
+		col,
+	});
 	if (!resolvedCoord) {
 		return;
 	}
-	editor.apply([{
-		type: "insert-table-cell-text",
-		blockId,
-		row: resolvedCoord.row,
-		col: resolvedCoord.col,
-		offset: 0,
-		text: char,
-	}], { origin: "user" });
+	editor.apply(
+		[
+			{
+				type: "splice-text",
+				blockId,
+				cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+				from: 0,
+				to: 0,
+				insert: char,
+			},
+		],
+		{ origin: "user" },
+	);
 }
 
 function isArrowKey(key: string): boolean {
-	return key === "ArrowUp" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowRight";
+	return (
+		key === "ArrowUp" ||
+		key === "ArrowDown" ||
+		key === "ArrowLeft" ||
+		key === "ArrowRight"
+	);
 }
 
 function arrowDelta(key: string): { row: number; col: number } {
 	switch (key) {
-		case "ArrowUp": return { row: -1, col: 0 };
-		case "ArrowDown": return { row: 1, col: 0 };
-		case "ArrowLeft": return { row: 0, col: -1 };
-		case "ArrowRight": return { row: 0, col: 1 };
-		default: return { row: 0, col: 0 };
+		case "ArrowUp":
+			return { row: -1, col: 0 };
+		case "ArrowDown":
+			return { row: 1, col: 0 };
+		case "ArrowLeft":
+			return { row: 0, col: -1 };
+		case "ArrowRight":
+			return { row: 0, col: 1 };
+		default:
+			return { row: 0, col: 0 };
 	}
 }
 

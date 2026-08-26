@@ -1,9 +1,8 @@
 import type {
-	DatabaseViewState,
 	InlineDelta,
 	InlineNodeDeltaInsert,
 	TableColumnSchema,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	crdtMapToPlainRecord,
 	crdtValueToPlain,
@@ -123,57 +122,6 @@ export function toTableColumnSchema(column: unknown): TableColumnSchema | null {
 	};
 }
 
-export function toDatabaseViewState(view: unknown): DatabaseViewState | null {
-	if (!view || typeof view !== "object") return null;
-	const mapLike = view as {
-		get?: (key: string) => unknown;
-	};
-	const id = mapLike.get?.("id");
-	const type = mapLike.get?.("type");
-	if (typeof id !== "string" || typeof type !== "string") {
-		return null;
-	}
-
-	const filterValue = toPlainObject(mapLike.get?.("filter"));
-
-	return {
-		id,
-		title: toString(mapLike.get?.("title")),
-		type: type as DatabaseViewState["type"],
-		visibleColumnIds: toStringArray(mapLike.get?.("visibleColumnIds")),
-		columnOrder: toStringArray(mapLike.get?.("columnOrder")),
-		sort: toPlainArray(mapLike.get?.("sort")) as DatabaseViewState["sort"],
-		filter: (filterValue as DatabaseViewState["filter"] | null) ?? null,
-		groupBy: toNullableString(mapLike.get?.("groupBy")),
-		rowPinning: toDatabaseRowPinning(mapLike.get?.("rowPinning")),
-		pageIndex: toNumber(mapLike.get?.("pageIndex")),
-		pageSize: toNumber(mapLike.get?.("pageSize")),
-	};
-}
-
-function toDatabaseRowPinning(
-	value: unknown,
-): DatabaseViewState["rowPinning"] {
-	if (!value || typeof value !== "object") {
-		return undefined;
-	}
-	const mapLike = value as {
-		get?: (key: string) => unknown;
-	};
-	const topValues = toStringArray(mapLike.get?.("top"));
-	const bottomValues = toStringArray(mapLike.get?.("bottom"));
-	const top = topValues && topValues.length > 0 ? topValues : undefined;
-	const bottom =
-		bottomValues && bottomValues.length > 0 ? bottomValues : undefined;
-	if (!top && !bottom) {
-		return undefined;
-	}
-	return {
-		top,
-		bottom,
-	};
-}
-
 function toPlainArray(value: unknown): TableColumnSchema["options"] {
 	if (
 		!value ||
@@ -187,7 +135,9 @@ function toPlainArray(value: unknown): TableColumnSchema["options"] {
 		.filter((item): item is Record<string, unknown> => item !== null)
 		.map(
 			(item) =>
-				item as unknown as NonNullable<TableColumnSchema["options"]>[number],
+				item as unknown as NonNullable<
+					TableColumnSchema["options"]
+				>[number],
 		);
 }
 
@@ -197,27 +147,6 @@ function toPlainObject(value: unknown): Record<string, unknown> | null {
 
 function toNumber(value: unknown): number | undefined {
 	return typeof value === "number" ? value : undefined;
-}
-
-function toString(value: unknown): string | undefined {
-	return typeof value === "string" ? value : undefined;
-}
-
-function toNullableString(value: unknown): string | null | undefined {
-	if (value === null) return null;
-	return typeof value === "string" ? value : undefined;
-}
-
-function toStringArray(value: unknown): string[] | undefined {
-	if (
-		!value ||
-		typeof (value as { toArray?: () => unknown[] }).toArray !== "function"
-	) {
-		return undefined;
-	}
-	return (value as { toArray: () => unknown[] })
-		.toArray()
-		.filter((entry): entry is string => typeof entry === "string");
 }
 
 function toBoolean(value: unknown): boolean | undefined {

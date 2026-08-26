@@ -1,10 +1,20 @@
-import type { BlockSchema, Editor, FieldEditorFocusOptions } from "@pen/types";
+import type {
+	BlockSchema,
+	Editor,
+	FieldEditorFocusOptions,
+} from "@input/pen-types";
 import type { FieldEditorStore } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import type {
 	FieldEditorSelectionSnapshot,
 	FieldEditorSelectionSource,
 } from "./selectionAuthority";
+import type {
+	DomSelectionReadDecision,
+	GestureEventKind,
+	GestureWindowState,
+	ReaderSelection,
+} from "./selectionReader";
 
 export type FieldEditorFocusReason =
 	| "activate"
@@ -80,9 +90,7 @@ export type PenFocusLifecycleEvent =
 			isEditing: boolean;
 	  };
 
-export type PenFocusLifecycleListener = (
-	event: PenFocusLifecycleEvent,
-) => void;
+export type PenFocusLifecycleListener = (event: PenFocusLifecycleEvent) => void;
 
 export type ActiveCellCoord = {
 	blockId: string;
@@ -151,7 +159,7 @@ export interface FieldEditorDomController extends FieldEditorSelectionState {
 	): FieldEditorSelectionSnapshot | null;
 	hasBackendSelectionAuthority(source: FieldEditorSelectionSource): boolean;
 	clearBackendSelectionAuthority(source: FieldEditorSelectionSource): void;
-	applyBackendSelectionUntilNextFrame(): void;
+	withBackendSelectionWrite<T>(write: () => T): T;
 	getBackendSelectionApplicationDepth(): number;
 	setEditContextSelectionSnapshot(
 		selection: FieldEditorSelectionSnapshot | null,
@@ -159,14 +167,12 @@ export interface FieldEditorDomController extends FieldEditorSelectionState {
 	getEditContextSelectionSnapshot(
 		blockId?: string | null,
 	): FieldEditorSelectionSnapshot | null;
-	resolveProgrammaticInputRange(
-		blockId: string | null,
-		liveRange: { start: number; end: number } | null,
-	): { start: number; end: number } | null;
-	shouldIgnoreDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
-	): boolean;
+	notifyGestureEvent?(eventKind: GestureEventKind): void;
+	getGestureWindows?(): GestureWindowState;
+	isAdmissibleGestureRead?(): boolean;
+	isProjectionInFlight?(): boolean;
+	requestDivergenceProjection?(): void;
+	readDomSelection?(proposal: ReaderSelection): DomSelectionReadDecision;
 	applyDocumentTextSelection(
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
@@ -206,6 +212,8 @@ export interface FieldEditorKeyboardController extends Pick<
 	"focusBlockId" | "inputMode"
 > {
 	readonly activeCellCoord: ActiveCellCoord | null;
+	/** Which rung `Mod-a` enters the T1 ladder on, from the interaction model. */
+	readonly selectAllBehavior: EditorSelectAllBehavior;
 	activateCell(blockId: string, row: number, col: number): void;
 	activateTextSelection(
 		blockId: string,
@@ -217,8 +225,14 @@ export interface FieldEditorKeyboardController extends Pick<
 		anchorOffset: number,
 		focusOffset: number,
 	): void;
+	commitCellTextSelection?(
+		blockId: string,
+		row: number,
+		col: number,
+		anchorOffset: number,
+		focusOffset: number,
+	): void;
 	deactivate(): void;
-	selectAll(rootElement?: HTMLElement | null): boolean;
 }
 
 export interface FieldEditorTableNavigationController {
@@ -265,8 +279,9 @@ export type FieldEditorSession = FieldEditorStore &
 	FieldEditorEscapeController & {
 		beginPointerSelection(): void;
 		endPointerSelection(): void;
-		selectAll(rootElement?: HTMLElement | null): boolean;
-		resetSelectAllCycle(): void;
+		notifyGestureEvent(eventKind: GestureEventKind): void;
+		isAdmissibleGestureRead(): boolean;
+		readDomSelection(proposal: ReaderSelection): DomSelectionReadDecision;
 		suspendForPointerSelection(): void;
 		getPendingMarks(): Readonly<Record<string, unknown | null>>;
 		togglePendingMark(markType: string): boolean;
@@ -276,9 +291,8 @@ export type FieldEditorSession = FieldEditorStore &
 			blockId: string;
 			offset: number;
 		}): void;
-		onFocusLifecycle(
-			listener: PenFocusLifecycleListener,
-		): () => void;
+		onFocusLifecycle(listener: PenFocusLifecycleListener): () => void;
 		waitForAttachment(blockId?: string | null): Promise<boolean>;
+		ackBlockMounted(blockId: string, element: HTMLElement): void;
 		delegate(blockSchema: BlockSchema): boolean;
 	};

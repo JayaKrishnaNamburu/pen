@@ -1,29 +1,44 @@
-import {
-  shouldExposeBlockInTooling,
-  type BlockSchema,
-  type Editor,
-} from "@pen/types";
+import { shouldExposeBlockInTooling } from "@input/pen-core";
+import type { BlockSchema, Editor } from "@input/pen-types";
+import { rejectToolCall } from "./toolRejection";
 
 export function getAvailableToolBlockSchemas(editor: Editor): BlockSchema[] {
-  return editor.schema
-    .allBlocks()
-    .filter((schema) => shouldExposeBlockInTooling(editor.documentProfile, schema));
+	return editor.schema
+		.allBlocks()
+		.filter((schema) =>
+			shouldExposeBlockInTooling(editor.documentProfile, schema),
+		);
+}
+
+/**
+ * Non-throwing form: the refusal reason, or `null` when the type is usable.
+ * Tools that return refusals to the model rather than throwing use this
+ * (`spec/packages/extensions/ai.md` EC5).
+ */
+export function checkToolCanUseBlockType(
+	editor: Editor,
+	blockType: string,
+): string | null {
+	const schema = editor.schema.resolve(blockType);
+	if (!schema) {
+		return `Unknown block type: "${blockType}"`;
+	}
+
+	if (!shouldExposeBlockInTooling(editor.documentProfile, schema)) {
+		return `Block type "${blockType}" is not available in ${editor.documentProfile} documents.`;
+	}
+
+	return null;
 }
 
 export function assertToolCanUseBlockType(
-  editor: Editor,
-  blockType: string,
+	editor: Editor,
+	blockType: string,
 ): BlockSchema {
-  const schema = editor.schema.resolve(blockType);
-  if (!schema) {
-    throw new Error(`Unknown block type: "${blockType}"`);
-  }
+	const reason = checkToolCanUseBlockType(editor, blockType);
+	if (reason) {
+		rejectToolCall(editor, reason, { blockType });
+	}
 
-  if (!shouldExposeBlockInTooling(editor.documentProfile, schema)) {
-    throw new Error(
-      `Block type "${blockType}" is not available in ${editor.documentProfile} documents.`,
-    );
-  }
-
-  return schema;
+	return editor.schema.resolve(blockType)!;
 }

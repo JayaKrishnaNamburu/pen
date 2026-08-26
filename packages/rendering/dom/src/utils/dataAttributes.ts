@@ -4,13 +4,19 @@ export function penDataAttr(name: string): string {
 	return `${PEN_PREFIX}${name}`;
 }
 
+/**
+ * Boolean values are presence-only: `true` becomes `""`, `false`/`undefined` are omitted.
+ * Keys that already start with `data-` pass through unchanged — pass `DATA_ATTRS`
+ * values at production sites so the emitted name stays coupled to the catalog.
+ */
 export function buildDataAttributes(
 	attrs: Record<string, string | number | boolean | undefined>,
 ): Record<string, string | undefined> {
 	const result: Record<string, string | undefined> = {};
 	for (const [key, value] of Object.entries(attrs)) {
 		if (value === undefined || value === false) continue;
-		result[`data-${key}`] = value === true ? "" : String(value);
+		const name = key.startsWith("data-") ? key : `data-${key}`;
+		result[name] = value === true ? "" : String(value);
 	}
 	return result;
 }
@@ -18,6 +24,7 @@ export function buildDataAttributes(
 export const DATA_ATTRS = {
 	editorRoot: "data-pen-editor-root",
 	editorContent: "data-pen-editor-content",
+	editorBlocksHost: "data-pen-editor-blocks-host",
 	viewId: "data-pen-view-id",
 	editorBlock: "data-pen-editor-block",
 	inlineContent: "data-pen-inline-content",
@@ -26,7 +33,9 @@ export const DATA_ATTRS = {
 	inlineAtomType: "data-pen-inline-atom-type",
 	inlineAtomProps: "data-pen-inline-atom-props",
 	inlineAtomCaretBoundary: "data-pen-inline-atom-caret-boundary",
+	emptyBlock: "data-pen-empty",
 	inlineAtomCaretSide: "data-pen-inline-atom-caret-side",
+	inlineAtomDragging: "data-pen-inline-atom-dragging",
 	fieldEditorSurface: "data-pen-field-editor-surface",
 	fieldEditorActiveSurface: "data-pen-field-editor-active-surface",
 	fieldEditor: "data-pen-field-editor",
@@ -58,4 +67,9 @@ export const DATA_ATTRS = {
 	tableCell: "data-pen-table-cell",
 	tableCellRow: "data-cell-row",
 	tableCellCol: "data-cell-col",
+	overlayLayer: "data-pen-overlay-layer",
+	overlayItem: "data-pen-overlay-item",
 } as const;
+
+export const OVERLAY_LAYER_ATTR = DATA_ATTRS.overlayLayer;
+export const OVERLAY_ITEM_ATTR = DATA_ATTRS.overlayItem;

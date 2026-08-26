@@ -1,20 +1,21 @@
 {
-  "name": "@pen/dom",
-  "version": "0.0.0",
+  "name": "@input/pen-dom",
+  "version": "0.0.1",
   "description": "DOM field-editor engine and helpers for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/input-systems/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/input-systems/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/input-systems/pen.git",
     "directory": "packages/rendering/dom"
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -37,14 +38,184 @@
         "default": "./dist/field-editor/index.cjs"
       }
     },
-    "./field-editor/*": {
+    "./field-editor/beforeinputMap": {
       "import": {
-        "types": "./dist/field-editor/*.d.ts",
-        "default": "./dist/field-editor/*.mjs"
+        "types": "./dist/field-editor/beforeinputMap.d.ts",
+        "default": "./dist/field-editor/beforeinputMap.mjs"
       },
       "require": {
-        "types": "./dist/field-editor/*.d.cts",
-        "default": "./dist/field-editor/*.cjs"
+        "types": "./dist/field-editor/beforeinputMap.d.cts",
+        "default": "./dist/field-editor/beforeinputMap.cjs"
+      }
+    },
+    "./field-editor/clipboard": {
+      "import": {
+        "types": "./dist/field-editor/clipboard.d.ts",
+        "default": "./dist/field-editor/clipboard.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/clipboard.d.cts",
+        "default": "./dist/field-editor/clipboard.cjs"
+      }
+    },
+    "./field-editor/commands": {
+      "import": {
+        "types": "./dist/field-editor/commands.d.ts",
+        "default": "./dist/field-editor/commands.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/commands.d.cts",
+        "default": "./dist/field-editor/commands.cjs"
+      }
+    },
+    "./field-editor/contenteditableBackend": {
+      "import": {
+        "types": "./dist/field-editor/contenteditableBackend.d.ts",
+        "default": "./dist/field-editor/contenteditableBackend.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/contenteditableBackend.d.cts",
+        "default": "./dist/field-editor/contenteditableBackend.cjs"
+      }
+    },
+    "./field-editor/crdt": {
+      "import": {
+        "types": "./dist/field-editor/crdt.d.ts",
+        "default": "./dist/field-editor/crdt.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/crdt.d.cts",
+        "default": "./dist/field-editor/crdt.cjs"
+      }
+    },
+    "./field-editor/dropResolver": {
+      "import": {
+        "types": "./dist/field-editor/dropResolver.d.ts",
+        "default": "./dist/field-editor/dropResolver.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/dropResolver.d.cts",
+        "default": "./dist/field-editor/dropResolver.cjs"
+      }
+    },
+    "./field-editor/editContextBackend": {
+      "import": {
+        "types": "./dist/field-editor/editContextBackend.d.ts",
+        "default": "./dist/field-editor/editContextBackend.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/editContextBackend.d.cts",
+        "default": "./dist/field-editor/editContextBackend.cjs"
+      }
+    },
+    "./field-editor/expandedContentEditableBackend": {
+      "import": {
+        "types": "./dist/field-editor/expandedContentEditableBackend.d.ts",
+        "default": "./dist/field-editor/expandedContentEditableBackend.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/expandedContentEditableBackend.d.cts",
+        "default": "./dist/field-editor/expandedContentEditableBackend.cjs"
+      }
+    },
+    "./field-editor/fieldEditorImpl": {
+      "import": {
+        "types": "./dist/field-editor/fieldEditorImpl.d.ts",
+        "default": "./dist/field-editor/fieldEditorImpl.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/fieldEditorImpl.d.cts",
+        "default": "./dist/field-editor/fieldEditorImpl.cjs"
+      }
+    },
+    "./field-editor/inlineAtomDom": {
+      "import": {
+        "types": "./dist/field-editor/inlineAtomDom.d.ts",
+        "default": "./dist/field-editor/inlineAtomDom.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/inlineAtomDom.d.cts",
+        "default": "./dist/field-editor/inlineAtomDom.cjs"
+      }
+    },
+    "./field-editor/inlineAtomInteraction": {
+      "import": {
+        "types": "./dist/field-editor/inlineAtomInteraction.d.ts",
+        "default": "./dist/field-editor/inlineAtomInteraction.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/inlineAtomInteraction.d.cts",
+        "default": "./dist/field-editor/inlineAtomInteraction.cjs"
+      }
+    },
+    "./field-editor/inlineAtomModel": {
+      "import": {
+        "types": "./dist/field-editor/inlineAtomModel.d.ts",
+        "default": "./dist/field-editor/inlineAtomModel.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/inlineAtomModel.d.cts",
+        "default": "./dist/field-editor/inlineAtomModel.cjs"
+      }
+    },
+    "./field-editor/keyHandling": {
+      "import": {
+        "types": "./dist/field-editor/keyHandling.d.ts",
+        "default": "./dist/field-editor/keyHandling.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/keyHandling.d.cts",
+        "default": "./dist/field-editor/keyHandling.cjs"
+      }
+    },
+    "./field-editor/reconciler": {
+      "import": {
+        "types": "./dist/field-editor/reconciler.d.ts",
+        "default": "./dist/field-editor/reconciler.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/reconciler.d.cts",
+        "default": "./dist/field-editor/reconciler.cjs"
+      }
+    },
+    "./field-editor/selectionBridge": {
+      "import": {
+        "types": "./dist/field-editor/selectionBridge.d.ts",
+        "default": "./dist/field-editor/selectionBridge.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/selectionBridge.d.cts",
+        "default": "./dist/field-editor/selectionBridge.cjs"
+      }
+    },
+    "./field-editor/store": {
+      "import": {
+        "types": "./dist/field-editor/store.d.ts",
+        "default": "./dist/field-editor/store.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/store.d.cts",
+        "default": "./dist/field-editor/store.cjs"
+      }
+    },
+    "./field-editor/transfer": {
+      "import": {
+        "types": "./dist/field-editor/transfer.d.ts",
+        "default": "./dist/field-editor/transfer.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/transfer.d.cts",
+        "default": "./dist/field-editor/transfer.cjs"
+      }
+    },
+    "./field-editor/transferImages": {
+      "import": {
+        "types": "./dist/field-editor/transferImages.d.ts",
+        "default": "./dist/field-editor/transferImages.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/transferImages.d.cts",
+        "default": "./dist/field-editor/transferImages.cjs"
       }
     },
     "./constants/selectAll": {
@@ -57,14 +228,84 @@
         "default": "./dist/constants/selectAll.cjs"
       }
     },
-    "./types/paste": {
+    "./utils/autocompleteController": {
       "import": {
-        "types": "./dist/types/paste.d.ts",
-        "default": "./dist/types/paste.mjs"
+        "types": "./dist/utils/autocompleteController.d.ts",
+        "default": "./dist/utils/autocompleteController.mjs"
       },
       "require": {
-        "types": "./dist/types/paste.d.cts",
-        "default": "./dist/types/paste.cjs"
+        "types": "./dist/utils/autocompleteController.d.cts",
+        "default": "./dist/utils/autocompleteController.cjs"
+      }
+    },
+    "./utils/blockSelectionSemantics": {
+      "import": {
+        "types": "./dist/utils/blockSelectionSemantics.d.ts",
+        "default": "./dist/utils/blockSelectionSemantics.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/blockSelectionSemantics.d.cts",
+        "default": "./dist/utils/blockSelectionSemantics.cjs"
+      }
+    },
+    "./utils/cellSelection": {
+      "import": {
+        "types": "./dist/utils/cellSelection.d.ts",
+        "default": "./dist/utils/cellSelection.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/cellSelection.d.cts",
+        "default": "./dist/utils/cellSelection.cjs"
+      }
+    },
+    "./utils/clipboardPayload": {
+      "import": {
+        "types": "./dist/utils/clipboardPayload.d.ts",
+        "default": "./dist/utils/clipboardPayload.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/clipboardPayload.d.cts",
+        "default": "./dist/utils/clipboardPayload.cjs"
+      }
+    },
+    "./utils/flowCapabilities": {
+      "import": {
+        "types": "./dist/utils/flowCapabilities.d.ts",
+        "default": "./dist/utils/flowCapabilities.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/flowCapabilities.d.cts",
+        "default": "./dist/utils/flowCapabilities.cjs"
+      }
+    },
+    "./utils/inlineInputRule": {
+      "import": {
+        "types": "./dist/utils/inlineInputRule.d.ts",
+        "default": "./dist/utils/inlineInputRule.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/inlineInputRule.d.cts",
+        "default": "./dist/utils/inlineInputRule.cjs"
+      }
+    },
+    "./utils/listInputRule": {
+      "import": {
+        "types": "./dist/utils/listInputRule.d.ts",
+        "default": "./dist/utils/listInputRule.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/listInputRule.d.cts",
+        "default": "./dist/utils/listInputRule.cjs"
+      }
+    },
+    "./utils/selectionFormation": {
+      "import": {
+        "types": "./dist/utils/selectionFormation.d.ts",
+        "default": "./dist/utils/selectionFormation.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/selectionFormation.d.cts",
+        "default": "./dist/utils/selectionFormation.cjs"
       }
     },
     "./utils/dataAttributes": {
@@ -75,6 +316,36 @@
       "require": {
         "types": "./dist/utils/dataAttributes.d.cts",
         "default": "./dist/utils/dataAttributes.cjs"
+      }
+    },
+    "./utils/editorEmptyState": {
+      "import": {
+        "types": "./dist/utils/editorEmptyState.d.ts",
+        "default": "./dist/utils/editorEmptyState.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/editorEmptyState.d.cts",
+        "default": "./dist/utils/editorEmptyState.cjs"
+      }
+    },
+    "./utils/environment": {
+      "import": {
+        "types": "./dist/utils/environment.d.ts",
+        "default": "./dist/utils/environment.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/environment.d.cts",
+        "default": "./dist/utils/environment.cjs"
+      }
+    },
+    "./utils/placeholderVisibility": {
+      "import": {
+        "types": "./dist/utils/placeholderVisibility.d.ts",
+        "default": "./dist/utils/placeholderVisibility.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/placeholderVisibility.d.cts",
+        "default": "./dist/utils/placeholderVisibility.cjs"
       }
     },
     "./utils/inlineDecorations": {
@@ -96,7 +367,158 @@
         "types": "./dist/utils/parentIdTree.d.cts",
         "default": "./dist/utils/parentIdTree.cjs"
       }
-    }
+    },
+    "./utils/fieldEditorTextEntryAttrs": {
+      "import": {
+        "types": "./dist/utils/fieldEditorTextEntryAttrs.d.ts",
+        "default": "./dist/utils/fieldEditorTextEntryAttrs.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/fieldEditorTextEntryAttrs.d.cts",
+        "default": "./dist/utils/fieldEditorTextEntryAttrs.cjs"
+      }
+    },
+    "./utils/menuPosition": {
+      "import": {
+        "types": "./dist/utils/menuPosition.d.ts",
+        "default": "./dist/utils/menuPosition.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/menuPosition.d.cts",
+        "default": "./dist/utils/menuPosition.cjs"
+      }
+    },
+    "./utils/selectionPlacement": {
+      "import": {
+        "types": "./dist/utils/selectionPlacement.d.ts",
+        "default": "./dist/utils/selectionPlacement.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/selectionPlacement.d.cts",
+        "default": "./dist/utils/selectionPlacement.cjs"
+      }
+    },
+    "./utils/tableDefaults": {
+      "import": {
+        "types": "./dist/utils/tableDefaults.d.ts",
+        "default": "./dist/utils/tableDefaults.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/tableDefaults.d.cts",
+        "default": "./dist/utils/tableDefaults.cjs"
+      }
+    },
+    "./utils/aiDomScope": {
+      "import": {
+        "types": "./dist/utils/aiDomScope.d.ts",
+        "default": "./dist/utils/aiDomScope.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/aiDomScope.d.cts",
+        "default": "./dist/utils/aiDomScope.cjs"
+      }
+    },
+    "./utils/aiKeyboardScope": {
+      "import": {
+        "types": "./dist/utils/aiKeyboardScope.d.ts",
+        "default": "./dist/utils/aiKeyboardScope.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/aiKeyboardScope.d.cts",
+        "default": "./dist/utils/aiKeyboardScope.cjs"
+      }
+    },
+    "./utils/fieldEditor": {
+      "import": {
+        "types": "./dist/utils/fieldEditor.d.ts",
+        "default": "./dist/utils/fieldEditor.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/fieldEditor.d.cts",
+        "default": "./dist/utils/fieldEditor.cjs"
+      }
+    },
+    "./utils/inlineAtomDragPreview": {
+      "import": {
+        "types": "./dist/utils/inlineAtomDragPreview.d.ts",
+        "default": "./dist/utils/inlineAtomDragPreview.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/inlineAtomDragPreview.d.cts",
+        "default": "./dist/utils/inlineAtomDragPreview.cjs"
+      }
+    },
+    "./utils/replaceElementChildren": {
+      "import": {
+        "types": "./dist/utils/replaceElementChildren.d.ts",
+        "default": "./dist/utils/replaceElementChildren.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/replaceElementChildren.d.cts",
+        "default": "./dist/utils/replaceElementChildren.cjs"
+      }
+    },
+    "./utils/slashMenuPopupAria": {
+      "import": {
+        "types": "./dist/utils/slashMenuPopupAria.d.ts",
+        "default": "./dist/utils/slashMenuPopupAria.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/slashMenuPopupAria.d.cts",
+        "default": "./dist/utils/slashMenuPopupAria.cjs"
+      }
+    },
+    "./utils/suggestionMenuPopupAria": {
+      "import": {
+        "types": "./dist/utils/suggestionMenuPopupAria.d.ts",
+        "default": "./dist/utils/suggestionMenuPopupAria.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/suggestionMenuPopupAria.d.cts",
+        "default": "./dist/utils/suggestionMenuPopupAria.cjs"
+      }
+    },
+    "./utils/blockDrag": {
+      "import": {
+        "types": "./dist/utils/blockDrag.d.ts",
+        "default": "./dist/utils/blockDrag.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/blockDrag.d.cts",
+        "default": "./dist/utils/blockDrag.cjs"
+      }
+    },
+    "./utils/editorInteractionModel": {
+      "import": {
+        "types": "./dist/utils/editorInteractionModel.d.ts",
+        "default": "./dist/utils/editorInteractionModel.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/editorInteractionModel.d.cts",
+        "default": "./dist/utils/editorInteractionModel.cjs"
+      }
+    },
+    "./utils/inlineAtomSelection": {
+      "import": {
+        "types": "./dist/utils/inlineAtomSelection.d.ts",
+        "default": "./dist/utils/inlineAtomSelection.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/inlineAtomSelection.d.cts",
+        "default": "./dist/utils/inlineAtomSelection.cjs"
+      }
+    },
+    "./utils/pointerSelection": {
+      "import": {
+        "types": "./dist/utils/pointerSelection.d.ts",
+        "default": "./dist/utils/pointerSelection.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/pointerSelection.d.cts",
+        "default": "./dist/utils/pointerSelection.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -106,19 +528,25 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/shortcuts": "workspace:*",
-    "@pen/types": "workspace:*"
+    "@input/pen-core": "workspace:^",
+    "@input/pen-shortcuts": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
+    "@input/pen-schema-default": "workspace:*",
+    "@input/pen-undo": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

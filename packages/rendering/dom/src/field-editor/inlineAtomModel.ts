@@ -3,13 +3,10 @@ import type {
 	InlineDelta,
 	InlineNodeDeltaInsert,
 	SchemaRegistry,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export const INLINE_ATOM_LOGICAL_LENGTH = 1;
 export const INLINE_ATOM_REPLACEMENT_TEXT = "\uFFFC";
-export const INLINE_ATOM_CARET_BOUNDARY_TEXT = "\u200B";
-
-const ZERO_WIDTH_SPACE = "\u200B";
 
 export interface InlineAtomInsert {
 	type: string;
@@ -88,9 +85,7 @@ export function resolveInlineAtomDisplayText(
 
 export function getInlineDeltaLength(delta: InlineDelta): number {
 	return typeof delta.insert === "string"
-		? delta.insert
-				.replaceAll(ZERO_WIDTH_SPACE, "")
-				.replaceAll(INLINE_ATOM_REPLACEMENT_TEXT, "").length
+		? delta.insert.replaceAll(INLINE_ATOM_REPLACEMENT_TEXT, "").length
 		: INLINE_ATOM_LOGICAL_LENGTH;
 }
 

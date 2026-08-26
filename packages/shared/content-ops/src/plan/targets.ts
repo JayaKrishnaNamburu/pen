@@ -1,20 +1,18 @@
 import type {
-  DatabaseViewState,
   DocumentProfile,
   FlowBlockCapability,
   TableColumnSchema,
-} from "@pen/types";
+} from "@input/pen-types";
 
-export const STRUCTURED_TARGET_KINDS = [
+const STRUCTURED_TARGET_KINDS = [
   "block",
   "table",
-  "database",
 ] as const;
 
 export type StructuredTargetKind =
   (typeof STRUCTURED_TARGET_KINDS)[number];
 
-export const TARGET_EDITABILITIES = [
+const TARGET_EDITABILITIES = [
   "editable",
   "read-only",
   "unsupported",
@@ -45,15 +43,6 @@ export interface TableTargetDescriptor extends BaseTargetDescriptor {
   columns: TableColumnSchema[];
 }
 
-export interface DatabaseTargetDescriptor extends BaseTargetDescriptor {
-  kind: "database";
-  rowCount: number;
-  columns: TableColumnSchema[];
-  views: DatabaseViewState[];
-  activeViewId: string | null;
-}
-
 export type StructuredTargetDescriptor =
   | BlockTargetDescriptor
-  | TableTargetDescriptor
-  | DatabaseTargetDescriptor;
+  | TableTargetDescriptor;

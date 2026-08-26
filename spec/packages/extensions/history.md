@@ -1,8 +1,8 @@
-# @pen/history
+# @input/pen-history
 
 ## Purpose
 
-`@pen/history` provides snapshot history, restore flows, and attribution primitives for Pen. It manages version snapshots, auto-snapshot scheduling, cross-editor restore coordination, and blame-style author attribution views.
+`@input/pen-history` provides snapshot history, restore flows, and attribution primitives for Pen. It manages version snapshots, auto-snapshot scheduling, cross-editor restore coordination, and blame-style author attribution views.
 
 ## Public Role
 
@@ -12,27 +12,26 @@ This package adds document-history capabilities around the editor without replac
 
 - Export map: `.`
 - Primary extension entrypoint: `historyExtension()`
-- Controller slot and accessors such as `HISTORY_CONTROLLER_SLOT` and `getHistoryController()`
-- Runtime controller: `HistoryControllerImpl`
-- Snapshot primitives such as `SnapshotManager` and `AutoSnapshotScheduler`
-- Attribution helpers such as `getCharacterAttribution()`, `buildBlameRanges()`, and `resolveHistoryAuthor()`
+- Controller lookup: `getHistoryController()` reads `editor.facet(historyControllerFacet)`. Activate still `assignSlot`s `HISTORY_CONTROLLER_SLOT` (defined on `@input/pen-types`), which overrides that facet.
+- `HistoryControllerImpl`, `SnapshotManager`, and `AutoSnapshotScheduler` are runtime internals; they are reached through `historyExtension()` / `getHistoryController()`, not the barrel
+- Attribution helpers such as `getCharacterAttribution()` and `buildBlameRanges()`
 - Public history types covering config, controller state, authors, blame ranges, and auto-snapshot options
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns snapshot orchestration and attribution views, but it does not become the live document runtime or undo stack.
 
 ## Runtime Model
 
-`@pen/history` operates at document-scope level and coordinates multiple attached editors when restoring or listing snapshots:
+`@input/pen-history` operates at document-scope level and coordinates multiple attached editors when restoring or listing snapshots:
 
 ```mermaid
 flowchart TD
   Editors[EditorsInDocumentScope]
-  History["@pen/history"]
+  History["@input/pen-history"]
   Controller[HistoryController]
   Snapshots[SnapshotManager]
   Auto[AutoSnapshotScheduler]
@@ -58,12 +57,12 @@ Important rules:
 - Path in workspace: `packages/extensions/history`
 - Spec path mirrors workspace path: `packages/extensions/history.md`
 - Install `historyExtension()` when a host needs version snapshots, restore flows, or attribution tooling
-- This package is complementary to `@pen/undo`: snapshots are for durable version history, while undo is for local reversible editing operations
+- This package is complementary to `@input/pen-undo`: snapshots are for durable version history, while undo is for local reversible editing operations
 - Hosts should treat persistence configuration as a boundary concern supplied to the package, not something the package invents internally
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. It is an important architectural package because it defines how Pen treats durable history across single-editor and multi-editor document scopes.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. It is an important architectural package because it defines how Pen treats durable history across single-editor and multi-editor document scopes.
 
 ## Non-goals
 

@@ -1,4 +1,5 @@
-import type { Editor } from "@pen/types";
+import { announceEditorA11y } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import type {
 	SearchController,
 	SearchMatch,
@@ -158,6 +159,7 @@ export class SearchControllerImpl implements SearchController {
 	}
 
 	recompute(): void {
+		const previousCount = this.state.matches.length;
 		const matches = findDocumentMatches(
 			this.editor,
 			this.state.query,
@@ -168,6 +170,14 @@ export class SearchControllerImpl implements SearchController {
 			matches,
 			activeIndex: normalizeActiveIndex(this.state.activeIndex, matches.length),
 		});
+		if (
+			this.state.query.length > 0 &&
+			matches.length !== previousCount
+		) {
+			announceEditorA11y(this.editor, "findMatches", {
+				count: matches.length,
+			});
+		}
 	}
 
 	private getActiveMatch(): SearchMatch | null {
@@ -200,6 +210,7 @@ function searchStatesEqual(left: SearchState, right: SearchState): boolean {
 		left.options.caseSensitive === right.options.caseSensitive &&
 		left.options.regex === right.options.regex &&
 		left.options.wholeWord === right.options.wholeWord &&
+		left.options.locale === right.options.locale &&
 		searchMatchesEqual(left.matches, right.matches)
 	);
 }
@@ -220,8 +231,6 @@ function searchMatchesEqual(
 			leftMatch?.blockId !== rightMatch?.blockId ||
 			leftMatch?.row !== rightMatch?.row ||
 			leftMatch?.col !== rightMatch?.col ||
-			leftMatch?.rowId !== rightMatch?.rowId ||
-			leftMatch?.columnId !== rightMatch?.columnId ||
 			leftMatch?.cellText !== rightMatch?.cellText ||
 			leftMatch?.from !== rightMatch?.from ||
 			leftMatch?.to !== rightMatch?.to ||

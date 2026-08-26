@@ -1,5 +1,15 @@
-import type { BlockHandle, Editor, Position } from "@pen/types";
-import type { BlockSuggestionMeta, PersistentSuggestion } from "../types";
+import {
+	generateId,
+	type BlockHandle,
+	type Editor,
+	type InlineDelta,
+	type Position,
+} from "@input/pen-types";
+import type {
+	BlockSuggestionMeta,
+	BlockSuggestionPreviousState,
+	PersistentSuggestion,
+} from "../types";
 
 export type BlockSuggestionMetaPayload = BlockSuggestionMeta &
 	Record<string, unknown>;
@@ -13,50 +23,35 @@ export type SuggestionCreationOptions = {
 	createdAt?: number;
 };
 
-type DeltaFragment = {
-	insert: string | object;
-	attributes?: Record<string, unknown>;
-};
-
-interface YTextLike {
-	toDelta(): DeltaFragment[];
-}
-
 export function readSuggestionsFromBlock(
 	editor: Editor,
 	blockId: string,
 ): PersistentSuggestion[] {
-	const ytext = getYText(editor, blockId);
-	if (!ytext) return [];
-
-	const suggestions: PersistentSuggestion[] = [];
-	let offset = 0;
-
-	for (const delta of ytext.toDelta()) {
-		const length =
-			typeof delta.insert === "string" ? delta.insert.length : 1;
-		const suggestion = asSuggestion(delta.attributes?.suggestion);
-		if (suggestion) {
-			suggestions.push({
-				kind: "text",
-				id: suggestion.id,
-				action: suggestion.action,
-				author: suggestion.author,
-				authorType: suggestion.authorType,
-				createdAt: suggestion.createdAt,
-				model: suggestion.model,
-				sessionId: suggestion.sessionId,
-				requestId: suggestion.requestId,
-				turnId: suggestion.turnId,
-				generationId: suggestion.generationId,
-				blockId,
-				offset,
-				length,
-			});
-		}
-		offset += length;
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		return [];
 	}
 
+	const suggestions = suggestionsFromDeltas(block.inlineDeltas(), blockId);
+	const table = block.as("table");
+	if (!table) {
+		return suggestions;
+	}
+
+	for (let row = 0; row < table.tableRowCount(); row += 1) {
+		for (let col = 0; col < table.tableColumnCount(); col += 1) {
+			const cell = table.tableCell(row, col);
+			if (!cell) {
+				continue;
+			}
+			suggestions.push(
+				...suggestionsFromDeltas(cell.inlineDeltas(), blockId, {
+					row,
+					col,
+				}),
+			);
+		}
+	}
 	return suggestions;
 }
 
@@ -112,9 +107,7 @@ export function serializeBlockSuggestionMeta(
 	};
 }
 
-export function parseBlockSuggestionMeta(
-	meta: unknown,
-): BlockSuggestionMeta | null {
+function parseBlockSuggestionMeta(meta: unknown): BlockSuggestionMeta | null {
 	if (!meta || typeof meta !== "object") return null;
 	const record = meta as Record<string, unknown>;
 	if (
@@ -132,7 +125,9 @@ export function parseBlockSuggestionMeta(
 		action !== "insert-block" &&
 		action !== "delete-block" &&
 		action !== "move-block" &&
-		action !== "convert-block"
+		action !== "convert-block" &&
+		action !== "split-block" &&
+		action !== "format-text"
 	) {
 		return null;
 	}
@@ -168,7 +163,7 @@ export function createSuggestionMark(
 	const resolvedSessionId = options.sessionId ?? sessionId;
 	return {
 		suggestion: {
-			id: options.suggestionId ?? crypto.randomUUID(),
+			id: options.suggestionId ?? generateId(),
 			action,
 			author,
 			authorType,
@@ -196,6 +191,34 @@ function readPreviousState(
 			record.props && typeof record.props === "object"
 				? { ...(record.props as Record<string, unknown>) }
 				: undefined,
+		format: readFormatState(record.format),
+	};
+}
+
+function readFormatState(
+	value: unknown,
+): BlockSuggestionPreviousState["format"] {
+	if (!value || typeof value !== "object") {
+		return undefined;
+	}
+	const record = value as Record<string, unknown>;
+	if (typeof record.from !== "number" || typeof record.to !== "number") {
+		return undefined;
+	}
+	if (!record.marks || typeof record.marks !== "object") {
+		return undefined;
+	}
+	const cell =
+		record.cell && typeof record.cell === "object"
+			? (record.cell as Record<string, unknown>)
+			: null;
+	return {
+		from: record.from,
+		to: record.to,
+		marks: { ...(record.marks as Record<string, unknown | null>) },
+		...(cell && typeof cell.row === "number" && typeof cell.col === "number"
+			? { cell: { row: cell.row, col: cell.col } }
+			: {}),
 	};
 }
 
@@ -254,12 +277,37 @@ function asSuggestion(value: unknown): {
 	};
 }
 
-function getYText(editor: Editor, blockId: string): YTextLike | null {
-	try {
-		return (
-			(editor.internals.getBlockText(blockId) as YTextLike | null) ?? null
-		);
-	} catch {
-		return null;
+function suggestionsFromDeltas(
+	deltas: readonly InlineDelta[],
+	blockId: string,
+	cell?: { row: number; col: number },
+): PersistentSuggestion[] {
+	const suggestions: PersistentSuggestion[] = [];
+	let offset = 0;
+	for (const delta of deltas) {
+		const length =
+			typeof delta.insert === "string" ? delta.insert.length : 1;
+		const suggestion = asSuggestion(delta.attributes?.suggestion);
+		if (suggestion) {
+			suggestions.push({
+				kind: "text",
+				id: suggestion.id,
+				action: suggestion.action,
+				author: suggestion.author,
+				authorType: suggestion.authorType,
+				createdAt: suggestion.createdAt,
+				model: suggestion.model,
+				sessionId: suggestion.sessionId,
+				requestId: suggestion.requestId,
+				turnId: suggestion.turnId,
+				generationId: suggestion.generationId,
+				blockId,
+				offset,
+				length,
+				...(cell ? { cell } : {}),
+			});
+		}
+		offset += length;
 	}
+	return suggestions;
 }

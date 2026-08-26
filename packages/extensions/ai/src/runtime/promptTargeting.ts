@@ -42,3 +42,47 @@ export function isDocumentFollowUpEditPrompt(prompt: string): boolean {
 			/\bmake (?:it|this)\b/.test(normalizedPrompt))
 	);
 }
+
+export function parseParagraphReference(prompt: string): number | null {
+	const match = prompt.match(
+		/\b(?:(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)|(\d+)(?:st|nd|rd|th))\s+paragraph\b/i,
+	);
+	if (!match) {
+		return null;
+	}
+	const wordOrdinal = match[1]?.toLowerCase();
+	if (wordOrdinal) {
+		return resolveWordOrdinal(wordOrdinal);
+	}
+	const numericOrdinal = Number.parseInt(match[2] ?? "", 10);
+	return Number.isFinite(numericOrdinal) && numericOrdinal > 0
+		? numericOrdinal
+		: null;
+}
+
+export function resolveWordOrdinal(word: string): number | null {
+	switch (word) {
+		case "first":
+			return 1;
+		case "second":
+			return 2;
+		case "third":
+			return 3;
+		case "fourth":
+			return 4;
+		case "fifth":
+			return 5;
+		case "sixth":
+			return 6;
+		case "seventh":
+			return 7;
+		case "eighth":
+			return 8;
+		case "ninth":
+			return 9;
+		case "tenth":
+			return 10;
+		default:
+			return null;
+	}
+}

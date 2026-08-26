@@ -1,10 +1,8 @@
-import type { BlockImportMatch, MarkdownNode, SchemaRegistry } from "@pen/types";
+import type { BlockImportMatch, MarkdownNode, SchemaRegistry } from "@input/pen-types";
+import { pendingBlocksFromHtmlFragment } from "./htmlBlocks";
 import { collectInlineHtmlContent } from "./htmlInline";
 import { collectInlineContent, processInlineNodes } from "./inlineMarks";
-import {
-  parseDatabaseMarkdownMarker,
-  parseTable,
-} from "./tableParser";
+import { parseTable } from "./tableParser";
 import type {
   InlineMark,
   MdastList,
@@ -79,18 +77,8 @@ function walkNodes(
   registry: SchemaRegistry,
   listIndent: number,
 ): void {
-  let pendingDatabasePayload: ReturnType<typeof parseDatabaseMarkdownMarker> =
-    null;
-
-  for (const node of nodes) {
-    if (node.type === "html") {
-      const payload = parseDatabaseMarkdownMarker(node.value);
-      if (payload) {
-        pendingDatabasePayload = payload;
-        continue;
-      }
-    }
-
+  for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index]!;
     if (
       node.type === "paragraph" &&
       node.children?.length === 1 &&
@@ -117,13 +105,49 @@ function walkNodes(
         schemaBlock.marks = inline.marks;
       } else {
         const inlineSourceNodes = getMarkdownInlineSource(schemaBlock, node);
-        if (!inlineSourceNodes) {
-          blocks.push(schemaBlock);
-          continue;
+        if (inlineSourceNodes) {
+          const inline = collectInlineContent(inlineSourceNodes);
+          schemaBlock.content = inline.text;
+          schemaBlock.marks = inline.marks;
         }
-        const inline = collectInlineContent(inlineSourceNodes);
-        schemaBlock.content = inline.text;
-        schemaBlock.marks = inline.marks;
+      }
+
+      const nested: PendingBlock[] = [];
+      const leftoverHtml = leftoverHtmlFromImport(schemaBlock);
+      if (leftoverHtml) {
+        nested.push(...pendingBlocksFromHtmlFragment(leftoverHtml));
+      }
+      const deferred = deferredMarkdownChildren(schemaBlock);
+      if (deferred.length > 0) {
+        walkNodes(deferred, nested, registry, listIndent);
+      } else if (!leftoverHtml) {
+        const remaining = remainingUnconsumedChildren(schemaBlock, node);
+        if (remaining.length > 0) {
+          walkNodes(remaining, nested, registry, listIndent);
+        }
+      }
+
+      const unclosed = unclosedHtmlTag(node);
+      if (unclosed) {
+        const inner: MdastNode[] = [];
+        while (
+          index + 1 < nodes.length &&
+          !isHtmlCloseTag(nodes[index + 1]!, unclosed)
+        ) {
+          index += 1;
+          inner.push(nodes[index]!);
+        }
+        if (
+          index + 1 < nodes.length &&
+          isHtmlCloseTag(nodes[index + 1]!, unclosed)
+        ) {
+          index += 1;
+        }
+        walkNodes(inner, nested, registry, listIndent);
+      }
+
+      if (nested.length > 0) {
+        schemaBlock.children = nested;
       }
       blocks.push(schemaBlock);
       continue;
@@ -131,14 +155,10 @@ function walkNodes(
 
     const mapping = blockMappings[node.type];
     if (mapping) {
-      const block =
-        node.type === "table"
-          ? parseTable(node as MdastTable, pendingDatabasePayload)
-          : mapping(node);
+      const block = mapping(node);
       if (!block) {
         continue;
       }
-      pendingDatabasePayload = null;
 
       if (
         node.children &&
@@ -156,13 +176,11 @@ function walkNodes(
     }
 
     if (node.type === "list") {
-      pendingDatabasePayload = null;
       walkListItems(node as MdastList, blocks, registry, listIndent);
       continue;
     }
 
     if (node.type === "listItem") {
-      pendingDatabasePayload = null;
       const block = listItemToBlock(node as MdastListItem, listIndent);
       blocks.push(block);
 
@@ -182,7 +200,6 @@ function walkNodes(
     }
 
     if (node.children && Array.isArray(node.children)) {
-      pendingDatabasePayload = null;
       walkNodes(node.children, blocks, registry, listIndent);
     }
   }
@@ -310,4 +327,67 @@ function getMarkdownInlineSource(
 
 function getMarkdownInlineHtml(block: BlockImportMatch): string | null {
   return block.importContentSource?.markdownHtml ?? null;
+}
+
+function leftoverHtmlFromImport(block: BlockImportMatch): string | null {
+  if (!block.importContentSource?.markdownHtml) {
+    return null;
+  }
+  const nodes = block.importContentSource.markdownNodes;
+  if (nodes?.length !== 1 || nodes[0]?.type !== "html") {
+    return null;
+  }
+  const value = (nodes[0] as { value?: string }).value?.trim() ?? "";
+  return value.length > 0 ? value : null;
+}
+
+function deferredMarkdownChildren(block: BlockImportMatch): MdastNode[] {
+  const deferred: MdastNode[] = [];
+  for (const child of block.children ?? []) {
+    const nodes = child.importContentSource?.markdownNodes;
+    if (!nodes || nodes.length === 0 || child.importContentSource?.markdownHtml) {
+      continue;
+    }
+    deferred.push(...(nodes as MdastNode[]));
+  }
+  return deferred;
+}
+
+function remainingUnconsumedChildren(
+  block: BlockImportMatch,
+  node: MdastNode,
+): MdastNode[] {
+  if (!node.children || node.children.length < 2) {
+    return [];
+  }
+  if (
+    block.importContentSource?.markdownNodes &&
+    !block.importContentSource.markdownHtml
+  ) {
+    return node.children.slice(1);
+  }
+  return [];
+}
+
+function unclosedHtmlTag(node: MdastNode): string | null {
+  if (node.type !== "html") {
+    return null;
+  }
+  const value = (node.value ?? "").trim();
+  const open = /^<([a-z][\w-]*)\b[^>]*>/i.exec(value);
+  if (!open) {
+    return null;
+  }
+  const tag = open[1]!;
+  if (new RegExp(`</${tag}\\s*>`, "i").test(value)) {
+    return null;
+  }
+  return tag;
+}
+
+function isHtmlCloseTag(node: MdastNode, tag: string): boolean {
+  if (node.type !== "html") {
+    return false;
+  }
+  return new RegExp(`^</${tag}\\s*>`, "i").test((node.value ?? "").trim());
 }

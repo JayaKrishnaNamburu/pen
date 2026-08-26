@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import type { BlockRangeStreamingPreviewPlan } from "./streamingPreviewPlan";
 
 export function mapStreamingBlockRangeTextOffset(
@@ -16,8 +16,6 @@ export function mapStreamingBlockRangeTextOffset(
 		normalizedRange.start.blockId === normalizedRange.end.blockId &&
 		normalizedRange.middleBlockIds.length === 0
 	) {
-		const blockText =
-			editor.getBlock(normalizedRange.start.blockId)?.textContent() ?? "";
 		const from = Math.min(
 			normalizedRange.start.offset,
 			normalizedRange.end.offset,

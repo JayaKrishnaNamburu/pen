@@ -3,10 +3,11 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { PenEditor } from "../penEditor";
 import { resolveRenderer, SubdocumentRenderer } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -20,7 +21,7 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 	}
 }
 
-describe("@pen/react subdocument rendering", () => {
+describe("@input/pen-react subdocument rendering", () => {
 	it("registers the subdocument renderer in the public renderer map", () => {
 		expect(resolveRenderer("subdocument")).toBe(SubdocumentRenderer);
 		expect(typeof SubdocumentRenderer).toBe("function");
@@ -28,6 +29,7 @@ describe("@pen/react subdocument rendering", () => {
 
 	it("mounts nested editors without leaking parent selection handlers", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -54,14 +56,18 @@ describe("@pen/react subdocument rendering", () => {
 				await flushAnimationFrames(3);
 			});
 
-			const editorRoots = container.querySelectorAll("[data-pen-editor-root]");
-			const nestedContent = container.querySelectorAll("[data-pen-editor-content]")[1] as
-				| HTMLElement
-				| undefined;
+			const editorRoots = container.querySelectorAll(
+				"[data-pen-editor-root]",
+			);
+			const nestedContent = container.querySelectorAll(
+				"[data-pen-editor-content]",
+			)[1] as HTMLElement | undefined;
 
 			expect(editorRoots).toHaveLength(2);
 			expect(
-				container.querySelector("[data-pen-subdocument-host] [data-pen-editor-root]"),
+				container.querySelector(
+					"[data-pen-subdocument-host] [data-pen-editor-root]",
+				),
 			).not.toBeNull();
 			expect(nestedContent).toBeTruthy();
 

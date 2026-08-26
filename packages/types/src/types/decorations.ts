@@ -44,10 +44,4 @@ export interface DecorationSet {
   inlineForBlock(blockId: string): readonly InlineDecoration[];
 
   equals(other: DecorationSet): boolean;
-  map(mapping: PositionMapping): DecorationSet;
-}
-
-export interface PositionMapping {
-  readonly affectedBlocks: readonly string[];
-  mapOffset(blockId: string, offset: number): number;
 }

@@ -1,3 +1,5 @@
+import { applySplitBlock } from "@input/pen-core";
+import { generateId } from "@input/pen-types";
 import type { TestEditor } from "./types";
 
 const INLINE_MARK_KEYS: Record<string, string> = {
@@ -30,18 +32,13 @@ export function simulateKeypress(
 
   if (key === "enter") {
     const offset = textTarget.to;
-    const newBlockId = crypto.randomUUID();
-    editor.apply(
-      [
-        {
-          type: "split-block",
-          blockId: textTarget.blockId,
-          offset,
-          newBlockId,
-        },
-      ],
-      { origin: "user", undoGroup: true },
-    );
+    const newBlockId = generateId();
+    applySplitBlock(editor, {
+      blockId: textTarget.blockId,
+      offset,
+      newBlockId,
+      applyOptions: { origin: "user", undoGroup: true },
+    });
     editor.selectText(newBlockId, 0, 0);
     return;
   }
@@ -57,8 +54,8 @@ export function simulateKeypress(
         {
           type: "format-text",
           blockId: textTarget.blockId,
-          offset: textTarget.from,
-          length: textTarget.to - textTarget.from,
+          from: textTarget.from,
+          to: textTarget.to,
           marks: { [markType]: true },
         },
       ],

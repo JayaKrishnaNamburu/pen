@@ -1,3 +1,5 @@
+"use client";
+
 export {
 	MultiplayerPresenceList,
 	MultiplayerRemoteCursors,
@@ -15,4 +17,4 @@ export type {
 	PeerState,
 	RemoteCursorState,
 	RemoteSelectionState,
-} from "@pen/multiplayer";
+} from "@input/pen-multiplayer";

@@ -1,5 +1,6 @@
-import { exportMarkdownForBlocks } from "@pen/markdown-serialization";
-import type { Editor, SelectionState, TextSelection } from "@pen/types";
+import { selectionToRange } from "@input/pen-core";
+import { exportMarkdownForBlocks } from "@input/pen-markdown-serialization";
+import type { Editor, SelectionState, TextSelection } from "@input/pen-types";
 import type { StructuredTargetInspection } from "./structuredTargets";
 import { inspectStructuredTarget } from "./structuredTargets";
 
@@ -42,6 +43,7 @@ export interface ContextToolOptions {
 	format: DocumentContextFormat;
 	includeSelection: boolean;
 	includeSuggestions: boolean;
+	annotateBlocks: boolean;
 	range: DocumentRangeInput | null;
 }
 
@@ -49,19 +51,22 @@ type BlockSnapshotHandle =
 	ReturnType<Editor["getBlock"]> extends infer T ? NonNullable<T> : never;
 
 const SURROUNDING_BLOCK_RADIUS = 2;
-const SUMMARY_PREVIEW_LIMIT = 80;
+const SUMMARY_PREVIEW_LIMIT = 160;
 
-export function normalizeContextToolOptions(input: unknown): ContextToolOptions {
+export function normalizeContextToolOptions(
+	input: unknown,
+): ContextToolOptions {
 	const options = (input ?? {}) as Record<string, unknown>;
 	return {
 		format:
 			options.format === "json" ||
-				options.format === "markdown" ||
-				options.format === "summary"
+			options.format === "markdown" ||
+			options.format === "summary"
 				? options.format
 				: "summary",
 		includeSelection: options.includeSelection === true,
 		includeSuggestions: options.includeSuggestions === true,
+		annotateBlocks: options.annotateBlocks === true,
 		range:
 			options.range && typeof options.range === "object"
 				? (options.range as DocumentRangeInput)
@@ -76,10 +81,9 @@ export function buildCursorContext(
 	const selection = editor.getSelection();
 	const activeBlockId = resolveActiveBlockId(selection);
 	const boundedBlocks = resolveCursorBlocks(editor, activeBlockId, viewMode);
-	const activeBlock =
-		(activeBlockId
-			? boundedBlocks.find((block) => block.id === activeBlockId) ?? null
-			: boundedBlocks[0] ?? null);
+	const activeBlock = activeBlockId
+		? (boundedBlocks.find((block) => block.id === activeBlockId) ?? null)
+		: (boundedBlocks[0] ?? null);
 	return {
 		selection,
 		activeBlockId: activeBlock?.id ?? activeBlockId,
@@ -87,7 +91,10 @@ export function buildCursorContext(
 		selectedText: resolveSelectedText(editor, selection, viewMode),
 		markdown: formatBlocksAsMarkdown(boundedBlocks),
 		surroundingBlocks: summarizeBlocks(boundedBlocks),
-		structuredTarget: inspectStructuredTarget(editor, activeBlock?.id ?? activeBlockId),
+		structuredTarget: inspectStructuredTarget(
+			editor,
+			activeBlock?.id ?? activeBlockId,
+		),
 	};
 }
 
@@ -109,11 +116,50 @@ export function buildDocumentBlockSnapshots(
 	return resolveDocumentBlocks(editor, null, viewMode);
 }
 
-export function formatBlocksAsMarkdown(blocks: DocumentBlockSnapshot[]): string {
+export function formatBlocksAsMarkdown(
+	blocks: DocumentBlockSnapshot[],
+): string {
 	return blocks
 		.map((block) => block.markdown)
 		.filter((block) => block.length > 0)
 		.join("\n\n");
+}
+
+/** Matches one block annotation comment produced by {@link formatBlocksAsAnnotatedMarkdown}. */
+const BLOCK_ANNOTATION_PATTERN = /^<!-- block:(\S+) (\S+) -->$/;
+
+/**
+ * Markdown with an id/type comment above every block so a model can address
+ * blocks precisely. Annotations are metadata: strip them with
+ * {@link stripBlockAnnotations} before importing the markdown back.
+ */
+export function formatBlocksAsAnnotatedMarkdown(
+	blocks: DocumentBlockSnapshot[],
+): string {
+	return blocks
+		.map(
+			(block) =>
+				`<!-- block:${block.id} ${block.type} -->\n${block.markdown.trimEnd()}`,
+		)
+		.join("\n\n");
+}
+
+/**
+ * Removes the `<!-- block:<id> <type> -->` lines that annotate markdown given
+ * to a model. Models copy the annotations back into their payloads, so this
+ * runs on the way in — an annotation that reaches the document becomes literal
+ * text in a block.
+ */
+export function stripBlockAnnotations(markdown: string): string {
+	if (!markdown.includes("<!-- block:")) {
+		return markdown;
+	}
+	return markdown
+		.split("\n")
+		.filter((line) => !BLOCK_ANNOTATION_PATTERN.test(line.trim()))
+		.join("\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
 }
 
 export function exportDocumentRangeAsMarkdown(
@@ -128,7 +174,9 @@ export function exportDocumentRangeAsMarkdown(
 	);
 }
 
-export function summarizeBlocks(blocks: DocumentBlockSnapshot[]): SummaryBlockSnapshot[] {
+export function summarizeBlocks(
+	blocks: DocumentBlockSnapshot[],
+): SummaryBlockSnapshot[] {
 	return blocks.map((block) => ({
 		id: block.id,
 		type: block.type,
@@ -142,7 +190,7 @@ export function resolveSelectionText(
 	selection: TextSelection,
 	viewMode: DocumentContextViewMode,
 ): string {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	const blockIds = range.blockRange;
 	const parts = blockIds.map((blockId, index) => {
 		const block = editor.getBlock(blockId);
@@ -152,7 +200,9 @@ export function resolveSelectionText(
 		let text = "";
 		const startOffset = index === 0 ? range.start.offset : 0;
 		const endOffset =
-			index === blockIds.length - 1 ? range.end.offset : Number.POSITIVE_INFINITY;
+			index === blockIds.length - 1
+				? range.end.offset
+				: Number.POSITIVE_INFINITY;
 
 		for (const delta of block.textDeltas()) {
 			const length = delta.insert.length;
@@ -248,13 +298,21 @@ function resolveCursorBlocks(
 			SURROUNDING_BLOCK_RADIUS + 1,
 		);
 	}
-	if (typeof activeBlock.prev === "undefined" || typeof activeBlock.next === "undefined") {
+	if (
+		typeof activeBlock.prev === "undefined" ||
+		typeof activeBlock.next === "undefined"
+	) {
 		const blocks = resolveDocumentBlocks(editor, null, viewMode);
-		const activeBlockIndex = blocks.findIndex((block) => block.id === activeBlock.id);
+		const activeBlockIndex = blocks.findIndex(
+			(block) => block.id === activeBlock.id,
+		);
 		if (activeBlockIndex < 0) {
 			return blocks.slice(0, SURROUNDING_BLOCK_RADIUS + 1);
 		}
-		const startIndex = Math.max(0, activeBlockIndex - SURROUNDING_BLOCK_RADIUS);
+		const startIndex = Math.max(
+			0,
+			activeBlockIndex - SURROUNDING_BLOCK_RADIUS,
+		);
 		const endIndex = Math.min(
 			blocks.length,
 			activeBlockIndex + SURROUNDING_BLOCK_RADIUS + 1,
@@ -335,7 +393,9 @@ export function resolveDocumentBlockHandles(
 	return blocks.slice(rangeStart, rangeEnd);
 }
 
-export function listDocumentBlockHandles(editor: Editor): BlockSnapshotHandle[] {
+export function listDocumentBlockHandles(
+	editor: Editor,
+): BlockSnapshotHandle[] {
 	const allBlocks = editor.documentState?.allBlocks?.();
 	if (allBlocks) {
 		return Array.from(allBlocks) as BlockSnapshotHandle[];

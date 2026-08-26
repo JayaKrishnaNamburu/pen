@@ -1,8 +1,10 @@
-import type { BlockHandle, Editor, TableCellHandle } from "@pen/types";
-import { buildDatabaseData, buildTableChildren } from "./exporterUtils";
+import type { BlockHandle, Editor, TableCellHandle } from "@input/pen-types";
+import {
+	buildTableChildren,
+	getNumberedListItemValue,
+	sortDeltaAttributes,
+} from "@input/pen-core";
 import { groupListItems } from "./listGrouper";
-import { getNumberedListItemValue } from "./orderedList";
-import { sortDeltaAttributes } from "./sortDeltaAttributes";
 
 export interface MarkdownExportRange {
   startBlockId?: string | null;
@@ -15,7 +17,6 @@ export interface MarkdownExportConfig {
   viewMode?: MarkdownExportViewMode;
 }
 
-const ZERO_WIDTH_SPACE = "\u200B";
 const DELETE_SUGGESTION_ACTION = "delete";
 
 export function exportMarkdownRange(
@@ -96,11 +97,6 @@ function serializeBlockHandleToMarkdown(
     props,
     content: serializeInlineContent(handle, editor, viewMode),
     children: buildTableChildren(handle),
-    ...(handle.type === "database"
-      ? {
-          databaseData: buildDatabaseData(handle),
-        }
-      : {}),
   };
 
   return schema.serialize.toMarkdown(block);
@@ -116,11 +112,18 @@ function serializeInlineContent(
     return readResolvedText(handle, viewMode);
   }
 
+  const stored = deltas
+    .map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
+    .join("");
+  if (stored === "") {
+    return "";
+  }
+
   let result = "";
 
   for (const delta of deltas) {
     let text = typeof delta.insert === "string" ? delta.insert : "";
-    if (text === ZERO_WIDTH_SPACE) continue;
+    if (!text) continue;
     const suggestion = delta.attributes?.suggestion as
       | { action?: string }
       | undefined;
@@ -187,13 +190,14 @@ function readTableRows(
   serializeCell: (cell: TableCellHandle | null) => string,
 ): string[][] {
   const rows: string[][] = [];
-  const rowCount = handle.tableRowCount();
-  const colCount = handle.tableColumnCount();
+  const table = handle.as("table");
+  const rowCount = table?.tableRowCount() ?? 0;
+  const colCount = table?.tableColumnCount() ?? 0;
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     const row: string[] = [];
     for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
-      row.push(serializeCell(handle.tableCell(rowIndex, columnIndex)));
+      row.push(serializeCell(table?.tableCell(rowIndex, columnIndex) ?? null));
     }
     rows.push(row);
   }
@@ -210,10 +214,16 @@ function serializeTableCellMarkdown(
     return "";
   }
 
+  const deltas = [...cell.textDeltas()];
+  const stored = deltas.map((delta) => delta.insert).join("");
+  if (stored === "") {
+    return "";
+  }
+
   let result = "";
-  for (const delta of cell.textDeltas()) {
+  for (const delta of deltas) {
     let text = delta.insert;
-    if (text === ZERO_WIDTH_SPACE) {
+    if (!text) {
       continue;
     }
     const suggestion = delta.attributes?.suggestion as
@@ -257,7 +267,7 @@ function renderHtmlTableFallback(rows: string[][]): string {
 }
 
 function escapeMarkdownPipe(text: string): string {
-  return text.replace(/\|/g, "\\|");
+  return text.replaceAll("\\", "\\\\").replaceAll("|", "\\|");
 }
 
 function escapeHTML(text: string): string {
@@ -269,11 +279,7 @@ function escapeHTML(text: string): string {
 }
 
 function listAllBlockHandles(editor: Editor): BlockHandle[] {
-  const allBlocks = editor.documentState?.allBlocks?.();
-  if (allBlocks) {
-    return Array.from(allBlocks);
-  }
-  return Array.from(editor.blocks());
+  return Array.from(editor.documentState.allBlocks());
 }
 
 function readResolvedText(

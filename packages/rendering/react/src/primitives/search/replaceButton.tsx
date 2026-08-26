@@ -1,30 +1,34 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
 export interface SearchReplaceButtonProps
-	extends AsChildProps,
+	extends
+		AsChildProps,
 		Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
 	ref?: React.Ref<HTMLElement>;
 }
 
 export function SearchReplace(props: SearchReplaceButtonProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchReplaceButton
 			{...props}
 			action="replace"
-			label="Replace match"
+			label={resolveEditorMessage(editor, "pen.search.replaceMatch")}
 			onAction={(controller) => controller?.replace()}
 		/>
 	);
 }
 
 export function SearchReplaceAll(props: SearchReplaceButtonProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchReplaceButton
 			{...props}
 			action="replace-all"
-			label="Replace all matches"
+			label={resolveEditorMessage(editor, "pen.search.replaceAll")}
 			onAction={(controller) => controller?.replaceAll()}
 		/>
 	);
@@ -33,7 +37,9 @@ export function SearchReplaceAll(props: SearchReplaceButtonProps) {
 type SearchReplaceButtonInternalProps = SearchReplaceButtonProps & {
 	action: "replace" | "replace-all";
 	label: string;
-	onAction: (controller: ReturnType<typeof useSearchContext>["controller"]) => void;
+	onAction: (
+		controller: ReturnType<typeof useSearchContext>["controller"],
+	) => void;
 };
 
 function SearchReplaceButton(props: SearchReplaceButtonInternalProps) {

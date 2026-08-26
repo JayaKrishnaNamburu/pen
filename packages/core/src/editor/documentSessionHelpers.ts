@@ -6,13 +6,13 @@ import type {
 	DocumentScopeInfo,
 	DocumentScopeReplacementEvent,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	SUBDOCUMENT,
 	isYjsCRDTDocument,
 	isYjsDoc,
 	type YjsDoc,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 
 export type ScopeListener = (event: CRDTEvent) => void;
 export type ScopeReplacementListener = (
@@ -28,11 +28,13 @@ export type ScopeEntry = {
 	scope: DocumentScope;
 	awareness: Awareness | null;
 	observerUnsub: Unsubscribe;
-	subdocsHandler: ((event: {
-		added: Set<YjsDoc>;
-		loaded: Set<YjsDoc>;
-		removed: Set<YjsDoc>;
-	}) => void) | null;
+	subdocsHandler:
+		| ((event: {
+				added: Set<YjsDoc>;
+				loaded: Set<YjsDoc>;
+				removed: Set<YjsDoc>;
+		  }) => void)
+		| null;
 };
 
 export function getDocumentGuid(doc: YjsDoc): string {
@@ -175,7 +177,10 @@ export function indexOwnerScope(
 	if (!scope.parentId || !scope.ownerBlockId) {
 		return;
 	}
-	scopeIdsByOwnerKey.set(toOwnerKey(scope.parentId, scope.ownerBlockId), scope.id);
+	scopeIdsByOwnerKey.set(
+		toOwnerKey(scope.parentId, scope.ownerBlockId),
+		scope.id,
+	);
 }
 
 export function removeOwnerIndex(

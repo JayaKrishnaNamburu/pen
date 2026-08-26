@@ -5,12 +5,10 @@ export type {
 } from "./commandsShared";
 export {
 	getLogicalInlineLength,
+	normalizeInlineOffset,
 	normalizeInlineRange,
 } from "./commandsShared";
-export {
-	applyListTabBehavior,
-	moveCaretAcrossBlocks,
-} from "./commandsNavigation";
+export { applyListTabBehavior, moveCaretAcrossBlocks } from "./commandsListTab";
 export {
 	applyBackspaceBehavior,
 	applyDeleteBehavior,
@@ -22,12 +20,8 @@ export {
 	convertBlock,
 	getConvertBlockOps,
 	insertTextAtRange,
-	normalizeInlineOffset,
 	setInlineMark,
 	splitBlockAtOffset,
 	toggleInlineMark,
 } from "./commandsBlock";
-export {
-	applyEnterBehavior,
-	resolveEnterAction,
-} from "./commandsEnter";
+export { applyEnterBehavior, resolveEnterAction } from "./commandsEnter";

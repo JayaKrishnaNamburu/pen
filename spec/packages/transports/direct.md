@@ -1,4 +1,4 @@
-# @pen/transport-direct
+# @input/pen-transport-direct
 
 ## Purpose
 
@@ -11,17 +11,20 @@ Provide transport-specific wiring around Pen protocols and sessions.
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- `directTransport()` and `DirectTransportOptions`. `toolRuntime` is required.
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/types`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: Transport packages should stay below product policy and above raw network wiring.
+- Boundary: Transport packages should stay below product policy and above raw network wiring. The `@input/pen-ai` dependency is for tool authorization (`openAIToolCall`, `createAIToolTurn`), not for AI orchestration.
 
 ## Data Flow / Runtime Model
 
-Transport package packages in Pen should stay package-first and explicit about ownership. Adopt when a host needs the specific transport surface.
+In-process transport. The live `Editor` is a `directTransport({ editor })` constructor option. `PenStreamRequest` has no `editor` field; direct never reads one off the request.
+
+Each `toolCalls` entry is authorized with `openAIToolCall()` before `toolRuntime.executeTool()`. A denied call yields `tool-error` and skips execution. The write guard installed for the call is restored in `finally`, not `catch`: abandoning a stream mid-`yield` resumes the generator with a return completion, which runs `finally` and skips `catch`. A `catch`-only restore left a read-only guard patched onto the host editor and silently dropped later writes. `opened.close()` is idempotent and returns its first result on later calls (owned by `@input/pen-ai/tools`).
 
 ## Integration Notes
 
@@ -31,7 +34,7 @@ Transport package packages in Pen should stay package-first and explicit about o
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

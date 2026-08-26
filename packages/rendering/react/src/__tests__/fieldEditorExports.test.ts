@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import {
+	createEditor,
+	createHeadlessEditor,
+	keymapFacet,
+} from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	expandFieldEditorRange,
 	contractFieldEditorRange,
 	shouldUseBlockSelection,
 	getExpandedBlockRole,
 	computeTextDiff,
-} from "../field-editor/index";
-import { ContentEditableBackend } from "../field-editor/contenteditableBackend";
-import { EditContextBackend } from "../field-editor/editContextBackend";
-import { ExpandedContentEditableBackend } from "../field-editor/expandedContentEditableBackend";
-import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+} from "@input/pen-dom/field-editor";
+import { ContentEditableBackend } from "@input/pen-dom/field-editor/contenteditableBackend";
+import { EditContextBackend } from "@input/pen-dom/field-editor/editContextBackend";
+import { ExpandedContentEditableBackend } from "@input/pen-dom/field-editor/expandedContentEditableBackend";
+import { FieldEditorImpl } from "@input/pen-dom";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	EditorRegionSelector,
 	Pen,
@@ -20,6 +25,7 @@ import {
 
 function createFieldEditorExportsEditor() {
 	return createEditor({
+		schema: defaultSchema,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -28,7 +34,7 @@ function createFieldEditorExportsEditor() {
 	});
 }
 
-describe("@pen/react field-editor exports", () => {
+describe("@input/pen-react field-editor exports", () => {
 	it("loads the field-editor helper barrel on all platforms", () => {
 		expect(typeof expandFieldEditorRange).toBe("function");
 		expect(typeof contractFieldEditorRange).toBe("function");
@@ -52,11 +58,14 @@ describe("@pen/react field-editor exports", () => {
 	it("exports the rich-text shortcuts extension", () => {
 		const extension = richTextShortcutsExtension();
 		expect(extension.name).toBe("rich-text-shortcuts");
-		expect(extension.keyBindings?.map((binding) => binding.key)).toEqual([
-			"Mod-b",
-			"Mod-i",
-			"Mod-u",
-		]);
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [extension],
+		});
+		expect(editor.facet(keymapFacet).map((binding) => binding.key)).toEqual(
+			["Mod-b", "Mod-i", "Mod-u"],
+		);
+		editor.destroy();
 	});
 
 	it("exports the optional region selector primitive", () => {
@@ -147,16 +156,18 @@ describe("@pen/react field-editor exports", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 
@@ -193,19 +204,21 @@ describe("@pen/react field-editor exports", () => {
 				position: "last" as const,
 			},
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 0,
-				text: blockId,
+				from: 0,
+				to: 0,
+				insert: blockId,
 			},
 		]);
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "first",
+				from: 0,
+				to: 0,
+				insert: "first",
 			},
 			...insertOps,
 		]);
@@ -216,6 +229,7 @@ describe("@pen/react field-editor exports", () => {
 		fieldEditor.expandTo(lastBlockId);
 
 		expect(shouldUseBlockSelection(editor, 51)).toBe(true);
+		expect(editor.selection?.type).toBe("text");
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: firstBlockId,
 			isEditing: true,

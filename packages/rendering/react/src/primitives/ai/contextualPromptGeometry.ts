@@ -1,52 +1,65 @@
-import type { Editor } from "@pen/types";
-import type { AIContextualPromptAnchor, AISession } from "@pen/ai";
-import { domSelectionToEditor, getTextSelectionClientRects, queryBlockElement } from "../../field-editor/selectionBridge";
-import { queryEditorBlockElement, resolveEditorContentElement } from "../../utils/aiDomScope";
+import type { Editor } from "@input/pen-types";
+import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
+import {
+	measureWithRoot,
+	type GeometryReader,
+	type Rect,
+} from "@input/pen-dom";
+import {
+	domSelectionToEditor,
+	getTextSelectionClientRects,
+} from "@input/pen-dom/field-editor/selectionBridge";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import {
+	queryEditorBlockElement,
+	resolveEditorContentElement,
+} from "../../utils/aiDomScope";
 import type { ContextualPromptPlacement } from "./contextualPromptTypes";
 
 export function resolveAnchorRect(
 	hostElement: HTMLElement,
 	anchor: AIContextualPromptAnchor,
 ): DOMRect | null {
-	if (anchor.selectionSnapshot?.blockRange.length) {
-		const blockRects = anchor.selectionSnapshot.blockRange
-			.map((blockId) => queryBlockElement(hostElement, blockId))
-			.filter((element): element is HTMLElement => element instanceof HTMLElement)
-			.map((element) => element.getBoundingClientRect());
-		if (blockRects.length > 0) {
-			return mergeDomRects(blockRects);
+	return measureWithRoot(geometryRoot(hostElement), ({ reader }) => {
+		if (anchor.selectionSnapshot?.blockRange.length) {
+			const blockRects = readBlockDomRects(
+				reader,
+				anchor.selectionSnapshot.blockRange,
+			);
+			if (blockRects.length > 0) {
+				return mergeDomRects(blockRects);
+			}
 		}
-	}
-	if (anchor.focusBlockId) {
-		const blockElement = queryBlockElement(hostElement, anchor.focusBlockId);
-		if (blockElement) {
-			return blockElement.getBoundingClientRect();
+		if (anchor.focusBlockId) {
+			return rectToDomRect(reader.blockRect(anchor.focusBlockId));
 		}
-	}
-	return null;
+		return null;
+	});
 }
 
 export function resolveInsertedAnchorRect(
 	hostElement: HTMLElement,
 	anchor: AIContextualPromptAnchor,
 ): DOMRect | null {
-	if (!anchor.focusBlockId) {
+	const focusBlockId = anchor.focusBlockId;
+	if (!focusBlockId) {
 		return resolveFallbackRect(anchor.lastResolvedRect);
 	}
 
-	const blockElement = queryBlockElement(hostElement, anchor.focusBlockId);
-	if (!blockElement) {
-		return resolveFallbackRect(anchor.lastResolvedRect);
-	}
-
-	return blockElement.getBoundingClientRect();
+	return measureWithRoot(geometryRoot(hostElement), ({ reader }) => {
+		return (
+			rectToDomRect(reader.blockRect(focusBlockId)) ??
+			resolveFallbackRect(anchor.lastResolvedRect)
+		);
+	});
 }
 
 export function resolvePromptSelectionRects(
 	hostElement: HTMLElement,
 	session: AISession,
 ): readonly DOMRect[] {
-	const selectionSnapshot = session.contextualPrompt?.anchor.selectionSnapshot;
+	const selectionSnapshot =
+		session.contextualPrompt?.anchor.selectionSnapshot;
 	if (selectionSnapshot) {
 		const selectionRects = getTextSelectionClientRects(hostElement, {
 			anchor: selectionSnapshot.anchor,
@@ -65,10 +78,11 @@ export function resolvePromptSelectionRects(
 	}
 
 	if (selectionSnapshot?.blockRange.length) {
-		const blockRects = selectionSnapshot.blockRange
-			.map((blockId) => queryBlockElement(hostElement, blockId))
-			.filter((element): element is HTMLElement => element instanceof HTMLElement)
-			.map((element) => element.getBoundingClientRect());
+		const blockRects = measureWithRoot(
+			geometryRoot(hostElement),
+			({ reader }) =>
+				readBlockDomRects(reader, selectionSnapshot.blockRange),
+		);
 		if (blockRects.length > 0) {
 			return blockRects;
 		}
@@ -98,7 +112,7 @@ export function resolveLiveSelectionRect(
 	const commonAncestor =
 		range.commonAncestorContainer instanceof Element
 			? range.commonAncestorContainer
-			: range.commonAncestorContainer.parentElement ?? null;
+			: (range.commonAncestorContainer.parentElement ?? null);
 	if (!commonAncestor || !hostElement.contains(commonAncestor)) {
 		return null;
 	}
@@ -110,7 +124,8 @@ export function resolvePromptHostElement(
 	editor: Editor,
 	session: AISession,
 ): HTMLElement | null {
-	const selectionSnapshot = session.contextualPrompt?.anchor.selectionSnapshot;
+	const selectionSnapshot =
+		session.contextualPrompt?.anchor.selectionSnapshot;
 	const anchorBlockId =
 		selectionSnapshot?.blockRange[0] ??
 		selectionSnapshot?.anchor.blockId ??
@@ -123,13 +138,40 @@ export function resolvePromptHostElement(
 			anchorBlock?.closest("[data-pen-editor-root]");
 		const hostElement =
 			rootElement?.querySelector("[data-pen-editor-content]") ??
-			(anchorBlock?.closest("[data-pen-editor-content]") as HTMLElement | null);
+			(anchorBlock?.closest(
+				"[data-pen-editor-content]",
+			) as HTMLElement | null);
 		if (hostElement instanceof HTMLElement) {
 			return hostElement;
 		}
 	}
 
 	return resolveEditorContentElement(editor);
+}
+
+function geometryRoot(hostElement: HTMLElement): HTMLElement {
+	const root = hostElement.closest(`[${DATA_ATTRS.editorRoot}]`);
+	return root instanceof HTMLElement ? root : hostElement;
+}
+
+function readBlockDomRects(
+	reader: GeometryReader,
+	blockIds: readonly string[],
+): DOMRect[] {
+	const rects: DOMRect[] = [];
+	for (const blockId of blockIds) {
+		const rect = rectToDomRect(reader.blockRect(blockId));
+		if (rect) {
+			rects.push(rect);
+		}
+	}
+	return rects;
+}
+
+function rectToDomRect(rect: Rect | null): DOMRect | null {
+	return rect
+		? createDomRect(rect.top, rect.left, rect.width, rect.height)
+		: null;
 }
 
 function mergeDomRects(rects: readonly DOMRect[]): DOMRect | null {
@@ -238,12 +280,10 @@ function createDomRect(
 }
 
 export function selectionMatchesSnapshot(
-	selection:
-		| {
-			anchor: { blockId: string; offset: number };
-			focus: { blockId: string; offset: number };
-		}
-		| null,
+	selection: {
+		anchor: { blockId: string; offset: number };
+		focus: { blockId: string; offset: number };
+	} | null,
 	snapshot: NonNullable<AIContextualPromptAnchor["selectionSnapshot"]>,
 ): boolean {
 	if (!selection) {

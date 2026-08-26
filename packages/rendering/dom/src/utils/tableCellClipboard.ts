@@ -1,8 +1,8 @@
-import type { CellSelection, DocumentOp, Editor } from "@pen/types";
+import type { CellSelection, DocumentOp, Editor } from "@input/pen-types";
 import {
 	resolveCellSelectionCoord,
 	resolveCellSelectionMatrix,
-} from "@pen/core";
+} from "@input/pen-core";
 
 export function isPasteShortcut(event: KeyboardEvent): boolean {
 	return (
@@ -34,7 +34,9 @@ export async function copyCellSelection(
 	for (const rowCells of resolveCellSelectionMatrix(block, selection)) {
 		const row: string[] = [];
 		for (const cellCoord of rowCells) {
-			const cell = block.tableCell(cellCoord.row, cellCoord.col);
+			const cell = block
+				.as("table")
+				?.tableCell(cellCoord.row, cellCoord.col);
 			row.push(cell?.textContent() ?? "");
 		}
 		cellData.push(row);
@@ -48,9 +50,13 @@ export async function copyCellSelection(
 	});
 	const encodedPenCells = encodeURIComponent(penCells);
 
-	const htmlRows = cellData.map((row) =>
-		`<tr>${row.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`,
-	).join("");
+	const htmlRows = cellData
+		.map(
+			(row) =>
+				`<tr>${row.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`,
+		)
+		.join("");
+	// SEC5: already-serialized rows
 	const html = `<table>${htmlRows}</table>`;
 	const clipboard = globalThis.navigator?.clipboard;
 	if (!clipboard) {
@@ -64,7 +70,9 @@ export async function copyCellSelection(
 		try {
 			await clipboard.write([
 				new ClipboardItem({
-					"text/plain": new Blob([tabSeparated], { type: "text/plain" }),
+					"text/plain": new Blob([tabSeparated], {
+						type: "text/plain",
+					}),
 					"text/html": new Blob(
 						[`<meta data-pen-cells="${encodedPenCells}" />${html}`],
 						{ type: "text/html" },
@@ -81,7 +89,16 @@ export async function copyCellSelection(
 		try {
 			await clipboard.writeText(tabSeparated);
 			return true;
-		} catch {
+		} catch (error) {
+			editor.internals.emit("diagnostic", {
+				code: "PEN_CLIPBOARD_002",
+				level: "warn",
+				source: "clipboard",
+				message: "Table cell copy could not write the clipboard",
+				remediation:
+					"Grant clipboard permission or copy while the editor is focused.",
+				error,
+			});
 			return false;
 		}
 	}
@@ -89,47 +106,82 @@ export async function copyCellSelection(
 	return false;
 }
 
-export function pasteCellSelection(editor: Editor, selection: CellSelection): void {
-	navigator.clipboard.read().then((items) => {
-		for (const item of items) {
-			if (item.types.includes("text/html")) {
-				item.getType("text/html").then((blob) => {
-					blob.text().then((html) => {
-						const penCellsMatch = html.match(/data-pen-cells=(['"])(.*?)\1/);
-						if (penCellsMatch) {
-							try {
-								const parsed = parseEncodedCellPayload(penCellsMatch[2]);
-								applyPastedCells(editor, selection, parsed.cells);
-								return;
-							} catch {
-								// Fall through to plain-text clipboard reads below.
+export function pasteCellSelection(
+	editor: Editor,
+	selection: CellSelection,
+): void {
+	navigator.clipboard
+		.read()
+		.then((items) => {
+			for (const item of items) {
+				if (item.types.includes("text/html")) {
+					item.getType("text/html").then((blob) => {
+						blob.text().then((html) => {
+							const penCellsMatch = html.match(
+								/data-pen-cells=(['"])(.*?)\1/,
+							);
+							if (penCellsMatch) {
+								try {
+									const parsed = parseEncodedCellPayload(
+										penCellsMatch[2],
+									);
+									applyPastedCells(
+										editor,
+										selection,
+										parsed.cells,
+									);
+									return;
+								} catch {
+									// Fall through to plain-text clipboard reads below.
+								}
 							}
-						}
-						pasteFromPlainText(editor, selection);
+							pasteFromPlainText(editor, selection);
+						});
 					});
-				});
-				return;
+					return;
+				}
 			}
-		}
-		pasteFromPlainText(editor, selection);
-	}).catch(() => {
-		pasteFromPlainText(editor, selection);
-	});
+			pasteFromPlainText(editor, selection);
+		})
+		.catch(() => {
+			// rich clipboard.read failed; plain-text paste is the remaining path.
+			pasteFromPlainText(editor, selection);
+		});
 }
 
 function pasteFromPlainText(editor: Editor, selection: CellSelection): void {
-	navigator.clipboard.readText().then((text) => {
-		const cells = text.split("\n").map((row) => row.split("\t"));
-		applyPastedCells(editor, selection, cells);
-	}).catch(() => { });
+	navigator.clipboard
+		.readText()
+		.then((text) => {
+			const cells = text.split("\n").map((row) => row.split("\t"));
+			applyPastedCells(editor, selection, cells);
+		})
+		.catch((error: unknown) => {
+			// CH5: terminal clipboard failure — no remaining paste fallback.
+			editor.internals.emit("diagnostic", {
+				code: "PEN_CLIPBOARD_001",
+				level: "warn",
+				source: "clipboard",
+				message: "Table cell paste could not read the clipboard",
+				remediation:
+					"Grant clipboard permission or paste while the editor is focused.",
+				error,
+			});
+		});
 }
 
-function applyPastedCells(editor: Editor, selection: CellSelection, cellData: string[][]): void {
+function applyPastedCells(
+	editor: Editor,
+	selection: CellSelection,
+	cellData: string[][],
+): void {
 	const block = editor.getBlock(selection.blockId);
 	if (!block) return;
 
-	const rowCount = selection.rowIds?.length ?? block.tableRowCount();
-	const colCount = selection.columnIds?.length ?? block.tableColumnCount();
+	const table = block.as("table");
+	const rowCount = selection.rowIds?.length ?? table?.tableRowCount() ?? 0;
+	const colCount =
+		selection.columnIds?.length ?? table?.tableColumnCount() ?? 0;
 	const startRow = Math.min(selection.anchor.row, selection.head.row);
 	const startCol = Math.min(selection.anchor.col, selection.head.col);
 
@@ -145,28 +197,28 @@ function applyPastedCells(editor: Editor, selection: CellSelection, cellData: st
 				col: targetCol,
 			});
 			if (!resolvedCoord) continue;
-			const cell = block.tableCell(resolvedCoord.row, resolvedCoord.col);
+			const cell = table?.tableCell(resolvedCoord.row, resolvedCoord.col);
 			if (!cell) continue;
 			const existingLen = cell.textContent().length;
 			if (existingLen > 0) {
 				ops.push({
-					type: "delete-table-cell-text",
+					type: "splice-text",
 					blockId: selection.blockId,
-					row: resolvedCoord.row,
-					col: resolvedCoord.col,
-					offset: 0,
-					length: existingLen,
+					cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+					from: 0,
+					to: existingLen,
+					insert: "",
 				});
 			}
 			const pasteText = cellData[r][c];
 			if (pasteText.length > 0) {
 				ops.push({
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: selection.blockId,
-					row: resolvedCoord.row,
-					col: resolvedCoord.col,
-					offset: 0,
-					text: pasteText,
+					cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+					from: 0,
+					to: 0,
+					insert: pasteText,
 				});
 			}
 		}
@@ -181,6 +233,7 @@ function parseEncodedCellPayload(raw: string): { cells: string[][] } {
 	try {
 		return JSON.parse(decodeURIComponent(raw)) as { cells: string[][] };
 	} catch {
+		// encoded payload was not URI-encoded; try the raw JSON.
 		return JSON.parse(raw) as { cells: string[][] };
 	}
 }

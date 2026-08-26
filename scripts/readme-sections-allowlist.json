@@ -1,0 +1,4 @@
+{
+  "_comment": "DOC4 (spec/rules/documentation.md): published package READMEs owned by parallel work. The section check reports these and stays green until those READMEs meet the contract. Each entry needs package and a reason naming DOC4. Remove an entry in the same PR that closes the gap.",
+  "packages": []
+}

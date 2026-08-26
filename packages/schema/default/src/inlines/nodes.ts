@@ -1,5 +1,9 @@
-import type { InlineSchema, PropSchema } from "@pen/types";
-import { prop, resolveSchema } from "@pen/types";
+import type { InlineSchema, PropSchema } from "@input/pen-types";
+import {
+	prop,
+	resolveSchema,
+} from "@input/pen-core";
+import { escapeHtml } from "../escapeHtml";
 
 function resolveProps(
   props: Record<string, unknown>,
@@ -21,9 +25,17 @@ export const mention: InlineSchema = {
   serialize: {
     toMarkdown: (_, props) => `@${props?.label ?? ""}`,
     toHTML: (_, props) =>
-      `<span class="mention" data-id="${props?.id ?? ""}">${props?.label ?? ""}</span>`,
+      `<span class="mention" data-id="${escapeHtml(String(props?.id ?? ""))}">${escapeHtml(String(props?.label ?? ""))}</span>`,
   },
   aiDescription: "Mention of a user, page, or entity",
+  a11y: {
+    label: (props) => {
+      const name =
+        typeof props.label === "string" ? props.label.trim() : "";
+      return name.length > 0 ? `@${name}` : "Mention";
+    },
+    roleDescription: "mention",
+  },
 };
 
 export const inlineApp: InlineSchema = {
@@ -36,7 +48,15 @@ export const inlineApp: InlineSchema = {
   serialize: {
     toMarkdown: (_, props) => `[app:${props?.appType ?? ""}]`,
     toHTML: (_, props) =>
-      `<span class="inline-app" data-type="${props?.appType ?? ""}"></span>`,
+      `<span class="inline-app" data-type="${escapeHtml(String(props?.appType ?? ""))}"></span>`,
   },
   aiDescription: "Inline embedded application",
+  a11y: {
+    label: (props) => {
+      const appType =
+        typeof props.appType === "string" ? props.appType.trim() : "";
+      return appType.length > 0 ? appType : "App";
+    },
+    roleDescription: "application",
+  },
 };

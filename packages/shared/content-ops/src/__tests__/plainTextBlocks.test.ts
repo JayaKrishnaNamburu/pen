@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { splitPlainTextBlocks } from "../plainTextBlocks";
+import { splitPlainTextLineBlocks } from "../plainTextBlocks";
 
-describe("splitPlainTextBlocks", () => {
+describe("splitPlainTextLineBlocks", () => {
   it("splits single newlines into adjacent blocks", () => {
-    expect(splitPlainTextBlocks("Hey\nHappy\n- Krijn")).toEqual([
+    expect(splitPlainTextLineBlocks("Hey\nHappy\n- Krijn")).toEqual([
       "Hey",
       "Happy",
       "- Krijn",
@@ -11,7 +11,7 @@ describe("splitPlainTextBlocks", () => {
   });
 
   it("preserves internal empty blocks from double newlines", () => {
-    expect(splitPlainTextBlocks("Hey\n\nHappy\n\n- Krijn")).toEqual([
+    expect(splitPlainTextLineBlocks("Hey\n\nHappy\n\n- Krijn")).toEqual([
       "Hey",
       "",
       "Happy",
@@ -21,7 +21,7 @@ describe("splitPlainTextBlocks", () => {
   });
 
   it("normalizes CRLF and CR line endings", () => {
-    expect(splitPlainTextBlocks("Hey\r\nHappy\r- Krijn")).toEqual([
+    expect(splitPlainTextLineBlocks("Hey\r\nHappy\r- Krijn")).toEqual([
       "Hey",
       "Happy",
       "- Krijn",
@@ -29,7 +29,7 @@ describe("splitPlainTextBlocks", () => {
   });
 
   it("drops leading and trailing empty blocks", () => {
-    expect(splitPlainTextBlocks("\n\nHey\n\nHappy\n\n")).toEqual([
+    expect(splitPlainTextLineBlocks("\n\nHey\n\nHappy\n\n")).toEqual([
       "Hey",
       "",
       "Happy",
@@ -37,7 +37,7 @@ describe("splitPlainTextBlocks", () => {
   });
 
   it("preserves multiple internal empty blocks", () => {
-    expect(splitPlainTextBlocks("Hey\n\n\nHappy")).toEqual([
+    expect(splitPlainTextLineBlocks("Hey\n\n\nHappy")).toEqual([
       "Hey",
       "",
       "",
@@ -46,7 +46,7 @@ describe("splitPlainTextBlocks", () => {
   });
 
   it("trims each block", () => {
-    expect(splitPlainTextBlocks("  Hey  \n  Happy  ")).toEqual([
+    expect(splitPlainTextLineBlocks("  Hey  \n  Happy  ")).toEqual([
       "Hey",
       "Happy",
     ]);

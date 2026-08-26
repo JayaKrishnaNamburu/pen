@@ -1,11 +1,9 @@
-import type { BlockSelectionRole, Editor } from "@pen/types";
+import type { BlockSelectionRole, Editor } from "@input/pen-types";
 import {
 	getBlockSelectionRoleFromSchema as getSharedBlockSelectionRoleFromSchema,
 	getBlockSelectionRoleFromType as getSharedBlockSelectionRoleFromType,
-} from "@pen/types";
-export type { BlockSelectionRole } from "@pen/types";
-
-const ZERO_WIDTH_SPACE = "\u200B";
+} from "@input/pen-core";
+export type { BlockSelectionRole } from "@input/pen-types";
 
 export function getBlockSelectionRoleFromSchema(
 	schema: Parameters<typeof getSharedBlockSelectionRoleFromSchema>[0],
@@ -53,23 +51,8 @@ export function getEditorBlockSelectionLength(
 
 	return getSelectionLengthForRole(
 		getEditorBlockSelectionRole(editor, blockId),
-		getLogicalBlockTextLength(block),
+		block.length(),
 	);
-}
-
-function getLogicalBlockTextLength(
-	block: NonNullable<ReturnType<Editor["getBlock"]>>,
-): number {
-	return block
-		.inlineDeltas()
-		.reduce(
-			(length, delta) =>
-				length +
-				(typeof delta.insert === "string"
-					? delta.insert.replaceAll(ZERO_WIDTH_SPACE, "").length
-					: 1),
-			0,
-		);
 }
 
 export function isInlineEditableBlock(

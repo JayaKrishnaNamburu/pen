@@ -1,15 +1,12 @@
-import React, {
-	useRef,
-	useLayoutEffect,
-	useSyncExternalStore,
-} from "react";
-import type { Editor } from "@pen/types";
+import React, { useRef, useSyncExternalStore } from "react";
+import { resolveEditorMessage } from "@input/pen-core";
+import type { FieldEditorSession } from "@input/pen-dom";
 import { EditorContentContext } from "../../context/editorContentContext";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
-import { useAIStructuredPreviewContent } from "../../hooks/useAIStructuredPreview";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useBlockList } from "../../hooks/useBlockList";
 import {
 	useDocumentEmptyState,
@@ -17,18 +14,15 @@ import {
 } from "../../hooks/useDocumentEmptyState";
 import { useInlineCompletionState } from "../../hooks/useInlineCompletionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
-import { AIStructuredTargetPreviewItem } from "../ai/structuredTargetPreview";
 import { AutocompletePreviewBlock } from "./autocompletePreviewBlock";
 import { EditorBlock } from "./block";
-import {
-	DropPreviewProvider,
-} from "./dropPreviewContext";
-import {
-	buildMoveBlockOps,
-	useBlockDragSession,
-} from "./blockDragSession";
+import { DropPreviewProvider } from "./dropPreviewContext";
+import { buildMoveBlockOps, useBlockDragSession } from "./blockDragSession";
 import { useEditorRegionSelectionContext } from "./regionSelectionState";
 import { useTransferSession } from "./useTransferSession";
 import { useEditorContentPointerState } from "./useEditorContentPointerState";
@@ -44,32 +38,34 @@ import {
 import {
 	getInlineAtomDragSnapshot,
 	subscribeInlineAtomDragSnapshot,
-} from "./inlineAtomInteraction";
+} from "@input/pen-dom";
 
 export interface EditorContentProps extends AsChildProps {
-	virtualize?:
-	| boolean
-	| {
-		overscan?: number;
-		estimatedHeight?: number;
-		mobileOverscan?: number;
-	};
 	emptyPlaceholder?: string;
 	ref?: React.Ref<HTMLElement>;
 }
 
 export function EditorContent(props: EditorContentProps) {
-	const { virtualize: _virtualize, emptyPlaceholder, ...rest } = props;
-	const { editor, readonly, blockDragAndDrop, blockSelection, interactionModel } = useEditorContext();
+	const { emptyPlaceholder: emptyPlaceholderProp, ...rest } = props;
+	const {
+		editor,
+		readonly,
+		blockDragAndDrop,
+		blockSelection,
+		interactionModel,
+	} = useEditorContext();
+	const emptyPlaceholder =
+		emptyPlaceholderProp ??
+		resolveEditorMessage(editor, "pen.schema.document.emptyPlaceholder");
 	const fieldEditor = useFieldEditorContext();
 	const { store: regionSelectionStore } = useEditorRegionSelectionContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const blockIds = useBlockList(editor);
-	const contentItems = useAIStructuredPreviewContent(editor, blockIds);
 	const visibleSuggestion = useInlineCompletionState(editor);
 	const blockDragSession = useBlockDragSession();
 	const contentRef = useRef<HTMLElement>(null);
-	const blocksHostRef = blockDragSession.blocksHostRef as React.RefObject<HTMLDivElement | null>;
+	const blocksHostRef =
+		blockDragSession.blocksHostRef as React.RefObject<HTMLDivElement | null>;
 	const {
 		regionGestureRef,
 		pointerGestureRef,
@@ -104,11 +100,18 @@ export function EditorContent(props: EditorContentProps) {
 		transferInlineDropCaretStyle ?? inlineAtomDropCaretStyle;
 	const isInlineAtomDropActive = inlineAtomDropCaretStyle !== null;
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (!fieldEditor || fieldEditorState.mode !== "expanded") return;
 		if (!blocksHostRef.current) return;
 		fieldEditor.attachElement(blocksHostRef.current);
 	}, [fieldEditor, fieldEditorState.mode, fieldEditorState.activeBlockIds]);
+
+	// no dep array: acks every commit, matching the Vue binding's
+	// onMounted + onUpdated pair. A text-only splice leaves blockIds
+	// referentially stable but can still replace block DOM nodes.
+	useIsomorphicLayoutEffect(() => {
+		ackMountedBlockElements(fieldEditor, blocksHostRef.current);
+	});
 
 	// Click-to-activate: when user clicks on a block, activate the field editor.
 	// Shift-click: select a range of blocks (AC #22).
@@ -135,16 +138,11 @@ export function EditorContent(props: EditorContentProps) {
 	const anchorBlock = visibleSuggestion
 		? editor.getBlock(visibleSuggestion.blockId)
 		: null;
-	for (const contentItem of contentItems) {
-		if (contentItem.kind === "block") {
-			blockElements.push(
-				<EditorBlock key={contentItem.blockId} blockId={contentItem.blockId} />,
-			);
-			if (
-				previewBlocks.length > 0 &&
-				contentItem.blockId === visibleSuggestion?.blockId
-			) {
-				const previewBlockElements = previewBlocks.map((previewBlock, previewIndex) => (
+	for (const blockId of blockIds) {
+		blockElements.push(<EditorBlock key={blockId} blockId={blockId} />);
+		if (previewBlocks.length > 0 && blockId === visibleSuggestion?.blockId) {
+			const previewBlockElements = previewBlocks.map(
+				(previewBlock, previewIndex) => (
 					<AutocompletePreviewBlock
 						key={`autocomplete-preview:${previewBlock.id}`}
 						anchorBlock={anchorBlock}
@@ -153,27 +151,17 @@ export function EditorContent(props: EditorContentProps) {
 						block={previewBlock}
 						previewIndex={previewIndex}
 					/>
-				));
-				blockElements.push(...previewBlockElements);
-			}
-			continue;
+				),
+			);
+			blockElements.push(...previewBlockElements);
 		}
-		blockElements.push(
-			<div
-				key={`virtual-target:${contentItem.target.blockId}`}
-				data-pen-ai-structured-virtual-target=""
-				data-block-type={contentItem.target.targetKind}
-				data-plan-state={contentItem.planState}
-				{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
-			>
-				<AIStructuredTargetPreviewItem target={contentItem.target} />
-			</div>,
-		);
 	}
 
 	const inlineDropCaret =
-		(isDropActive || isInlineAtomDropActive) && activeInlineDropCaretStyle ? (
+		(isDropActive || isInlineAtomDropActive) &&
+		activeInlineDropCaretStyle ? (
 			<div
+				// AX7 overlay — inline drop caret is presentation
 				aria-hidden="true"
 				{...{ [DATA_ATTRS.dropCaret]: "" }}
 				style={createInlineDropCaretStyle(activeInlineDropCaretStyle)}
@@ -274,9 +262,9 @@ export function EditorContent(props: EditorContentProps) {
 				data-pen-editor-blocks-host=""
 				{...(fieldEditorState.mode === "expanded"
 					? {
-						[DATA_ATTRS.fieldEditorSurface]: "",
-						...fieldEditorTextEntryAttrs(true),
-					}
+							[DATA_ATTRS.fieldEditorSurface]: "",
+							...fieldEditorTextEntryAttrs(true, editor),
+						}
 					: {})}
 				ref={blocksHostRef}
 			>
@@ -289,8 +277,10 @@ export function EditorContent(props: EditorContentProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorContent]: "",
-		[DATA_ATTRS.dropTarget]: isDropActive || isInlineAtomDropActive || undefined,
-		[DATA_ATTRS.empty]: isEmpty || undefined,
+		...buildDataAttributes({
+			"drop-target": isDropActive || isInlineAtomDropActive,
+			empty: isEmpty,
+		}),
 		onDragOver: handleBlockDragOver,
 		onDrop: handleBlockDrop,
 		onDragLeave: handleBlockDragLeave,
@@ -315,3 +305,22 @@ export function EditorContent(props: EditorContentProps) {
 	);
 }
 
+function ackMountedBlockElements(
+	fieldEditor: FieldEditorSession | null,
+	host: HTMLElement | null,
+): void {
+	if (!fieldEditor || !host) {
+		return;
+	}
+	for (const element of host.querySelectorAll(
+		`[${DATA_ATTRS.editorBlock}]`,
+	)) {
+		if (!(element instanceof HTMLElement)) {
+			continue;
+		}
+		const blockId = element.getAttribute(DATA_ATTRS.blockId);
+		if (blockId) {
+			fieldEditor.ackBlockMounted(blockId, element);
+		}
+	}
+}

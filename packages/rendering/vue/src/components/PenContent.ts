@@ -1,7 +1,13 @@
-import { DATA_ATTRS } from "@pen/dom/utils/dataAttributes";
+import {
+  buildDataAttributes,
+  DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
+import { fieldEditorTextEntryAttrs } from "@input/pen-dom/utils/fieldEditorTextEntryAttrs";
 import {
   defineComponent,
   h,
+  onMounted,
+  onUpdated,
   ref,
   watch,
   type ComponentPublicInstance,
@@ -9,10 +15,18 @@ import {
 } from "vue";
 import { useBlockList } from "../composables/useBlockList";
 import { useEditorContext } from "../internal/editorContext";
-import { useFieldEditorState } from "../internal/editorState";
+import {
+  useDocumentEmptyState,
+  useFieldEditorState,
+} from "../internal/editorState";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
 import { PenBlock } from "./PenBlock";
 
+/**
+ * Renders the document's top-level blocks and hosts the text-entry
+ * surface. Must appear inside a `PenEditor`, which provides the editor
+ * context and the field editor this component attaches to.
+ */
 export const PenContent = defineComponent({
   name: "PenContent",
   props: {
@@ -26,6 +40,7 @@ export const PenContent = defineComponent({
     const fieldEditor = useFieldEditorContext();
     const fieldEditorState = useFieldEditorState(fieldEditor);
     const blockIds = useBlockList(editor);
+    const isEmpty = useDocumentEmptyState(editor);
     const blocksHostElement = ref<HTMLElement | null>(null);
 
     watch(
@@ -42,6 +57,26 @@ export const PenContent = defineComponent({
       { immediate: true },
     );
 
+    const ackMountedBlocks = () => {
+      const host = blocksHostElement.value;
+      if (!host || !fieldEditor) {
+        return;
+      }
+      for (const element of host.querySelectorAll(
+        `[${DATA_ATTRS.editorBlock}]`,
+      )) {
+        if (!(element instanceof HTMLElement)) {
+          continue;
+        }
+        const blockId = element.getAttribute(DATA_ATTRS.blockId);
+        if (blockId) {
+          fieldEditor.ackBlockMounted(blockId, element);
+        }
+      }
+    };
+    onMounted(ackMountedBlocks);
+    onUpdated(ackMountedBlocks);
+
     return () => {
       const blockNodes = blockIds.value.map((blockId) =>
         h(PenBlock, {
@@ -50,23 +85,34 @@ export const PenContent = defineComponent({
         }),
       );
 
-      return h(props.as, { [DATA_ATTRS.editorContent]: "" }, [
-        h(
-          "div",
-          {
-            ref: (element: Element | ComponentPublicInstance | null) => {
-              blocksHostElement.value =
-                element instanceof HTMLElement ? element : null;
+      return h(
+        props.as,
+        {
+          [DATA_ATTRS.editorContent]: "",
+          ...buildDataAttributes({
+            empty: isEmpty.value,
+          }),
+        },
+        [
+          h(
+            "div",
+            {
+              ref: (element: Element | ComponentPublicInstance | null) => {
+                blocksHostElement.value =
+                  element instanceof HTMLElement ? element : null;
+              },
+              "data-pen-editor-blocks-host": "",
+              ...(fieldEditorState.value.mode === "expanded"
+                ? {
+                    [DATA_ATTRS.fieldEditorSurface]: "",
+                    ...fieldEditorTextEntryAttrs(true, editor),
+                  }
+                : {}),
             },
-            "data-pen-editor-blocks-host": "",
-            [DATA_ATTRS.fieldEditorSurface]:
-              fieldEditorState.value.mode === "expanded" ? "" : undefined,
-            [DATA_ATTRS.fieldEditorActiveSurface]:
-              fieldEditorState.value.mode === "expanded" ? "" : undefined,
-          },
-          blockNodes,
-        ),
-      ]);
+            blockNodes,
+          ),
+        ],
+      );
     };
   },
 });

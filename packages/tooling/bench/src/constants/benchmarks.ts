@@ -1,9 +1,12 @@
 import type { BenchDefinition } from "../bench";
+import { getScale3Baseline } from "./scale3";
 
-type BenchMetadata = Pick<
-	BenchDefinition,
-	"id" | "name" | "targetMs" | "critical"
->;
+// id is optional on BenchDefinition (a bench can run unregistered) but REQUIRED here:
+// the registry is keyed by id and the population parity check compares registered ids
+// against running ids, so a metadata entry without one cannot participate in it at all.
+type BenchMetadata = Pick<BenchDefinition, "name" | "targetMs" | "critical"> & {
+	id: string;
+};
 
 export const CRDT_INSERT_1000_BLOCKS_BENCH: BenchMetadata = {
 	id: "crdt.insert-1000-blocks",
@@ -28,16 +31,70 @@ export const CRDT_FORK_MERGE_100_BENCH: BenchMetadata = {
 	name: "fork + merge 100-block document",
 };
 
+export const ANCHORS_ENCODE_SIZE_1000_BENCH: BenchMetadata = {
+	id: "anchors.encode-size-1000",
+	name: "Yjs relative-position encode size x1000",
+};
+
+export const ANCHORS_RESOLVE_70K_1000_BENCH: BenchMetadata = {
+	id: "anchors.resolve-70k-1000",
+	name: "Yjs relative-position resolve 70k chars x1000",
+};
+
+export const ANCHORS_RESOLVE_200_BLOCKS_BENCH: BenchMetadata = {
+	id: "anchors.resolve-200-blocks",
+	name: "Yjs relative-position resolve across 200 blocks",
+};
+
+export const ANCHORS_SPLIT_FOLLOW_BENCH: BenchMetadata = {
+	id: "anchors.split-follow",
+	name: "Yjs relative-position follow after Pen copy-split",
+};
+
+// The four above address a paragraph's `block.content`. A table cell's text is a
+// nested Y.Text at `tableContent[row].cells[col].content` and a table block has no
+// `content` key at all, so these are a different substrate rather than a size
+// variant. There is no cell equivalent of `anchors.split-follow`:
+// `split-table-cell` is a validated no-op, so a cell never undergoes copy-split.
+export const ANCHORS_ENCODE_SIZE_CELL_1000_BENCH: BenchMetadata = {
+	id: "anchors.encode-size-cell-1000",
+	name: "Yjs relative-position encode size in a table cell x1000",
+};
+
+export const ANCHORS_RESOLVE_CELL_70K_1000_BENCH: BenchMetadata = {
+	id: "anchors.resolve-cell-70k-1000",
+	name: "Yjs relative-position resolve 70k chars in a table cell x1000",
+};
+
+export const ANCHORS_RESOLVE_200_CELLS_BENCH: BenchMetadata = {
+	id: "anchors.resolve-200-cells",
+	name: "Yjs relative-position resolve across 200 table cells",
+};
+
+export const ANCHORS_CELL_IN_BLOCK_EDIT_BENCH: BenchMetadata = {
+	id: "anchors.cell-in-block-edit",
+	name: "Yjs relative-position shift and collapse within a table cell",
+};
+
 export const SCHEMA_RESOLVE_X10000_BENCH: BenchMetadata = {
 	id: "schema.resolve-x10000",
 	name: "schema resolve x10000",
 	targetMs: 10,
 };
 
+// Re-baselined 200 -> 500 under CH8, which asks that a budget the CI runner
+// cannot meet reliably be re-recorded with the number written down rather than
+// left permanently red. Measurements behind the move: 49.86ms idle on an
+// Apple Silicon laptop, and on ubuntu-latest 117.78ms on one run against
+// 272.25ms and 277.69ms on two others — a 2.4x spread across the same commit
+// range, which straddled the old target and made the gate report the runner
+// rather than the diff. This is the heaviest bench in the set and the only one
+// that moved; the 1ms and 10ms critical targets stay green on the same runner.
+// 500 clears the worst observed run by ~1.8x and still fails a 2x regression.
 export const SCHEMA_NORMALIZE_500_BLOCK_DOCUMENT_BENCH: BenchMetadata = {
 	id: "schema.normalize-500-block-document",
 	name: "normalize 500-block document",
-	targetMs: 200,
+	targetMs: 500,
 	critical: true,
 };
 
@@ -111,29 +168,9 @@ export const AI_RETRIEVE_DOCUMENT_SPANS_BENCH: BenchMetadata = {
 	name: "ai retrieve_document_spans ranked lookup",
 };
 
-export const AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH: BenchMetadata = {
-	id: "ai.markdown-fast-apply-table-insert",
-	name: "ai markdown fast apply table insert",
-};
-
 export const AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH: BenchMetadata = {
 	id: "ai.markdown-full-replace-table-insert",
 	name: "ai markdown full replace table insert",
-};
-
-export const AI_FLOW_PATCH_TEXT_EDIT_BENCH: BenchMetadata = {
-	id: "ai.flow-patch-text-edit",
-	name: "ai flow patch compile text edit",
-};
-
-export const AI_FLOW_PATCH_ALIGNMENT_BENCH: BenchMetadata = {
-	id: "ai.flow-patch-alignment",
-	name: "ai flow patch alignment metrics",
-};
-
-export const AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH: BenchMetadata = {
-	id: "ai.flow-patch-scoped-replacement",
-	name: "ai flow patch scoped replacement metrics",
 };
 
 export const AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH: BenchMetadata = {
@@ -170,8 +207,67 @@ export const AI_AUTOCOMPLETE_PREFETCH_AFTER_ACCEPT_BENCH: BenchMetadata = {
 	critical: true,
 };
 
+const scale3DocumentSize100 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.document-size.100",
+);
+const scale3DocumentSize1000 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.document-size.1000",
+);
+const scale3ExtensionCountPlus8 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.extension-count.plus8",
+);
+const scale3DecorationCount256 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.decoration-count.256",
+);
+const scale3RemoteCaretCount8 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.remote-caret-count.8",
+);
+
+export const SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH: BenchMetadata = {
+	id: scale3DocumentSize100.id,
+	name: "SCALE3 keystroke realistic-stack document-size 100",
+	targetMs: scale3DocumentSize100.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH: BenchMetadata = {
+	id: scale3DocumentSize1000.id,
+	name: "SCALE3 keystroke realistic-stack document-size 1000",
+	targetMs: scale3DocumentSize1000.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH: BenchMetadata = {
+	id: scale3ExtensionCountPlus8.id,
+	name: "SCALE3 keystroke realistic-stack extension-count plus8",
+	targetMs: scale3ExtensionCountPlus8.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH: BenchMetadata = {
+	id: scale3DecorationCount256.id,
+	name: "SCALE3 keystroke realistic-stack decoration-count 256",
+	targetMs: scale3DecorationCount256.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_REMOTE_CARET_COUNT_8_BENCH: BenchMetadata = {
+	id: scale3RemoteCaretCount8.id,
+	name: "SCALE3 keystroke realistic-stack remote-caret-count 8",
+	targetMs: scale3RemoteCaretCount8.gateP50Ms,
+	critical: true,
+};
+
 export const BENCHMARK_METADATA: BenchMetadata[] = [
 	CRDT_INSERT_1000_BLOCKS_BENCH,
+	ANCHORS_ENCODE_SIZE_1000_BENCH,
+	ANCHORS_RESOLVE_70K_1000_BENCH,
+	ANCHORS_RESOLVE_200_BLOCKS_BENCH,
+	ANCHORS_SPLIT_FOLLOW_BENCH,
+	ANCHORS_ENCODE_SIZE_CELL_1000_BENCH,
+	ANCHORS_RESOLVE_CELL_70K_1000_BENCH,
+	ANCHORS_RESOLVE_200_CELLS_BENCH,
+	ANCHORS_CELL_IN_BLOCK_EDIT_BENCH,
 	CRDT_ENCODE_STATE_500_BENCH,
 	CRDT_LOAD_DOCUMENT_500_BENCH,
 	CRDT_FORK_MERGE_100_BENCH,
@@ -190,16 +286,17 @@ export const BENCHMARK_METADATA: BenchMetadata[] = [
 	AI_PROMPT_ASSEMBLY_TOOL_JOURNAL_BENCH,
 	AI_READ_DOCUMENT_RANGE_20_BLOCKS_BENCH,
 	AI_RETRIEVE_DOCUMENT_SPANS_BENCH,
-	AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH,
 	AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH,
-	AI_FLOW_PATCH_TEXT_EDIT_BENCH,
-	AI_FLOW_PATCH_ALIGNMENT_BENCH,
-	AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH,
 	AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH,
 	AI_AUTOCOMPLETE_REQUESTING_CANCEL_CHURN_BENCH,
 	AI_AUTOCOMPLETE_PROVIDER_BUDGET_BENCH,
 	AI_AUTOCOMPLETE_PARTIAL_ACCEPT_BENCH,
 	AI_AUTOCOMPLETE_PREFETCH_AFTER_ACCEPT_BENCH,
+	SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH,
+	SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH,
+	SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH,
+	SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH,
+	SCALE3_KEYSTROKE_REMOTE_CARET_COUNT_8_BENCH,
 ];
 
 export function findBenchMetadataById(id: string): BenchMetadata | undefined {

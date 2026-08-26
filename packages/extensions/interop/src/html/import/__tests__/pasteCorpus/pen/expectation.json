@@ -1,0 +1,34 @@
+{
+  "id": "pen",
+  "source": "Pen",
+  "provenance": "synthetic-until-capture",
+  "approximates": "Pen HTML clipboard flavor: <meta data-pen-blocks> prefix plus exported semantic HTML. This fixture measures the HTML fallback, not the versioned JSON flavor (IOP1).",
+  "markers": ["data-pen-blocks", "h1", "strong", "em"],
+  "imageCount": 0,
+  "outcomes": {
+    "headings": "h1",
+    "lists": "flat bullets",
+    "tables": "none",
+    "code": "none",
+    "links": "none",
+    "images": "none",
+    "marks": "bold, italic",
+    "colors": "none"
+  },
+  "intentionalLosses": [
+    "The data-pen-blocks meta is stripped on the HTML import path; structured Pen blocks arrive only through the JSON clipboard flavor (IOP1)"
+  ],
+  "blocks": [
+    { "type": "heading", "level": 1, "text": "Quarterly notes" },
+    {
+      "type": "paragraph",
+      "text": "Hello world and more.",
+      "marks": [
+        { "type": "bold", "text": "world" },
+        { "type": "italic", "text": "more" }
+      ]
+    },
+    { "type": "bulletListItem", "indent": 0, "text": "First item" },
+    { "type": "bulletListItem", "indent": 0, "text": "Second item" }
+  ]
+}

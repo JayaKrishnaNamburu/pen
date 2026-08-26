@@ -1,0 +1,4 @@
+{
+	"_comment": "API1 (spec/rules/api.md): known inverted workspace edges. The DAG check reports these and stays green until the inversions land. Each entry needs from, to, and a reason. Remove an entry in the same PR that drops the edge.",
+	"inversions": []
+}

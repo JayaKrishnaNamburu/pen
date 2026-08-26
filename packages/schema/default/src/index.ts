@@ -12,7 +12,6 @@ export { checkListItem } from "./blocks/checkListItem";
 export { codeBlock } from "./blocks/codeBlock";
 export { image } from "./blocks/image";
 export { table } from "./blocks/table";
-export { database } from "./blocks/database";
 export { divider } from "./blocks/divider";
 export { callout } from "./blocks/callout";
 export { toggle } from "./blocks/toggle";
@@ -30,3 +29,15 @@ export {
   backgroundColor,
 } from "./inlines/marks";
 export { mention, inlineApp } from "./inlines/nodes";
+
+export {
+	SCHEMA_DISPLAY_CATALOG,
+	resolveDisplayCopy,
+	resolveDisplayGroup,
+	schemaDisplayKey,
+	schemaGroupKey,
+} from "./messages";
+export type {
+	SchemaDisplayField,
+	SchemaDisplayMessageKey,
+} from "./messages";

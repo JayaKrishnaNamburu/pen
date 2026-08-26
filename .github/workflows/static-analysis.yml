@@ -1,0 +1,105 @@
+# Static analysis gates.
+#
+# One job runs the whole list. This used to be one job per gate, built from a
+# matrix, which put twenty-two checks and a `gate-list` plumbing job on every
+# pull request — a wall of names a contributor had to read past to find the
+# one that mattered. Each of those jobs also paid its own thirty-second
+# toolchain setup to do fifteen seconds of work.
+#
+# The list lives in scripts/gates.json and the job below runs it through the
+# very script contributors run locally, so a gate cannot exist on CI and be
+# missing from `pnpm verify`. Every gate runs even after one fails, and the
+# summary names each failure next to the command that produced it.
+#
+# Most gates read the source tree or published manifests only. The few that
+# read built output declare `needsBuild` in gates.json, and the runner orders
+# those after `pnpm build` so a cheap failure still lands before anything pays
+# for a build. Anything needing a browser lives in conformance.yml or the
+# ci.yml browser matrix.
+
+name: Static analysis
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: static-analysis-${{ github.ref }}
+  # Superseded pull-request runs are cancelled; pushes to a release branch
+  # are not, so every commit on main keeps a complete result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gates:
+    name: Repo gates
+    # The whole list runs serially, including one build for the gates that
+    # read dist/. Roughly eight minutes; the ceiling is for a cold cache.
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: repo-gates
+
+      - name: Run every gate in scripts/gates.json
+        run: node scripts/verify.mjs --gates
+
+  changeset:
+    name: Changeset
+    # Pull requests only: the check compares the branch against its base, and
+    # a push to main has no base to compare against.
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          # changeset-check diffs against the merge base, which a depth-1
+          # checkout does not contain.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # changeset-check.mjs imports only node: builtins, so this job skips
+          # the workspace install. setup-node@v5 caches for the package manager
+          # named in packageManager by default, which would shell out to a pnpm
+          # that was never installed, so the cache has to be declined.
+          package-manager-cache: false
+
+      - name: Check changeset coverage
+        run: node scripts/changeset-check.mjs
+
+  summary:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: All gates
+    if: always()
+    needs: [gates, changeset]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require every gate to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}
+          allow-skipped: changeset

@@ -1,28 +1,19 @@
-import type { SelectionState } from "@pen/types";
+import { isCollapsed } from "@input/pen-core";
+import type { SelectionState } from "@input/pen-types";
 import type { AISurface } from "../types";
 import type {
-	AIApplyStrategy,
-	AIBlockAdapterId,
-	AIBlockClass,
 	AIContentFormat,
 	AIMutationMode,
-	AIPlannerMode,
+	AIMutationPreference,
 	AIRouteLane,
 	AITargetKind,
-	AITransportKind,
+	PromptIntent,
 } from "./contracts";
-import {
-	resolveBlockAdapter,
-	resolveBlockAdapterContentFormat,
-} from "./blockAdapters";
 import {
 	resolveMutationMode,
 	shouldStreamDirectAIOutput,
 } from "./mutationPolicy";
-import {
-	resolveGenerationTargetKind,
-	resolvePlannerMode,
-} from "./structuredPlanner";
+import { resolveGenerationTargetKind } from "./generationTarget";
 
 export interface RequestRouterInput {
 	prompt: string;
@@ -33,6 +24,7 @@ export interface RequestRouterInput {
 	target: "selection" | "block";
 	contentFormat: AIContentFormat;
 	surface?: AISurface;
+	mutationPreference?: AIMutationPreference;
 }
 
 export interface RequestRouterDecision {
@@ -40,14 +32,11 @@ export interface RequestRouterDecision {
 	lane: AIRouteLane;
 	mutationMode: AIMutationMode;
 	contentFormat: AIContentFormat;
-	plannerMode: AIPlannerMode;
-	applyStrategy: AIApplyStrategy;
+	editsArriveAsToolCalls: boolean;
 	targetKind: AITargetKind;
-	blockClass: AIBlockClass;
-	adapterId: AIBlockAdapterId;
-	transportKind: AITransportKind;
 	suggestMode: boolean;
 	surface?: AISurface;
+	mutationPreference?: AIMutationPreference;
 	allowToolUse: boolean;
 	useCursorContext: boolean;
 	useDocumentSummary: boolean;
@@ -57,39 +46,71 @@ export interface RequestRouterDecision {
 }
 
 interface NavigatorRefinementInput {
-	surroundingBlockCount?: number;
 	selectedTextLength?: number;
 	activeBlockType?: string | null;
 	structuredTargetKind?: AITargetKind | null;
 }
 
-export type PromptIntent =
-	| "rewrite"
-	| "continue"
-	| "local-edit"
-	| "structural"
-	| "search"
-	| "review"
-	| "unknown";
+export type { PromptIntent } from "./contracts";
 
-const REWRITE_PATTERNS = /\b(rewrite|retry|redo|again|do.?over|summari[sz]e|translate|simplify|fix|improve|shorten|expand|polish|paraphrase)\b/i;
-const CONTINUE_PATTERNS = /\b(continue|finish|complete|keep writing|next paragraph|next section)\b/i;
-const GENERATIVE_PATTERNS = /\b(write|create|draft|compose|generate|brainstorm)\b/i;
-const SEARCH_PATTERNS = /\b(find|search|where|which|list|scan|inspect|look for)\b/i;
-const STRUCTURAL_PATTERNS = /\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert block|table|heading hierarchy)\b/i;
-const REVIEW_PATTERNS = /\b(review|critique|audit|compare|analyze entire|check whole)\b/i;
+const REWRITE_PATTERNS =
+	/\b(rewrite|retry|redo|again|do.?over|summari[sz]e|translate|simplify|fix|improve|shorten|expand|extend|polish|paraphrase|edit|revise|reword|rephrase)\b/i;
+const CONTINUE_PATTERNS =
+	/\b(continue|finish|complete|keep writing|next paragraph|next section)\b/i;
+const GENERATIVE_PATTERNS =
+	/\b(write|create|draft|compose|generate|brainstorm)\b/i;
+const SEARCH_PATTERNS =
+	/\b(find|search|look for|locate|where (?:is|are|does|do)|list (?:all|every|each|the)|scan for)\b/i;
+const STRUCTURAL_PATTERNS =
+	/\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert|turn\s+(?:\S+\s+){0,8}?into|(?:bullet(?:ed)?|numbered|ordered) list|checklist|table|heading hierarchy|merge|split)\b/i;
+const REVIEW_PATTERNS =
+	/\b(review|critique|audit|compare|analyze entire|check whole)\b/i;
+/**
+ * Opening interrogatives only, and deliberately without the polite modals
+ * (`can`, `could`, `would`, `will`): "Can you make the title purple?" is an
+ * edit request wearing a question mark, and a trailing `?` cannot tell the two
+ * apart. The asymmetry decides the conservatism — a question misread as an
+ * edit rewrites the document, while an edit misread as a question only loses
+ * EC17's forced tool choice and still edits when the model picks the tool.
+ */
+const QUESTION_PATTERNS =
+	/^\s*(what|why|how|who|when|where|which|whose|is|are|was|were|does|do|did|has|have|should|am)\b/i;
 const TABLE_TARGET_PATTERNS = /\b(table|grid|rows?|columns?)\b/i;
-const DATABASE_TARGET_PATTERNS = /\b(database|view|views|records?)\b/i;
+
+/**
+ * Largest document whose working set annotates every block. Bigger documents
+ * still take the tool loop; they just do not ship a fully annotated copy.
+ * The working-set builder is the only reader.
+ */
+export const AI_ANNOTATED_WORKING_SET_MAX_BLOCKS = 120;
+
+/**
+ * Whether this lane's durable edits arrive as `edit_document` tool calls (EC1).
+ *
+ * This replaced a three-member apply-strategy union (UC5). The other two
+ * members — "text fast apply" and "markdown full replace" — were a restatement
+ * of `target` and `contentFormat`, which the decision already carries, and no
+ * consumer read them for anything but the absence of `tool-edit`. What every
+ * reader actually needed was this one bit: may the assistant text become a
+ * durable mutation, or is text the model talking?
+ */
+function editsArriveAsToolCalls(lane: AIRouteLane): boolean {
+	return lane === "tool-loop";
+}
 
 export function routeAIRequest(
 	input: RequestRouterInput,
 ): RequestRouterDecision {
 	const selectionExpanded =
-		input.selection?.type === "text" && !input.selection.isCollapsed;
+		input.selection?.type === "text" && !isCollapsed(input.selection);
 	const intent = classifyPromptIntent(input.prompt);
 
 	let lane: AIRouteLane;
-	if (selectionExpanded && input.target === "selection" && intent === "rewrite") {
+	if (
+		selectionExpanded &&
+		input.target === "selection" &&
+		intent === "rewrite"
+	) {
 		lane = "selection-rewrite";
 	} else if (
 		input.target === "block" &&
@@ -99,12 +120,11 @@ export function routeAIRequest(
 		!isStructuralBlockType(input.blockType)
 	) {
 		lane = "cursor-context";
-	} else if (intent === "review" || intent === "structural") {
-		lane = input.suggestMode ? "review" : "tool-loop";
-	} else if (intent === "search") {
-		lane = "tool-loop";
-	} else if (!selectionExpanded && input.blockCount <= 200) {
-		lane = "context-first";
+	} else if (
+		(intent === "review" || intent === "structural") &&
+		input.suggestMode
+	) {
+		lane = "review";
 	} else if (selectionExpanded && input.target === "selection") {
 		lane = "selection-rewrite";
 	} else {
@@ -116,6 +136,7 @@ export function routeAIRequest(
 		suggestMode: input.suggestMode,
 		selection: input.selection,
 		surface: input.surface,
+		mutationPreference: input.mutationPreference,
 	});
 	let targetKind = resolveGenerationTargetKind({
 		target: input.target,
@@ -126,15 +147,10 @@ export function routeAIRequest(
 	if (
 		input.target === "block" &&
 		targetKind === "block" &&
-		(promptTargetKind === "table" || promptTargetKind === "database")
+		promptTargetKind === "table"
 	) {
 		targetKind = promptTargetKind;
 	}
-	let plannerMode = resolvePlannerMode({
-		target: input.target,
-		targetKind,
-		intent,
-	});
 	mutationMode = resolveStructuredMutationMode({
 		mutationMode,
 		target: input.target,
@@ -142,20 +158,10 @@ export function routeAIRequest(
 		surface: input.surface,
 		activeBlockType: input.blockType,
 	});
-	const adapter = resolveBlockAdapter({
-		targetKind,
-		plannerMode,
-		target: input.target,
-		activeBlockType: input.blockType,
-		surface: input.surface,
-		mutationMode,
-	});
-	const resolvedContentFormat = resolveBlockAdapterContentFormat({
-		adapter,
+	const resolvedContentFormat = resolveGenerationContentFormat({
 		target: input.target,
 		targetKind,
 		surface: input.surface,
-		mutationMode,
 		fallback: input.contentFormat,
 	});
 
@@ -164,25 +170,14 @@ export function routeAIRequest(
 		lane,
 		mutationMode,
 		contentFormat: resolvedContentFormat,
-		plannerMode,
-		applyStrategy: resolveApplyStrategy({
-			target: input.target,
-			targetKind,
-			contentFormat: resolvedContentFormat,
-			plannerMode,
-			mutationMode,
-			intent,
-			surface: input.surface,
-		}),
+		editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 		targetKind,
-		blockClass: adapter.blockClass,
-		adapterId: adapter.id,
-		transportKind: adapter.transportKind,
 		suggestMode: input.suggestMode,
 		surface: input.surface,
+		mutationPreference: input.mutationPreference,
 		allowToolUse: lane === "tool-loop" || lane === "review",
-		useCursorContext: lane === "cursor-context" || lane === "context-first",
-		useDocumentSummary: lane === "context-first" || lane === "tool-loop" || lane === "review",
+		useCursorContext: lane === "cursor-context",
+		useDocumentSummary: lane === "tool-loop" || lane === "review",
 		shouldStreamDirectly: shouldStreamDirectAIOutput({
 			mutationMode,
 			contentFormat: resolvedContentFormat,
@@ -202,70 +197,50 @@ export function refineRouteWithNavigator(
 	let targetKind = decision.targetKind;
 
 	if (input.activeBlockType && isStructuralBlockType(input.activeBlockType)) {
-		if (input.activeBlockType === "table" || input.activeBlockType === "database") {
-			targetKind = input.activeBlockType;
+		if (input.activeBlockType === "table") {
+			targetKind = "table";
 		}
 		confidence = Math.min(confidence, 0.45);
-		if (lane === "cursor-context" || lane === "context-first") {
+		if (lane === "cursor-context") {
 			lane = "tool-loop";
 		}
-	}
-
-	if ((input.surroundingBlockCount ?? 0) <= 1 && lane === "cursor-context") {
-		confidence = Math.min(confidence, 0.4);
-		lane = "context-first";
-	}
-
-	if ((input.selectedTextLength ?? 0) > 1200 && lane === "selection-rewrite") {
-		confidence = Math.min(confidence, 0.55);
 	}
 
 	if (
-		input.structuredTargetKind === "table" ||
-		input.structuredTargetKind === "database"
+		(input.selectedTextLength ?? 0) > 1200 &&
+		lane === "selection-rewrite"
 	) {
+		confidence = Math.min(confidence, 0.55);
+	}
+
+	if (input.structuredTargetKind === "table") {
 		targetKind = input.structuredTargetKind;
 		confidence = Math.min(confidence, 0.5);
-		if (lane === "cursor-context" || lane === "context-first") {
+		if (lane === "cursor-context") {
 			lane = "tool-loop";
 		}
 	}
 
-	const plannerMode = resolvePlannerMode({
-		target: decision.target,
-		targetKind,
-		intent: decision.intent,
-	});
-	const resolvedPlannerMode = plannerMode;
 	const mutationMode = resolveStructuredMutationMode({
 		mutationMode:
 			lane === decision.lane
 				? decision.mutationMode
 				: resolveMutationMode({
-					lane,
-					suggestMode: decision.suggestMode,
-					selection: null,
-					surface: decision.surface,
-				}),
+						lane,
+						suggestMode: decision.suggestMode,
+						selection: null,
+						surface: decision.surface,
+						mutationPreference: decision.mutationPreference,
+					}),
 		target: "block",
 		targetKind,
 		surface: decision.surface,
 		activeBlockType: input.activeBlockType ?? null,
 	});
-	const adapter = resolveBlockAdapter({
-		targetKind,
-		plannerMode,
-		target: decision.target,
-		activeBlockType: input.activeBlockType ?? null,
-		surface: decision.surface,
-		mutationMode,
-	});
-	const contentFormat = resolveBlockAdapterContentFormat({
-		adapter,
+	const contentFormat = resolveGenerationContentFormat({
 		target: decision.target,
 		targetKind,
 		surface: decision.surface,
-		mutationMode,
 		fallback: decision.contentFormat,
 	});
 
@@ -274,21 +249,9 @@ export function refineRouteWithNavigator(
 			...decision,
 			confidence,
 			targetKind,
-			blockClass: adapter.blockClass,
-			adapterId: adapter.id,
-			transportKind: adapter.transportKind,
 			contentFormat,
 			mutationMode,
-			plannerMode,
-			applyStrategy: resolveApplyStrategy({
-				target: decision.target,
-				targetKind,
-				contentFormat,
-				plannerMode,
-				mutationMode,
-				intent: decision.intent,
-				surface: decision.surface,
-			}),
+			editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 			shouldStreamDirectly: shouldStreamDirectAIOutput({
 				mutationMode,
 				contentFormat,
@@ -302,23 +265,11 @@ export function refineRouteWithNavigator(
 		lane,
 		mutationMode,
 		contentFormat,
-		plannerMode,
-		applyStrategy: resolveApplyStrategy({
-			target: decision.target,
-			targetKind,
-			contentFormat,
-			plannerMode,
-			mutationMode,
-			intent: decision.intent,
-			surface: decision.surface,
-		}),
+		editsArriveAsToolCalls: editsArriveAsToolCalls(lane),
 		targetKind,
-		blockClass: adapter.blockClass,
-		adapterId: adapter.id,
-		transportKind: adapter.transportKind,
 		allowToolUse: lane === "tool-loop" || lane === "review",
-		useCursorContext: lane === "cursor-context" || lane === "context-first",
-		useDocumentSummary: lane === "context-first" || lane === "tool-loop" || lane === "review",
+		useCursorContext: lane === "cursor-context",
+		useDocumentSummary: lane === "tool-loop" || lane === "review",
 		shouldStreamDirectly: shouldStreamDirectAIOutput({
 			mutationMode,
 			contentFormat,
@@ -347,20 +298,40 @@ export function classifyPromptIntent(prompt: string): PromptIntent {
 	if (GENERATIVE_PATTERNS.test(prompt)) {
 		return "unknown";
 	}
+	// Last, so every edit verb above wins: "Improve this?" is a rewrite.
+	if (QUESTION_PATTERNS.test(prompt)) {
+		return "question";
+	}
 	if (prompt.trim().length <= 80) {
 		return "local-edit";
 	}
 	return "unknown";
 }
 
+function resolveGenerationContentFormat(input: {
+	target: "selection" | "block";
+	targetKind: AITargetKind;
+	surface?: AISurface;
+	fallback: AIContentFormat;
+}): AIContentFormat {
+	if (input.target === "selection") {
+		return input.fallback;
+	}
+	if (
+		input.targetKind === "table" ||
+		input.fallback === "markdown" ||
+		input.surface === "bottom-chat"
+	) {
+		return "markdown";
+	}
+	return input.fallback;
+}
+
 function isStructuralBlockType(blockType: string | null): boolean {
-	return blockType === "table" || blockType === "database" || blockType === "kanban";
+	return blockType === "table" || blockType === "kanban";
 }
 
 function inferPromptTargetKind(prompt: string): AITargetKind | null {
-	if (DATABASE_TARGET_PATTERNS.test(prompt)) {
-		return "database";
-	}
 	if (TABLE_TARGET_PATTERNS.test(prompt)) {
 		return "table";
 	}
@@ -393,50 +364,10 @@ function resolveStructuredMutationMode(input: {
 	if (
 		input.surface === "bottom-chat" &&
 		input.target === "block" &&
-		input.targetKind === "database" &&
-		input.activeBlockType !== input.targetKind
-	) {
-		return "direct-stream";
-	}
-	if (
-		input.surface === "bottom-chat" &&
-		input.target === "block" &&
 		input.targetKind === "table" &&
 		input.activeBlockType !== "table"
 	) {
 		return "streaming-suggestions";
 	}
 	return input.mutationMode;
-}
-
-function resolveApplyStrategy(input: {
-	target: "selection" | "block";
-	targetKind: AITargetKind;
-	contentFormat: AIContentFormat;
-	plannerMode: AIPlannerMode;
-	mutationMode: AIMutationMode;
-	intent: PromptIntent;
-	surface?: AISurface;
-}): AIApplyStrategy {
-	if (input.plannerMode === "structured" || input.targetKind === "database") {
-		return "structured-database";
-	}
-	if (input.target === "selection" || input.contentFormat === "text") {
-		return "text-fast-apply";
-	}
-	if (
-		input.surface === "bottom-chat" &&
-		input.mutationMode === "streaming-suggestions"
-	) {
-		return "markdown-full-replace";
-	}
-	if (
-		input.intent === "rewrite" ||
-		input.intent === "continue" ||
-		input.intent === "local-edit" ||
-		input.targetKind === "table"
-	) {
-		return "markdown-fast-apply";
-	}
-	return "markdown-full-replace";
 }

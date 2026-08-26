@@ -1,30 +1,21 @@
 import React, { useContext } from "react";
-import type { Editor } from "@pen/types";
-import type { RemoteCursorState } from "@pen/multiplayer";
+import type { Editor } from "@input/pen-types";
+import type { RemoteCursorState } from "@input/pen-multiplayer";
 import { EditorContext } from "../../context/editorContext";
 import { useRemoteCursors } from "../../hooks/useRemoteCursors";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 export interface MultiplayerRemoteCursorsProps extends AsChildProps {
 	editor?: Editor;
 	renderCursor?: (cursor: RemoteCursorState) => React.ReactNode;
 	ref?: React.Ref<HTMLElement>;
 }
 
-export function MultiplayerRemoteCursors(
-	props: MultiplayerRemoteCursorsProps,
-) {
+export function MultiplayerRemoteCursors(props: MultiplayerRemoteCursorsProps) {
 	const { editor: editorProp, renderCursor, ...rest } = props;
 	const editorContext = useContext(EditorContext);
 	const editor = editorProp ?? editorContext?.editor;
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.Multiplayer.RemoteCursors> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.Multiplayer.RemoteCursors");
 	}
 

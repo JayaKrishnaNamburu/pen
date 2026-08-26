@@ -1,0 +1,39 @@
+name: Performance
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  bench:
+    name: Budgets
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: bench
+
+      - name: Build bench and its dependencies
+        run: pnpm --filter @input/pen-bench... build
+
+      - name: Run CH8 serial performance budgets
+        run: pnpm --filter @input/pen-bench run bench:ci
+
+      - name: Run SCALE1 envelope measurement gate
+        run: pnpm --filter @input/pen-bench run bench:envelope

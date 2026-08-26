@@ -1,6 +1,8 @@
 import React from "react";
-import type { Editor } from "@pen/types";
-import { getAIController, type PersistentTextSuggestion } from "@pen/ai";
+import { aiControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
+import type { AIController, PersistentTextSuggestion } from "@input/pen-ai";
 import { useActiveAISession } from "./useActiveAISession";
 import { useAIActions } from "./useAIActions";
 import { useSuggestions } from "./useSuggestions";
@@ -47,7 +49,8 @@ export interface InlineSuggestionControlsState {
 export function useInlineSuggestionControls(
 	editor: Editor,
 ): InlineSuggestionControlsState {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const actions = useAIActions(editor);
 	const suggestions = useSuggestions(editor);
 	const activeSession = useActiveAISession(editor);
@@ -62,7 +65,7 @@ export function useInlineSuggestionControls(
 
 	const activeInlineSessionTurn =
 		activeSession?.surface === "inline-edit"
-			? activeSession.turns[activeSession.turns.length - 1] ?? null
+			? (activeSession.turns[activeSession.turns.length - 1] ?? null)
 			: null;
 	const shouldUseRightEdgeRail =
 		activeSession?.surface === "inline-edit" &&
@@ -78,43 +81,51 @@ export function useInlineSuggestionControls(
 		() => new Set(resolvingSuggestionIds),
 		[resolvingSuggestionIds],
 	);
-	const scopedSuggestions = React.useMemo(
-		() => {
-			const filteredSuggestions: PersistentTextSuggestion[] = activeSession
-				? suggestions.filter(
-						(suggestion): suggestion is PersistentTextSuggestion =>
-							isTextSuggestion(suggestion) &&
-							(suggestion.sessionId === activeSession.id ||
-								sessionSuggestionIds.has(suggestion.id)) &&
-							!resolvingSuggestionIdSet.has(suggestion.id),
-					)
-				: suggestions.filter(
-						(suggestion): suggestion is PersistentTextSuggestion =>
-							isTextSuggestion(suggestion) &&
-							!resolvingSuggestionIdSet.has(suggestion.id),
-					);
-			return dedupeSuggestionsById(filteredSuggestions);
-		},
-		[activeSession, resolvingSuggestionIdSet, suggestions],
-	);
+	const scopedSuggestions = React.useMemo(() => {
+		const filteredSuggestions: PersistentTextSuggestion[] = activeSession
+			? suggestions.filter(
+					(suggestion): suggestion is PersistentTextSuggestion =>
+						isTextSuggestion(suggestion) &&
+						(suggestion.sessionId === activeSession.id ||
+							sessionSuggestionIds.has(suggestion.id)) &&
+						!resolvingSuggestionIdSet.has(suggestion.id),
+				)
+			: suggestions.filter(
+					(suggestion): suggestion is PersistentTextSuggestion =>
+						isTextSuggestion(suggestion) &&
+						!resolvingSuggestionIdSet.has(suggestion.id),
+				);
+		return dedupeSuggestionsById(filteredSuggestions);
+	}, [activeSession, resolvingSuggestionIdSet, suggestions]);
 
 	React.useEffect(() => {
 		if (resolvingSuggestionIds.length === 0) {
 			return;
 		}
-		const pendingSuggestionIds = new Set(suggestions.map((suggestion) => suggestion.id));
+		const pendingSuggestionIds = new Set(
+			suggestions.map((suggestion) => suggestion.id),
+		);
 		setResolvingSuggestionIds((currentIds) =>
-			currentIds.filter((suggestionId) => pendingSuggestionIds.has(suggestionId)),
+			currentIds.filter((suggestionId) =>
+				pendingSuggestionIds.has(suggestionId),
+			),
 		);
 	}, [resolvingSuggestionIds.length, suggestions]);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		function updatePositions() {
-			const nextPositions = resolveSuggestionControlPositions(editor, scopedSuggestions, {
-				placement: shouldUseRightEdgeRail ? "right-rail" : "anchor",
-			});
+			const nextPositions = resolveSuggestionControlPositions(
+				editor,
+				scopedSuggestions,
+				{
+					placement: shouldUseRightEdgeRail ? "right-rail" : "anchor",
+				},
+			);
 			setPositions((currentPositions) =>
-				areSuggestionControlPositionsEqual(currentPositions, nextPositions)
+				areSuggestionControlPositionsEqual(
+					currentPositions,
+					nextPositions,
+				)
 					? currentPositions
 					: nextPositions,
 			);
@@ -134,12 +145,13 @@ export function useInlineSuggestionControls(
 		positions[positions.length - 1]?.id ??
 		null;
 	const activePosition = activeGroupId
-		? positions.find((position) => position.id === activeGroupId) ?? null
+		? (positions.find((position) => position.id === activeGroupId) ?? null)
 		: null;
 	const activeSuggestionNumber =
 		activeGroupId == null
 			? 0
-			: positions.findIndex((position) => position.id === activeGroupId) + 1;
+			: positions.findIndex((position) => position.id === activeGroupId) +
+				1;
 	const activeSuggestionScrollKey =
 		activePosition == null
 			? null
@@ -150,7 +162,10 @@ export function useInlineSuggestionControls(
 			setActiveIndex(0);
 			return;
 		}
-		if (activeGroupId && positions.some((position) => position.id === activeGroupId)) {
+		if (
+			activeGroupId &&
+			positions.some((position) => position.id === activeGroupId)
+		) {
 			return;
 		}
 		setActiveIndex(positions.length - 1);
@@ -160,7 +175,10 @@ export function useInlineSuggestionControls(
 		if (!activePosition || !activeSuggestionScrollKey) {
 			return;
 		}
-		const anchors = resolveSuggestionAnchorElements(editor, activePosition.suggestionIds);
+		const anchors = resolveSuggestionAnchorElements(
+			editor,
+			activePosition.suggestionIds,
+		);
 		if (anchors.length === 0) {
 			return;
 		}
@@ -226,7 +244,9 @@ export function useInlineSuggestionControls(
 		hasVisibleControls: activePosition != null,
 		shouldUseRightEdgeRail,
 		canGoToPrevious: activeSuggestionNumber > 1,
-		canGoToNext: activeSuggestionNumber > 0 && activeSuggestionNumber < positions.length,
+		canGoToNext:
+			activeSuggestionNumber > 0 &&
+			activeSuggestionNumber < positions.length,
 		setActiveIndex,
 		goToPrevious,
 		goToNext,
@@ -234,4 +254,3 @@ export function useInlineSuggestionControls(
 		rejectActiveSuggestionGroup,
 	};
 }
-

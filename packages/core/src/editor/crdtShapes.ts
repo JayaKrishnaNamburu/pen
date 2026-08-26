@@ -18,6 +18,10 @@ export interface CRDTTextLike {
 	readonly length: number;
 }
 
+export interface CRDTInlineTextLike extends CRDTTextLike {
+	insertEmbed(offset: number, value: Record<string, unknown>): void;
+}
+
 export interface CRDTUnknownArray<T = unknown> {
 	readonly length: number;
 	get(index: number): T;
@@ -42,10 +46,8 @@ export type TableRowMap = CRDTUnknownMap;
 export type TableContentArray = CRDTUnknownArray<TableRowMap>;
 export type TableColumnMap = CRDTUnknownMap;
 export type TableColumnArray = CRDTUnknownArray<TableColumnMap>;
-export type DatabaseViewMap = CRDTUnknownMap;
-export type DatabaseViewArray = CRDTUnknownArray<DatabaseViewMap>;
 
-export function isCRDTArray(value: unknown): value is CRDTUnknownArray {
+function isCRDTArray(value: unknown): value is CRDTUnknownArray {
 	return (
 		typeof value === "object" &&
 		value !== null &&
@@ -73,7 +75,10 @@ export function getArrayProp<T = unknown>(
 	return isCRDTArray(value) ? (value as CRDTUnknownArray<T>) : null;
 }
 
-export function getMapProp(map: CRDTUnknownMap, key: string): CRDTUnknownMap | null {
+export function getMapProp(
+	map: CRDTUnknownMap,
+	key: string,
+): CRDTUnknownMap | null {
 	const value = map.get(key);
 	return isCRDTMap(value) ? value : null;
 }
@@ -91,30 +96,30 @@ export function getTextProp(
 	key: string,
 ): CRDTTextLike | null {
 	const value = map.get(key);
-	return (
-		typeof value === "object" &&
+	return typeof value === "object" &&
 		value !== null &&
 		typeof (value as { insert?: unknown }).insert === "function" &&
 		typeof (value as { delete?: unknown }).delete === "function" &&
 		typeof (value as { toString?: unknown }).toString === "function"
-	)
 		? (value as CRDTTextLike)
 		: null;
 }
 
-export function getTableContent(blockMap: CRDTUnknownMap): TableContentArray | null {
+export function getTableContent(
+	blockMap: CRDTUnknownMap,
+): TableContentArray | null {
 	return getArrayProp<TableRowMap>(blockMap, "tableContent");
 }
 
-export function getTableColumns(blockMap: CRDTUnknownMap): TableColumnArray | null {
+export function getTableColumns(
+	blockMap: CRDTUnknownMap,
+): TableColumnArray | null {
 	return getArrayProp<TableColumnMap>(blockMap, "tableColumns");
 }
 
-export function getDatabaseViews(blockMap: CRDTUnknownMap): DatabaseViewArray | null {
-	return getArrayProp<DatabaseViewMap>(blockMap, "databaseViews");
-}
-
-export function getRowCells(rowMap: CRDTUnknownMap): CRDTUnknownArray<TableCellMap> | null {
+export function getRowCells(
+	rowMap: CRDTUnknownMap,
+): CRDTUnknownArray<TableCellMap> | null {
 	return getArrayProp<TableCellMap>(rowMap, "cells");
 }
 
@@ -138,7 +143,7 @@ export function getCellText(
 	return cell ? getTextProp(cell, "content") : null;
 }
 
-export function findColumnIndexById(
+function findColumnIndexById(
 	blockMap: CRDTUnknownMap,
 	columnId: string,
 ): number {
@@ -152,7 +157,7 @@ export function findColumnIndexById(
 	return -1;
 }
 
-export function findColumnMapById(
+function findColumnMapById(
 	blockMap: CRDTUnknownMap,
 	columnId: string,
 ): CRDTUnknownMap | null {
@@ -164,7 +169,7 @@ export function findColumnMapById(
 	return columnMap && isCRDTMap(columnMap) ? columnMap : null;
 }
 
-export function findRowIndexById(
+function findRowIndexById(
 	tableContent: TableContentArray,
 	rowId: string,
 ): number {
@@ -176,7 +181,9 @@ export function findRowIndexById(
 	return -1;
 }
 
-export function crdtMapToPlainRecord(value: unknown): Record<string, unknown> | null {
+export function crdtMapToPlainRecord(
+	value: unknown,
+): Record<string, unknown> | null {
 	if (!value || typeof value !== "object") return null;
 	const entries = (
 		value as { entries?: () => IterableIterator<[string, unknown]> }
@@ -193,8 +200,12 @@ export function crdtMapToPlainRecord(value: unknown): Record<string, unknown> | 
 
 export function crdtValueToPlain(value: unknown): unknown {
 	if (!value || typeof value !== "object") return value;
-	if (typeof (value as { toArray?: () => unknown[] }).toArray === "function") {
-		return (value as { toArray: () => unknown[] }).toArray().map(crdtValueToPlain);
+	if (
+		typeof (value as { toArray?: () => unknown[] }).toArray === "function"
+	) {
+		return (value as { toArray: () => unknown[] })
+			.toArray()
+			.map(crdtValueToPlain);
 	}
 	return crdtMapToPlainRecord(value);
 }

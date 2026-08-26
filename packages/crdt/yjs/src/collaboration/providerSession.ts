@@ -3,7 +3,7 @@ import type {
 	Editor,
 	MultiplayerSession,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import * as Y from "yjs";
 
 export type YjsProviderStatus = "disconnected" | "connecting" | "connected";
@@ -84,7 +84,9 @@ class YjsProviderSession implements MultiplayerSession {
 
 		if (status === "connected") {
 			this.setState(
-				this.supportsSyncEvents && !this.isSynced ? "syncing" : "connected",
+				this.supportsSyncEvents && !this.isSynced
+					? "syncing"
+					: "connected",
 			);
 			return;
 		}

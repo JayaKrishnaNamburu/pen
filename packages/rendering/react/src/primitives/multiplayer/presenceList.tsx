@@ -1,11 +1,9 @@
 import React, { useContext } from "react";
-import type { Editor } from "@pen/types";
-import type { PeerState } from "@pen/multiplayer";
+import type { Editor } from "@input/pen-types";
+import type { PeerState } from "@input/pen-multiplayer";
 import { EditorContext } from "../../context/editorContext";
 import { useMultiplayer } from "../../hooks/useMultiplayer";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 export interface MultiplayerPresenceListProps extends AsChildProps {
 	editor?: Editor;
 	maxVisible?: number;
@@ -13,19 +11,12 @@ export interface MultiplayerPresenceListProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 }
 
-export function MultiplayerPresenceList(
-	props: MultiplayerPresenceListProps,
-) {
+export function MultiplayerPresenceList(props: MultiplayerPresenceListProps) {
 	const { editor: editorProp, maxVisible, renderAvatar, ...rest } = props;
 	const editorContext = useContext(EditorContext);
 	const editor = editorProp ?? editorContext?.editor;
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.Multiplayer.PresenceList> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.Multiplayer.PresenceList");
 	}
 
@@ -59,7 +50,10 @@ export function MultiplayerPresenceList(
 		overflowCount > 0
 			? [
 					...renderedPeerAvatars,
-					<span key="overflow" data-pen-multiplayer-presence-overflow="">
+					<span
+						key="overflow"
+						data-pen-multiplayer-presence-overflow=""
+					>
 						+{overflowCount}
 					</span>,
 				]

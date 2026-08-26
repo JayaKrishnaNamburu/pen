@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import type { Editor } from "@pen/types";
-import { getSelectionPointRect } from "../../field-editor/selectionBridge";
+import type { Editor } from "@input/pen-types";
+import { measureWithRoot, type GeometryReader } from "@input/pen-dom";
 import {
 	getDropPreview,
 	resolveDropTarget,
 	type DropPreview,
 	type ResolvedDropTarget,
-} from "../../field-editor/dropResolver";
-import {
-	executeTransfer,
-} from "../../field-editor/transfer";
-import { canAcceptImageTransfer } from "../../field-editor/transferImages";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+} from "@input/pen-dom/field-editor/dropResolver";
+import { executeTransfer } from "@input/pen-dom/field-editor/transfer";
+import { canAcceptImageTransfer } from "@input/pen-dom/field-editor/transferImages";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 interface InlineDropCaretStyle {
 	left: number;
@@ -68,7 +66,7 @@ export function useTransferSession(
 			target instanceof Element &&
 			target.closest(`[${DATA_ATTRS.ignoreTransfer}]`) !== null;
 
-		const isPointWithinElement = (
+		const readPointWithinElement = (
 			element: HTMLElement,
 			clientX: number,
 			clientY: number,
@@ -86,14 +84,25 @@ export function useTransferSession(
 			!isIgnoredTransferTarget(event.target) &&
 			canAcceptImageTransfer(editor, event.dataTransfer) &&
 			(isNodeWithinRoot(event.target) ||
-				isPointWithinElement(rootElement, event.clientX, event.clientY));
+				readPointWithinElement(
+					rootElement,
+					event.clientX,
+					event.clientY,
+				));
 
 		const isRelevantContentDragEvent = (event: DragEvent): boolean =>
 			!isIgnoredTransferTarget(event.target) &&
 			(isNodeWithinContent(event.target) ||
-				isPointWithinElement(contentElement, event.clientX, event.clientY));
+				readPointWithinElement(
+					contentElement,
+					event.clientX,
+					event.clientY,
+				));
 
-		const updateDropPreviewFromEvent = (event: DragEvent) => {
+		const updateDropPreviewFromEvent = (
+			event: DragEvent,
+			reader: GeometryReader,
+		) => {
 			if (!isRelevantContentDragEvent(event)) {
 				imageFileDropTargetRef.current = null;
 				setDropPreview(null);
@@ -113,23 +122,26 @@ export function useTransferSession(
 			const preview = getDropPreview(dropTarget);
 			setDropPreview(preview);
 			if (preview?.kind === "inline-caret") {
-				const caretRect = getSelectionPointRect(rootElement, preview.point);
-				if (caretRect) {
-					setInlineDropCaretStyle({
-						left: caretRect.left,
-						top: caretRect.top,
-						height: Math.max(caretRect.height, 18),
-					});
-				} else {
-					setInlineDropCaretStyle(null);
-				}
+				const caretRect = reader.caretRect(preview.point, "downstream");
+				setInlineDropCaretStyle(
+					caretRect
+						? {
+								left: caretRect.left,
+								top: caretRect.top,
+								height: Math.max(caretRect.height, 18),
+							}
+						: null,
+				);
 			} else {
 				setInlineDropCaretStyle(null);
 			}
 		};
 
 		const handleDragEnter = (event: DragEvent) => {
-			if (!isRelevantImageFileDragEvent(event)) {
+			const relevant = measureWithRoot(rootElement, () =>
+				isRelevantImageFileDragEvent(event),
+			);
+			if (!relevant) {
 				return;
 			}
 
@@ -152,20 +164,25 @@ export function useTransferSession(
 		};
 
 		const handleDragOver = (event: DragEvent) => {
-			if (!isRelevantImageFileDragEvent(event)) {
-				return;
-			}
+			measureWithRoot(rootElement, ({ reader }) => {
+				if (!isRelevantImageFileDragEvent(event)) {
+					return;
+				}
 
-			event.preventDefault();
-			setIsDropActive(true);
-			updateDropPreviewFromEvent(event);
-			if (event.dataTransfer) {
-				event.dataTransfer.dropEffect = "copy";
-			}
+				event.preventDefault();
+				setIsDropActive(true);
+				updateDropPreviewFromEvent(event, reader);
+				if (event.dataTransfer) {
+					event.dataTransfer.dropEffect = "copy";
+				}
+			});
 		};
 
 		const handleDrop = (event: DragEvent) => {
-			if (!isRelevantImageFileDragEvent(event)) {
+			const relevant = measureWithRoot(rootElement, () =>
+				isRelevantImageFileDragEvent(event),
+			);
+			if (!relevant) {
 				return;
 			}
 
@@ -192,7 +209,10 @@ export function useTransferSession(
 		rootElement.addEventListener("dragleave", handleDragLeave, true);
 		rootElement.addEventListener("dragover", handleDragOver, true);
 		rootElement.addEventListener("drop", handleDrop, true);
-		rootElement.ownerDocument?.addEventListener("dragend", handleDocumentDragEnd);
+		rootElement.ownerDocument?.addEventListener(
+			"dragend",
+			handleDocumentDragEnd,
+		);
 		return () => {
 			clearImageFileDropState();
 			rootElement.removeEventListener("dragenter", handleDragEnter, true);

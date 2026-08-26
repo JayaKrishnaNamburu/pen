@@ -1,25 +1,24 @@
-import type {
-	BlockSchema,
-	BlockSelectionRole,
-	Editor,
-	FieldEditorType,
-	FlowBlockCapability,
-} from "@pen/types";
 import {
 	getBlockSelectionRoleFromSchema,
 	getFlowCapabilityFromSchema,
-	isNestedContent,
 	shouldExposeBlockInTooling,
-} from "@pen/types";
+} from "@input/pen-core";
 import type {
 	StructuredTargetDescriptor,
 	TargetEditability,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
+import {
+	isNestedContent,
+	type BlockSchema,
+	type BlockSelectionRole,
+	type Editor,
+	type FieldEditorType,
+	type FlowBlockCapability,
+} from "@input/pen-types";
 import { getAvailableToolBlockSchemas } from "./blockTypePolicy";
 
 const INLINE_CONTENT_TYPE = "inline";
 const TABLE_BLOCK_TYPE = "table";
-const DATABASE_BLOCK_TYPE = "database";
 
 export const STRUCTURED_TARGET_OPERATION_IDS = [
 	"replace_text",
@@ -38,11 +37,6 @@ export const STRUCTURED_TARGET_OPERATION_IDS = [
 	"delete_column",
 	"set_cell_text",
 	"update_columns",
-	"add_column",
-	"update_column",
-	"update_cell",
-	"add_view",
-	"set_active_view",
 ] as const;
 
 export type StructuredTargetOperationId =
@@ -73,7 +67,9 @@ export interface ToolBlockTypeEntry extends StructuredTargetSchemaSnapshot {
 	editability: TargetEditability;
 }
 
-export function listAvailableToolBlockTypes(editor: Editor): ToolBlockTypeEntry[] {
+export function listAvailableToolBlockTypes(
+	editor: Editor,
+): ToolBlockTypeEntry[] {
 	return getAvailableToolBlockSchemas(editor).map((schema) =>
 		buildToolBlockTypeEntry(editor, schema),
 	);
@@ -128,30 +124,16 @@ function buildStructuredTargetDescriptor(
 	const flowCapability = getFlowCapabilityFromSchema(schema);
 
 	if (block.type === TABLE_BLOCK_TYPE) {
+		const table = block.as("table");
 		return {
 			kind: "table",
 			blockId: block.id,
 			blockType: block.type,
 			documentProfile: editor.documentProfile,
 			editability,
-			rowCount: block.tableRowCount(),
-			columnCount: block.tableColumnCount(),
-			columns: [...block.tableColumns()],
-		};
-	}
-
-	if (block.type === DATABASE_BLOCK_TYPE) {
-		return {
-			kind: "database",
-			blockId: block.id,
-			blockType: block.type,
-			documentProfile: editor.documentProfile,
-			editability,
-			rowCount: block.tableRowCount(),
-			columns: [...block.tableColumns()],
-			views: [...block.databaseViews()],
-			activeViewId:
-				block.databaseActiveView()?.id ?? block.databasePrimaryViewId(),
+			rowCount: table?.tableRowCount() ?? 0,
+			columnCount: table?.tableColumnCount() ?? 0,
+			columns: [...(table?.tableColumns() ?? [])],
 		};
 	}
 
@@ -163,8 +145,9 @@ function buildStructuredTargetDescriptor(
 		editability,
 		flowCapability,
 		supportsTextContent: schema?.content === INLINE_CONTENT_TYPE,
-		supportsChildren:
-			schema ? isNestedContent(schema.content) || schema.isContainer === true : false,
+		supportsChildren: schema
+			? isNestedContent(schema.content) || schema.isContainer === true
+			: false,
 		propSchemaKeys: Object.keys(schema?.propSchema ?? {}),
 	};
 }
@@ -190,23 +173,6 @@ function listValidTargetOperations(
 			"delete_column",
 			"set_cell_text",
 			"update_columns",
-		];
-	}
-
-	if (target.kind === "database") {
-		return [
-			"update_props",
-			"insert_before",
-			"insert_after",
-			"move_block",
-			"delete_block",
-			"convert_block",
-			"add_column",
-			"update_column",
-			"insert_row",
-			"update_cell",
-			"add_view",
-			"set_active_view",
 		];
 	}
 
@@ -240,7 +206,8 @@ function buildToolBlockTypeEntry(
 	return {
 		type: schema.type,
 		props: Object.keys(schema.propSchema ?? {}),
-		supportsChildren: isNestedContent(schema.content) || schema.isContainer === true,
+		supportsChildren:
+			isNestedContent(schema.content) || schema.isContainer === true,
 		editability: resolveTargetEditability(editor, schema),
 		...schemaSnapshot,
 	};

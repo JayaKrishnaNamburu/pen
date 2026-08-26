@@ -1,0 +1,77 @@
+# HOST3 / API7: Node versions at the endpoints of engines.node (>=22)
+# plus one non-Linux runner. Kept out of ci.yml so it can be edited
+# independently. Floor 22 is the setup-node pin in ci/release/docs;
+# 26 is Node Current as of 2026-08 (the open upper end of >=22).
+name: Node
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: node-matrix-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  host3-node-matrix:
+    name: ${{ matrix.label }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # `label` exists only to render the check name.
+        include:
+          - os: ubuntu-latest
+            node-version: 22
+            label: 22 on Ubuntu
+          - os: ubuntu-latest
+            node-version: 26
+            label: 26 on Ubuntu
+          - os: macos-latest
+            node-version: 22
+            label: 22 on macOS
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ matrix.node-version }}
+          turbo-cache-scope: node-matrix
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Typecheck packages
+        run: pnpm typecheck
+
+      - name: Run unit and integration tests
+        run: pnpm test -- --maxWorkers=2
+
+  node-matrix:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: All Node jobs
+    if: always()
+    needs: [host3-node-matrix]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require every host lane to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}

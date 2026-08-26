@@ -1,4 +1,4 @@
-# @pen/playground
+# @input/pen-playground
 
 ## Purpose
 
@@ -6,50 +6,53 @@ Workspace package in the Pen monorepo.
 
 ## Public Role
 
-Exercise the runtime and renderer surface in a local integration app.
+The reference app: the shortest honest example of embedding Pen. Someone who has never seen this repository should be able to clone it, run `pnpm dev`, and read the whole app in one sitting.
 
-In practice, the playground is also the integration harness for Pen's AI transport and streaming contracts. It should reflect shipped package behavior closely enough to catch drift between `@pen/ai`, `@pen/types`, and the host-side request pipeline.
+It stays narrow on purpose. A surface is added here only when a first-time embedder needs to see it — editor, AI agent, document inspector, optional collaboration. Package tests and the examples cover the rest.
 
 ## Key Exports / Entrypoints
 
 - Export map: Package root only.
-- Workspace scripts: `build`, `dev`, `dev:backend`, `dev:e2e`, `typecheck`
+- Workspace scripts: `build`, `dev`, `dev:e2e`, `typecheck`, `lint`
+- Client entry: `src/main.tsx` mounts `src/App.tsx`, a three-pane shell over one `Editor`.
+- Server entry: `server/aiPlugin.ts` and `server/collaborationPlugin.ts`, Vite middleware that serves `POST /api/chat` and the Yjs websocket at `/collaboration`. There is no second process to start.
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@ai-sdk/anthropic`, `@pen/ai`, `@pen/ai-autocomplete`, `@pen/ai-suggestions`, `@pen/ai-skills`, `@pen/ai-tools`, `@pen/assets-memory`, `@pen/core`, `@pen/crdt-yjs`, `@pen/database`, `@pen/export-html`, `@pen/export-markdown`, `@pen/import-html`, `@pen/import-markdown`, `@pen/input-rules`, `@pen/multiplayer`, `@pen/preset-default`, `@pen/react`, `@pen/schema-default`, `@pen/search`, `@pen/shortcuts`, `@pen/types`, `@y/websocket-server`, `ai`, `dotenv`, `react`, `react-dom`, `ws`, `y-websocket`, `yjs`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-input-rules`, `@input/pen-multiplayer`, `@input/pen-preset-default`, `@input/pen-react`, `@input/pen-types`, `@y/websocket-server`, `react`, `react-dom`, `ws`, `yjs`, `y-websocket`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This is a private app for development, experimentation, and demos.
+- It resolves Pen from built packages rather than source aliases, so it fails the way a real consumer would when an export map or `dist` build is wrong.
 
 ## Data Flow / Runtime Model
 
-Private playground app packages in Pen should stay package-first and explicit about ownership. Use it to validate end-to-end integration of shipped packages.
+One editor, three panes, no mirrored state. The chat sidebar and the inspector both read and write the same `Editor` instance, which is why they cannot disagree with the document.
 
-For AI flows, the playground currently owns a thin but important server boundary:
-
-- It hydrates a server-side editor from serialized client state and remaps client block ids to server block ids before handling requested operations.
-- It validates requested-operation conflicts using the shared selection/range helpers and provenance checks.
-- It builds local-operation prompts for bounded rewrites and removals.
-- It requires local-operation model output to be wrapped in `<pen_local_operation>...</pen_local_operation>`.
-- It streams typed local-operation frames such as `replace-preview`, `replace-final`, `insert-preview`, and `insert-final` back to the client.
-- Preview extraction must suppress wrapper text, including partially streamed closing markers, so protocol framing never leaks into the document.
-- It also exercises proactive AI suggestion flows by shipping a host analyzer for `@pen/ai-suggestions`, exposing playground tuning controls, and validating renderer behavior for underline, popover, apply, and dismiss lifecycle.
+- `src/editor/usePenEditor.ts` owns the editor's lifecycle and seeds the starter document with a single `apply` at `origin: "system"`. It also assigns `window.penPlayground` as `{ editor, aiController }` so Playwright — and a human in the console — can reach the live instance and the AI controller.
+- `src/chat/useChat.ts` sends prompts through `runPrompt` and keeps a receipt of each turn. The agent's answer arrives as document content or tool calls, never as chat prose, so the transcript records what changed rather than replaying a reply.
+- `src/ai/penModel.ts` is the `ModelAdapter`: it posts to `/api/chat` and translates newline-delimited JSON back into `ModelStreamEvent`s. A browser-saved Anthropic key from the agent bar is sent as `x-anthropic-api-key` and wins over the server env key for that request.
+- `server/chatRoute.ts` picks a backend per request — Anthropic when `ANTHROPIC_API_KEY` is set, `server/scriptedModel.ts` when it is not — so a fresh clone with no key still streams.
+- `src/collaboration/` joins an optional Yjs room from the toolbar; the editor is recreated with `multiplayerExtension` when a session exists. A `?room=` link without a stored display name opens the join card rather than loading a private document under a shared URL. `EditorPane` keys `Pen.Editor.Root` to `editor.internals.viewId`, because a field editor is bound to one instance for its lifetime and a swapped-in editor would otherwise be driven by the previous one's DOM.
+- Joining waits for the room before writing anything. Every editor is born with one empty paragraph, and the CRDT merges it like any other insert, so `usePenEditor` remembers that block and deletes it once a room with content arrives — otherwise each join would leave a blank block behind.
+- `src/editor/penEditor.ts` assembles the editor and reads two query params so AI write posture can be compared on one document without a rebuild: `?mutation=direct|suggestions`, and `?editStreaming=preview|atomic`. Durable edits always go through `edit_document`.
+- `src/editor/ReviewSurface.tsx` wraps the editor with the AI review bar, which is how staged suggestions are accepted or rejected when the mutation posture is `suggestions`.
+- `src/inspector/useDocumentSnapshot.ts` reads block tree, generation, and selection back out of the editor on `commit` and `selectionChange`; nothing in the app keeps a second copy.
+- `src/ui/` holds the interface primitives as simplified ports of Input's design system, in plain CSS over `src/styles/tokens.css`. They are presentation only: no primitive imports from `editor/`, `chat/`, or `inspector/`, and none of them knows Pen exists. The agent bar's new-chat and API-key buttons are `Button.Icon` plus `Icon.Plus` and `Icon.Anthropic`.
 
 Important rules:
 
-- Playground transport should mirror the shared `@pen/types` operation contract rather than inventing a playground-only target shape.
-- Local-operation prompts may be playground-specific, but the resulting operation semantics must stay aligned with the AI extension's fast-apply and suggestion lifecycle.
-- AI suggestion responses should stay structured and bounded so the playground remains an integration harness for the shared suggestion contract rather than a playground-only heuristic branch.
-- Private glue is acceptable here, but behavior that affects correctness should stay consistent with package contracts and corresponding specs.
+- The wire format between `penModel.ts` and the server is a named subset of `ModelStreamEvent` (`server/protocol.ts`), not a shape of its own. A chat needs four event types; keeping the subset explicit is what makes the file readable.
+- The scripted model answers in whichever form Pen asked for: tools in the request mean structural edits, no tools mean prose for a block. It exists to make the request contract visible, not to simulate a model.
+- The UI layer stays dependency-free. A ported primitive that would need Radix, framer-motion, or an icon package is either simplified until it does not, or left out.
+- Prefer deleting a feature here over explaining it.
 
 ## Integration Notes
 
 - Path in workspace: `playground`
 - Spec path mirrors workspace path: `packages/playground.md`
 - This package is private to the workspace and exists to support docs, demos, or local development flows.
-- The playground server is the main place where request/response streaming, local-operation payload parsing, and end-to-end AI validation are exercised together
-- The playground also validates proactive AI suggestion integration across `@pen/ai-suggestions`, `@pen/react`, and the host analyzer boundary
-- Changes here should be treated as integration behavior, not as an excuse to fork the runtime contract from shipped packages
+- `pnpm test:e2e` drives `playground/e2e` against `dev:e2e` on port 4173.
+- `playground/README.md` is the contributor-facing tour and should stay true to the file layout.
 
 ## Current Maturity / Intended Usage
 
@@ -61,5 +64,6 @@ Do not treat playground-only glue as part of the public runtime contract.
 
 Additional non-goals:
 
-- Do not let playground-specific request routing redefine the meaning of shared operation targets.
-- Do not allow payload-wrapper narration or protocol framing to leak into editor-visible content.
+- Not a feature showcase. Coverage of every extension lives in package tests.
+- Not a chat product. The document is the output surface; the sidebar is a receipt.
+- No abstraction that exists only to look professional. A reader should be able to follow every hop from keystroke to document without a diagram.

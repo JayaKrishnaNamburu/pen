@@ -1,21 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { InputRuleEngine } from "../engine";
 import { defaultInlineRules } from "../inlineRules";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 
 type InlineRulesTestEditor = {
 	getBlock(): {
 		type: string;
 		textContent(): string;
 	};
-	selection:
-		| {
-				type: "text";
-				anchor: { blockId: string; offset: number };
-				focus: { blockId: string; offset: number };
-				isCollapsed: boolean;
-		  }
-		| null;
+	selection: {
+		type: "text";
+		anchor: { blockId: string; offset: number };
+		focus: { blockId: string; offset: number };
+	} | null;
 	schema: {
 		resolve(): {
 			content: "inline" | "none";
@@ -42,7 +39,6 @@ function mockEditor(opts: {
 			type: "text" as const,
 			anchor: { blockId: "b1", offset },
 			focus: { blockId: "b1", offset },
-			isCollapsed: true,
 		},
 		schema: {
 			resolve: () => ({
@@ -68,21 +64,27 @@ describe("InputRuleEngine — inline rules", () => {
 		it("matches **hello** when closing * is typed", () => {
 			const engine = engineWithInlineRules();
 			const editor = mockEditor({ textContent: "**hello*" });
-			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
+			const result = engine.tryMatchInline(
+				editor as unknown as Editor,
+				"b1",
+				"*",
+			);
 
 			expect(result).not.toBeNull();
 			expect(result).toHaveLength(2);
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				length: 9,
+				from: 0,
+				to: 0 + 9,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 				marks: { bold: true },
 			});
 		});
@@ -90,18 +92,24 @@ describe("InputRuleEngine — inline rules", () => {
 		it("matches bold after other text: 'hey **world*' + '*'", () => {
 			const engine = engineWithInlineRules();
 			const editor = mockEditor({ textContent: "hey **world*" });
-			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
+			const result = engine.tryMatchInline(
+				editor as unknown as Editor,
+				"b1",
+				"*",
+			);
 
 			expect(result).not.toBeNull();
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
-				offset: 4,
-				length: 9,
+				type: "splice-text",
+				from: 4,
+				to: 4 + 9,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "insert-text",
-				offset: 4,
-				text: "world",
+				type: "splice-text",
+				from: 4,
+				to: 4,
+				insert: "world",
 				marks: { bold: true },
 			});
 		});
@@ -109,7 +117,11 @@ describe("InputRuleEngine — inline rules", () => {
 		it("does not match with empty inner text '***' + '*'", () => {
 			const engine = engineWithInlineRules();
 			const editor = mockEditor({ textContent: "***" });
-			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
+			const result = engine.tryMatchInline(
+				editor as unknown as Editor,
+				"b1",
+				"*",
+			);
 			expect(result).toBeNull();
 		});
 	});
@@ -122,14 +134,16 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
-				offset: 0,
-				length: 7,
+				type: "splice-text",
+				from: 0,
+				to: 0 + 7,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "insert-text",
-				offset: 0,
-				text: "hello",
+				type: "splice-text",
+				from: 0,
+				to: 0,
+				insert: "hello",
 				marks: { italic: true },
 			});
 		});
@@ -141,7 +155,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "word",
+				insert: "word",
 				marks: { italic: true },
 			});
 		});
@@ -155,7 +169,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "hello",
+				insert: "hello",
 				marks: { code: true },
 			});
 		});
@@ -176,7 +190,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "hello",
+				insert: "hello",
 				marks: { strikethrough: true },
 			});
 		});
@@ -190,7 +204,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "marked",
+				insert: "marked",
 				marks: { highlight: true },
 			});
 		});
@@ -230,7 +244,11 @@ describe("InputRuleEngine — inline rules", () => {
 					resolveInline: () => ({ kind: "mark" }),
 				},
 			};
-			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
+			const result = engine.tryMatchInline(
+				editor as unknown as Editor,
+				"b1",
+				"*",
+			);
 			expect(result).toBeNull();
 		});
 
@@ -252,10 +270,13 @@ describe("InputRuleEngine — inline rules", () => {
 					type: "text" as const,
 					anchor: { blockId: "b1", offset: 0 },
 					focus: { blockId: "b1", offset: 5 },
-					isCollapsed: false,
 				},
 			};
-			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
+			const result = engine.tryMatchInline(
+				editor as unknown as Editor,
+				"b1",
+				"*",
+			);
 			expect(result).toBeNull();
 		});
 
@@ -265,7 +286,11 @@ describe("InputRuleEngine — inline rules", () => {
 				...mockEditor({ textContent: "**hello*" }),
 				selection: null,
 			};
-			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
+			const result = engine.tryMatchInline(
+				editor as unknown as Editor,
+				"b1",
+				"*",
+			);
 			expect(result).toBeNull();
 		});
 
@@ -278,6 +303,69 @@ describe("InputRuleEngine — inline rules", () => {
 			expect(result![1]).toMatchObject({
 				marks: { bold: true },
 			});
+		});
+
+		it("does not rematch the inner text a rule just inserted", () => {
+			const cases: Array<{
+				before: string;
+				trigger: string;
+				inner: string;
+				markType: string;
+			}> = [
+				{
+					before: "**hello*",
+					trigger: "*",
+					inner: "hello",
+					markType: "bold",
+				},
+				{
+					before: "*hello",
+					trigger: "*",
+					inner: "hello",
+					markType: "italic",
+				},
+				{
+					before: "`code",
+					trigger: "`",
+					inner: "code",
+					markType: "code",
+				},
+				{
+					before: "~~text~",
+					trigger: "~",
+					inner: "text",
+					markType: "strikethrough",
+				},
+				{
+					before: "==text=",
+					trigger: "=",
+					inner: "text",
+					markType: "highlight",
+				},
+			];
+
+			const engine = engineWithInlineRules();
+			for (const { before, trigger, inner, markType } of cases) {
+				const ops = engine.tryMatchInline(
+					mockEditor({ textContent: before }),
+					"b1",
+					trigger,
+				);
+				expect(ops, markType).not.toBeNull();
+				expect(ops![1]).toMatchObject({
+					type: "splice-text",
+					insert: inner,
+					marks: { [markType]: true },
+				});
+				expect(
+					engine.tryMatchInline(
+						mockEditor({ textContent: inner }),
+						"b1",
+						trigger,
+					),
+					markType,
+				).toBeNull();
+			}
 		});
 	});
 });

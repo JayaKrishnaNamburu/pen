@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
-import { createDecorationSet } from "@pen/core";
-import { createTestEditor } from "@pen/test";
-import type { Editor } from "@pen/types";
-import { defineExtension } from "@pen/types";
+import { createDecorationSet, decorationsFacet } from "@input/pen-core";
+import { createTestEditor } from "@input/pen-test";
+import type { Editor } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -23,7 +23,7 @@ import {
 } from "../index";
 
 afterEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 const editorProp = {
@@ -31,7 +31,7 @@ const editorProp = {
   required: true,
 };
 
-describe("@pen/vue public API", () => {
+describe("@input/pen-vue public API", () => {
   it("registers PenEditor through the plugin", () => {
     const editor = createTestEditor({
       blocks: [
@@ -73,20 +73,22 @@ describe("@pen/vue public API", () => {
     let decorationsEnabled = false;
     const decorationsExtension = defineExtension({
       name: "test-vue-decorations",
-      decorations(_state, currentEditor) {
-        const blockId = currentEditor.firstBlock()?.id;
-        if (!decorationsEnabled || !blockId) {
-          return createDecorationSet([]);
-        }
+      facets: [
+        decorationsFacet.of((_state, currentEditor) => {
+          const blockId = currentEditor.firstBlock()?.id;
+          if (!decorationsEnabled || !blockId) {
+            return createDecorationSet([]);
+          }
 
-        return createDecorationSet([
-          {
-            type: "block",
-            blockId,
-            attributes: { highlighted: true },
-          },
-        ]);
-      },
+          return createDecorationSet([
+            {
+              type: "block",
+              blockId,
+              attributes: { highlighted: true },
+            },
+          ]);
+        }),
+      ],
     });
 
     const editor = createTestEditor({
@@ -153,10 +155,11 @@ describe("@pen/vue public API", () => {
           position: "last",
         },
         {
-          type: "insert-text",
+          type: "splice-text",
           blockId: "paragraph-3",
-          offset: 0,
-          text: "Third",
+          from: 0,
+				to: 0,
+				insert: "Third",
         },
       ],
       { origin: "user" },

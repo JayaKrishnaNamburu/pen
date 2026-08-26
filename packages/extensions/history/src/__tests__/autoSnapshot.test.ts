@@ -1,10 +1,14 @@
-import { createEditor } from "@pen/core";
-import { createDocumentSession } from "@pen/core";
-import { yjsAdapter } from "@pen/crdt-yjs";
-import type { PenPersistence, VersionEntry, VersionMetadata } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import { createDocumentSession } from "@input/pen-core";
+import { yjsAdapter } from "@input/pen-crdt-yjs";
+import type {
+	PenPersistence,
+	VersionEntry,
+	VersionMetadata,
+} from "@input/pen-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import * as Y from "yjs";
 import { getHistoryController, historyExtension } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("AutoSnapshotScheduler", () => {
 	afterEach(() => {
@@ -14,6 +18,7 @@ describe("AutoSnapshotScheduler", () => {
 	it("creates a session-start snapshot when enabled", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -28,7 +33,9 @@ describe("AutoSnapshotScheduler", () => {
 
 		await flushMicrotasks();
 
-		expect((await getHistoryController(editor)!.listSnapshots())).toHaveLength(1);
+		expect(
+			await getHistoryController(editor)!.listSnapshots(),
+		).toHaveLength(1);
 		expect(persistence.entries[0]?.metadata.trigger).toBe("auto");
 		expect(persistence.entries[0]?.metadata.label).toBe("Session start");
 	});
@@ -36,6 +43,7 @@ describe("AutoSnapshotScheduler", () => {
 	it("creates an operation-threshold snapshot after document commits", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -57,14 +65,17 @@ describe("AutoSnapshotScheduler", () => {
 
 		const snapshots = await getHistoryController(editor)!.listSnapshots();
 		expect(snapshots.length).toBeGreaterThan(beforeCount);
-		expect(persistence.entries.some((entry) => entry.metadata.trigger === "auto")).toBe(
-			true,
-		);
+		expect(
+			persistence.entries.some(
+				(entry) => entry.metadata.trigger === "auto",
+			),
+		).toBe(true);
 	});
 
 	it("creates an AI-generation snapshot from diagnostics", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -85,15 +96,20 @@ describe("AutoSnapshotScheduler", () => {
 		});
 		await flushMicrotasks();
 
-		expect((await getHistoryController(editor)!.listSnapshots())).toHaveLength(1);
+		expect(
+			await getHistoryController(editor)!.listSnapshots(),
+		).toHaveLength(1);
 		expect(persistence.entries[0]?.metadata.trigger).toBe("ai-generation");
-		expect(persistence.entries[0]?.metadata.label).toBe("Pre-AI generation");
+		expect(persistence.entries[0]?.metadata.label).toBe(
+			"Pre-AI generation",
+		);
 	});
 
 	it("creates interval snapshots", async () => {
 		vi.useFakeTimers();
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -110,7 +126,9 @@ describe("AutoSnapshotScheduler", () => {
 		vi.advanceTimersByTime(1_000);
 		await flushMicrotasks();
 
-		expect((await getHistoryController(editor)!.listSnapshots())).toHaveLength(1);
+		expect(
+			await getHistoryController(editor)!.listSnapshots(),
+		).toHaveLength(1);
 	});
 
 	it("does not duplicate session-start snapshots across editors on one session", async () => {
@@ -119,6 +137,7 @@ describe("AutoSnapshotScheduler", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -132,6 +151,7 @@ describe("AutoSnapshotScheduler", () => {
 			],
 		});
 		const editorB = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -147,12 +167,39 @@ describe("AutoSnapshotScheduler", () => {
 
 		await flushMicrotasks();
 
-		expect((await getHistoryController(editorA)!.listSnapshots())).toHaveLength(1);
+		expect(
+			await getHistoryController(editorA)!.listSnapshots(),
+		).toHaveLength(1);
 		expect(persistence.entries).toHaveLength(1);
 
 		editorA.destroy();
 		editorB.destroy();
 		documentSession.destroy();
+	});
+
+	it("destroy stops interval snapshots", async () => {
+		vi.useFakeTimers();
+		const persistence = new MemoryPersistence();
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [
+				historyExtension({
+					persistence,
+					docId: "doc-1",
+					autoSnapshot: {
+						onSessionStart: false,
+						onAIGeneration: false,
+						intervalMs: 1_000,
+					},
+				}),
+			],
+		});
+
+		await editor.destroy();
+		vi.advanceTimersByTime(5_000);
+		await flushMicrotasks();
+
+		expect(persistence.entries).toHaveLength(0);
 	});
 });
 
@@ -164,15 +211,15 @@ class MemoryPersistence implements PenPersistence {
 		return null;
 	}
 
-	async saveSnapshot(): Promise<void> { }
+	async saveSnapshot(): Promise<void> {}
 
-	async appendUpdate(): Promise<void> { }
+	async appendUpdate(): Promise<void> {}
 
 	async getUpdates(): Promise<Uint8Array[]> {
 		return [];
 	}
 
-	async compact(): Promise<void> { }
+	async compact(): Promise<void> {}
 
 	async saveVersionSnapshot(
 		_docId: string,
@@ -201,7 +248,9 @@ class MemoryPersistence implements PenPersistence {
 		_docId: string,
 		versionId: string,
 	): Promise<{ state: Uint8Array; snapshot: Uint8Array }> {
-		const entry = this.entries.find((candidate) => candidate.id === versionId);
+		const entry = this.entries.find(
+			(candidate) => candidate.id === versionId,
+		);
 		if (!entry) {
 			throw new Error(`Missing version ${versionId}`);
 		}
@@ -224,12 +273,22 @@ function appendText(
 	blockId: string,
 	text: string,
 ): void {
-	const ydoc = editor.internals.adapter.raw<Y.Doc>(editor.internals.crdtDoc);
-	const blockMap = ydoc.getMap("blocks").get(blockId) as Y.Map<unknown>;
-	const content = blockMap.get("content") as Y.Text;
-	ydoc.transact(() => {
-		content.insert(content.length, text);
-	}, "user");
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		throw new Error(`missing block ${blockId}`);
+	}
+	editor.apply(
+		[
+			{
+				type: "splice-text",
+				blockId,
+				from: block.length(),
+				to: block.length(),
+				insert: text,
+			},
+		],
+		{ origin: "user" },
+	);
 }
 
 async function flushMicrotasks(): Promise<void> {

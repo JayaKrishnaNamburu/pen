@@ -1,11 +1,15 @@
-import React, { useRef, useLayoutEffect } from "react";
+import React, { useRef } from "react";
+import type { Editor } from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
-import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
+import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { useCellTextSnapshot } from "../../hooks/useCellTextSnapshot";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import { isInlineContentEmpty } from "../../utils/editorEmptyState";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 
 const TABLE_CELL_MIN_WIDTH = "6rem";
 
@@ -14,7 +18,6 @@ export interface TableCellContentProps {
 	row: number;
 	col: number;
 	placeholder?: string;
-	columnType?: string;
 }
 
 export function TableCellContent(props: TableCellContentProps) {
@@ -31,40 +34,51 @@ function TextCell(props: TableCellContentProps) {
 
 	const isActiveCell = isCellActive(fieldEditorState, tableBlockId, row, col);
 	const showPlaceholder =
-		!!placeholder &&
-		(!textSnapshot.text || textSnapshot.text === "\u200B");
+		!!placeholder && isInlineContentEmpty(textSnapshot.deltas);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (isActiveCell && elementRef.current && fieldEditor) {
 			fieldEditor.attachElement(elementRef.current);
 		}
 	}, [isActiveCell, fieldEditor]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (isActiveCell) return;
 		if (!elementRef.current) return;
 		if (!textSnapshot.exists) {
-			elementRef.current.replaceChildren();
+			replaceElementChildren(elementRef.current);
 			return;
 		}
 		fullReconcileDeltasToDOM(
 			[...textSnapshot.deltas],
 			elementRef.current,
 			editor.schema,
-			{ preserveSelection: false },
+			{
+				editor,
+				preserveSelection: false,
+			},
 		);
 	}, [editor, isActiveCell, textSnapshot]);
 
 	return (
 		<span
 			ref={elementRef}
-			{...cellSurfaceAttrs(isActiveCell, row, col, showPlaceholder, placeholder)}
+			{...cellSurfaceAttrs(
+				editor,
+				isActiveCell,
+				row,
+				col,
+				showPlaceholder,
+				placeholder,
+			)}
 		/>
 	);
 }
 
 function isCellActive(
-	fieldEditorState: { activeCellCoord: { blockId: string; row: number; col: number } | null },
+	fieldEditorState: {
+		activeCellCoord: { blockId: string; row: number; col: number } | null;
+	},
 	tableBlockId: string,
 	row: number,
 	col: number,
@@ -77,6 +91,7 @@ function isCellActive(
 }
 
 function cellSurfaceAttrs(
+	editor: Editor,
 	isActiveCell: boolean,
 	row: number,
 	col: number,
@@ -86,7 +101,7 @@ function cellSurfaceAttrs(
 	return {
 		[DATA_ATTRS.inlineContent]: "",
 		[DATA_ATTRS.fieldEditorSurface]: "",
-		...fieldEditorTextEntryAttrs(isActiveCell),
+		...fieldEditorTextEntryAttrs(isActiveCell, editor),
 		[DATA_ATTRS.ignorePointerGesture]: isActiveCell ? "" : undefined,
 		[DATA_ATTRS.placeholderVisible]: showPlaceholder ? "" : undefined,
 		[DATA_ATTRS.tableCellRow]: row,
@@ -98,6 +113,9 @@ function cellSurfaceAttrs(
 			display: "block",
 			width: "100%",
 			position: showPlaceholder ? ("relative" as const) : undefined,
+			// RI1: unicode-bidi does not inherit, so every cell needs its own
+			// isolate — the table host's does not reach them.
+			unicodeBidi: "isolate" as const,
 		},
 	};
 }

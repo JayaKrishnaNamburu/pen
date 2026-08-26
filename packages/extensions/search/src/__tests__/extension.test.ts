@@ -1,10 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
+import {
+	createEditor,
+	createHeadlessEditor,
+	keyBindingPriorityToPrecedence,
+	keymapFacet,
+	searchControllerFacet,
+} from "@input/pen-core";
+import type { Extension, KeyBinding } from "@input/pen-types";
 import { getSearchController, searchExtension } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
-describe("@pen/search extension", () => {
+describe("@input/pen-search extension", () => {
+	it("SM2: getSearchController keeps its documented name and resolves through the facet", () => {
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [searchExtension()],
+		});
+		expect(getSearchController(editor)).toBe(
+			editor.facet(searchControllerFacet),
+		);
+		expect(
+			getSearchController(createEditor({ schema: defaultSchema })),
+		).toBeNull();
+	});
+
 	it("registers a controller and finds matches across blocks", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 		const firstBlockId = editor.firstBlock()!.id;
@@ -13,10 +35,11 @@ describe("@pen/search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "hello world",
+					from: 0,
+					to: 0,
+					insert: "hello world",
 				},
 				{
 					type: "insert-block",
@@ -26,10 +49,11 @@ describe("@pen/search extension", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: secondBlockId,
-					offset: 0,
-					text: "hello again",
+					from: 0,
+					to: 0,
+					insert: "hello again",
 				},
 			],
 			{ origin: "user" },
@@ -54,6 +78,7 @@ describe("@pen/search extension", () => {
 
 	it("navigates matches and replaces the active match", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
@@ -61,10 +86,11 @@ describe("@pen/search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+					to: 0,
+					insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },
@@ -83,13 +109,16 @@ describe("@pen/search extension", () => {
 		controller?.setReplaceText("omega");
 		controller?.replace();
 
-		expect(editor.getBlock(blockId)?.textContent()).toBe("alpha beta omega");
+		expect(editor.getBlock(blockId)?.textContent()).toBe(
+			"alpha beta omega",
+		);
 
 		editor.destroy();
 	});
 
 	it("replaces all matches in descending offset order", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
@@ -97,10 +126,11 @@ describe("@pen/search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "aa aa aa",
+					from: 0,
+					to: 0,
+					insert: "aa aa aa",
 				},
 			],
 			{ origin: "user" },
@@ -119,6 +149,7 @@ describe("@pen/search extension", () => {
 
 	it("finds and replaces matches inside table cells", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 		const tableBlockId = "table-1";
@@ -133,12 +164,12 @@ describe("@pen/search extension", () => {
 					position: "last",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: tableBlockId,
-					row: 0,
-					col: 0,
-					offset: 0,
-					text: "hello table",
+					cell: { row: 0, col: 0 },
+					from: 0,
+					to: 0,
+					insert: "hello table",
 				},
 			],
 			{ origin: "user" },
@@ -159,13 +190,20 @@ describe("@pen/search extension", () => {
 		controller?.setReplaceText("hi");
 		controller?.replace();
 
-		expect(editor.getBlock(tableBlockId)?.tableCell(0, 0)?.textContent()).toBe("hi table");
+		expect(
+			editor
+				.getBlock(tableBlockId)!
+				.as("table")
+				?.tableCell(0, 0)
+				?.textContent(),
+		).toBe("hi table");
 
 		editor.destroy();
 	});
 
 	it("navigates table-cell matches by selecting the active cell without inline decorations", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 		const tableBlockId = "table-1";
@@ -180,20 +218,20 @@ describe("@pen/search extension", () => {
 					position: "last",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: tableBlockId,
-					row: 0,
-					col: 0,
-					offset: 0,
-					text: "alpha one",
+					cell: { row: 0, col: 0 },
+					from: 0,
+					to: 0,
+					insert: "alpha one",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: tableBlockId,
-					row: 1,
-					col: 0,
-					offset: 0,
-					text: "alpha two",
+					cell: { row: 1, col: 0 },
+					from: 0,
+					to: 0,
+					insert: "alpha two",
 				},
 			],
 			{ origin: "user" },
@@ -215,110 +253,9 @@ describe("@pen/search extension", () => {
 		editor.destroy();
 	});
 
-	it("finds and replaces matches inside database cells", () => {
-		const editor = createEditor({
-			extensions: [searchExtension()],
-		});
-		const databaseBlockId = "db-1";
-
-		editor.apply(
-			[
-				{
-					type: "insert-block",
-					blockId: databaseBlockId,
-					blockType: "database",
-					props: { title: "Roadmap" },
-					position: "last",
-				},
-				{
-					type: "update-table-columns",
-					blockId: databaseBlockId,
-					columns: [{ id: "name", title: "Name", type: "text" }],
-				},
-				{
-					type: "database-insert-row",
-					blockId: databaseBlockId,
-					rowId: "row-1",
-					values: { name: "hello roadmap" },
-				},
-			],
-			{ origin: "user" },
-		);
-
-		const controller = getSearchController(editor);
-		controller?.setQuery("hello");
-
-		const state = controller?.getState();
-		expect(state?.matches).toHaveLength(1);
-		expect(state?.matches[0]).toMatchObject({
-			kind: "database-cell",
-			blockId: databaseBlockId,
-			rowId: "row-1",
-			columnId: "name",
-		});
-
-		controller?.setReplaceText("hi");
-		controller?.replace();
-
-		expect(editor.getBlock(databaseBlockId)?.tableCell(0, 0)?.textContent()).toBe("hi roadmap");
-
-		editor.destroy();
-	});
-
-	it("navigates database-cell matches by selecting the active cell without inline decorations", () => {
-		const editor = createEditor({
-			extensions: [searchExtension()],
-		});
-		const databaseBlockId = "db-1";
-
-		editor.apply(
-			[
-				{
-					type: "insert-block",
-					blockId: databaseBlockId,
-					blockType: "database",
-					props: { title: "Roadmap" },
-					position: "last",
-				},
-				{
-					type: "update-table-columns",
-					blockId: databaseBlockId,
-					columns: [{ id: "name", title: "Name", type: "text" }],
-				},
-				{
-					type: "database-insert-row",
-					blockId: databaseBlockId,
-					rowId: "row-1",
-					values: { name: "alpha roadmap" },
-				},
-				{
-					type: "database-insert-row",
-					blockId: databaseBlockId,
-					rowId: "row-2",
-					values: { name: "alpha launch" },
-				},
-			],
-			{ origin: "user" },
-		);
-
-		const controller = getSearchController(editor);
-		controller?.open();
-		controller?.setQuery("alpha");
-		controller?.next();
-
-		expect(editor.selection).toMatchObject({
-			type: "cell",
-			blockId: databaseBlockId,
-			anchor: { row: 1, col: 0 },
-			head: { row: 1, col: 0 },
-		});
-		expect(editor.getDecorations().decorations).toHaveLength(0);
-
-		editor.destroy();
-	});
-
 	it("tracks open and close state", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 
@@ -336,6 +273,7 @@ describe("@pen/search extension", () => {
 
 	it("clears search decorations when closed", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
@@ -343,10 +281,11 @@ describe("@pen/search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+					to: 0,
+					insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },
@@ -362,6 +301,80 @@ describe("@pen/search extension", () => {
 
 		expect(editor.getDecorations().decorations).toHaveLength(0);
 
+		editor.destroy();
+	});
+
+	it("K1: undeclared-priority search bindings stay at the shim default of 300", () => {
+		const extension = searchExtension();
+		expect("keyBindings" in extension).toBe(false);
+		expect(
+			extension.facets
+				?.filter((provider) => provider.facetName === "pen.keymap")
+				.every((provider) => provider.precedence === "default"),
+		).toBe(true);
+
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [extension],
+		});
+		const searchKeys = editor.facet(keymapFacet).map((binding) => ({
+			key: binding.key,
+			priority: binding.priority ?? 300,
+			precedence: keyBindingPriorityToPrecedence(binding.priority ?? 300),
+		}));
+		expect(searchKeys).toEqual([
+			{ key: "Mod-f", priority: 300, precedence: "default" },
+			{ key: "Mod-g", priority: 300, precedence: "default" },
+			{ key: "Shift-Mod-g", priority: 300, precedence: "default" },
+			{ key: "Enter", priority: 300, precedence: "default" },
+			{ key: "Shift-Enter", priority: 300, precedence: "default" },
+			{ key: "Escape", priority: 300, precedence: "default" },
+		]);
+		editor.destroy();
+	});
+
+	it("K1: a priority-100 competitor still precedes search's default-300 Mod-f", () => {
+		let winner: string | null = null;
+		const competitor: Extension = {
+			name: "search-keymap-competitor",
+			version: "0.0.0",
+			facets: [
+				keymapFacet.of(
+					[
+						{
+							key: "Mod-f",
+							priority: 100,
+							handler: () => {
+								winner = "highest";
+								return true;
+							},
+						} satisfies KeyBinding,
+					],
+					"highest",
+				),
+			],
+		};
+
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [searchExtension(), competitor],
+		});
+
+		const modF = editor
+			.facet(keymapFacet)
+			.filter((binding) => binding.key === "Mod-f");
+		expect(modF).toHaveLength(2);
+		expect(modF.map((binding) => binding.priority ?? 300)).toEqual([
+			100, 300,
+		]);
+
+		for (const binding of modF) {
+			if (binding.handler(editor, {} as KeyboardEvent)) {
+				if (winner === null) winner = "search";
+				break;
+			}
+		}
+		expect(winner).toBe("highest");
 		editor.destroy();
 	});
 });

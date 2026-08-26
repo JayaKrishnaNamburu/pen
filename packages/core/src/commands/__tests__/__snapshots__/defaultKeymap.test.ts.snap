@@ -1,0 +1,752 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`default keymap K2 > K2: linux resolved bindings match the windows table 1`] = `
+[
+  {
+    "command": "pen.caretLeft",
+    "key": "ArrowLeft",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLeft",
+    "key": "Shift-ArrowLeft",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretRight",
+    "key": "ArrowRight",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretRight",
+    "key": "Shift-ArrowRight",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretUp",
+    "key": "ArrowUp",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretUp",
+    "key": "Shift-ArrowUp",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDown",
+    "key": "ArrowDown",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDown",
+    "key": "Shift-ArrowDown",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.deleteBackward",
+    "key": "Backspace",
+    "param": {
+      "granularity": "grapheme",
+    },
+  },
+  {
+    "command": "pen.deleteForward",
+    "key": "Delete",
+    "param": {
+      "granularity": "grapheme",
+    },
+  },
+  {
+    "command": "pen.splitBlock",
+    "key": "Enter",
+  },
+  {
+    "command": "pen.insertLineBreak",
+    "key": "Shift-Enter",
+  },
+  {
+    "command": "pen.indent",
+    "key": "Tab",
+  },
+  {
+    "command": "pen.outdent",
+    "key": "Shift-Tab",
+  },
+  {
+    "command": "table.cellNext",
+    "context": "cell",
+    "key": "Tab",
+  },
+  {
+    "command": "table.cellPrev",
+    "context": "cell",
+    "key": "Shift-Tab",
+  },
+  {
+    "command": "table.cellDown",
+    "context": "cell",
+    "key": "Enter",
+  },
+  {
+    "command": "pen.selectAll",
+    "key": "Ctrl-a",
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Ctrl-b",
+    "param": {
+      "mark": "bold",
+    },
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Ctrl-i",
+    "param": {
+      "mark": "italic",
+    },
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Ctrl-u",
+    "param": {
+      "mark": "underline",
+    },
+  },
+  {
+    "command": "history.undo",
+    "key": "Ctrl-z",
+  },
+  {
+    "command": "history.redo",
+    "key": "Shift-Ctrl-z",
+  },
+  {
+    "command": "history.redo",
+    "key": "Ctrl-y",
+  },
+  {
+    "command": "pen.caretWordLeft",
+    "key": "Ctrl-ArrowLeft",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretWordLeft",
+    "key": "Shift-Ctrl-ArrowLeft",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretWordRight",
+    "key": "Ctrl-ArrowRight",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretWordRight",
+    "key": "Shift-Ctrl-ArrowRight",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Home",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Shift-Home",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "End",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "Shift-End",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDocStart",
+    "key": "Ctrl-Home",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDocStart",
+    "key": "Shift-Ctrl-Home",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDocEnd",
+    "key": "Ctrl-End",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDocEnd",
+    "key": "Shift-Ctrl-End",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.deleteBackward",
+    "key": "Ctrl-Backspace",
+    "param": {
+      "granularity": "word",
+    },
+  },
+  {
+    "command": "pen.deleteForward",
+    "key": "Ctrl-Delete",
+    "param": {
+      "granularity": "word",
+    },
+  },
+]
+`;
+
+exports[`default keymap K2 > K2: macos resolved bindings match the normative platform table 1`] = `
+[
+  {
+    "command": "pen.caretLeft",
+    "key": "ArrowLeft",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLeft",
+    "key": "Shift-ArrowLeft",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretRight",
+    "key": "ArrowRight",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretRight",
+    "key": "Shift-ArrowRight",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretUp",
+    "key": "ArrowUp",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretUp",
+    "key": "Shift-ArrowUp",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDown",
+    "key": "ArrowDown",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDown",
+    "key": "Shift-ArrowDown",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.deleteBackward",
+    "key": "Backspace",
+    "param": {
+      "granularity": "grapheme",
+    },
+  },
+  {
+    "command": "pen.deleteForward",
+    "key": "Delete",
+    "param": {
+      "granularity": "grapheme",
+    },
+  },
+  {
+    "command": "pen.splitBlock",
+    "key": "Enter",
+  },
+  {
+    "command": "pen.insertLineBreak",
+    "key": "Shift-Enter",
+  },
+  {
+    "command": "pen.indent",
+    "key": "Tab",
+  },
+  {
+    "command": "pen.outdent",
+    "key": "Shift-Tab",
+  },
+  {
+    "command": "table.cellNext",
+    "context": "cell",
+    "key": "Tab",
+  },
+  {
+    "command": "table.cellPrev",
+    "context": "cell",
+    "key": "Shift-Tab",
+  },
+  {
+    "command": "table.cellDown",
+    "context": "cell",
+    "key": "Enter",
+  },
+  {
+    "command": "pen.selectAll",
+    "key": "Meta-a",
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Meta-b",
+    "param": {
+      "mark": "bold",
+    },
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Meta-i",
+    "param": {
+      "mark": "italic",
+    },
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Meta-u",
+    "param": {
+      "mark": "underline",
+    },
+  },
+  {
+    "command": "history.undo",
+    "key": "Meta-z",
+  },
+  {
+    "command": "history.redo",
+    "key": "Shift-Meta-z",
+  },
+  {
+    "command": "history.redo",
+    "key": "Meta-y",
+  },
+  {
+    "command": "pen.caretWordLeft",
+    "key": "Alt-ArrowLeft",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretWordLeft",
+    "key": "Shift-Alt-ArrowLeft",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretWordRight",
+    "key": "Alt-ArrowRight",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretWordRight",
+    "key": "Shift-Alt-ArrowRight",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Meta-ArrowLeft",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Shift-Meta-ArrowLeft",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "Meta-ArrowRight",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "Shift-Meta-ArrowRight",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Home",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Shift-Home",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "End",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "Shift-End",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDocStart",
+    "key": "Meta-ArrowUp",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDocStart",
+    "key": "Shift-Meta-ArrowUp",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDocEnd",
+    "key": "Meta-ArrowDown",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDocEnd",
+    "key": "Shift-Meta-ArrowDown",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.deleteBackward",
+    "key": "Alt-Backspace",
+    "param": {
+      "granularity": "word",
+    },
+  },
+  {
+    "command": "pen.deleteForward",
+    "key": "Alt-Delete",
+    "param": {
+      "granularity": "word",
+    },
+  },
+]
+`;
+
+exports[`default keymap K2 > K2: windows resolved bindings match the normative platform table 1`] = `
+[
+  {
+    "command": "pen.caretLeft",
+    "key": "ArrowLeft",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLeft",
+    "key": "Shift-ArrowLeft",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretRight",
+    "key": "ArrowRight",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretRight",
+    "key": "Shift-ArrowRight",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretUp",
+    "key": "ArrowUp",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretUp",
+    "key": "Shift-ArrowUp",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDown",
+    "key": "ArrowDown",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDown",
+    "key": "Shift-ArrowDown",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.deleteBackward",
+    "key": "Backspace",
+    "param": {
+      "granularity": "grapheme",
+    },
+  },
+  {
+    "command": "pen.deleteForward",
+    "key": "Delete",
+    "param": {
+      "granularity": "grapheme",
+    },
+  },
+  {
+    "command": "pen.splitBlock",
+    "key": "Enter",
+  },
+  {
+    "command": "pen.insertLineBreak",
+    "key": "Shift-Enter",
+  },
+  {
+    "command": "pen.indent",
+    "key": "Tab",
+  },
+  {
+    "command": "pen.outdent",
+    "key": "Shift-Tab",
+  },
+  {
+    "command": "table.cellNext",
+    "context": "cell",
+    "key": "Tab",
+  },
+  {
+    "command": "table.cellPrev",
+    "context": "cell",
+    "key": "Shift-Tab",
+  },
+  {
+    "command": "table.cellDown",
+    "context": "cell",
+    "key": "Enter",
+  },
+  {
+    "command": "pen.selectAll",
+    "key": "Ctrl-a",
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Ctrl-b",
+    "param": {
+      "mark": "bold",
+    },
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Ctrl-i",
+    "param": {
+      "mark": "italic",
+    },
+  },
+  {
+    "command": "pen.toggleMark",
+    "key": "Ctrl-u",
+    "param": {
+      "mark": "underline",
+    },
+  },
+  {
+    "command": "history.undo",
+    "key": "Ctrl-z",
+  },
+  {
+    "command": "history.redo",
+    "key": "Shift-Ctrl-z",
+  },
+  {
+    "command": "history.redo",
+    "key": "Ctrl-y",
+  },
+  {
+    "command": "pen.caretWordLeft",
+    "key": "Ctrl-ArrowLeft",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretWordLeft",
+    "key": "Shift-Ctrl-ArrowLeft",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretWordRight",
+    "key": "Ctrl-ArrowRight",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretWordRight",
+    "key": "Shift-Ctrl-ArrowRight",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Home",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Shift-Home",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "End",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "Shift-End",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDocStart",
+    "key": "Ctrl-Home",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDocStart",
+    "key": "Shift-Ctrl-Home",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretDocEnd",
+    "key": "Ctrl-End",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretDocEnd",
+    "key": "Shift-Ctrl-End",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.deleteBackward",
+    "key": "Ctrl-Backspace",
+    "param": {
+      "granularity": "word",
+    },
+  },
+  {
+    "command": "pen.deleteForward",
+    "key": "Ctrl-Delete",
+    "param": {
+      "granularity": "word",
+    },
+  },
+]
+`;

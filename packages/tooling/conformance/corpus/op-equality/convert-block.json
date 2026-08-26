@@ -1,0 +1,106 @@
+{
+	"id": "convert-block",
+	"opType": "convert-block",
+	"family": "conversions",
+	"path": "command",
+	"command": "pen.convertBlock",
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "Title"
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "convert-block",
+			"blockId": "p1",
+			"newType": "heading",
+			"newProps": {
+				"level": 2
+			}
+		}
+	],
+	"updateBytes": "AQIBFKgBCgF3B2hlYWRpbmcoAAELBWxldmVsAX0CAQECAgcKAQ==",
+	"updateByteLength": 37,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Title"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Title"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {
+					"level": 2
+				},
+				"type": "heading"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "p1",
+			"offset": 0
+		},
+		"blockRange": [
+			"p1"
+		],
+		"focus": {
+			"blockId": "p1",
+			"offset": 0
+		},
+		"goalX": null,
+		"isCollapsed": true,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

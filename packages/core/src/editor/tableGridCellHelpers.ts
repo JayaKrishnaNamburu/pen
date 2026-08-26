@@ -1,4 +1,4 @@
-import type { TableColumnSchema } from "@pen/types";
+import type { TableColumnSchema } from "@input/pen-types";
 import {
 	type CRDTTextLike,
 	type CRDTUnknownMap,
@@ -79,7 +79,9 @@ export function writeCellDeltas(
 	cellMap: CRDTUnknownMap,
 	deltas: CRDTDelta[],
 ): void {
-	const targetContent = cellMap.get("content") as CRDTTextWithDelta | undefined;
+	const targetContent = cellMap.get("content") as
+		| CRDTTextWithDelta
+		| undefined;
 	if (!targetContent) {
 		return;
 	}
@@ -104,8 +106,10 @@ export function writeCellDeltas(
 	}
 }
 
-export function readTableCellDeltas(cellMap: CRDTUnknownMap): CRDTDelta[] {
-	const sourceContent = cellMap.get("content") as CRDTTextWithDelta | undefined;
+function readTableCellDeltas(cellMap: CRDTUnknownMap): CRDTDelta[] {
+	const sourceContent = cellMap.get("content") as
+		| CRDTTextWithDelta
+		| undefined;
 	if (!sourceContent) {
 		return [];
 	}

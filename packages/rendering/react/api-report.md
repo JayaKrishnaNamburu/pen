@@ -1,0 +1,554 @@
+# @input/pen-react
+
+## .
+
+`./dist/index.d.ts`
+
+### function
+
+- BlockquoteRenderer
+- BulletListItemRenderer
+- CalloutRenderer
+- CheckListItemRenderer
+- CodeBlockRenderer
+- composeRefs
+- DefaultRenderer
+- DividerRenderer
+- EditorBlock
+- EditorBlockHandle
+- EditorCaretOverlay
+- EditorContent
+- EditorDragOverlay
+- EditorFieldEditor
+- EditorRegionSelector
+- EditorRoot
+- EditorSelectionRect
+- HeadingRenderer
+- ImageRenderer
+- InlineContent
+- NumberedListItemRenderer
+- ParagraphRenderer
+- PenEditor
+- registerRenderer
+- resolveRenderer
+- resolveSuggestionMenuTarget
+- SelectionToolbarContent
+- SelectionToolbarRoot
+- SlashMenuContent
+- SlashMenuEmpty
+- SlashMenuGroup
+- SlashMenuInput
+- SlashMenuItem
+- SlashMenuList
+- SlashMenuRoot
+- SubdocumentRenderer
+- SuggestionMenuContent
+- SuggestionMenuEmpty
+- SuggestionMenuGroup
+- SuggestionMenuItem
+- SuggestionMenuList
+- SuggestionMenuRoot
+- TableCellContent
+- TableRenderer
+- ToggleRenderer
+- ToolbarButton
+- ToolbarGroup
+- ToolbarRoot
+- ToolbarSelect
+- ToolbarSeparator
+- ToolbarToggle
+- useBlockDragHandle
+- useBlockList
+- useCellTextSnapshot
+- useContextualPromptAnchor
+- useContextualPromptPlacement
+- useContextualPromptSession
+- useDecorations
+- useEditor
+- useEditorContext
+- useEditorFocusController
+- useEditorMessage
+- useExtensionState
+- useFieldEditor
+- useFieldEditorContext
+- useFieldEditorState
+- useFocusController
+- useSelection
+- useSelectionToolbar
+- useSelectionToolbarContext
+- useSlashMenu
+- useSlashMenuContext
+- useSuggestionMenu
+- useSuggestionMenuContext
+- useToolbar
+- useToolbarContext
+
+### value
+
+- AIAcceptButton
+- AIAcceptButtonProps
+- AIActionBar
+- AIActionBarProps
+- AIChangeList
+- AIChangeListProps
+- AICommandInput
+- AICommandInputProps
+- AICommandItem
+- AICommandItemProps
+- AICommandList
+- AICommandListProps
+- AICommandMenu
+- AICommandMenuProps
+- AIContextualPromptComposer
+- AIContextualPromptComposerProps
+- AIContextualPromptSurface
+- AIContextualPromptSurfaceProps
+- AIContextualPromptTrigger
+- AIContextualPromptTriggerProps
+- AIDebugLogCommitMetrics
+- AIDebugLogEntry
+- AIDebugLogState
+- AIDiffView
+- AIDiffViewProps
+- AIGenerationZone
+- AIGenerationZoneProps
+- AIInlineSession
+- AIInlineSessionActions
+- AIInlineSessionActionsProps
+- AIInlineSessionProps
+- AIInlineSuggestionAcceptButton
+- AIInlineSuggestionAcceptButtonProps
+- AIInlineSuggestionControls
+- AIInlineSuggestionControlsProps
+- AIInlineSuggestionCount
+- AIInlineSuggestionCountProps
+- AIInlineSuggestionFloatingSurface
+- AIInlineSuggestionFloatingSurfaceProps
+- AIInlineSuggestionNextButton
+- AIInlineSuggestionNextButtonProps
+- AIInlineSuggestionPreviousButton
+- AIInlineSuggestionPreviousButtonProps
+- AIInlineSuggestionRejectButton
+- AIInlineSuggestionRejectButtonProps
+- AIProgress
+- AIProgressProps
+- AIRejectButton
+- AIRejectButtonProps
+- AIRetryButton
+- AIRetryButtonProps
+- AIRoot
+- AIRootProps
+- AISelectionTrigger
+- AISelectionTriggerProps
+- AISuggestion
+- AISuggestionPopoverPosition
+- AISuggestionProps
+- AISuggestionsPopover
+- AISuggestionsPopoverProps
+- AISuggestionsRoot
+- AISuggestionsRootProps
+- AIToolStream
+- AIToolStreamProps
+- AITrackChanges
+- AITrackChangesProps
+- AITrigger
+- AITriggerProps
+- AsChildProps
+- AttributionState
+- BlameRange
+- BlockDecoration
+- BlockHandle
+- BlockRenderContext
+- BlockRenderer
+- buildDataAttributes
+- CARET
+- CharacterAttribution
+- ContextualPromptMode
+- ContextualPromptPlacement
+- ContextualPromptSide
+- CreateEditorOptions
+- DATA_ATTRS
+- Decoration
+- DecorationSet
+- Editor
+- EditorContext
+- FieldEditor
+- FieldEditorContext
+- FieldEditorFocusRequest
+- fullReconcileDeltasToDOM
+- getAttachedFieldEditor
+- getAttachedFieldEditorStore
+- HistoryState
+- InlineAtomInteractions
+- InlineAtomRenderInteractionProps
+- InlineDecoration
+- InlineSuggestionControlPosition
+- InlineSuggestionControlsState
+- isCellInSelection
+- MultiplayerCaretOverlay
+- MultiplayerCaretOverlayProps
+- MultiplayerCaretRenderProps
+- MultiplayerPresenceList
+- MultiplayerPresenceListProps
+- MultiplayerRemoteCursors
+- MultiplayerRemoteCursorsProps
+- MultiplayerState
+- PeerState
+- Pen
+- PenFieldEditorFocusOptions
+- PenFocusAction
+- PenFocusDecision
+- PenFocusLifecycleEvent
+- PenFocusLifecycleListener
+- PenFocusPolicy
+- PenFocusReason
+- PenFocusRequest
+- RemoteCursorState
+- RemoteSelectionState
+- renderAsChild
+- RICH_TEXT_SHORTCUTS_EXTENSION_NAME
+- richTextShortcutsExtension
+- RichTextShortcutsOptions
+- SearchCaseSensitive
+- SearchContextValue
+- SearchInput
+- SearchInputProps
+- SearchNavigationButtonProps
+- SearchNext
+- SearchPrevious
+- SearchRegExpToggle
+- SearchReplace
+- SearchReplaceAll
+- SearchReplaceButtonProps
+- SearchReplaceInput
+- SearchReplaceInputProps
+- SearchResults
+- SearchResultsProps
+- SearchRoot
+- SearchRootProps
+- SearchToggleProps
+- SearchWholeWord
+- SelectionState
+- SelectionToolbarContext
+- ToolbarContext
+- useActiveAISession
+- useAI
+- useAIActions
+- useAIContext
+- useAIDebugLog
+- useAISessionActions
+- useAISessions
+- useAIStreamEvents
+- useAISuggestionPopover
+- useAISuggestions
+- useAISuggestionsMetrics
+- useAttribution
+- UseContextualPromptPlacementOptions
+- useGeneration
+- useHistory
+- useInlineSuggestionControls
+- useMultiplayer
+- useRemoteCursors
+- useRemoteSelections
+- useSearch
+- useSearchContext
+- useSuggestions
+- useSuggestMode
+
+### type
+
+- BlockControlsProps
+- BlockControlsRenderer
+- BlockDragAndDropOptions
+- BlockDragHandleHookResult
+- BlockHandleProps
+- BlockSelectionOptions
+- DragOverlayProps
+- EditorBlockProps
+- EditorCaretOverlayProps
+- EditorCaretRenderProps
+- EditorCaretVariant
+- EditorContentProps
+- EditorContextValue
+- EditorRootProps
+- FieldEditorWrapperProps
+- InlineAtomRenderer
+- InlineAtomRenderers
+- InlineAtomRenderProps
+- InlineContentProps
+- PasteImporters
+- PenEditorProps
+- PenFocusController
+- PenFocusOffset
+- PenFocusOptions
+- PenRangeFocusRequest
+- PenTextFocusRequest
+- RegionSelectorProps
+- RendererOverrides
+- ResolvedBlockDragAndDropOptions
+- ResolvedBlockSelectionOptions
+- ResolvedInteractionModel
+- SelectionRectProps
+- SelectionToolbarContentProps
+- SelectionToolbarContextValue
+- SelectionToolbarRootProps
+- SelectionToolbarState
+- SlashMenuActions
+- SlashMenuContentProps
+- SlashMenuContextValue
+- SlashMenuEmptyProps
+- SlashMenuGroupProps
+- SlashMenuInputProps
+- SlashMenuItemProps
+- SlashMenuListProps
+- SlashMenuRootProps
+- SlashMenuState
+- SlashMenuTarget
+- SuggestionMenuActions
+- SuggestionMenuBoundary
+- SuggestionMenuContentProps
+- SuggestionMenuContextValue
+- SuggestionMenuController
+- SuggestionMenuEmptyProps
+- SuggestionMenuGetItemsOptions
+- SuggestionMenuGroupProps
+- SuggestionMenuItemProps
+- SuggestionMenuListProps
+- SuggestionMenuRootProps
+- SuggestionMenuSelectOptions
+- SuggestionMenuState
+- SuggestionMenuStatus
+- SuggestionMenuTarget
+- SuggestionMenuTrigger
+- TableCellContentProps
+- ToolbarButtonProps
+- ToolbarContextValue
+- ToolbarGroupProps
+- ToolbarRootProps
+- ToolbarSelectProps
+- ToolbarSeparatorProps
+- ToolbarState
+- ToolbarToggleProps
+- UseSuggestionMenuOptions
+
+## ./ai
+
+`./dist/ai.d.ts`
+
+### function
+
+- AIAcceptButton
+- AIActionBar
+- AIChangeList
+- AICommandInput
+- AICommandItem
+- AICommandList
+- AICommandMenu
+- AIContextualPromptComposer
+- AIContextualPromptSurface
+- AIContextualPromptTrigger
+- AIDiffView
+- AIGenerationZone
+- AIInlineSession
+- AIInlineSessionActions
+- AIInlineSuggestionAcceptButton
+- AIInlineSuggestionControls
+- AIInlineSuggestionCount
+- AIInlineSuggestionFloatingSurface
+- AIInlineSuggestionNextButton
+- AIInlineSuggestionPreviousButton
+- AIInlineSuggestionRejectButton
+- AIProgress
+- AIRejectButton
+- AIRetryButton
+- AIRoot
+- AISelectionTrigger
+- AISuggestion
+- AIToolStream
+- AITrackChanges
+- AITrigger
+- useActiveAISession
+- useAI
+- useAIActions
+- useAIContext
+- useAIDebugLog
+- useAISessionActions
+- useAISessions
+- useAIStreamEvents
+- useGeneration
+- useInlineSuggestionControls
+- useSuggestions
+- useSuggestMode
+
+### value
+
+- AIContextualPromptAnchor
+- AIContextualPromptAnchorKind
+- AIContextualPromptAnchorStatus
+- AIContextualPromptComposerState
+- AIContextualPromptRect
+- AIContextualPromptState
+- AIControllerState
+- AISession
+- AISessionCommitMetrics
+- AISessionMetrics
+- AISessionPrompt
+- AISessionStatus
+- AISessionTarget
+- AIStatus
+- AIStreamEvent
+- AIStreamEventType
+- AISurface
+- GenerationState
+- PersistentSuggestion
+
+### type
+
+- AIAcceptButtonProps
+- AIActionBarProps
+- AIChangeListProps
+- AICommandInputProps
+- AICommandItemProps
+- AICommandListProps
+- AICommandMenuProps
+- AIContextualPromptComposerProps
+- AIContextualPromptSurfaceProps
+- AIContextualPromptTriggerProps
+- AIDebugLogCommitMetrics
+- AIDebugLogEntry
+- AIDebugLogState
+- AIDiffViewProps
+- AIGenerationZoneProps
+- AIInlineSessionActionsProps
+- AIInlineSessionProps
+- AIInlineSuggestionAcceptButtonProps
+- AIInlineSuggestionControlsProps
+- AIInlineSuggestionCountProps
+- AIInlineSuggestionFloatingSurfaceProps
+- AIInlineSuggestionNextButtonProps
+- AIInlineSuggestionPreviousButtonProps
+- AIInlineSuggestionRejectButtonProps
+- AIProgressProps
+- AIRejectButtonProps
+- AIRetryButtonProps
+- AIRootProps
+- AISelectionTriggerProps
+- AISuggestionProps
+- AIToolStreamProps
+- AITrackChangesProps
+- AITriggerProps
+- ContextualPromptMode
+- ContextualPromptPlacement
+- ContextualPromptSide
+- InlineSuggestionControlPosition
+- InlineSuggestionControlsState
+- UseContextualPromptPlacementOptions
+
+## ./ai-suggestions
+
+`./dist/aiSuggestions.d.ts`
+
+### function
+
+- AISuggestionsPopover
+- AISuggestionsRoot
+- useAISuggestionPopover
+- useAISuggestions
+- useAISuggestionsMetrics
+
+### value
+
+- AISuggestion
+- AISuggestionGroup
+- AISuggestionsMetrics
+- AISuggestionsState
+
+### type
+
+- AISuggestionPopoverPosition
+- AISuggestionsPopoverProps
+- AISuggestionsRootProps
+
+## ./history
+
+`./dist/history.d.ts`
+
+### function
+
+- useAttribution
+- useHistory
+
+### value
+
+- BlameRange
+- CharacterAttribution
+- HistoryState
+
+### type
+
+- AttributionState
+
+## ./multiplayer
+
+`./dist/multiplayer.d.ts`
+
+### function
+
+- MultiplayerCaretOverlay
+- MultiplayerPresenceList
+- MultiplayerRemoteCursors
+- useMultiplayer
+- useRemoteCursors
+- useRemoteSelections
+
+### value
+
+- MultiplayerState
+- PeerState
+- RemoteCursorState
+- RemoteSelectionState
+
+### type
+
+- MultiplayerCaretOverlayProps
+- MultiplayerCaretRenderProps
+- MultiplayerPresenceListProps
+- MultiplayerRemoteCursorsProps
+
+## ./search
+
+`./dist/search.d.ts`
+
+### function
+
+- SearchCaseSensitive
+- SearchInput
+- SearchNext
+- SearchPrevious
+- SearchRegExpToggle
+- SearchReplace
+- SearchReplaceAll
+- SearchReplaceInput
+- SearchResults
+- SearchRoot
+- SearchWholeWord
+- useSearch
+- useSearchContext
+
+### value
+
+- SearchController
+- SearchMatch
+- SearchOptions
+- SearchState
+
+### type
+
+- SearchContextValue
+- SearchInputProps
+- SearchNavigationButtonProps
+- SearchReplaceButtonProps
+- SearchReplaceInputProps
+- SearchResultsProps
+- SearchRootProps
+- SearchToggleProps

@@ -1,17 +1,22 @@
-import { createDocumentSession, createEditor } from "@pen/core";
-import { yjsAdapter } from "@pen/crdt-yjs";
-import type { PenPersistence, VersionEntry, VersionMetadata } from "@pen/types";
-import { describe, expect, it } from "vitest";
-import * as Y from "yjs";
 import {
-	getHistoryController,
-	HISTORY_CONTROLLER_SLOT,
-	historyExtension,
-} from "../index";
+	createDocumentSession,
+	createEditor,
+	historyControllerFacet,
+} from "@input/pen-core";
+import { yjsAdapter } from "@input/pen-crdt-yjs";
+import {
+	type PenPersistence,
+	type VersionEntry,
+	type VersionMetadata,
+} from "@input/pen-types";
+import { describe, expect, it } from "vitest";
+import { defaultSchema } from "@input/pen-schema-default";
+import { getHistoryController, historyExtension } from "../index";
 
 describe("historyExtension", () => {
 	it("registers the history controller on the editor", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
@@ -21,13 +26,14 @@ describe("historyExtension", () => {
 			],
 		});
 
-		expect(editor.internals.getSlot(HISTORY_CONTROLLER_SLOT)).toBeTruthy();
+		expect(editor.facet(historyControllerFacet)).toBeTruthy();
 		expect(getHistoryController(editor)).toBeTruthy();
 	});
 
 	it("creates and lists snapshots", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -38,7 +44,10 @@ describe("historyExtension", () => {
 		});
 		const controller = getHistoryController(editor)!;
 
-		const created = await controller.createSnapshot("Manual checkpoint", "manual");
+		const created = await controller.createSnapshot(
+			"Manual checkpoint",
+			"manual",
+		);
 		const snapshots = await controller.listSnapshots();
 
 		expect(created.metadata.label).toBe("Manual checkpoint");
@@ -49,6 +58,7 @@ describe("historyExtension", () => {
 	it("restores a previous snapshot for a standalone editor", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -66,11 +76,19 @@ describe("historyExtension", () => {
 		setBlockText(editor, blockId, "hello world");
 		await controller.createSnapshot("Updated", "manual");
 
+		const recovered: string[] = [];
+		editor.on("crdt:recovered", (method) => {
+			recovered.push(method);
+		});
+
 		await controller.restoreSnapshot(original.id);
 
+		expect(recovered).toEqual(["snapshot"]);
 		expect(readBlockText(editor, blockId)).toBe("hello");
 		expect(persistence.entries).toHaveLength(3);
-		expect(persistence.entries[2]?.metadata.label).toBe("Pre-restore auto-save");
+		expect(persistence.entries[2]?.metadata.label).toBe(
+			"Pre-restore auto-save",
+		);
 		expect(getHistoryController(editor)).toBeTruthy();
 	});
 
@@ -80,6 +98,7 @@ describe("historyExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -90,6 +109,7 @@ describe("historyExtension", () => {
 			],
 		});
 		const editorB = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -115,7 +135,9 @@ describe("historyExtension", () => {
 		expect(editorA.internals.documentSession).toBe(documentSession);
 		expect(editorB.internals.documentSession).toBe(documentSession);
 		expect(editorA.documentScope.id).toBe(editorB.documentScope.id);
-		expect(getHistoryController(editorA)).toBe(getHistoryController(editorB));
+		expect(getHistoryController(editorA)).toBe(
+			getHistoryController(editorB),
+		);
 		expect(getHistoryController(editorA)).toBeTruthy();
 		expect(getHistoryController(editorB)).toBeTruthy();
 
@@ -130,6 +152,7 @@ describe("historyExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -140,6 +163,7 @@ describe("historyExtension", () => {
 			],
 		});
 		const editorB = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -150,10 +174,12 @@ describe("historyExtension", () => {
 			],
 		});
 
-		expect(editorA.internals.getSlot(HISTORY_CONTROLLER_SLOT)).toBe(
-			editorB.internals.getSlot(HISTORY_CONTROLLER_SLOT),
+		expect(editorA.facet(historyControllerFacet)).toBe(
+			editorB.facet(historyControllerFacet),
 		);
-		expect(getHistoryController(editorA)).toBe(getHistoryController(editorB));
+		expect(getHistoryController(editorA)).toBe(
+			getHistoryController(editorB),
+		);
 
 		editorA.destroy();
 		editorB.destroy();
@@ -166,6 +192,7 @@ describe("historyExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const rootEditor = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -188,6 +215,7 @@ describe("historyExtension", () => {
 			scopeId: rootEditor.documentScope.id,
 		});
 		const childEditor = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			documentScopeId: childScope!.id,
 		});
@@ -199,10 +227,14 @@ describe("historyExtension", () => {
 
 		setBlockText(childEditor, childBlockId, "nested updated");
 		await controller.restoreSnapshot(original.id);
-		const restoredChildScope = documentSession.getScopeForBlock("subdoc-block", {
-			scopeId: rootEditor.documentScope.id,
-		});
+		const restoredChildScope = documentSession.getScopeForBlock(
+			"subdoc-block",
+			{
+				scopeId: rootEditor.documentScope.id,
+			},
+		);
 		const restoredChildEditor = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			documentScopeId: restoredChildScope!.id,
 		});
@@ -210,7 +242,9 @@ describe("historyExtension", () => {
 		expect(restoredChildEditor.firstBlock()?.textContent()).toBe(
 			"nested original",
 		);
-		expect(restoredChildEditor.documentScope.ownerBlockId).toBe("subdoc-block");
+		expect(restoredChildEditor.documentScope.ownerBlockId).toBe(
+			"subdoc-block",
+		);
 		expect(restoredChildEditor.documentScope.parentId).toBe(
 			rootEditor.documentScope.id,
 		);
@@ -221,6 +255,57 @@ describe("historyExtension", () => {
 		documentSession.destroy();
 	});
 
+	it("restores a previous snapshot after editor.apply writes", async () => {
+		const persistence = new MemoryPersistence();
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [
+				historyExtension({
+					persistence,
+					docId: "doc-apply",
+					autoSnapshot: false,
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		const controller = getHistoryController(editor)!;
+
+		editor.apply(
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "hello" }],
+			{ origin: "user" },
+		);
+		const original = await controller.createSnapshot("Original", "manual");
+
+		editor.apply(
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 5,
+					to: 5,
+					insert: " world",
+				},
+			],
+			{ origin: "user" },
+		);
+		expect(
+			editor
+				.getBlock(blockId)
+				?.textContent()
+				?.replace(/\u200B/g, ""),
+		).toBe("hello world");
+
+		await controller.restoreSnapshot(original.id);
+
+		expect(
+			editor
+				.getBlock(blockId)
+				?.textContent()
+				?.replace(/\u200B/g, ""),
+		).toBe("hello");
+
+		editor.destroy();
+	});
 });
 
 class MemoryPersistence implements PenPersistence {
@@ -263,8 +348,11 @@ class MemoryPersistence implements PenPersistence {
 		);
 
 		if (options?.before) {
-			const beforeIndex = entries.findIndex((entry) => entry.id === options.before);
-			entries = beforeIndex === -1 ? entries : entries.slice(beforeIndex + 1);
+			const beforeIndex = entries.findIndex(
+				(entry) => entry.id === options.before,
+			);
+			entries =
+				beforeIndex === -1 ? entries : entries.slice(beforeIndex + 1);
 		}
 
 		if (typeof options?.limit === "number") {
@@ -278,7 +366,9 @@ class MemoryPersistence implements PenPersistence {
 		_docId: string,
 		versionId: string,
 	): Promise<{ state: Uint8Array; snapshot: Uint8Array }> {
-		const entry = this.entries.find((candidate) => candidate.id === versionId);
+		const entry = this.entries.find(
+			(candidate) => candidate.id === versionId,
+		);
 		if (!entry) {
 			throw new Error(`Missing version ${versionId}`);
 		}
@@ -305,22 +395,38 @@ function toVersionEntry(entry: StoredVersion): VersionEntry {
 	};
 }
 
-function setBlockText(editor: ReturnType<typeof createEditor>, blockId: string, text: string): void {
-	const ydoc = editor.internals.adapter.raw<Y.Doc>(editor.internals.crdtDoc);
-	const blockMap = ydoc.getMap("blocks").get(blockId) as Y.Map<unknown>;
-	const content = blockMap.get("content") as Y.Text;
-	ydoc.transact(() => {
-		content.delete(0, content.length);
-		content.insert(0, text);
-	}, "user");
+function setBlockText(
+	editor: ReturnType<typeof createEditor>,
+	blockId: string,
+	text: string,
+): void {
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		throw new Error(`missing block ${blockId}`);
+	}
+	const length = block.length();
+	editor.apply(
+		length > 0
+			? [
+					{
+						type: "splice-text",
+						blockId,
+						from: 0,
+						to: 0 + length,
+						insert: text,
+					},
+				]
+			: [{ type: "splice-text", blockId, from: 0, to: 0, insert: text }],
+		{ origin: "user" },
+	);
 }
 
 function readBlockText(
 	editor: ReturnType<typeof createEditor>,
 	blockId: string,
 ): string {
-	const ydoc = editor.internals.adapter.raw<Y.Doc>(editor.internals.crdtDoc);
-	const blockMap = ydoc.getMap("blocks").get(blockId) as Y.Map<unknown>;
-	const content = blockMap.get("content") as Y.Text;
-	return content.toString();
+	return (editor.getBlock(blockId)?.textContent() ?? "").replace(
+		/\u200B/g,
+		"",
+	);
 }

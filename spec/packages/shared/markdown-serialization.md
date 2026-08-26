@@ -1,4 +1,4 @@
-# @pen/markdown-serialization
+# @input/pen-markdown-serialization
 
 ## Purpose
 
@@ -11,17 +11,18 @@ Provide shared lower-level helpers used by higher-level packages.
 ## Key Exports / Entrypoints
 
 - Export map: `.`
+- Owned here: `exportMarkdownForBlocks()`, `exportMarkdownRange()`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Shared packages support package boundaries without becoming end-user entrypoints.
 
 ## Data Flow / Runtime Model
 
-Shared support library packages in Pen should stay package-first and explicit about ownership. Use them when authoring other Pen packages, not as first-stop adoption surfaces.
+This package still owns markdown serialization (`exportMarkdownForBlocks()`, `exportMarkdownRange()`). The old `core → markdown-serialization` inversion is gone.
 
 ## Integration Notes
 
@@ -31,7 +32,7 @@ Shared support library packages in Pen should stay package-first and explicit ab
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

@@ -1,23 +1,33 @@
 import {
 	buildTableChildren,
-} from "@pen/core";
-import type { Editor, TextSelection } from "@pen/types";
+	clipboardFacet,
+	isCollapsed,
+	isMultiBlock,
+	selectionToRange,
+} from "@input/pen-core";
+import type { Editor, TextSelection } from "@input/pen-types";
 import type { FieldEditorTransferController } from "./controller";
 import type { PasteImporters } from "../types/paste";
 import { executeTransfer } from "./transfer";
-import {
-	type Delta,
-	type PenBlock,
-} from "../utils/clipboardPayload";
+import { type Delta, type PenBlock } from "../utils/clipboardPayload";
 import {
 	serializeDeltasToFormat,
 	sliceDeltas,
 	writePenClipboard,
 } from "../utils/clipboardSerialization";
+import { resolveEditorUrl } from "../security/resolveEditorUrl";
 
 type PasteInputEvent = InputEvent & {
 	dataTransfer?: DataTransfer | null;
 };
+
+export function getPasteImporters(editor: Editor): PasteImporters | undefined {
+	const value = editor.facet(clipboardFacet);
+	if (!value || Array.isArray(value)) {
+		return undefined;
+	}
+	return value as PasteImporters;
+}
 
 // ── Paste entry points ──────────────────────────────────────
 
@@ -80,11 +90,11 @@ function applyPasteFromDataTransfer(
 export function handleCopy(editor: Editor, event?: ClipboardEvent): void {
 	const selection = editor.selection;
 	if (!selection) return;
-	if (selection.type === "text" && selection.isCollapsed) return;
+	if (selection.type === "text" && isCollapsed(selection)) return;
 
 	if (selection.type === "cell") return;
 
-	if (selection.type === "text" && !selection.isMultiBlock) {
+	if (selection.type === "text" && !isMultiBlock(selection)) {
 		copyInlineSelection(editor, selection, event);
 		return;
 	}
@@ -128,7 +138,11 @@ function copyInlineSelection(
 		htmlContent = schema.serialize.toHTML({
 			id: block.id,
 			type: block.type,
-			props: isFullBlock ? block.props : {},
+			props: admitHtmlBlockProps(
+				editor,
+				block.type,
+				isFullBlock ? block.props : {},
+			),
 			content: inlineHtml || selectedText,
 		});
 	}
@@ -149,7 +163,7 @@ function copyInlineSelection(
 	}
 
 	const plainText = mdContent || selectedText;
-	writePenClipboard([penBlock], htmlContent, plainText, event);
+	writePenClipboard([penBlock], htmlContent, plainText, event, editor);
 }
 
 function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
@@ -160,7 +174,9 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 	if (blocks.length === 0) return;
 
 	const isText = selection.type === "text";
-	const range = isText ? (selection as TextSelection).toRange() : null;
+	const range = isText
+		? selectionToRange(editor.internals.doc, selection as TextSelection)
+		: null;
 
 	const htmlParts: string[] = [];
 	const mdParts: string[] = [];
@@ -180,7 +196,9 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 			if (isLast) sliceTo = range.end.offset;
 		}
 		const isPartial = sliceFrom > 0 || sliceTo < fullText.length;
-		const content = isPartial ? fullText.slice(sliceFrom, sliceTo) : fullText;
+		const content = isPartial
+			? fullText.slice(sliceFrom, sliceTo)
+			: fullText;
 		const deltas = block.textDeltas();
 		const slicedDeltas = isPartial
 			? sliceDeltas(deltas, sliceFrom, sliceTo)
@@ -198,12 +216,16 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 		});
 
 		if (schema?.serialize?.toHTML) {
-			const inlineHtml = serializeDeltasToFormat(slicedDeltas, editor, "html");
+			const inlineHtml = serializeDeltasToFormat(
+				slicedDeltas,
+				editor,
+				"html",
+			);
 			htmlParts.push(
 				schema.serialize.toHTML({
 					id: block.id,
 					type: block.type,
-					props: block.props,
+					props: admitHtmlBlockProps(editor, block.type, block.props),
 					content: inlineHtml || content,
 					children: tableChildren,
 				}),
@@ -231,7 +253,24 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 	const plainText =
 		mdParts.join("\n") || blocks.map((b) => b.textContent()).join("\n");
 
-	writePenClipboard(penBlocks, htmlContent, plainText, event);
+	writePenClipboard(penBlocks, htmlContent, plainText, event, editor);
+}
+
+function admitHtmlBlockProps(
+	editor: Editor,
+	blockType: string,
+	props: Record<string, unknown>,
+): Record<string, unknown> {
+	if (blockType !== "image") {
+		return props;
+	}
+	const src = resolveEditorUrl(editor, props.src, "image");
+	if (src === null) {
+		const admitted = { ...props };
+		delete admitted.src;
+		return admitted;
+	}
+	return { ...props, src };
 }
 
 // ── Cut ─────────────────────────────────────────────────────
@@ -240,4 +279,3 @@ export function handleCut(editor: Editor, event?: ClipboardEvent): void {
 	handleCopy(editor, event);
 	editor.deleteSelection();
 }
-

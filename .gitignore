@@ -5,5 +5,7 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 playwright-report/
-test-results/
-playground/.env.local
+test-results*/
+.env.local
+.npmrc
+.claude/

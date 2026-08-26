@@ -1,5 +1,10 @@
-import type { SchemaRegistry } from "@pen/types";
+import type { SchemaRegistry } from "@input/pen-types";
+import type { UrlPolicy } from "../security/urlPolicy";
 import type { FieldEditorDelta } from "./crdt";
+import {
+	clearEmptyBlockPlaceholder,
+	ensureEmptyBlockPlaceholder,
+} from "./emptyBlockPlaceholder";
 import {
 	createInlineAtomElement,
 	getLogicalNodeLength,
@@ -11,9 +16,11 @@ export function applyDeltaToDOM(
 	delta: readonly FieldEditorDelta[],
 	element: HTMLElement,
 	registry: SchemaRegistry,
+	policy?: UrlPolicy,
 ): boolean {
 	let childIndex = 0;
 	let textOffset = 0;
+	clearEmptyBlockPlaceholder(element);
 
 	for (const entry of delta) {
 		if (entry.retain != null) {
@@ -78,6 +85,7 @@ export function applyDeltaToDOM(
 						text,
 						entry.attributes,
 						registry,
+						policy,
 					);
 					const ref = element.childNodes[childIndex] ?? null;
 					element.insertBefore(node, ref);
@@ -125,6 +133,7 @@ export function applyDeltaToDOM(
 			}
 		}
 	}
+	ensureEmptyBlockPlaceholder(element);
 	return true;
 }
 

@@ -1,3 +1,5 @@
+"use client";
+
 export {
 	AIRoot,
 	AITrigger,
@@ -7,7 +9,6 @@ export {
 	AICommandList,
 	AICommandItem,
 	AIGenerationZone,
-	AIStructuredTargetPreview,
 	AIActionBar,
 	AIAcceptButton,
 	AIRejectButton,
@@ -39,7 +40,6 @@ export {
 	type AICommandListProps,
 	type AICommandItemProps,
 	type AIGenerationZoneProps,
-	type AIStructuredTargetPreviewProps,
 	type AIActionBarProps,
 	type AIAcceptButtonProps,
 	type AIRejectButtonProps,
@@ -68,17 +68,14 @@ export {
 	type UseContextualPromptPlacementOptions,
 } from "./primitives/ai/index";
 export { useAI } from "./hooks/useAI";
-export { useAIDebugLog, type AIDebugLogEntry, type AIDebugLogFastApplyMetrics, type AIDebugLogState } from "./hooks/useAIDebugLog";
+export {
+	useAIDebugLog,
+	type AIDebugLogEntry,
+	type AIDebugLogCommitMetrics,
+	type AIDebugLogState,
+} from "./hooks/useAIDebugLog";
 export { useAISessions } from "./hooks/useAISessions";
 export { useActiveAISession } from "./hooks/useActiveAISession";
-export {
-	useAIStructuredPreview,
-	useActiveAIStructuredPreview,
-	useAIStructuredTargetPreview,
-	useAIStructuredPreviewContent,
-	type AIStructuredPreviewSelection,
-	type AIStructuredTargetPreviewSelection,
-} from "./hooks/useAIStructuredPreview";
 export { useAIActions } from "./hooks/useAIActions";
 export { useAISessionActions } from "./hooks/useAISessionActions";
 export { useAIStreamEvents } from "./hooks/useAIStreamEvents";
@@ -99,7 +96,7 @@ export type {
 	AIContextualPromptState,
 	AIControllerState,
 	AISession,
-	AISessionFastApplyMetrics,
+	AISessionCommitMetrics,
 	AISessionMetrics,
 	AISessionPrompt,
 	AISessionStatus,
@@ -109,8 +106,5 @@ export type {
 	AIStreamEvent,
 	AIStreamEventType,
 	GenerationState,
-	GenerationStructuredPreviewState,
 	PersistentSuggestion,
-	StructuralReviewItem,
-	StructuralReviewComparisonRow,
-} from "@pen/ai";
+} from "@input/pen-ai";

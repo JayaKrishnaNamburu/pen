@@ -1,19 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { DEFAULT_UNDO_MAX_DEPTH } from "../undoExtension";
 import { UndoManagerImpl } from "../undoManager";
 
-describe("@pen/undo UndoManagerImpl", () => {
+function createCrdtUndo() {
+  return {
+    undo: vi.fn(() => true),
+    redo: vi.fn(() => true),
+    canUndo: vi.fn(() => true),
+    canRedo: vi.fn(() => false),
+    stopCapturing: vi.fn(),
+    setCaptureTimeout: vi.fn(),
+    addTrackedOrigin: vi.fn(),
+    removeTrackedOrigin: vi.fn(),
+    destroy: vi.fn(),
+  };
+}
+
+describe("@input/pen-undo UndoManagerImpl", () => {
   it("delegates undo/redo operations to the CRDT undo manager", () => {
-    const crdtUndo = {
-      undo: vi.fn(() => true),
-      redo: vi.fn(() => true),
-      canUndo: vi.fn(() => true),
-      canRedo: vi.fn(() => false),
-      stopCapturing: vi.fn(),
-      setCaptureTimeout: vi.fn(),
-      addTrackedOrigin: vi.fn(),
-      removeTrackedOrigin: vi.fn(),
-    };
+    const crdtUndo = createCrdtUndo();
 
     const manager = new UndoManagerImpl(crdtUndo);
 
@@ -29,16 +35,7 @@ describe("@pen/undo UndoManagerImpl", () => {
   });
 
   it("registers tracked origins idempotently", () => {
-    const crdtUndo = {
-      undo: vi.fn(() => true),
-      redo: vi.fn(() => true),
-      canUndo: vi.fn(() => true),
-      canRedo: vi.fn(() => true),
-      stopCapturing: vi.fn(),
-      setCaptureTimeout: vi.fn(),
-      addTrackedOrigin: vi.fn(),
-      removeTrackedOrigin: vi.fn(),
-    };
+    const crdtUndo = createCrdtUndo();
 
     const manager = new UndoManagerImpl(crdtUndo);
     const unregister = manager.registerTrackedOrigins(["ai"]);
@@ -54,16 +51,7 @@ describe("@pen/undo UndoManagerImpl", () => {
   });
 
   it("keeps shared tracked origins registered until all owners release them", () => {
-    const crdtUndo = {
-      undo: vi.fn(() => true),
-      redo: vi.fn(() => true),
-      canUndo: vi.fn(() => true),
-      canRedo: vi.fn(() => true),
-      stopCapturing: vi.fn(),
-      setCaptureTimeout: vi.fn(),
-      addTrackedOrigin: vi.fn(),
-      removeTrackedOrigin: vi.fn(),
-    };
+    const crdtUndo = createCrdtUndo();
 
     const manager = new UndoManagerImpl(crdtUndo);
     const unregisterA = manager.registerTrackedOrigins(["ai"]);
@@ -81,16 +69,7 @@ describe("@pen/undo UndoManagerImpl", () => {
   });
 
   it("notifies capture boundary listeners when explicit undo groups change", () => {
-    const crdtUndo = {
-      undo: vi.fn(() => true),
-      redo: vi.fn(() => true),
-      canUndo: vi.fn(() => true),
-      canRedo: vi.fn(() => true),
-      stopCapturing: vi.fn(),
-      setCaptureTimeout: vi.fn(),
-      addTrackedOrigin: vi.fn(),
-      removeTrackedOrigin: vi.fn(),
-    };
+    const crdtUndo = createCrdtUndo();
 
     const manager = new UndoManagerImpl(crdtUndo);
     const onCaptureBoundary = vi.fn();
@@ -112,5 +91,59 @@ describe("@pen/undo UndoManagerImpl", () => {
       2_147_483_647,
     );
     expect(crdtUndo.setCaptureTimeout).toHaveBeenNthCalledWith(3, 1000);
+  });
+
+  it("H.6/CH7 default max-depth cap is 500", () => {
+    expect(DEFAULT_UNDO_MAX_DEPTH).toBe(500);
+  });
+
+  it("CH5: reports a thrown stack listener through onListenerError", () => {
+    const crdtUndo = createCrdtUndo();
+    const errors: unknown[] = [];
+    const manager = new UndoManagerImpl(crdtUndo, undefined, {
+      onListenerError(error) {
+        errors.push(error);
+      },
+    });
+
+    manager.onStackChange(() => {
+      throw new Error("listener-boom");
+    });
+    manager.stopCapturing();
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(Error);
+    expect((errors[0] as Error).message).toBe("listener-boom");
+  });
+
+  it("CH7 destroy() tears down the CRDT undo manager", () => {
+    const crdtUndo = createCrdtUndo();
+    const manager = new UndoManagerImpl(crdtUndo);
+
+    manager.destroy();
+
+    expect(crdtUndo.destroy).toHaveBeenCalledTimes(1);
+    crdtUndo.undo.mockClear();
+    crdtUndo.redo.mockClear();
+    crdtUndo.stopCapturing.mockClear();
+    crdtUndo.setCaptureTimeout.mockClear();
+    crdtUndo.addTrackedOrigin.mockClear();
+
+    expect(manager.undo()).toBe(false);
+    expect(manager.redo()).toBe(false);
+    manager.stopCapturing();
+    manager.syncExplicitUndoGroup("after-destroy");
+    manager.setGroupTimeout(50);
+    manager.resetIdleTimer();
+    expect(manager.registerTrackedOrigins(["ai"])).toEqual(expect.any(Function));
+    manager.onStackChange(() => {
+      throw new Error("destroyed managers must not notify");
+    });
+
+    expect(crdtUndo.undo).not.toHaveBeenCalled();
+    expect(crdtUndo.redo).not.toHaveBeenCalled();
+    expect(crdtUndo.stopCapturing).not.toHaveBeenCalled();
+    expect(crdtUndo.setCaptureTimeout).not.toHaveBeenCalled();
+    expect(crdtUndo.addTrackedOrigin).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
-import type { InteractionModel } from "@pen/types";
+import type { InteractionModel, SelectAllBehavior } from "@input/pen-types";
 
-export type EditorSelectAllBehavior = "document-first" | "block-first";
+export type EditorSelectAllBehavior = SelectAllBehavior;
 
 export const DEFAULT_SELECT_ALL_BEHAVIOR: EditorSelectAllBehavior =
 	"document-first";

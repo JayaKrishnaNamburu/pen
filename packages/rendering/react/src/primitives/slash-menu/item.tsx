@@ -1,5 +1,5 @@
 import React from "react";
-import { useSlashMenuContext } from "./root";
+import { getSlashMenuOptionId, useSlashMenuContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 
 export interface SlashMenuItemProps extends AsChildProps {
@@ -12,29 +12,37 @@ export interface SlashMenuItemProps extends AsChildProps {
 
 export function SlashMenuItem(props: SlashMenuItemProps) {
 	const { blockType, index, onSelect, ...rest } = props;
-	const { confirm, select, selectedIndex } = useSlashMenuContext();
+	const { confirm, listboxId, select, selectedIndex } = useSlashMenuContext();
 	const isSelected = index != null && index === selectedIndex;
 
 	const handleClick = () => {
 		if (onSelect) {
 			onSelect();
-		} else {
-			confirm(index);
+			return;
 		}
+		confirm(index);
+	};
+
+	const handleMouseDown = (event: React.MouseEvent) => {
+		event.preventDefault();
 	};
 
 	const handleMouseEnter = () => {
-		if (index == null) return;
+		if (index == null) {
+			return;
+		}
 		select(index);
 	};
 
 	const primitiveProps: Record<string, unknown> = {
+		id: index != null ? getSlashMenuOptionId(listboxId, index) : undefined,
 		"data-pen-slash-menu-item": "",
 		"data-block-type": blockType,
-		"data-selected": isSelected || undefined,
+		"data-selected": isSelected ? "" : undefined,
 		role: "option",
 		"aria-selected": isSelected,
 		onClick: handleClick,
+		onMouseDown: handleMouseDown,
 		onMouseEnter: handleMouseEnter,
 	};
 

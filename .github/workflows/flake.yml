@@ -1,0 +1,184 @@
+# CH9 (spec/rules/reliability.md): the suite must give the same
+# answer twice. Ten runs on an unchanged tree, scheduled — not per PR.
+# Failures are quarantined via scripts/flake-allowlist.json (test, issue,
+# reason). A gate that passes on a second attempt is not a gate.
+name: Flake sweep
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flake:
+    name: Ten-run determinism
+    timeout-minutes: 120
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Report CH9 quarantine allowlist
+        run: |
+          echo "CH9 quarantine allowlist (scripts/flake-allowlist.json):"
+          node -e '
+            const allowlist = require("./scripts/flake-allowlist.json");
+            for (const entry of allowlist.tests) {
+              console.log(`- ${entry.name}  issue=${entry.issue}  reason=${entry.reason}`);
+            }
+          '
+
+      - name: Run @input/pen-react ten times
+        run: |
+          set +e
+          mkdir -p flake-results
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            echo "::group::CH9 run ${i} of 10"
+            pnpm --filter @input/pen-react exec vitest run \
+              --reporter=default \
+              --reporter=json \
+              --outputFile.json="${GITHUB_WORKSPACE}/flake-results/run-${i}.json"
+            echo $? > "${GITHUB_WORKSPACE}/flake-results/run-${i}.exit"
+            echo "::endgroup::"
+          done
+          set -e
+
+      - name: Compare runs against CH9 allowlist
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, existsSync } from "node:fs";
+
+          const allowlist = JSON.parse(
+            readFileSync("scripts/flake-allowlist.json", "utf8"),
+          );
+          const allowed = allowlist.tests.map((entry) => entry.name);
+          const halfTimeoutMs = (allowlist.testTimeoutMs ?? 10_000) / 2;
+
+          function isAllowed(title, fullName) {
+            return allowed.some(
+              (name) => title === name || fullName.includes(name),
+            );
+          }
+
+          function loadRun(index) {
+            const reportPath = `flake-results/run-${index}.json`;
+            const exitPath = `flake-results/run-${index}.exit`;
+            const exitCode = existsSync(exitPath)
+              ? Number(readFileSync(exitPath, "utf8").trim())
+              : 1;
+            if (!existsSync(reportPath)) {
+              return {
+                index,
+                exitCode,
+                failed: ["(no JSON report — suite did not start)"],
+                slow: [],
+                fingerprint: `missing:${exitCode}`,
+              };
+            }
+            const report = JSON.parse(readFileSync(reportPath, "utf8"));
+            const failed = [];
+            const slow = [];
+            for (const file of report.testResults ?? []) {
+              for (const assertion of file.assertionResults ?? []) {
+                if (assertion.status === "failed") {
+                  failed.push(assertion.title || assertion.fullName);
+                }
+                if ((assertion.duration ?? 0) > halfTimeoutMs) {
+                  slow.push({
+                    name: assertion.title || assertion.fullName,
+                    duration: assertion.duration,
+                  });
+                }
+              }
+            }
+            failed.sort();
+            return {
+              index,
+              exitCode,
+              failed,
+              slow,
+              fingerprint: failed.join("\n") || "pass",
+            };
+          }
+
+          const runs = [];
+          for (let index = 1; index <= 10; index += 1) {
+            runs.push(loadRun(index));
+          }
+
+          const unallowlisted = [];
+          for (const run of runs) {
+            const quarantined = run.failed.filter((name) =>
+              isAllowed(name, name),
+            );
+            const unexpected = run.failed.filter(
+              (name) => !isAllowed(name, name),
+            );
+            console.log(
+              `run ${run.index}: exit=${run.exitCode} failed=${run.failed.length} quarantined=${quarantined.length} unexpected=${unexpected.length}`,
+            );
+            for (const name of quarantined) {
+              const entry = allowlist.tests.find(
+                (item) => name === item.name || name.includes(item.name),
+              );
+              console.log(
+                `  quarantined: ${name}  issue=${entry?.issue ?? "?"}  reason=${entry?.reason ?? "?"}`,
+              );
+            }
+            for (const name of unexpected) {
+              console.log(`  unexpected: ${name}`);
+              unallowlisted.push({ run: run.index, name });
+            }
+          }
+
+          const fingerprints = new Set(runs.map((run) => run.fingerprint));
+          const identical = fingerprints.size === 1;
+          console.log(
+            identical
+              ? "CH9: ten identical results"
+              : `CH9: ${fingerprints.size} distinct result sets`,
+          );
+
+          const slowNames = new Set();
+          for (const run of runs) {
+            for (const test of run.slow) {
+              const allowedSlow = isAllowed(test.name, test.name);
+              console.log(
+                `  slow (>${halfTimeoutMs}ms): ${test.name} ${Math.round(test.duration)}ms${allowedSlow ? " (allowlisted)" : ""}`,
+              );
+              if (!allowedSlow) {
+                slowNames.add(test.name);
+              }
+            }
+          }
+
+          if (unallowlisted.length > 0) {
+            console.error(
+              "CH9 failed: failures not on the quarantine allowlist",
+            );
+            process.exit(1);
+          }
+          if (slowNames.size > 0) {
+            console.error(
+              "CH9 failed: tests over half of testTimeout are not on the allowlist",
+            );
+            process.exit(1);
+          }
+          if (!identical) {
+            console.error("CH9 failed: ten runs did not produce identical results");
+            process.exit(1);
+          }
+          console.log("CH9 passed: ten identical runs, exceptions allowlisted");
+          EOF

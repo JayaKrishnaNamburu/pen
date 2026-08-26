@@ -1,5 +1,6 @@
+import { affectedBlockIdsFromSummary } from "@input/pen-core";
 import { useRef, useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 
 interface BlockTextDelta {
 	insert: string | Record<string, unknown>;
@@ -14,6 +15,8 @@ interface BlockTextSnapshot {
 
 const EMPTY_DELTAS: readonly BlockTextDelta[] = [];
 
+// HOST5: empty snapshot is correct for shell-only SSR. Do not populate
+// this from the live document — hosts export content with @input/pen-interop/html.
 const SSR_SNAPSHOT: BlockTextSnapshot = {
 	exists: false,
 	text: "",
@@ -28,8 +31,10 @@ export function useBlockTextSnapshot(
 
 	return useSyncExternalStore(
 		(callback) =>
-			editor.onDocumentCommit((event) => {
-				if (event.affectedBlocks.includes(blockId)) {
+			editor.on("commit", (event) => {
+				if (
+					affectedBlockIdsFromSummary(event.summary).includes(blockId)
+				) {
 					callback();
 				}
 			}),

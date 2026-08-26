@@ -1,6 +1,7 @@
 import type { BlockSchema } from "./schema";
-import type { SelectionState } from "./selection";
+import type { SelectionRecord, SelectionState } from "./selection";
 import type { GenerationZone } from "./crdt";
+import type { OpOrigin } from "./ops";
 import type { Unsubscribe } from "./utility";
 import type { FieldEditorInputMode } from "./fieldEditorCapabilities";
 
@@ -38,8 +39,6 @@ export interface FieldEditor {
 		element: HTMLElement,
 	): void;
 	deactivate(): void;
-	selectAll?(rootElement?: HTMLElement | null): boolean;
-	resetSelectAllCycle?(): void;
 	suspendForPointerSelection?(): void;
 	syncTextSelection?(
 		blockId: string,
@@ -79,13 +78,13 @@ export interface FieldEditor {
 	onActivate?(callback: (blockIds: string[]) => void): Unsubscribe;
 	onDeactivate?(callback: (blockIds: string[]) => void): Unsubscribe;
 	onSelectionChange?(
-		callback: (selection: SelectionState) => void,
+		callback: (record: SelectionRecord) => void,
 	): Unsubscribe;
 }
 
 export interface StreamingTarget {
 	readonly generationZone: GenerationZone | null;
-	beginStreaming(zoneId: string, blockId: string): void;
+	beginStreaming(zoneId: string, blockId: string, origin?: OpOrigin): void;
 	appendDelta(delta: string): void;
 	endStreaming(status: "complete" | "cancelled" | "error"): void;
 }

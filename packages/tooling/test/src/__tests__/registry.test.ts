@@ -1,43 +1,43 @@
 import { describe, expect, it } from "vitest";
 import {
-	SchemaRegistryImpl,
+	defineBlock,
 	mergeSchemas,
+	prop,
+	SchemaRegistryImpl,
 	suggestion,
-} from "@pen/core";
+} from "@input/pen-core";
 import {
-	defaultSchema,
-	createDefaultSchema,
-	paragraph,
-	heading,
-	bulletListItem,
-	numberedListItem,
-	checkListItem,
-	codeBlock,
-	image,
-	table,
-	divider,
-	callout,
-	toggle,
 	blockquote,
 	bold,
-	italic,
-	underline,
-	strikethrough,
-	highlight,
-	textColor,
-	backgroundColor,
-	link,
+	bulletListItem,
+	callout,
+	checkListItem,
 	code,
-	mention,
+	codeBlock,
+	createDefaultSchema,
+	defaultSchema,
+	divider,
+	heading,
+	highlight,
+	image,
 	inlineApp,
-} from "@pen/schema-default";
-import type { BlockSchema, InlineSchema } from "@pen/types";
-import { defineBlock, prop } from "@pen/types";
+	italic,
+	link,
+	mention,
+	numberedListItem,
+	paragraph,
+	strikethrough,
+	table,
+	textColor,
+	toggle,
+	underline,
+} from "@input/pen-schema-default";
+import type { BlockSchema, InlineSchema } from "@input/pen-types";
 
 describe("SchemaRegistryImpl", () => {
 	// ── AC 1: resolves all default block and inline types ───
 	describe("AC 1 — resolves all default block and inline types by name", () => {
-		it("resolves all 14 default block types", () => {
+		it("resolves all 13 default block types", () => {
 			const blockTypes = [
 				"paragraph",
 				"heading",
@@ -47,7 +47,6 @@ describe("SchemaRegistryImpl", () => {
 				"codeBlock",
 				"image",
 				"table",
-				"database",
 				"divider",
 				"callout",
 				"toggle",
@@ -95,9 +94,15 @@ describe("SchemaRegistryImpl", () => {
 
 	// ── AC 2: without removes types ─────────────────────────
 	describe("AC 2 — without() removes types", () => {
-		it("returns null for removed block type", () => {
+		it("drops the registered schema and resolves removed types as passthrough", () => {
 			const schema = defaultSchema.without(["table"]);
-			expect(schema.resolve("table")).toBeNull();
+			expect(schema.allBlocks().some((block) => block.type === "table")).toBe(
+				false,
+			);
+			const resolved = schema.resolve("table");
+			expect(resolved).not.toBeNull();
+			expect(resolved?.propSchema).toEqual({});
+			expect(resolved?.display?.hidden).toBe(true);
 		});
 
 		it("still resolves other block types", () => {
@@ -181,9 +186,9 @@ describe("SchemaRegistryImpl", () => {
 	});
 
 	// ── AC 17: resolves correct counts ──────────────────────
-	describe("AC 17 — resolves all 14 blocks, 9 marks, 2 nodes, 1 system mark", () => {
-		it("has 14 block schemas", () => {
-			expect(defaultSchema.allBlocks()).toHaveLength(14);
+	describe("AC 17 — resolves all 13 blocks, 9 marks, 2 nodes, 1 system mark", () => {
+		it("has 13 block schemas", () => {
+			expect(defaultSchema.allBlocks()).toHaveLength(13);
 		});
 
 		it("has 12 inline schemas (9 marks + 2 nodes + 1 system mark)", () => {
@@ -229,7 +234,7 @@ describe("SchemaRegistryImpl", () => {
 	describe("AC 19 — allBlockDisplays returns visible block entries", () => {
 		it("returns only visible entries with display metadata", () => {
 			const displays = defaultSchema.allBlockDisplays();
-			expect(displays).toHaveLength(13);
+			expect(displays).toHaveLength(12);
 			expect(displays.map((entry) => entry.type)).not.toContain("subdocument");
 			for (const entry of displays) {
 				expect(entry.display).toBeDefined();

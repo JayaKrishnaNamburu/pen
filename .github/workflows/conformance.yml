@@ -1,0 +1,95 @@
+# Browser conformance suite. The harness needs a real engine, so these jobs
+# build and run Playwright; static checks live in static-gates.yml.
+
+name: Conformance
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conformance-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  conformance-engine:
+    name: ${{ matrix.label }}
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    # chromium blocks the merge. webkit and firefox report only until a
+    # conformance job on this workflow finishes the Playwright suite with
+    # 0 failed. Playground e2e green is a different matrix (ci.yml) and
+    # does not promote these jobs.
+    #
+    # A continue-on-error leg reports `success` to the aggregate job below,
+    # so a red webkit or firefox does not block. Dropping the flag here is
+    # the whole promotion; branch protection does not change.
+    continue-on-error: ${{ matrix.engine != 'chromium' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # `label` exists only to render the check name; `engine` is what
+        # Playwright is given.
+        include:
+          - engine: chromium
+            label: Chromium
+          - engine: webkit
+            label: WebKit
+          - engine: firefox
+            label: Firefox
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Pen toolchain
+        uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: conformance
+
+      - name: Build conformance and dependencies
+        run: pnpm --filter @input/pen-conformance... build
+
+      - name: Install Playwright ${{ matrix.engine }}
+        run: pnpm --filter @input/pen-conformance exec playwright install --with-deps ${{ matrix.engine }}
+
+      - name: Run conformance ${{ matrix.engine }} suite
+        run: pnpm --filter @input/pen-conformance run test:${{ matrix.engine }}
+
+      - name: Upload Playwright artifacts
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-${{ matrix.engine }}-artifacts
+          path: |
+            packages/tooling/conformance/playwright-report/
+            packages/tooling/conformance/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  conformance:
+    # The single required check for this workflow. See
+    # .github/actions/require-jobs for why the aggregation exists and why
+    # `always()` is load-bearing.
+    name: All engines
+    if: always()
+    needs: [conformance-engine]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require the blocking engines to have succeeded
+        uses: ./.github/actions/require-jobs
+        with:
+          needs: ${{ toJSON(needs) }}

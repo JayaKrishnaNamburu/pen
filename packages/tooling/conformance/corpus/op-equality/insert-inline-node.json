@@ -1,0 +1,163 @@
+{
+	"id": "insert-inline-node",
+	"opType": "insert-inline-node",
+	"family": "atoms",
+	"path": "command",
+	"command": "pen.duplicateBlock",
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "Hi ",
+				"mention": {
+					"offset": 3,
+					"props": {
+						"id": "ada",
+						"label": "Ada"
+					}
+				}
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "insert-block",
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"blockType": "paragraph",
+			"props": {},
+			"position": {
+				"after": "p1"
+			}
+		},
+		{
+			"type": "insert-text",
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"offset": 0,
+			"text": "Hi "
+		},
+		{
+			"type": "insert-inline-node",
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"offset": 3,
+			"nodeType": "mention",
+			"props": {
+				"id": "ada",
+				"label": "Ada"
+			}
+		}
+	],
+	"updateBytes": "AQgBEycBBmJsb2NrcyQwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDMBKAABEwR0eXBlAXcJcGFyYWdyYXBoJwABEwVwcm9wcwEnAAETBG1ldGEBJwABEwdjb250ZW50AsgBDgEHAXckMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAzBAABFwNIaSCFARsreyJpZCI6ImFkYSIsImxhYmVsIjoiQWRhIiwidHlwZSI6Im1lbnRpb24ifQEBAQIH",
+	"updateByteLength": 210,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hi "
+						},
+						{
+							"insert": {
+								"id": "ada",
+								"label": "Ada",
+								"type": "mention"
+							}
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1",
+			"00000000-0000-4000-8000-000000000003"
+		],
+		"blocks": {
+			"00000000-0000-4000-8000-000000000003": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hi "
+						},
+						{
+							"insert": {
+								"id": "ada",
+								"label": "Ada",
+								"type": "mention"
+							}
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hi "
+						},
+						{
+							"insert": {
+								"id": "ada",
+								"label": "Ada",
+								"type": "mention"
+							}
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"offset": 0
+		},
+		"blockRange": [
+			"00000000-0000-4000-8000-000000000003"
+		],
+		"focus": {
+			"blockId": "00000000-0000-4000-8000-000000000003",
+			"offset": 0
+		},
+		"goalX": null,
+		"isCollapsed": true,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

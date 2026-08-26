@@ -38,33 +38,26 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: "Hello world",
 				previousTextLength: 5,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
 
-		expect(decorations).toHaveLength(6);
+		expect(decorations).toHaveLength(1);
 		expect(decorations[0]).toMatchObject({
 			blockId: "body-1",
 			from: 5,
-			key: "ai-streaming-review-preview:session-1:turn-1:2:new:body-1:5:5",
-			virtualText: " ",
+			key: "ai-streaming-review-preview:session-1:turn-1:body-1:5",
+			virtualText: " world",
 			attributes: {
 				"data-pen-ai-review-preview-virtual": true,
-				"data-pen-ai-review-preview-new": true,
-				"data-pen-ai-preview-revision": 2,
 			},
 		});
-		expect(
-			String(readDecorationAttributes(decorations[1])?.style),
-		).toContain("animation-delay: 4ms");
 		expect(
 			readDecorationAttributes(decorations[0])?.["data-suggestion-id"],
 		).toBe(undefined);
 	});
 
-	it("animates only newly received insertion characters", () => {
+	it("grows insertion preview text in one virtual span", () => {
 		const decorations = buildStreamingReviewPreviewDecorations({
 			editor: createReviewEditor({
 				blockId: "body-1",
@@ -81,23 +74,15 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: " world",
 				previousTextLength: 3,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
-		const newDecorations = decorations.filter(
-			(decoration) =>
-				readDecorationAttributes(decoration)?.[
-					"data-pen-ai-review-preview-new"
-				] === true,
-		);
 
-		expect(readVirtualText(decorations)).toBe(" world");
-		expect(newDecorations).toHaveLength(3);
-		expect(readDecorationAttributes(newDecorations[1])?.style).toContain(
-			"animation-delay: 4ms",
-		);
+		expect(decorations).toHaveLength(1);
+		expect(decorations[0]).toMatchObject({
+			key: "ai-streaming-review-preview:session-1:turn-1:body-1:5",
+			virtualText: " world",
+		});
 	});
 
 	it("streams only the changed tail for same-block word replacements", () => {
@@ -118,8 +103,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: "Hello Sarah",
 				previousTextLength: 8,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -158,8 +141,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: "Hello Sarah, how are you?",
 				previousTextLength: 9,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -200,8 +181,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: previewText,
 				previousTextLength: previewText.length - "Pro ".length,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -223,9 +202,11 @@ describe("AI review presentation streaming preview", () => {
 	it("does not hide unchanged blocks while a full block-range replacement streams", () => {
 		const { firstBlockText, secondBlockText, thirdBlockText } =
 			MACBOOK_THREE_BLOCK_PARTS;
-		const originalText = [firstBlockText, secondBlockText, thirdBlockText].join(
-			"\n",
-		);
+		const originalText = [
+			firstBlockText,
+			secondBlockText,
+			thirdBlockText,
+		].join("\n");
 		const previewText = buildMacBookProStreamingPreviewText(originalText);
 		const decorations = buildStreamingReviewPreviewDecorations({
 			editor: createMacBookThreeBlockReviewEditor(),
@@ -240,8 +221,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: previewText,
 				previousTextLength: previewText.length - "Pro ".length,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -275,27 +254,27 @@ describe("AI review presentation streaming preview", () => {
 					pendingSuggestionIds: [],
 				}),
 			],
-			streamingReviewPreview: {
-				sessionId: "session-1",
-				turnId: "turn-1",
-				target: {
-					kind: "text-range",
-					blockId: "body-1",
-					from: 0,
-					to: originalText.length,
+			streamingReviewPreviews: [
+				{
+					sessionId: "session-1",
+					turnId: "turn-1",
+					target: {
+						kind: "text-range",
+						blockId: "body-1",
+						from: 0,
+						to: originalText.length,
+					},
+					text: previewText,
+					previousTextLength: previewText.length - "Pro ".length,
 				},
-				text: previewText,
-				previousTextLength: previewText.length - "Pro ".length,
-				revision: 2,
-				updatedAt: 123,
-			},
+			],
 			suggestionPresentation: "final-text",
 		});
 		const contextDecorations = decorations.filter(
 			(decoration) =>
 				decoration.type === "inline" &&
 				decoration.attributes?.["data-pen-ai-review-role"] ===
-				"context",
+					"context",
 		);
 
 		expect(readVirtualText(decorations)).toBe("Pro ");
@@ -320,8 +299,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: "Hello",
 				previousTextLength: 5,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -359,8 +336,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: "Hello\n\nWorld",
 				previousTextLength: 5,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -387,8 +362,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: "Replacement",
 				previousTextLength: 0,
-				revision: 1,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -435,8 +408,6 @@ describe("AI review presentation streaming preview", () => {
 				},
 				text: "Alpha teammate\nBeta friend",
 				previousTextLength: "Alpha ".length,
-				revision: 2,
-				updatedAt: 123,
 			},
 			suggestionPresentation: "final-text",
 		});
@@ -471,7 +442,7 @@ describe("AI review presentation streaming preview", () => {
 			editor,
 			sessions: [createInlineSession()],
 			suggestionPresentation: "final-text",
-			streamingReviewPreview: HI_TEXT_RANGE_STREAMING_PREVIEW,
+			streamingReviewPreviews: [HI_TEXT_RANGE_STREAMING_PREVIEW],
 		});
 
 		expect(readVirtualText(decorations)).toContain("i");
@@ -481,10 +452,102 @@ describe("AI review presentation streaming preview", () => {
 			editor: createHelloExclamationSuggestionEditor(),
 			sessions: [createInlineSession()],
 			suggestionPresentation: "final-text",
-			streamingReviewPreview: HI_TEXT_RANGE_STREAMING_PREVIEW,
+			streamingReviewPreviews: [HI_TEXT_RANGE_STREAMING_PREVIEW],
 		});
 
 		expect(readVirtualText(decorationsWithSuggestion)).toContain("i");
 	});
-});
 
+	/**
+	 * A chat prompt runs a generation and creates no session, so a builder that
+	 * asks for a session row renders nothing for the surface most edits come
+	 * through. Every other probe here passes a session, which is how that went
+	 * unnoticed.
+	 */
+	it("renders the preview for a turn that has a generation but no session", () => {
+		const decorations = buildAIReviewPresentationDecorations({
+			activeGeneration: {
+				id: HI_TEXT_RANGE_STREAMING_PREVIEW.sessionId,
+				sessionId: null,
+				status: "streaming",
+			} as never,
+			activeSessionId: null,
+			editor: createReviewEditor({
+				blockId: "body-1",
+				text: "Hello",
+				deltas: [{ insert: "Hello" }],
+			}),
+			sessions: [],
+			suggestionPresentation: "final-text",
+			streamingReviewPreviews: [HI_TEXT_RANGE_STREAMING_PREVIEW],
+		});
+
+		expect(readVirtualText(decorations)).toContain("i");
+	});
+
+	/**
+	 * One call, two operations: the first has finished arriving and the second
+	 * is still coming, and neither is written yet. Showing only the arriving
+	 * one drops the first proposal off the page, so the block underneath
+	 * reverts to the text the same turn is about to replace.
+	 */
+	it("renders every operation of a streaming call at once", () => {
+		const decorations = buildAIReviewPresentationDecorations({
+			activeSessionId: "session-1",
+			editor: createAlphaBetaGammaReviewEditor(),
+			sessions: [createInlineSession()],
+			suggestionPresentation: "final-text",
+			streamingReviewPreviews: [
+				{
+					sessionId: "session-1",
+					operationIndex: 0,
+					target: {
+						kind: "text-range",
+						blockId: "body-1",
+						from: 0,
+						to: 5,
+					},
+					text: "Alpha rewritten",
+					previousTextLength: 15,
+				},
+				{
+					sessionId: "session-1",
+					operationIndex: 1,
+					target: {
+						kind: "insertion-point",
+						blockId: "body-2",
+						offset: 4,
+					},
+					text: "Gamma arriv",
+					previousTextLength: 8,
+				},
+			],
+		});
+
+		// "Alpha" is a shared prefix, so the first operation streams its tail.
+		const virtualText = readVirtualText(decorations);
+		expect(virtualText).toContain(" rewritten");
+		expect(virtualText).toContain("Gamma arriv");
+	});
+
+	it("ignores a preview left over from a turn that is no longer running", () => {
+		const decorations = buildAIReviewPresentationDecorations({
+			activeGeneration: {
+				id: "some-other-generation",
+				sessionId: null,
+				status: "streaming",
+			} as never,
+			activeSessionId: null,
+			editor: createReviewEditor({
+				blockId: "body-1",
+				text: "Hello",
+				deltas: [{ insert: "Hello" }],
+			}),
+			sessions: [],
+			suggestionPresentation: "final-text",
+			streamingReviewPreviews: [HI_TEXT_RANGE_STREAMING_PREVIEW],
+		});
+
+		expect(readVirtualText(decorations)).toBe("");
+	});
+});

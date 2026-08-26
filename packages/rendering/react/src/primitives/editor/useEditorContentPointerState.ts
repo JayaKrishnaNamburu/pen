@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type { RefObject } from "react";
-import type { PointerSelectionGesture } from "../../selection/interactionController";
+import type { PointerSelectionGesture } from "@input/pen-dom/utils/pointerSelection";
 
 export interface EditorContentRegionGesture {
 	clientX: number;

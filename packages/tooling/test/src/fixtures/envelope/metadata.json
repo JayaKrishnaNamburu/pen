@@ -1,0 +1,100 @@
+{
+	"ruleId": "SCALE1",
+	"spec": "spec/rules/scale.md",
+	"hostFloor": "spec/rules/host.md",
+	"virtualization": "packages/rendering/react/VIRTUALIZATION.md",
+	"ladder": {
+		"blocks": [100, 1000, 5000],
+		"longBlockChars": 100000,
+		"nestingDepth": 10,
+		"tableRows": 50,
+		"tableCols": 20,
+		"committedBlockCount": 100,
+		"runtimeBlockCounts": [1000, 5000]
+	},
+	"rungs": [
+		{
+			"id": "blocks-100",
+			"size": "100 blocks",
+			"storage": "committed",
+			"path": "src/fixtures/envelope/committed/blocks-100.json"
+		},
+		{ "id": "blocks-1000", "size": "1,000 blocks", "storage": "runtime" },
+		{ "id": "blocks-5000", "size": "5,000 blocks", "storage": "runtime" },
+		{
+			"id": "long-block",
+			"size": "100,000 characters",
+			"storage": "runtime"
+		},
+		{ "id": "nesting-10", "size": "depth 10", "storage": "runtime" },
+		{ "id": "table-50x20", "size": "50 × 20", "storage": "runtime" }
+	],
+	"axes": [
+		{
+			"id": "blockCount",
+			"label": "Block count",
+			"verified": {
+				"display": "5,000",
+				"suite": "`@input/pen-test` SCALE1 `envelopeLadder`"
+			},
+			"measured": {
+				"display": "1,000",
+				"suite": "`@input/pen-bench` `createLargeDocument`"
+			},
+			"untestedAbove": {
+				"display": "5,000"
+			}
+		},
+		{
+			"id": "longestBlock",
+			"label": "Longest single block",
+			"verified": {
+				"display": "100,000 characters",
+				"suite": "`@input/pen-test` SCALE1 `envelopeLadder`"
+			},
+			"measured": null,
+			"untestedAbove": {
+				"display": "100,000 characters"
+			}
+		},
+		{
+			"id": "nestingDepth",
+			"label": "Nesting depth",
+			"verified": {
+				"display": "10",
+				"suite": "`@input/pen-test` SCALE1 `envelopeLadder`"
+			},
+			"measured": null,
+			"untestedAbove": {
+				"display": "10"
+			}
+		},
+		{
+			"id": "table",
+			"label": "Table",
+			"verified": {
+				"display": "50 × 20",
+				"suite": "`@input/pen-test` SCALE1 `envelopeLadder`"
+			},
+			"measured": null,
+			"untestedAbove": {
+				"display": "50 × 20"
+			}
+		},
+		{
+			"id": "concurrentPeers",
+			"label": "Concurrent peers",
+			"verified": {
+				"display": "2",
+				"suite": "`@input/pen-test` `createTestCollaboration` + `assertPeerEditsSurvive`"
+			},
+			"measured": null,
+			"untestedAbove": {
+				"display": "2"
+			}
+		}
+	],
+	"notes": [
+		"2026-08-21 / 2026-08-24: Concurrent peers stayed at **2**, but the earlier verified grade did not measure collaboration. Independently populated Y.Docs exchange full state and LWW-keep one `Y.Text`; the 2026-08-24 probe ended at `Hello B` on both sides (later client id wins; the 2026-08-21 note said `Hello A`). `assertDocEquals` still passes on that loss. `createTestCollaboration` now forks both peers from one encoded seed (`createTwoPeerHarness`). The grade is re-verified by `assertPeerEditsSurvive` plus the merged text `Hello A B` / `Hello B A`, which fail on that independently-seeded fixture and pass on the shared-seed harness. Re-measured the bench row on that harness: published path (A insert + sync) p50 0.198 ms versus the committed 1.49 ms; concurrent A+B insert + sync p50 0.434 ms; empty-timer floor p50 0.000 ms (n=21). The table number is the peer count, not the clock."
+	]
+}

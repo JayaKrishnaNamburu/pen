@@ -1,0 +1,61 @@
+# Nightly property-based fuzz run.
+#
+# Logs a seed every run and passes PEN_FUZZ_SEED into fuzz:nightly, which runs
+# every workspace *.properties.test.ts suite (I2/I3, DUR3, I1) at nightly
+# scale plus any packages/**/*an-fuzz*.test.ts file. Browser fuzz is not
+# part of this job.
+#
+# The schedule only fires from the default branch. `workflow_dispatch` can
+# run on any branch and is not a substitute for a scheduled green run.
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz-nightly:
+    name: Fuzz
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Log fuzz seed
+        id: seed
+        run: |
+          SEED="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date -u +%s)"
+          echo "seed=$SEED" >> "$GITHUB_OUTPUT"
+          echo "Nightly fuzz seed: $SEED"
+
+      - name: Detect conformance package
+        id: conformance
+        run: |
+          if [ -f packages/tooling/conformance/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Handover: @input/pen-conformance is not in this checkout."
+            echo "Handover: @input/pen-conformance is not in this checkout; fuzz:nightly would consume PEN_FUZZ_SEED=${{ steps.seed.outputs.seed }}."
+          fi
+
+      - name: Set up Pen toolchain
+        if: ${{ steps.conformance.outputs.present == 'true' }}
+        uses: ./.github/actions/setup
+
+      - name: Run nightly property fuzz
+        if: ${{ steps.conformance.outputs.present == 'true' }}
+        env:
+          PEN_FUZZ_SEED: ${{ steps.seed.outputs.seed }}
+        run: pnpm --filter @input/pen-conformance run fuzz:nightly

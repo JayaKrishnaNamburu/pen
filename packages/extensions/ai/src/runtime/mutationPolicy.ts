@@ -1,7 +1,8 @@
-import type { SelectionState } from "@pen/types";
+import type { SelectionState } from "@input/pen-types";
 import type {
 	AIContentFormat,
 	AIMutationMode,
+	AIMutationPreference,
 	AIRouteLane,
 } from "./contracts";
 
@@ -10,26 +11,30 @@ interface MutationPolicyInput {
 	suggestMode: boolean;
 	selection: SelectionState;
 	surface?: "inline-edit" | "bottom-chat";
+	mutationPreference?: AIMutationPreference;
 }
 
 export function resolveMutationMode(
 	input: MutationPolicyInput,
 ): AIMutationMode {
+	if (
+		input.mutationPreference === "direct" &&
+		!input.suggestMode &&
+		input.lane !== "review"
+	) {
+		return "direct-stream";
+	}
 	if (input.lane === "selection-rewrite") {
 		return "streaming-suggestions";
 	}
 	if (
-		(input.surface === "bottom-chat" ||
-			input.surface === "inline-edit") &&
-		(input.lane === "cursor-context" || input.lane === "context-first")
+		(input.surface === "bottom-chat" || input.surface === "inline-edit") &&
+		input.lane === "cursor-context"
 	) {
 		return "streaming-suggestions";
 	}
 	if (input.lane === "cursor-context") {
 		return "direct-stream";
-	}
-	if (input.lane === "context-first") {
-		return "persistent-suggestions";
 	}
 	if (input.lane === "review") {
 		return "staged-review";
@@ -51,15 +56,16 @@ export function shouldStreamDirectAIOutput(options: {
 	contentFormat: AIContentFormat;
 	target: "selection" | "block";
 }): boolean {
-	if (
-		options.target === "block" &&
-		options.contentFormat === "markdown"
-	) {
+	if (options.target === "block" && options.contentFormat === "markdown") {
 		return false;
 	}
 
-	return (
-		options.mutationMode === "direct-stream" ||
-		options.mutationMode === "ephemeral-preview"
-	);
+	return options.mutationMode === "direct-stream";
+}
+
+/** Durable text lands as suggestion marks rather than applying immediately. */
+export function stagesAsSuggestions(
+	mode: AIMutationMode | undefined,
+): boolean {
+	return mode != null && mode !== "direct-stream";
 }

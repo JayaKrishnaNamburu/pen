@@ -1,4 +1,4 @@
-import type { InlineDelta, TableCellHandle } from "@pen/types";
+import type { InlineDelta, TableCellHandle } from "@input/pen-types";
 import {
 	getStringProp,
 	getTextProp,
@@ -28,9 +28,7 @@ export class TableCellHandleImpl implements TableCellHandle {
 	textContent(): string {
 		const content = getTextProp(this._cellMap, "content");
 		if (content) {
-			const text = content.toString();
-			if (text === "\u200B") return "";
-			return text;
+			return content.toString();
 		}
 		return "";
 	}

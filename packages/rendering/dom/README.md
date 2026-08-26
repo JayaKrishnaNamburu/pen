@@ -1,17 +1,77 @@
-# @pen/dom
+# `@input/pen-dom`
 
-Shared DOM field-editor engine and low-level DOM helpers for Pen renderers.
+Shared DOM field-editor engine for Pen renderers. `@input/pen-react` and `@input/pen-vue` mount `FieldEditorImpl` inside their document shells. Vanilla hosts call `mountEditor`, which is that same composition without a framework.
+
+This package does not assemble a schema, install a preset, or ship CSS. It is the DOM engine, not a product editor.
 
 ## Install
 
+This package has no peer dependencies. Hosts that want a mounted editor still need `@input/pen-core` and a preset or schema.
+
 ```bash
-pnpm add @pen/dom
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-dom yjs
 ```
 
-## What It Provides
+`yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
 
-- the shared DOM field-editor implementation used by renderer packages
-- select-all behavior helpers
-- paste/import helper types
+`engines.node` is `>=22`.
 
-This package is a low-level surface intended for renderer and infrastructure work more than end-user app setup.
+## Usage
+
+```ts
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { mountEditor } from "@input/pen-dom";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
+
+const root = document.querySelector("#app");
+if (!(root instanceof HTMLElement)) {
+  throw new Error("Missing #app");
+}
+
+mountEditor(editor, root);
+```
+
+That snippet is the vanilla mount path. `FieldEditorImpl.setRootElement` alone binds a focus sink and never builds the document tree — the page stays blank while it typechecks. React and Vue hosts should keep using those packages; they already construct `FieldEditorImpl` and the same document shell.
+
+Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke.
+
+The root export also includes `urlPolicy`, `urlPolicyExtension`, `DomScheduler`, and keyboard helpers such as `handleEditorDocumentKeyDown`. Extra subpaths exist on the `exports` map (`./field-editor`, `./constants/selectAll`, and the listed `./utils/*` keys). Prefer the root export unless you already depend on a subpath.
+
+## Capabilities
+
+The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. This package is the vanilla surface, and it is also where most capabilities are implemented for the framework bindings — so its column is mostly `bring-your-own-ui`: the behavior is here, and `mountEditor` renders no chrome for it.
+
+`supported` from `mountEditor` alone: single-block fields, expanded fields, document mutation, paste, and the review-surface styling contract (adopt `PEN_REVIEW_STYLESHEET`). Everything else — table chrome, AI review affordances, overlays, multiplayer presence, search UI — exports its state and utilities and leaves the rendering to you.
+
+## Options
+
+`mountEditor(editor, root, options?)` returns `{ fieldEditor, root, destroy }`. Options:
+
+| Option             | Default           | Effect                                                                                                                                                                                                                       |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readonly`         | `false`           | Declines typing and pointer activation; sets `data-readonly` (match with `[data-readonly]`, not `="true"`) and `aria-readonly="true"`. Does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`. |
+| `interactionModel` | `"content-first"` | Passed through `resolveSelectAllBehavior`                                                                                                                                                                                    |
+| `focusPolicy`      | unset             | Host focus policy passed to `FieldEditorImpl`                                                                                                                                                                                |
+
+`FieldEditorImpl` accepts a second argument:
+
+| Option              | Default            | Effect                                           |
+| ------------------- | ------------------ | ------------------------------------------------ |
+| `selectAllBehavior` | `"document-first"` | `"block-first"` selects the active block first   |
+| `focusPolicy`       | unset              | Host focus policy passed to the focus controller |
+
+`DEFAULT_SELECT_ALL_BEHAVIOR` is `"document-first"`. `resolveSelectAllBehavior(interactionModel)` returns `"block-first"` only when `interactionModel` is `"block-first"`.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Getting started page (`#/getting-started`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

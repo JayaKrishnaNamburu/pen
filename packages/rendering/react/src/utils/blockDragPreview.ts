@@ -1,5 +1,6 @@
 import type React from "react";
-import { DATA_ATTRS } from "./dataAttributes";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 const DRAG_PREVIEW_ROOT_ATTR = "data-pen-block-drag-preview-root";
 const DRAG_PREVIEW_ATTR = "data-pen-block-drag-preview";
@@ -26,7 +27,9 @@ function getPreviewRoot(ownerDocument: Document): HTMLElement {
 }
 
 function removeDragHandles(clone: HTMLElement) {
-	const handleElements = clone.querySelectorAll(`[${DATA_ATTRS.blockHandle}]`);
+	const handleElements = clone.querySelectorAll(
+		`[${DATA_ATTRS.blockHandle}]`,
+	);
 	for (const handle of handleElements) {
 		const parent = handle.parentElement;
 		handle.remove();
@@ -68,7 +71,10 @@ function resetBlockStateAttrs(clone: HTMLElement) {
 	clone.removeAttribute("draggable");
 }
 
-function createCountBadge(ownerDocument: Document, blockCount: number): HTMLElement {
+function createCountBadge(
+	ownerDocument: Document,
+	blockCount: number,
+): HTMLElement {
 	const badge = ownerDocument.createElement("div");
 	badge.textContent = String(blockCount);
 	badge.style.position = "absolute";
@@ -110,6 +116,7 @@ export function setBlockDragPreviewImage(args: {
 	const rect = blockElement.getBoundingClientRect();
 	const preview = ownerDocument.createElement("div");
 	preview.setAttribute(DRAG_PREVIEW_ATTR, "");
+	// AX7 overlay — drag ghost is presentation
 	preview.setAttribute("aria-hidden", "true");
 	preview.style.position = "fixed";
 	preview.style.top = "0";
@@ -130,7 +137,7 @@ export function setBlockDragPreviewImage(args: {
 		preview.append(createCountBadge(ownerDocument, args.blockCount));
 	}
 
-	previewRoot.replaceChildren(preview);
+	replaceElementChildren(previewRoot, preview);
 	args.event.dataTransfer.setDragImage(
 		preview,
 		Math.max(0, args.event.clientX - rect.left),
@@ -138,7 +145,9 @@ export function setBlockDragPreviewImage(args: {
 	);
 }
 
-export function clearBlockDragPreviewImage(ownerDocument: Document | null | undefined) {
+export function clearBlockDragPreviewImage(
+	ownerDocument: Document | null | undefined,
+) {
 	if (!ownerDocument) {
 		return;
 	}
@@ -148,6 +157,6 @@ export function clearBlockDragPreviewImage(ownerDocument: Document | null | unde
 	if (!previewRoot) {
 		return;
 	}
-	previewRoot.replaceChildren();
+	replaceElementChildren(previewRoot);
 	previewRoot.remove();
 }

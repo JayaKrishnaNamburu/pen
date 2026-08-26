@@ -1,20 +1,21 @@
 {
-  "name": "@pen/content-ops",
-  "version": "0.0.0",
+  "name": "@input/pen-content-ops",
+  "version": "0.0.1",
   "description": "Shared content parsing and write ops for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/input-systems/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/input-systems/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/input-systems/pen.git",
     "directory": "packages/shared/content-ops"
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -26,7 +27,8 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -36,22 +38,26 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/types": "workspace:*",
+    "@input/pen-core": "workspace:^",
+    "@input/pen-types": "workspace:^",
     "htmlparser2": "^9.0.0",
     "mdast-util-from-markdown": "^2.0.0",
     "mdast-util-gfm": "^3.0.0",
     "micromark-extension-gfm": "^3.0.0"
   },
   "devDependencies": {
-    "@pen/schema-default": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

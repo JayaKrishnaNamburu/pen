@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { getInsertSiblingBlockOp } from "../utils/parentIdTree";
+import { defaultSchema } from "@input/pen-schema-default";
 
-describe("@pen/react parentIdTree", () => {
+describe("@input/pen-react parentIdTree", () => {
 	it("inserts sibling blocks after the full nested subtree and inherits parentId", () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -18,10 +20,9 @@ describe("@pen/react parentIdTree", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId: parentToggleId,
-				newType: "toggle",
-				newProps: { open: true },
+				props: { type: "toggle", ...{ open: true } },
 			},
 			{
 				type: "insert-block",
@@ -31,7 +32,7 @@ describe("@pen/react parentIdTree", () => {
 				position: { after: parentToggleId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: nestedToggleId,
 				props: { parentId: parentToggleId },
 			},
@@ -43,7 +44,7 @@ describe("@pen/react parentIdTree", () => {
 				position: { after: nestedToggleId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: nestedChildId,
 				props: { parentId: nestedToggleId },
 			},

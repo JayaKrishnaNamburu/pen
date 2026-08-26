@@ -1,14 +1,18 @@
 // @vitest-environment jsdom
 
-import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
-import { createTestEditor } from "@pen/test";
+import { fieldEditorHostFacet } from "@input/pen-core";
+import {
+  handleEditorDocumentKeyDown,
+  type FieldEditorImpl,
+} from "@input/pen-dom";
+import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { h, nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
 
 afterEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 function createTableEditor() {
@@ -24,12 +28,12 @@ function createTableEditor() {
 
   editor.apply([
     {
-      type: "insert-table-cell-text",
+      type: "splice-text",
       blockId: "table-1",
-      row: 0,
-      col: 0,
-      offset: 0,
-      text: "A1",
+      cell: { row: 0, col: 0 },
+      from: 0,
+      to: 0,
+      insert: "A1",
     },
   ]);
 
@@ -121,7 +125,7 @@ async function flushTransfer() {
   await nextTick();
 }
 
-describe("@pen/vue", () => {
+describe("@input/pen-vue", () => {
   it("mounts and renders a basic paragraph document", () => {
     const editor = createTestEditor({
       blocks: [
@@ -140,15 +144,14 @@ describe("@pen/vue", () => {
     });
 
     expect(wrapper.text()).toContain("Hello Vue");
-    expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBeTruthy();
+    expect(editor.facet(fieldEditorHostFacet)).toBeTruthy();
 
     wrapper.unmount();
     editor.destroy();
   });
 
-  it("routes document delete shortcuts through the shared DOM handler", async () => {
+  it("deletes a block selection with Backspace", async () => {
     const editor = createParagraphEditor();
-    const deleteSelection = vi.spyOn(editor, "deleteSelection").mockImplementation(() => undefined);
 
     const wrapper = mount(PenEditor, {
       attachTo: document.body,
@@ -164,10 +167,11 @@ describe("@pen/vue", () => {
         key: "Backspace",
       }),
     );
+    await nextTick();
 
-    expect(deleteSelection).toHaveBeenCalledWith({ origin: "user" });
+    expect(editor.documentState.blockOrder).toEqual(["paragraph-2"]);
+    expect(editor.getBlock("paragraph-2").textContent()).toBe("Second");
 
-    deleteSelection.mockRestore();
     wrapper.unmount();
     editor.destroy();
   });
@@ -202,14 +206,14 @@ describe("@pen/vue", () => {
     editor.destroy();
   });
 
-  it("maps an inline click to the resolved caret offset", async () => {
+  it("activates the field editor when the empty block host is clicked", async () => {
     const editor = createTestEditor({
       blocks: [
         {
           id: "paragraph-1",
           type: "paragraph",
           props: {},
-          content: "Hello",
+          content: "",
         },
       ],
     });
@@ -219,48 +223,18 @@ describe("@pen/vue", () => {
       props: { editor },
     });
 
-    const inlineSurface = wrapper.get("[data-pen-inline-content]");
-    const textNode = inlineSurface.element.firstChild;
-    expect(textNode?.nodeType).toBe(Node.TEXT_NODE);
-
-    const originalCaretRangeFromPoint = (
-      document as Document & {
-        caretRangeFromPoint?: (x: number, y: number) => Range | null;
-      }
-    ).caretRangeFromPoint;
-
-    (
-      document as Document & {
-        caretRangeFromPoint?: (x: number, y: number) => Range | null;
-      }
-    ).caretRangeFromPoint = () => {
-      const range = document.createRange();
-      range.setStart(textNode!, 2);
-      range.collapse(true);
-      return range;
-    };
-
-    await inlineSurface.trigger("mousedown", { clientX: 12, clientY: 8 });
+    const blockHost = wrapper.get('[data-block-id="paragraph-1"]');
+    await blockHost.trigger("mousedown");
     await nextTick();
 
     expect(editor.selection).toMatchObject({
       type: "text",
-      anchor: { blockId: "paragraph-1", offset: 2 },
-      focus: { blockId: "paragraph-1", offset: 2 },
+      anchor: { blockId: "paragraph-1" },
+      focus: { blockId: "paragraph-1" },
     });
-
-    if (originalCaretRangeFromPoint) {
-      (
-        document as Document & {
-          caretRangeFromPoint?: (x: number, y: number) => Range | null;
-        }
-      ).caretRangeFromPoint = originalCaretRangeFromPoint;
-    } else {
-      Reflect.deleteProperty(
-        document as Document & Record<string, unknown>,
-        "caretRangeFromPoint",
-      );
-    }
+    expect(
+      wrapper.find("[data-pen-field-editor-active-surface]").exists(),
+    ).toBe(true);
 
     wrapper.unmount();
     editor.destroy();
@@ -407,19 +381,202 @@ describe("@pen/vue", () => {
     });
     await nextTick();
 
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", {
+    const fieldEditor = editor.facet(
+      fieldEditorHostFacet,
+    ) as FieldEditorImpl | null;
+    if (!fieldEditor) {
+      throw new Error("expected mounted field editor");
+    }
+
+    const handled = handleEditorDocumentKeyDown({
+      event: new KeyboardEvent("keydown", {
         key: "ArrowDown",
         bubbles: true,
+        cancelable: true,
       }),
-    );
-    await nextTick();
+      editor,
+      fieldEditor,
+      root: wrapper.element as HTMLElement,
+    });
+    expect(handled).toBe(true);
 
     expect(editor.selection).toMatchObject({
       type: "text",
       anchor: { blockId: "paragraph-2", offset: 0 },
       focus: { blockId: "paragraph-2", offset: 0 },
     });
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("SEC1: javascript: / data:text/html image src is inert", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "image-js",
+          type: "image",
+          props: {
+            src: "javascript:alert(1)",
+            alt: "hostile js",
+          },
+        },
+        {
+          id: "image-html",
+          type: "image",
+          props: {
+            src: "data:text/html,<script>alert(1)</script>",
+            alt: "hostile html",
+          },
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    const images = wrapper.findAll("img");
+    expect(images).toHaveLength(2);
+
+    for (const image of images) {
+      expect(image.attributes("src")).toBeUndefined();
+      expect(image.attributes("data-pen-blocked-url")).toBe("");
+    }
+
+    expect(wrapper.html()).not.toContain("javascript:");
+    expect(wrapper.html()).not.toContain("data:text/html");
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("DIR2: sets dir on the block content host from props.direction ltr or rtl", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "paragraph-ltr",
+          type: "paragraph",
+          props: { direction: "ltr" },
+          content: "Hello",
+        },
+        {
+          id: "paragraph-rtl",
+          type: "paragraph",
+          props: { direction: "rtl" },
+          content: "مرحبا",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    expect(
+      wrapper.get('[data-block-id="paragraph-ltr"]').attributes("dir"),
+    ).toBe("ltr");
+    expect(
+      wrapper.get('[data-block-id="paragraph-rtl"]').attributes("dir"),
+    ).toBe("rtl");
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("DIR2: omits dir when props.direction is missing or auto", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "paragraph-none",
+          type: "paragraph",
+          props: {},
+          content: "Plain",
+        },
+        {
+          id: "paragraph-auto",
+          type: "paragraph",
+          props: { direction: "auto" },
+          content: "Auto",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    expect(
+      wrapper.get('[data-block-id="paragraph-none"]').attributes("dir"),
+    ).toBeUndefined();
+    expect(
+      wrapper.get('[data-block-id="paragraph-auto"]').attributes("dir"),
+    ).toBeUndefined();
+    expect(wrapper.html()).not.toContain('dir="auto"');
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("DIR2: nested blocks set dir independently", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "quote-ltr",
+          type: "blockquote",
+          props: { direction: "ltr" },
+          content: "Outer",
+        },
+        {
+          id: "paragraph-rtl",
+          type: "paragraph",
+          props: { direction: "rtl", parentId: "quote-ltr" },
+          content: "Inner",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    expect(wrapper.get('[data-block-id="quote-ltr"]').attributes("dir")).toBe(
+      "ltr",
+    );
+    expect(
+      wrapper.get('[data-block-id="paragraph-rtl"]').attributes("dir"),
+    ).toBe("rtl");
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("AX1: content host is a multiline textbox", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "paragraph-1",
+          type: "paragraph",
+          props: {},
+          content: "Hello Vue",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    const root = wrapper.get("[data-pen-editor-root]");
+    expect(root.attributes("role")).toBe("textbox");
+    expect(root.attributes("aria-multiline")).toBe("true");
+    expect(wrapper.get("[data-pen-editor-content]").attributes("role")).toBeUndefined();
+    expect(wrapper.get("[data-block-id]").attributes("role")).toBeUndefined();
 
     wrapper.unmount();
     editor.destroy();

@@ -1,0 +1,1 @@
+export { AutocompleteControllerImpl } from "./autocompleteControllerCore";

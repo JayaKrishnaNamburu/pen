@@ -1,0 +1,108 @@
+{
+  "name": "@input/pen-interop",
+  "version": "0.0.1",
+  "description": "HTML, Markdown, JSON, and XML import/export for Pen",
+  "license": "MIT",
+  "homepage": "https://github.com/input-systems/pen#readme",
+  "bugs": {
+    "url": "https://github.com/input-systems/pen/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/input-systems/pen.git",
+    "directory": "packages/extensions/interop"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./html": {
+      "import": {
+        "types": "./dist/html.d.ts",
+        "default": "./dist/html.mjs"
+      },
+      "require": {
+        "types": "./dist/html.d.cts",
+        "default": "./dist/html.cjs"
+      }
+    },
+    "./markdown": {
+      "import": {
+        "types": "./dist/markdown.d.ts",
+        "default": "./dist/markdown.mjs"
+      },
+      "require": {
+        "types": "./dist/markdown.d.cts",
+        "default": "./dist/markdown.cjs"
+      }
+    },
+    "./json": {
+      "import": {
+        "types": "./dist/json.d.ts",
+        "default": "./dist/json.mjs"
+      },
+      "require": {
+        "types": "./dist/json.d.cts",
+        "default": "./dist/json.cjs"
+      }
+    },
+    "./xml": {
+      "import": {
+        "types": "./dist/xml.d.ts",
+        "default": "./dist/xml.mjs"
+      },
+      "require": {
+        "types": "./dist/xml.d.cts",
+        "default": "./dist/xml.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "FIDELITY.md",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@input/pen-content-ops": "workspace:^",
+    "@input/pen-core": "workspace:^",
+    "@input/pen-markdown-serialization": "workspace:^",
+    "@input/pen-types": "workspace:^",
+    "domhandler": "^5.0.0",
+    "htmlparser2": "^9.0.0",
+    "isomorphic-dompurify": "~2.36.0"
+  },
+  "devDependencies": {
+    "@input/pen-schema-default": "workspace:^",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

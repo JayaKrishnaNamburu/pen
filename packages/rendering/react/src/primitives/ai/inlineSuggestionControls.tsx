@@ -1,8 +1,9 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { resolveEditorMessage } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import { useInlineSuggestionControls } from "../../hooks/useInlineSuggestionControls";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
 import { useAIContext } from "./root";
 
 export interface AIInlineSuggestionControlsProps extends AsChildProps {
@@ -14,6 +15,7 @@ export interface AIInlineSuggestionFloatingSurfaceProps extends AsChildProps {
 }
 
 interface InlineSuggestionControlsContextValue {
+	editor: Editor;
 	controls: ReturnType<typeof useInlineSuggestionControls>;
 }
 
@@ -23,11 +25,6 @@ const InlineSuggestionControlsContext =
 function useInlineSuggestionControlsContext(): InlineSuggestionControlsContextValue {
 	const ctx = React.useContext(InlineSuggestionControlsContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: inline suggestion primitives must be used within <Pen.AI.InlineSuggestionControls>.",
-			);
-		}
 		throw new Error("Missing Pen.AI.InlineSuggestionControls context");
 	}
 	return ctx;
@@ -40,28 +37,27 @@ export function AIInlineSuggestionControls(
 	const controls = useInlineSuggestionControls(editor);
 	const { activePosition } = controls;
 
-	const defaultChildren = controls.hasVisibleControls && activePosition
-		? [
-			<AIInlineSuggestionFloatingSurface
-				key={activePosition.id}
-			>
-				<div data-pen-ai-inline-suggestion-nav="">
-					<AIInlineSuggestionPreviousButton />
-					<AIInlineSuggestionCount />
-					<AIInlineSuggestionNextButton />
-				</div>
-				{controls.shouldUseRightEdgeRail ? null : (
-					<>
-						<AIInlineSuggestionRejectButton />
-						<AIInlineSuggestionAcceptButton />
-					</>
-				)}
-			</AIInlineSuggestionFloatingSurface>,
-		]
-		: [];
+	const defaultChildren =
+		controls.hasVisibleControls && activePosition
+			? [
+					<AIInlineSuggestionFloatingSurface key={activePosition.id}>
+						<div data-pen-ai-inline-suggestion-nav="">
+							<AIInlineSuggestionPreviousButton />
+							<AIInlineSuggestionCount />
+							<AIInlineSuggestionNextButton />
+						</div>
+						{controls.shouldUseRightEdgeRail ? null : (
+							<>
+								<AIInlineSuggestionRejectButton />
+								<AIInlineSuggestionAcceptButton />
+							</>
+						)}
+					</AIInlineSuggestionFloatingSurface>,
+				]
+			: [];
 
 	return (
-		<InlineSuggestionControlsContext.Provider value={{ controls }}>
+		<InlineSuggestionControlsContext.Provider value={{ editor, controls }}>
 			{renderAsChild(
 				{
 					...props,
@@ -72,7 +68,9 @@ export function AIInlineSuggestionControls(
 					"data-pen-ai-inline-suggestion-controls": "",
 					"data-visible-count": controls.visibleCount,
 					"data-placement": activePosition?.placement,
-					"data-has-active-suggestion": controls.hasVisibleControls ? "" : undefined,
+					"data-has-active-suggestion": controls.hasVisibleControls
+						? ""
+						: undefined,
 				},
 			)}
 		</InlineSuggestionControlsContext.Provider>
@@ -88,23 +86,19 @@ export function AIInlineSuggestionFloatingSurface(
 		return null;
 	}
 
-	const surface = renderAsChild(
-		props,
-		"div",
-		{
-			"data-pen-ai-inline-suggestion-control": "",
-			"data-suggestion-id": activePosition.id,
-			"data-suggestion-action": activePosition.action,
-			"data-placement": activePosition.placement,
-			"data-pen-ignore-pointer-gesture": "",
-			style: {
-				position: "absolute",
-				top: `${Math.round(activePosition.top)}px`,
-				left: `${Math.round(activePosition.left)}px`,
-				zIndex: 55,
-			},
+	const surface = renderAsChild(props, "div", {
+		"data-pen-ai-inline-suggestion-control": "",
+		"data-suggestion-id": activePosition.id,
+		"data-suggestion-action": activePosition.action,
+		"data-placement": activePosition.placement,
+		"data-pen-ignore-pointer-gesture": "",
+		style: {
+			position: "absolute",
+			top: `${Math.round(activePosition.top)}px`,
+			left: `${Math.round(activePosition.left)}px`,
+			zIndex: 55,
 		},
-	);
+	});
 	return createPortal(surface, activePosition.host);
 }
 
@@ -113,13 +107,16 @@ export interface AIInlineSuggestionCountProps extends AsChildProps {
 }
 
 export function AIInlineSuggestionCount(props: AIInlineSuggestionCountProps) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	return renderAsChild(
 		{
 			...props,
 			children:
 				props.children ??
-				`${controls.activeSuggestionNumber} of ${controls.visibleCount}`,
+				resolveEditorMessage(editor, "pen.ai.suggestion.count", {
+					current: controls.activeSuggestionNumber,
+					count: controls.visibleCount,
+				}),
 		},
 		"span",
 		{
@@ -135,7 +132,7 @@ export interface AIInlineSuggestionPreviousButtonProps extends AsChildProps {
 export function AIInlineSuggestionPreviousButton(
 	props: AIInlineSuggestionPreviousButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
@@ -144,16 +141,15 @@ export function AIInlineSuggestionPreviousButton(
 		onClick: controls.goToPrevious,
 		children: props.children ?? "\u2039",
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-prev": "",
-			disabled: !controls.canGoToPrevious,
-			"aria-label": "Previous suggestion",
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-prev": "",
+		disabled: !controls.canGoToPrevious,
+		"aria-label": resolveEditorMessage(
+			editor,
+			"pen.ai.suggestion.previous",
+		),
+	});
 }
 
 export interface AIInlineSuggestionNextButtonProps extends AsChildProps {
@@ -163,7 +159,7 @@ export interface AIInlineSuggestionNextButtonProps extends AsChildProps {
 export function AIInlineSuggestionNextButton(
 	props: AIInlineSuggestionNextButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
@@ -172,16 +168,12 @@ export function AIInlineSuggestionNextButton(
 		onClick: controls.goToNext,
 		children: props.children ?? "\u203a",
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-next": "",
-			disabled: !controls.canGoToNext,
-			"aria-label": "Next suggestion",
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-next": "",
+		disabled: !controls.canGoToNext,
+		"aria-label": resolveEditorMessage(editor, "pen.ai.suggestion.next"),
+	});
 }
 
 export interface AIInlineSuggestionAcceptButtonProps extends AsChildProps {
@@ -191,24 +183,22 @@ export interface AIInlineSuggestionAcceptButtonProps extends AsChildProps {
 export function AIInlineSuggestionAcceptButton(
 	props: AIInlineSuggestionAcceptButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
 		...props,
 		onMouseDown: preventEditorBlur,
 		onClick: controls.acceptActiveSuggestionGroup,
-		children: props.children ?? "Keep",
+		children:
+			props.children ??
+			resolveEditorMessage(editor, "pen.ai.suggestion.keep"),
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-accept": "",
-			disabled: !controls.hasVisibleControls,
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-accept": "",
+		disabled: !controls.hasVisibleControls,
+	});
 }
 
 export interface AIInlineSuggestionRejectButtonProps extends AsChildProps {
@@ -218,24 +208,22 @@ export interface AIInlineSuggestionRejectButtonProps extends AsChildProps {
 export function AIInlineSuggestionRejectButton(
 	props: AIInlineSuggestionRejectButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
 		...props,
 		onMouseDown: preventEditorBlur,
 		onClick: controls.rejectActiveSuggestionGroup,
-		children: props.children ?? "Undo",
+		children:
+			props.children ??
+			resolveEditorMessage(editor, "pen.ai.suggestion.undo"),
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-reject": "",
-			disabled: !controls.hasVisibleControls,
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-reject": "",
+		disabled: !controls.hasVisibleControls,
+	});
 }
 
 function preventEditorBlur(event: React.MouseEvent<HTMLElement>) {

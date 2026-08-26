@@ -1,5 +1,6 @@
+import { affectedBlockIdsFromSummary } from "@input/pen-core";
 import { useRef, useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 
 interface BlockModelSnapshot {
 	exists: boolean;
@@ -21,8 +22,10 @@ export function useBlockModel(
 
 	return useSyncExternalStore(
 		(callback) =>
-			editor.onDocumentCommit((event) => {
-				if (event.affectedBlocks.includes(blockId)) {
+			editor.on("commit", (event) => {
+				if (
+					affectedBlockIdsFromSummary(event.summary).includes(blockId)
+				) {
 					callback();
 				}
 			}),
@@ -53,8 +56,8 @@ function getBlockModelSnapshot(
 		type: block.type,
 		props: block.props,
 		revision: editor.getBlockRevision(blockId),
-		tableRowCount: block.tableRowCount(),
-		tableColumnCount: block.tableColumnCount(),
+		tableRowCount: block.as("table")?.tableRowCount() ?? 0,
+		tableColumnCount: block.as("table")?.tableColumnCount() ?? 0,
 	};
 }
 

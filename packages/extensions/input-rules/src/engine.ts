@@ -1,5 +1,10 @@
-import type { Editor, DocumentOp, InputRule, InputRuleContext } from "@pen/types";
-import { supportsInlineInputRules } from "@pen/types";
+import type {
+	Editor,
+	DocumentOp,
+	InputRule,
+	InputRuleContext,
+} from "@input/pen-types";
+import { isCollapsed, supportsInlineInputRules } from "@input/pen-core";
 import type { InlineInputRule } from "./types";
 
 interface InputRuleMatchOptions {
@@ -32,10 +37,6 @@ export class InputRuleEngine {
 		}
 	}
 
-	unregisterInline(id: string): void {
-		this._inlineRules = this._inlineRules.filter((r) => r.id !== id);
-	}
-
 	tryMatch(
 		editor: Editor,
 		blockId: string,
@@ -63,7 +64,8 @@ export class InputRuleEngine {
 		};
 
 		for (const rule of this._rules) {
-			if (rule.blockTypes && !rule.blockTypes.includes(blockType)) continue;
+			if (rule.blockTypes && !rule.blockTypes.includes(blockType))
+				continue;
 
 			const match = textBefore.match(rule.match);
 			if (!match) continue;
@@ -120,16 +122,18 @@ export class InputRuleEngine {
 
 			return [
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId,
-					offset: matchStart,
-					length: fullMatchLength,
+					from: matchStart,
+					to: matchStart + fullMatchLength,
+					insert: "",
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: matchStart,
-					text: innerText,
+					from: matchStart,
+					to: matchStart,
+					insert: innerText,
 					marks: { [rule.markType]: true },
 				},
 			];
@@ -148,7 +152,7 @@ export class InputRuleEngine {
 		}
 
 		const sel = editor.selection;
-		if (!sel || sel.type !== "text" || !sel.isCollapsed) return null;
+		if (!sel || sel.type !== "text" || !isCollapsed(sel)) return null;
 		if (sel.anchor.blockId !== blockId) return null;
 		return sel.anchor.offset;
 	}

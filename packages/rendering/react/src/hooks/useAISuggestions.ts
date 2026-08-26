@@ -1,10 +1,11 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
-import {
-	getAISuggestionsController,
-	type AISuggestion,
-	type AISuggestionsState,
-} from "@pen/ai-suggestions";
+import { aiSuggestionsControllerFacet } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import type {
+	AISuggestion,
+	AISuggestionsController,
+	AISuggestionsState,
+} from "@input/pen-ai/suggestions";
 
 const EMPTY_STATE: AISuggestionsState = {
 	enabled: true,
@@ -30,7 +31,10 @@ const EMPTY_STATE: AISuggestionsState = {
 };
 
 export function useAISuggestions(editor: Editor) {
-	const controller = getAISuggestionsController(editor);
+	const controller =
+		(editor.facet(
+			aiSuggestionsControllerFacet,
+		) as AISuggestionsController | null) ?? null;
 	const snapshotRef = useRef<AISuggestionsState>(EMPTY_STATE);
 
 	const subscribe = useCallback(
@@ -59,8 +63,9 @@ export function useAISuggestions(editor: Editor) {
 			(suggestion) => suggestion.id === state.activeSuggestionId,
 		) ?? null;
 	const activeGroup =
-		state.groups.find((group) => group.id === state.activeSuggestionGroupId) ??
-		null;
+		state.groups.find(
+			(group) => group.id === state.activeSuggestionGroupId,
+		) ?? null;
 
 	return {
 		state,
@@ -72,10 +77,12 @@ export function useAISuggestions(editor: Editor) {
 		setActiveSuggestionGroup: (id: string | null) => {
 			controller?.setActiveSuggestionGroup(id);
 		},
-		applySuggestion: (id: string) => controller?.applySuggestion(id) ?? false,
+		applySuggestion: (id: string) =>
+			controller?.applySuggestion(id) ?? false,
 		applySuggestionGroup: (id: string) =>
 			controller?.applySuggestionGroup(id) ?? 0,
-		dismissSuggestion: (id: string) => controller?.dismissSuggestion(id) ?? false,
+		dismissSuggestion: (id: string) =>
+			controller?.dismissSuggestion(id) ?? false,
 		dismissSuggestionGroup: (id: string) =>
 			controller?.dismissSuggestionGroup(id) ?? 0,
 	};
@@ -120,7 +127,8 @@ function isSameSuggestions(
 			leftSuggestion?.from !== rightSuggestion?.from ||
 			leftSuggestion?.to !== rightSuggestion?.to ||
 			leftSuggestion?.originalText !== rightSuggestion?.originalText ||
-			leftSuggestion?.replacementText !== rightSuggestion?.replacementText ||
+			leftSuggestion?.replacementText !==
+				rightSuggestion?.replacementText ||
 			leftSuggestion?.title !== rightSuggestion?.title ||
 			leftSuggestion?.kind !== rightSuggestion?.kind ||
 			leftSuggestion?.reason !== rightSuggestion?.reason ||

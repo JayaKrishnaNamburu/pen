@@ -1,4 +1,5 @@
-import type { BlockDecoration, Decoration, Editor, InlineDecoration } from "@pen/types";
+import type { BlockDecoration, Decoration, Editor, InlineDecoration } from "@input/pen-types";
+import { createRemotePresenceAttributes } from "../presence/presenceAttributes";
 import type { RemoteSelectionState } from "../types";
 
 export function buildRemoteSelectionDecorations(
@@ -29,14 +30,12 @@ function buildBlockSelectionDecorations(
 		type: "block",
 		blockId,
 		position: "wrap",
-		attributes: {
-			class: "pen-multiplayer-block-selection",
-			style: `--pen-multiplayer-color: ${selection.user.color}`,
-			"data-pen-multiplayer-block-selection": "",
-			"data-multiplayer-client-id": String(selection.clientId),
-			"data-user-id": selection.user.id,
-			"data-user-name": selection.user.name,
-		},
+		attributes: createRemotePresenceAttributes({
+			className: "pen-multiplayer-block-selection",
+			markerName: "data-pen-multiplayer-block-selection",
+			clientId: selection.clientId,
+			user: selection.user,
+		}),
 	}));
 }
 
@@ -102,14 +101,12 @@ function createSelectionDecoration(
 		from,
 		to,
 		key: `multiplayer-selection:${selection.clientId}:${blockId}:${from}:${to}:${selection.clock}`,
-		attributes: {
-			class: "pen-multiplayer-selection",
-			style: `--pen-multiplayer-color: ${selection.user.color}`,
-			"data-pen-multiplayer-selection": "",
-			"data-multiplayer-client-id": String(selection.clientId),
-			"data-user-id": selection.user.id,
-			"data-user-name": selection.user.name,
-		},
+		attributes: createRemotePresenceAttributes({
+			className: "pen-multiplayer-selection",
+			markerName: "data-pen-multiplayer-selection",
+			clientId: selection.clientId,
+			user: selection.user,
+		}),
 	};
 }
 

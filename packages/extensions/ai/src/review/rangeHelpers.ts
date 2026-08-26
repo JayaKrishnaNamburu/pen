@@ -16,7 +16,7 @@ export function subtractRanges(
 	return ranges;
 }
 
-export function subtractRange(
+function subtractRange(
 	range: InlineRange,
 	excludedRange: InlineRange,
 ): InlineRange[] {

@@ -17,44 +17,42 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `packages/shared`: lower-level shared support libraries
 - `packages/tooling`: testing, benchmarks, and development utilities
 - `packages/docs`: repository docs app for the current public Pen surface
-- `playground`: integration app and playground for shipped editor flows
+- `playground`: reference app for embedding Pen — editor, AI agent, document inspector, optional collaboration; hosts `pnpm test:e2e`
 
 ## Generated Package Specs
 
-- `@pen/core` -> `packages/core.md`
-- `@pen/crdt-yjs` -> `packages/crdt/yjs.md`
-- `@pen/docs` -> `packages/docs.md`
-- `@pen/ai-autocomplete` -> `packages/extensions/ai-autocomplete.md`
-- `@pen/ai-skills` -> `packages/extensions/ai-skills.md`
-- `@pen/ai-suggestions` -> `packages/extensions/ai-suggestions.md`
-- `@pen/ai-tools` -> `packages/extensions/ai-tools.md`
-- `@pen/ai` -> `packages/extensions/ai.md`
-- `@pen/database` -> `packages/extensions/database.md`
-- `@pen/delta-stream` -> `packages/extensions/delta-stream.md`
-- `@pen/document-ops` -> `packages/extensions/document-ops.md`
-- `@pen/export-html` -> `packages/extensions/export-html.md`
-- `@pen/export-json` -> `packages/extensions/export-json.md`
-- `@pen/export-markdown` -> `packages/extensions/export-markdown.md`
-- `@pen/export-xml` -> `packages/extensions/export-xml.md`
-- `@pen/history` -> `packages/extensions/history.md`
-- `@pen/import-html` -> `packages/extensions/import-html.md`
-- `@pen/import-markdown` -> `packages/extensions/import-markdown.md`
-- `@pen/input-rules` -> `packages/extensions/input-rules.md`
-- `@pen/multiplayer` -> `packages/extensions/multiplayer.md`
-- `@pen/search` -> `packages/extensions/search.md`
-- `@pen/shortcuts` -> `packages/extensions/shortcuts.md`
-- `@pen/undo` -> `packages/extensions/undo.md`
-- `@pen/preset-default` -> `packages/presets/default.md`
-- `@pen/dom` -> `packages/rendering/dom.md`
-- `@pen/react` -> `packages/rendering/react.md`
-- `@pen/vue` -> `packages/rendering/vue.md`
-- `@pen/schema-default` -> `packages/schema/default.md`
-- `@pen/content-ops` -> `packages/shared/content-ops.md`
-- `@pen/markdown-serialization` -> `packages/shared/markdown-serialization.md`
-- `@pen/assets-memory` -> `packages/tooling/assets-memory.md`
-- `@pen/bench` -> `packages/tooling/bench.md`
-- `@pen/test` -> `packages/tooling/test.md`
-- `@pen/transport-direct` -> `packages/transports/direct.md`
-- `@pen/transport-sse` -> `packages/transports/sse.md`
-- `@pen/types` -> `packages/types.md`
-- `@pen/playground` -> `packages/playground.md`
+- `@input/pen-core` -> `packages/core.md`
+- `@input/pen-crdt-yjs` -> `packages/crdt/yjs.md`
+- `@input/pen-docs` -> `packages/docs.md`
+- `@input/pen-ai` -> `packages/extensions/ai.md`
+- `@input/pen-document-ops` -> `packages/extensions/document-ops.md`
+- `@input/pen-history` -> `packages/extensions/history.md`
+- `@input/pen-input-rules` -> `packages/extensions/input-rules.md`
+- `@input/pen-interop` -> `packages/extensions/interop.md`
+- `@input/pen-multiplayer` -> `packages/extensions/multiplayer.md`
+- `@input/pen-search` -> `packages/extensions/search.md`
+- `@input/pen-shortcuts` -> `packages/extensions/shortcuts.md`
+- `@input/pen-undo` -> `packages/extensions/undo.md`
+- `@input/pen-preset-default` -> `packages/presets/default.md`
+- `@input/pen-dom` -> `packages/rendering/dom.md`
+- `@input/pen-react` -> `packages/rendering/react.md`
+- `@input/pen-vue` -> `packages/rendering/vue.md`
+- `@input/pen-schema-default` -> `packages/schema/default.md`
+- `@input/pen-content-ops` -> `packages/shared/content-ops.md`
+- `@input/pen-markdown-serialization` -> `packages/shared/markdown-serialization.md`
+- `@input/pen-assets-memory` -> `packages/tooling/assets-memory.md`
+- `@input/pen-bench` -> `packages/tooling/bench.md`
+- `@input/pen-test` -> `packages/tooling/test.md`
+- `@input/pen-transport-direct` -> `packages/transports/direct.md`
+- `@input/pen-transport-sse` -> `packages/transports/sse.md`
+- `@input/pen-types` -> `packages/types.md`
+- `@input/pen-playground` -> `packages/playground.md`
+
+AI feature subpaths (`@input/pen-ai/suggestions`, `/autocomplete`, `/skills`, `/tools`, `/stream`) are documented in `packages/extensions/ai.md`. Interop format subpaths (`@input/pen-interop/html`, `/markdown`, `/json`, `/xml`) are documented in `packages/extensions/interop.md`.
+
+## Packages Without A Current-State Spec
+
+`packages/` currently has 27 `package.json` files (24 published, 3 private: `@input/pen-docs`, `@input/pen-conformance`, `@input/pen-eslint-plugin`). 25 of those have a matching current-state spec. These two workspace packages exist and have no `spec/packages/` file. That is intentional:
+
+- `@input/pen-conformance` (`packages/tooling/conformance`) — private Playwright / browser-real harness. Scenario names and host pins track the live suite; a current-state spec would rot faster than it would help.
+- `@input/pen-eslint-plugin` (`packages/tooling/eslint-plugin`) — private lint rules that enforce `spec/rules/` invariants mechanically. The rules _are_ the documentation.

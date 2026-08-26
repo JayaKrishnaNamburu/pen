@@ -1,4 +1,4 @@
-# @pen/assets-memory
+# @input/pen-assets-memory
 
 ## Purpose
 
@@ -11,11 +11,15 @@ Support development, testing, benchmarking, or local integration workflows aroun
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- `memoryAssets()` is the sole entrypoint, with `MemoryAssetsOptions`: `maxSize`, `uploadUrl`, and the `rejectUpload` / `rejectAfterProgress` failure doubles
+- Upload enforces `maxSize` and reports `onProgress(0)` then `onProgress(1)` with no intermediate ticks, so hosts cannot accidentally depend on a progress curve this store does not have
+- `delete()` is implemented; nothing in Pen calls it
+- Falls back to a data URL when `URL.createObjectURL` is absent, which is what makes the store usable under Node
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Tooling packages serve the workspace and advanced integrators more than standard runtime embedding.
 
@@ -31,7 +35,7 @@ Tooling package packages in Pen should stay package-first and explicit about own
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

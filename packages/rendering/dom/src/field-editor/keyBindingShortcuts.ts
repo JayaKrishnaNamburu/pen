@@ -1,8 +1,9 @@
-import type { Editor, KeyBindingContext } from "@pen/types";
 import {
-	COLLECT_KEY_BINDINGS_SLOT_KEY,
+	collectEditorKeyBindings,
+	isCollapsed,
 	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-core";
+import type { Editor, KeyBindingContext } from "@input/pen-types";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 
 export function tryHandleHistoryOverrideBinding(
@@ -27,7 +28,7 @@ export function tryHandleHistoryOverrideBinding(
 	return false;
 }
 
-export function getDocumentTextRange(editor: Editor): {
+function getDocumentTextRange(editor: Editor): {
 	start: { blockId: string; offset: number };
 	end: { blockId: string; offset: number };
 	focusBlockId: string;
@@ -62,15 +63,7 @@ export function collectKeyBindings(editor: Editor): ReadonlyArray<{
 	context?: KeyBindingContext;
 	handler: (editor: Editor, event: KeyboardEvent) => boolean;
 }> {
-	const collect =
-		editor.internals.getSlot<
-			(registry: Editor["schema"]) => ReadonlyArray<{
-				key: string;
-				context?: KeyBindingContext;
-				handler: (editor: Editor, event: KeyboardEvent) => boolean;
-			}>
-		>(COLLECT_KEY_BINDINGS_SLOT_KEY) ?? null;
-	return collect?.(editor.schema) ?? [];
+	return collectEditorKeyBindings(editor);
 }
 
 export function matchesBindingContext(
@@ -92,7 +85,7 @@ export function matchesBindingContext(
 	if (context.hasSelection !== undefined) {
 		const hasSelection =
 			selection?.type === "text"
-				? !selection.isCollapsed
+				? !isCollapsed(selection)
 				: selection !== null;
 		if (hasSelection !== context.hasSelection) {
 			return false;
@@ -100,8 +93,8 @@ export function matchesBindingContext(
 	}
 
 	if (context.collapsed !== undefined) {
-		const isCollapsed = selection?.type === "text" && selection.isCollapsed;
-		if (isCollapsed !== context.collapsed) {
+		const collapsed = selection?.type === "text" && isCollapsed(selection);
+		if (collapsed !== context.collapsed) {
 			return false;
 		}
 	}

@@ -1,0 +1,112 @@
+import { describe, expect, it } from "vitest";
+import { collectToolExecutionOutput } from "@input/pen-core";
+import type { ToolDefinition } from "@input/pen-types";
+import {
+	AIToolContextImpl,
+	AIToolRuntimeImpl,
+	executeAITool,
+	getAIToolRuntime,
+	listAITools,
+} from "../index";
+
+describe("@input/pen-ai/tools", () => {
+	it("reads the canonical tool runtime from the editor facet", () => {
+		const runtime = new AIToolRuntimeImpl();
+		const editor = {
+			facet: () => runtime,
+		} as never;
+
+		expect(getAIToolRuntime(editor)).toBe(runtime);
+	});
+
+	it("lists tool descriptors", () => {
+		const runtime = new AIToolRuntimeImpl();
+		runtime.registerTool({
+			name: "echo",
+			description: "Echo input",
+			inputSchema: { type: "object", properties: {} },
+			handler: async (input) => input,
+		});
+
+		expect(listAITools(runtime)).toEqual([
+			{
+				name: "echo",
+				description: "Echo input",
+				inputSchema: { type: "object", properties: {} },
+				mutating: true,
+				destructive: false,
+			},
+		]);
+	});
+
+	it("buffers async iterable tool output", async () => {
+		const output = await collectToolExecutionOutput(
+			(async function* () {
+				yield { part: 1 };
+				yield { part: 2 };
+			})(),
+		);
+
+		expect(output).toEqual([{ part: 1 }, { part: 2 }]);
+	});
+
+	it("executes tools with a shared context helper", async () => {
+		const runtime = new AIToolRuntimeImpl();
+		const editor = {
+			apply() {
+				/* noop */
+			},
+			facet: () => null,
+		} as never;
+
+		const tool: ToolDefinition = {
+			name: "insert_summary",
+			description: "Insert a paragraph",
+			inputSchema: {
+				type: "object",
+				properties: {
+					content: { type: "string" },
+				},
+				required: ["content"],
+			},
+			mutating: false,
+			handler: async (input, context) => {
+				context.beginStreaming("zone-1", "block-1");
+				context.appendDelta((input as { content: string }).content);
+				context.endStreaming("complete");
+				return { ok: true };
+			},
+		};
+		runtime.registerTool(tool);
+
+		const emitted: unknown[] = [];
+		const context = new AIToolContextImpl(editor, "doc-1", (part) => {
+			emitted.push(part);
+		});
+		const result = await executeAITool(
+			runtime,
+			"insert_summary",
+			{ content: "Hello" },
+			context,
+		);
+
+		expect(result).toEqual({ ok: true });
+		expect(emitted).toEqual([
+			{
+				type: "gen-start",
+				zoneId: "zone-1",
+				blockId: "block-1",
+			},
+			{
+				type: "gen-delta",
+				zoneId: "zone-1",
+				delta: "Hello",
+			},
+			{
+				type: "gen-end",
+				zoneId: "zone-1",
+				status: "complete",
+			},
+		]);
+	});
+});

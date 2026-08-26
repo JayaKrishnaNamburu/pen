@@ -1,6 +1,10 @@
 export function countSharedPrefixLength(left: string, right: string): number {
 	let index = 0;
-	while (index < left.length && index < right.length && left[index] === right[index]) {
+	while (
+		index < left.length &&
+		index < right.length &&
+		left[index] === right[index]
+	) {
 		index += 1;
 	}
 	return index;

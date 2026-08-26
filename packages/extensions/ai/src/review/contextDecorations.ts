@@ -1,11 +1,12 @@
-import type { Editor, InlineDecoration } from "@pen/types";
+import { getSelectionBlockRange, isMultiBlock } from "@input/pen-core";
+import type { Editor, InlineDecoration } from "@input/pen-types";
+import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
 import type { AIExtensionConfig, AISession } from "../types";
 import {
 	AI_REVIEW_ROLE_ATTRIBUTE,
 	AI_REVIEW_STATE_ATTRIBUTE,
 	type AIReviewPresentationState,
 } from "./reviewPresentationState";
-import { AI_REVIEW_CONTEXT_STYLE } from "./reviewPresentationStyles";
 import { subtractRanges } from "./rangeHelpers";
 import type { SuggestionInlineRange } from "./suggestionDecorations";
 
@@ -52,7 +53,7 @@ export function buildContextDecorations({
 		return [];
 	}
 
-	const selectionSnapshot = resolveContextSelection(activeSession);
+	const selectionSnapshot = resolveContextSelection(editor, activeSession);
 	if (!selectionSnapshot) {
 		return [];
 	}
@@ -108,12 +109,14 @@ export function buildContextDecorations({
 				to: range.to,
 				key: `ai-review-context:${blockId}:${range.from}:${range.to}`,
 				attributes: {
-					class: "pen-ai-review-context pen-ai-affected-range",
+					class: [
+						REVIEW_SURFACE_CLASSES.context,
+						REVIEW_SURFACE_CLASSES.affectedRange,
+					].join(" "),
 					"data-ai-affected-range": "",
 					"data-ai-affected-range-session": "",
 					[AI_REVIEW_ROLE_ATTRIBUTE]: "context",
 					[AI_REVIEW_STATE_ATTRIBUTE]: reviewState,
-					style: AI_REVIEW_CONTEXT_STYLE,
 				},
 			});
 		}
@@ -122,7 +125,7 @@ export function buildContextDecorations({
 	return decorations;
 }
 
-function resolveContextSelection(session: AISession) {
+function resolveContextSelection(editor: Editor, session: AISession) {
 	const activeTurn =
 		session.activeTurnId != null
 			? (session.turns.find((turn) => turn.id === session.activeTurnId) ??
@@ -136,8 +139,13 @@ function resolveContextSelection(session: AISession) {
 			? {
 					anchor: { ...session.target.selection.anchor },
 					focus: { ...session.target.selection.focus },
-					blockRange: [...session.target.selection.blockRange],
-					isMultiBlock: session.target.selection.isMultiBlock,
+					blockRange: [
+						...getSelectionBlockRange(
+							editor.internals.doc,
+							session.target.selection,
+						),
+					],
+					isMultiBlock: isMultiBlock(session.target.selection),
 				}
 			: null)
 	);

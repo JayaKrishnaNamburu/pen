@@ -1,0 +1,53 @@
+{
+  "id": "word-web",
+  "source": "Microsoft Word (web)",
+  "provenance": "synthetic-until-capture",
+  "approximates": "Word for the web clipboard fragment (StartFragment, MsoNormal, Office xmlns). Semantic lists are what Word Online often emits; desktop Word usually does not.",
+  "markers": ["xmlns:w", "StartFragment", "MsoNormal", "MsoTableGrid"],
+  "imageCount": 0,
+  "outcomes": {
+    "headings": "h1",
+    "lists": "nested bullets (indent 0/1)",
+    "tables": "2×2, no header row",
+    "code": "none",
+    "links": "kept",
+    "images": "none",
+    "marks": "bold, italic, strike, link",
+    "colors": "none"
+  },
+  "intentionalLosses": [
+    "Office xmlns / Mso* class names are ignored; conversion uses tags only",
+    "No Word numbering metadata is preserved beyond the emitted <ul>/<li> tree"
+  ],
+  "blocks": [
+    { "type": "heading", "level": 1, "text": "Quarterly notes" },
+    {
+      "type": "paragraph",
+      "text": "Hello world and more.",
+      "marks": [
+        { "type": "bold", "text": "world" },
+        { "type": "italic", "text": "more" }
+      ]
+    },
+    { "type": "bulletListItem", "indent": 0, "text": "First item" },
+    { "type": "bulletListItem", "indent": 1, "text": "Nested item" },
+    { "type": "bulletListItem", "indent": 0, "text": "Second item" },
+    {
+      "type": "table",
+      "rows": 2,
+      "cols": 2,
+      "hasHeaderRow": false,
+      "cells": [["A", "B"], ["1", "2"]]
+    },
+    {
+      "type": "paragraph",
+      "text": "Word link",
+      "marks": [{ "type": "link", "text": "Word link" }]
+    },
+    {
+      "type": "paragraph",
+      "text": "old and new",
+      "marks": [{ "type": "strikethrough", "text": "old" }]
+    }
+  ]
+}

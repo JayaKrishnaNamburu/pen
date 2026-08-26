@@ -1,21 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { InputRuleEngine } from "../engine";
 import { defaultBlockRules } from "../defaultRules";
-import type { Editor, InputRule } from "@pen/types";
+import type { Editor, InputRule } from "@input/pen-types";
 
 type InputRuleTestEditor = {
 	getBlock(): {
 		type: string;
 		textContent(): string;
 	};
-	selection:
-		| {
-				type: "text";
-				anchor: { blockId: string; offset: number };
-				focus: { blockId: string; offset: number };
-				isCollapsed: boolean;
-		  }
-		| null;
+	selection: {
+		type: "text";
+		anchor: { blockId: string; offset: number };
+		focus: { blockId: string; offset: number };
+	} | null;
 	schema: {
 		resolve(): {
 			content: "inline";
@@ -40,7 +37,6 @@ function mockEditor(opts: {
 			type: "text" as const,
 			anchor: { blockId: "b1", offset },
 			focus: { blockId: "b1", offset },
-			isCollapsed: true,
 		},
 		schema: {
 			resolve: () => ({
@@ -69,7 +65,6 @@ function mockEditorWithSelection(opts: {
 			type: "text" as const,
 			anchor: { blockId: "b1", offset: opts.anchorOffset },
 			focus: { blockId: "b1", offset: opts.focusOffset },
-			isCollapsed: opts.anchorOffset === opts.focusOffset,
 		},
 		schema: {
 			resolve: () => ({
@@ -116,10 +111,9 @@ describe("InputRuleEngine", () => {
 				match: /^# $/,
 				handler: (_m, ctx) => [
 					{
-						type: "convert-block",
+						type: "set-props",
 						blockId: ctx.blockId,
-						newType: "heading",
-						newProps: { level: 1 },
+						props: { type: "heading", ...{ level: 1 } },
 					},
 				],
 			});
@@ -157,16 +151,16 @@ describe("InputRuleEngine", () => {
 			expect(result).not.toBeNull();
 			expect(result).toHaveLength(2);
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				length: 2,
+				from: 0,
+				to: 0 + 2,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
+				type: "set-props",
 				blockId: "b1",
-				newType: "heading",
-				newProps: { level: 1 },
+				props: { type: "heading", ...{ level: 1 } },
 			});
 		});
 
@@ -180,9 +174,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "heading",
-				newProps: { level: 3 },
+				type: "set-props",
+				props: { type: "heading", level: 3 },
 			});
 		});
 
@@ -196,8 +189,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "bulletListItem",
+				type: "set-props",
+				props: { type: "bulletListItem" },
 			});
 		});
 
@@ -211,8 +204,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "bulletListItem",
+				type: "set-props",
+				props: { type: "bulletListItem" },
 			});
 		});
 
@@ -226,8 +219,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "numberedListItem",
+				type: "set-props",
+				props: { type: "numberedListItem" },
 			});
 		});
 
@@ -241,9 +234,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "numberedListItem",
-				newProps: { start: 5 },
+				type: "set-props",
+				props: { type: "numberedListItem", start: 5 },
 			});
 		});
 
@@ -257,9 +249,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "checkListItem",
-				newProps: { checked: false },
+				type: "set-props",
+				props: { type: "checkListItem", checked: false },
 			});
 		});
 
@@ -273,9 +264,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "checkListItem",
-				newProps: { checked: true },
+				type: "set-props",
+				props: { type: "checkListItem", checked: true },
 			});
 		});
 
@@ -289,8 +279,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "blockquote",
+				type: "set-props",
+				props: { type: "blockquote" },
 			});
 		});
 
@@ -304,8 +294,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "codeBlock",
+				type: "set-props",
+				props: { type: "codeBlock" },
 			});
 		});
 
@@ -319,8 +309,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "divider",
+				type: "set-props",
+				props: { type: "divider" },
 			});
 		});
 
@@ -334,8 +324,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "divider",
+				type: "set-props",
+				props: { type: "divider" },
 			});
 		});
 
@@ -349,9 +339,9 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "callout",
-				newProps: { type: "note" },
+				type: "set-props",
+				blockId: "b1",
+				props: { type: "callout", severity: "info" },
 			});
 		});
 
@@ -365,9 +355,9 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "callout",
-				newProps: { type: "warning" },
+				type: "set-props",
+				blockId: "b1",
+				props: { type: "callout", severity: "warning" },
 			});
 		});
 
@@ -409,8 +399,132 @@ describe("InputRuleEngine", () => {
 				...mockEditor({ blockType: "paragraph", textContent: "#" }),
 				selection: null,
 			};
-			const result = engine.tryMatch(editor as unknown as Editor, "b1", " ");
+			const result = engine.tryMatch(
+				editor as unknown as Editor,
+				"b1",
+				" ",
+			);
 			expect(result).toBeNull();
+		});
+	});
+
+	describe("self-trigger and overlapping rules", () => {
+		const conversions: Array<{ text: string; newType: string }> = [
+			{ text: "#", newType: "heading" },
+			{ text: "-", newType: "bulletListItem" },
+			{ text: "*", newType: "bulletListItem" },
+			{ text: "+", newType: "bulletListItem" },
+			{ text: "1.", newType: "numberedListItem" },
+			{ text: "[ ]", newType: "checkListItem" },
+			{ text: "[x]", newType: "checkListItem" },
+			{ text: ">", newType: "blockquote" },
+			{ text: "```", newType: "codeBlock" },
+			{ text: "---", newType: "divider" },
+			{ text: "***", newType: "divider" },
+			{ text: "___", newType: "divider" },
+			{ text: "> [!note]", newType: "callout" },
+		];
+
+		it("does not rematch after converting a paragraph into the rule's result type", () => {
+			const engine = engineWithDefaults();
+
+			for (const { text, newType } of conversions) {
+				const before = mockEditor({
+					blockType: "paragraph",
+					textContent: text,
+				});
+				const ops = engine.tryMatch(before, "b1", " ");
+				expect(ops, text).not.toBeNull();
+				expect(ops).toEqual(
+					expect.arrayContaining([
+						expect.objectContaining({
+							type: "set-props",
+							props: expect.objectContaining({ type: newType }),
+						}),
+					]),
+				);
+
+				const leftoverTrigger = mockEditor({
+					blockType: newType,
+					textContent: text,
+				});
+				expect(engine.tryMatch(leftoverTrigger, "b1", " ")).toBeNull();
+
+				const emptied = mockEditor({
+					blockType: newType,
+					textContent: "",
+				});
+				expect(engine.tryMatch(emptied, "b1", " ")).toBeNull();
+			}
+		});
+
+		it("matches at most one default block rule for each trigger", () => {
+			const triggers = [
+				"# ",
+				"## ",
+				"### ",
+				"- ",
+				"* ",
+				"+ ",
+				"1. ",
+				"[ ] ",
+				"[x] ",
+				"> ",
+				"``` ",
+				"--- ",
+				"*** ",
+				"___ ",
+				"> [!note] ",
+			];
+
+			for (const trigger of triggers) {
+				const matches = defaultBlockRules.filter((rule) =>
+					rule.match.test(trigger),
+				);
+				expect(matches, trigger).toHaveLength(1);
+			}
+		});
+
+		it("when two rules match the same input, the first registered wins", () => {
+			const engine = new InputRuleEngine();
+			engine.register({
+				id: "first",
+				match: /^-\s$/,
+				blockTypes: ["paragraph"],
+				handler: (_match, ctx) => [
+					{
+						type: "set-props",
+						blockId: ctx.blockId,
+						props: { type: "bulletListItem", ...{} },
+					},
+				],
+			});
+			engine.register({
+				id: "second",
+				match: /^-\s$/,
+				blockTypes: ["paragraph"],
+				handler: (_match, ctx) => [
+					{
+						type: "set-props",
+						blockId: ctx.blockId,
+						props: { type: "heading", ...{ level: 1 } },
+					},
+				],
+			});
+
+			const result = engine.tryMatch(
+				mockEditor({ blockType: "paragraph", textContent: "-" }),
+				"b1",
+				" ",
+			);
+
+			expect(result).toEqual([
+				{
+					type: "set-props",
+					blockId: "b1",
+					props: { type: "bulletListItem", ...{} },
+				},
+			]);
 		});
 	});
 
@@ -433,7 +547,6 @@ describe("InputRuleEngine", () => {
 					type: "text" as const,
 					anchor: { blockId: "b1", offset: 7 },
 					focus: { blockId: "b1", offset: 7 },
-					isCollapsed: true,
 				},
 				schema: {
 					resolve: () => ({
@@ -444,7 +557,9 @@ describe("InputRuleEngine", () => {
 				},
 			} satisfies InputRuleTestEditor;
 
-			expect(engine.tryMatchInline(editor as unknown as Editor, "b1", "*")).toBeNull();
+			expect(
+				engine.tryMatchInline(editor as unknown as Editor, "b1", "*"),
+			).toBeNull();
 		});
 	});
 });

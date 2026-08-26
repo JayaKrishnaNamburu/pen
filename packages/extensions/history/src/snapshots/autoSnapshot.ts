@@ -1,4 +1,4 @@
-import type { DiagnosticEvent, Editor, Unsubscribe } from "@pen/types";
+import type { DiagnosticEvent, Editor, Unsubscribe } from "@input/pen-types";
 import type { AutoSnapshotConfig } from "../types";
 import { SnapshotManager } from "./snapshotManager";
 
@@ -52,7 +52,7 @@ export class AutoSnapshotScheduler {
 
 	private bindEditor(editor: Editor): void {
 		this.cleanup.push(
-			editor.onDocumentCommit(() => {
+			editor.on("commit", () => {
 				this.opsSinceSnapshot += 1;
 				if (this.opsSinceSnapshot < this.config.opThreshold) {
 					return;
@@ -70,7 +70,10 @@ export class AutoSnapshotScheduler {
 					event?.code === "GENERATION_COMPLETE" &&
 					this.config.onAIGeneration
 				) {
-					void this.safeCreateSnapshot("Pre-AI generation", "ai-generation");
+					void this.safeCreateSnapshot(
+						"Pre-AI generation",
+						"ai-generation",
+					);
 				}
 			}),
 		);
@@ -81,14 +84,6 @@ export class AutoSnapshotScheduler {
 			unsubscribe();
 		}
 		this.cleanup.length = 0;
-	}
-
-	triggerAISnapshot(): Promise<void> {
-		if (!this.config.onAIGeneration) {
-			return Promise.resolve();
-		}
-
-		return this.safeCreateSnapshot("Pre-AI generation", "ai-generation");
 	}
 
 	destroy(): void {

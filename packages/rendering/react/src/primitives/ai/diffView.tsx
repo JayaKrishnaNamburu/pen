@@ -1,6 +1,7 @@
 import React from "react";
 import { useSuggestions } from "../../hooks/useSuggestions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { describeBlockSuggestion } from "./changeListUtils";
 import { useAIContext } from "./root";
 
 export interface AIDiffViewProps extends AsChildProps {
@@ -19,14 +20,23 @@ export function AIDiffView(props: AIDiffViewProps) {
 			suggestion.kind === "text"
 				? (block
 						?.textContent()
-						.slice(suggestion.offset, suggestion.offset + suggestion.length) ?? "")
-				: describeBlockSuggestion(suggestion.action, block?.type ?? null);
+						.slice(
+							suggestion.offset,
+							suggestion.offset + suggestion.length,
+						) ?? "")
+				: describeBlockSuggestion(
+						editor,
+						suggestion.action,
+						block?.type ?? null,
+					);
 		const beforeText =
-			suggestion.action === "delete" || suggestion.action === "delete-block"
+			suggestion.action === "delete" ||
+			suggestion.action === "delete-block"
 				? text
 				: "";
 		const afterText =
-			suggestion.action === "insert" || suggestion.action === "insert-block"
+			suggestion.action === "insert" ||
+			suggestion.action === "insert-block"
 				? text
 				: "";
 
@@ -64,23 +74,4 @@ export function AIDiffView(props: AIDiffViewProps) {
 			"data-mode": mode,
 		},
 	);
-}
-
-function describeBlockSuggestion(
-	action: string,
-	blockType: string | null,
-): string {
-	const typeLabel = blockType ?? "block";
-	switch (action) {
-		case "insert-block":
-			return `Insert ${typeLabel}`;
-		case "delete-block":
-			return `Delete ${typeLabel}`;
-		case "move-block":
-			return `Move ${typeLabel}`;
-		case "convert-block":
-			return `Convert ${typeLabel}`;
-		default:
-			return typeLabel;
-	}
 }

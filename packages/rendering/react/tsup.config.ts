@@ -10,17 +10,16 @@ export default defineConfig({
     "src/search.ts",
   ],
   format: ["esm", "cjs"],
-  dts: true,
+  dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
   external: [
     "react",
     "react-dom",
-    "@pen/core",
-    "@pen/types",
-    "@pen/schema-default",
-    "@pen/import-html",
-    "@pen/import-markdown",
+    "@input/pen-core",
+    "@input/pen-types",
+    "@input/pen-schema-default",
+    "@input/pen-interop",
   ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };

@@ -3,18 +3,19 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createDocumentSession, createEditor } from "@pen/core";
-import { getHistoryController, historyExtension } from "@pen/history";
+import { createDocumentSession, createEditor } from "@input/pen-core";
+import { getHistoryController, historyExtension } from "@input/pen-history";
 import {
 	getMultiplayerController,
 	multiplayerExtension,
-} from "@pen/multiplayer";
+} from "@input/pen-multiplayer";
 import {
 	HISTORY_CONTROLLER_SLOT,
 	MULTIPLAYER_CONTROLLER_SLOT,
 	type VersionMetadata,
 	type VersionEntry,
-} from "@pen/types";
+} from "@input/pen-types";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	Pen,
 	useAttribution,
@@ -28,9 +29,10 @@ import {
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-describe("@pen/react history and multiplayer hooks", () => {
+describe("@input/pen-react history and multiplayer hooks", () => {
 	it("renders multiplayer primitives while hooks expose the same controller state", async () => {
 		const editor = createEditor({
+			schema: defaultSchema,
 			extensions: [
 				multiplayerExtension({
 					user: {
@@ -42,9 +44,14 @@ describe("@pen/react history and multiplayer hooks", () => {
 			],
 		});
 		const controller = getMultiplayerController(editor) as {
-			handleAwarenessChange(states: Map<number, Record<string, unknown>>): void;
+			handleAwarenessChange(
+				states: Map<number, Record<string, unknown>>,
+			): void;
 		} | null;
 		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hi" },
+		]);
 
 		controller?.handleAwarenessChange(
 			new Map<number, Record<string, unknown>>([
@@ -66,19 +73,12 @@ describe("@pen/react history and multiplayer hooks", () => {
 							color: "#abc123",
 						},
 						cursor: {
-							blockId,
-							offset: 2,
+							anchor: encodeAnchor(editor, blockId, 2),
 							clock: 1,
 						},
 						selection: {
-							anchor: {
-								blockId,
-								offset: 1,
-							},
-							head: {
-								blockId,
-								offset: 2,
-							},
+							anchor: encodeAnchor(editor, blockId, 1),
+							head: encodeAnchor(editor, blockId, 2),
 							clock: 1,
 						},
 					},
@@ -118,30 +118,38 @@ describe("@pen/react history and multiplayer hooks", () => {
 			);
 		});
 
-		expect(container.querySelector("[data-peer-count]")?.getAttribute("data-peer-count")).toBe(
-			"1",
-		);
 		expect(
-			container.querySelector("[data-cursor-count]")?.getAttribute("data-cursor-count"),
+			container
+				.querySelector("[data-peer-count]")
+				?.getAttribute("data-peer-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-selection-count]")?.getAttribute("data-selection-count"),
+			container
+				.querySelector("[data-cursor-count]")
+				?.getAttribute("data-cursor-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-pen-multiplayer-presence-avatar]")?.textContent,
+			container
+				.querySelector("[data-selection-count]")
+				?.getAttribute("data-selection-count"),
+		).toBe("1");
+		expect(
+			container.querySelector("[data-pen-multiplayer-presence-avatar]")
+				?.textContent,
 		).toBe("Babbage");
 		expect(
-			container.querySelector("[data-pen-multiplayer-remote-cursor]")?.getAttribute(
-				"data-user-name",
-			),
+			container
+				.querySelector("[data-pen-multiplayer-remote-cursor]")
+				?.getAttribute("data-user-name"),
 		).toBe("Babbage");
 		expect(
-			container.querySelector("[data-pen-multiplayer-caret-overlay]")?.getAttribute(
-				"data-cursor-count",
-			),
+			container
+				.querySelector("[data-pen-multiplayer-caret-overlay]")
+				?.getAttribute("data-cursor-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-pen-multiplayer-caret-label]")?.textContent,
+			container.querySelector("[data-pen-multiplayer-caret-label]")
+				?.textContent,
 		).toBe("Babbage");
 
 		await act(async () => {
@@ -152,11 +160,11 @@ describe("@pen/react history and multiplayer hooks", () => {
 	});
 
 	it("keeps history and attribution as hooks", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const historyController = createMockHistoryController(blockId, 1);
-		editor.internals.setSlot(HISTORY_CONTROLLER_SLOT, historyController);
-		editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, {
+		editor.internals.assignSlot(HISTORY_CONTROLLER_SLOT, historyController);
+		editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, {
 			subscribe() {
 				return () => {};
 			},
@@ -200,10 +208,14 @@ describe("@pen/react history and multiplayer hooks", () => {
 		});
 
 		expect(
-			container.querySelector("[data-snapshot-count]")?.getAttribute("data-snapshot-count"),
+			container
+				.querySelector("[data-snapshot-count]")
+				?.getAttribute("data-snapshot-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-blame-name]")?.getAttribute("data-blame-name"),
+			container
+				.querySelector("[data-blame-name]")
+				?.getAttribute("data-blame-name"),
 		).toBe("Babbage");
 
 		await act(async () => {
@@ -214,12 +226,13 @@ describe("@pen/react history and multiplayer hooks", () => {
 	});
 
 	it("shares history hook state across editors on the same document session", async () => {
-		const seedEditor = createEditor();
+		const seedEditor = createEditor({ schema: defaultSchema });
 		const documentSession = createDocumentSession({
 			adapter: seedEditor.internals.adapter,
 		});
 		const persistence = createMemoryPersistence();
 		const editorA = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -230,6 +243,7 @@ describe("@pen/react history and multiplayer hooks", () => {
 			],
 		});
 		const editorB = createEditor({
+			schema: defaultSchema,
 			documentSession,
 			extensions: [
 				historyExtension({
@@ -265,14 +279,14 @@ describe("@pen/react history and multiplayer hooks", () => {
 		});
 
 		expect(
-			container.querySelector("[data-snapshot-count-a]")?.getAttribute(
-				"data-snapshot-count-a",
-			),
+			container
+				.querySelector("[data-snapshot-count-a]")
+				?.getAttribute("data-snapshot-count-a"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-snapshot-count-b]")?.getAttribute(
-				"data-snapshot-count-b",
-			),
+			container
+				.querySelector("[data-snapshot-count-b]")
+				?.getAttribute("data-snapshot-count-b"),
 		).toBe("1");
 
 		await act(async () => {
@@ -406,7 +420,9 @@ function createMemoryPersistence() {
 				}));
 		},
 		async loadVersion(_docId: string, versionId: string) {
-			const entry = entries.find((candidate) => candidate.id === versionId);
+			const entry = entries.find(
+				(candidate) => candidate.id === versionId,
+			);
 			if (!entry) {
 				throw new Error(`Missing version ${versionId}`);
 			}
@@ -416,4 +432,16 @@ function createMemoryPersistence() {
 			};
 		},
 	};
+}
+
+function encodeAnchor(
+	editor: ReturnType<typeof createEditor>,
+	blockId: string,
+	offset: number,
+): string {
+	const minted = editor.anchors.create({ blockId, offset }, 1);
+	if (minted === null) {
+		throw new Error("Could not mint a presence anchor");
+	}
+	return editor.anchors.serialize(minted);
 }
