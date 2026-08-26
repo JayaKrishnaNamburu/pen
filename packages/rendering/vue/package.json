@@ -74,11 +74,11 @@
     "@input/pen-preset-default": "workspace:*",
     "@input/pen-test": "workspace:*",
     "@input/pen-undo": "workspace:*",
-    "@vue/test-utils": "^2.4.6",
+    "@vue/test-utils": "^2.4.11",
     "jsdom": "^28.1.0",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.7",
+    "vitest": "^3.2.7",
     "vue": "^3.5.41"
   }
 }
