@@ -1,4 +1,5 @@
-import { spawnSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page } from "@playwright/test";
 import { scenario } from "../src/scenario";
@@ -6,39 +7,68 @@ import type { ScenarioApi } from "../src/types";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
 
+/**
+ * Build output and dependencies, which the previous `rg` call skipped for
+ * free by honouring .gitignore. A walk has to name them: dist/ holds a
+ * compiled copy of the one file this assertion expects to be unique.
+ */
+const UNSEARCHED_DIRS = new Set([
+	"node_modules",
+	"dist",
+	".turbo",
+	"coverage",
+	"__tests__",
+]);
+
 /** Must exceed `CARET_BLINK_RESUME_DELAY_MS` in caretOverlay.tsx. */
 const CARET_BLINK_RESUME_WAIT_MS = 650;
 
 const AX6_CARET_BLINK_NAME = "pen-ax6-caret-blink";
 
-function assertPrefersReducedMotionSingleSite(): void {
-	const result = spawnSync(
-		"rg",
-		[
-			"-n",
-			"prefers-reduced-motion",
-			"packages/rendering",
-			"--glob",
-			"!**/__tests__/**",
-			"--glob",
-			"!**/*.{test,spec}.*",
-		],
-		{ cwd: REPO_ROOT, encoding: "utf8" },
-	);
-	if (result.status !== 0 && result.status !== 1) {
-		throw new Error(result.stderr || "AX6: rg failed for prefers-reduced-motion");
+function collectFilesContaining(
+	directory: string,
+	needle: string,
+	found: string[],
+): void {
+	for (const entry of readdirSync(directory, { withFileTypes: true })) {
+		if (entry.name.startsWith(".")) {
+			continue;
+		}
+		const full = join(directory, entry.name);
+		if (entry.isDirectory()) {
+			if (!UNSEARCHED_DIRS.has(entry.name)) {
+				collectFilesContaining(full, needle, found);
+			}
+			continue;
+		}
+		if (/\.(test|spec)\./.test(entry.name)) {
+			continue;
+		}
+		if (readFileSync(full, "utf8").includes(needle)) {
+			found.push(full);
+		}
 	}
-	const files = [
-		...new Set(
-			(result.stdout || "")
-				.split("\n")
-				.filter((line) => line.length > 0)
-				.map((line) => line.split(":")[0]),
-		),
-	];
+}
+
+/**
+ * Walked in Node rather than shelled out to `rg`: ripgrep is a developer tool,
+ * not a runner one, and its absence on ubuntu-latest failed this scenario for
+ * the machine rather than for the property. The rule under test is a source
+ * one, so it stays cheap either way.
+ */
+function assertPrefersReducedMotionSingleSite(): void {
+	const matches: string[] = [];
+	collectFilesContaining(
+		join(REPO_ROOT, "packages/rendering"),
+		"prefers-reduced-motion",
+		matches,
+	);
+	const files = matches
+		.map((file) => relative(REPO_ROOT, file).split(sep).join("/"))
+		.sort();
 	expect(
 		files,
-		`AX6 single-site: prefers-reduced-motion must live only in motion.ts\n${result.stdout}`,
+		`AX6 single-site: prefers-reduced-motion must live only in motion.ts\n${files.join("\n")}`,
 	).toEqual(["packages/rendering/dom/src/a11y/motion.ts"]);
 }
 
