@@ -21,7 +21,7 @@
     "@input/pen-react": "workspace:*",
     "@input/pen-types": "workspace:*",
     "@y/websocket-server": "^0.1.5",
-    "react": "^19.0.0",
+    "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "ws": "^8.21.3",
     "y-websocket": "^3.1.0",

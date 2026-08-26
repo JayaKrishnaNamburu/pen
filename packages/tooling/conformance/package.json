@@ -43,7 +43,7 @@
     "@input/pen-schema-default": "workspace:*",
     "@input/pen-test": "workspace:*",
     "@input/pen-types": "workspace:*",
-    "react": "^19.0.0",
+    "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "yjs": "^13.6.32"
   },
