@@ -90,8 +90,16 @@ function assertPaintedMatchesPlan(
 		expect(node.styleTop).toBe("0px");
 		expect(node.styleWidth).toBe(`${item.width}px`);
 		expect(node.styleHeight).toBe(`${item.height}px`);
-		expect(translate.x).toBeCloseTo(item.x, 4);
-		expect(translate.y).toBeCloseTo(item.y, 4);
+		// translate.* is parsed back out of the serialized `style.transform`
+		// string, which Chromium writes to four decimals: a planned 36.03125
+		// reads as 36.0312, a delta of exactly 0.00005 where precision 4
+		// demands strictly less than that. The assertion was pinned to the
+		// serializer's own rounding step and failed on float dust for any
+		// value with a 5 in the fifth decimal. Precision 3 leaves ten times
+		// the worst serialization error. box.* comes from
+		// getBoundingClientRect and is not serialized, so it stays at 4.
+		expect(translate.x).toBeCloseTo(item.x, 3);
+		expect(translate.y).toBeCloseTo(item.y, 3);
 		expect(node.box.x).toBeCloseTo(item.x, 4);
 		expect(node.box.y).toBeCloseTo(item.y, 4);
 		expect(node.box.width).toBeCloseTo(item.width, 4);
