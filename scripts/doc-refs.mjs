@@ -42,6 +42,7 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const IGNORE_DIR_NAMES = new Set([
 	"node_modules",
 	"dist",
+	".generated",
 	"coverage",
 	".turbo",
 	".git",
