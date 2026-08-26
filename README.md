@@ -1,7 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 <img width="100%" height="auto" alt="logo_black@2x" src="https://github.com/user-attachments/assets/6eb68df5-c70f-4a38-ac6f-f69530f0b355" />
 
-
 <h3 align="center">
   Headless, extension-first rich text<br/>editor engine for AI collaboration
 </h3>
