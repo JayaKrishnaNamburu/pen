@@ -65,13 +65,13 @@
     "@input/pen-document-ops": "workspace:*",
     "@input/pen-schema-default": "workspace:*",
     "@input/pen-test": "workspace:*",
-    "@input/pen-undo": "workspace:*",
     "@input/pen-types": "workspace:*",
+    "@input/pen-undo": "workspace:*",
     "@types/node": "^25.4.0",
     "tsup": "^8.4.0",
-    "tsx": "^4.19.0",
+    "tsx": "^4.23.12",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.7",
+    "vitest": "^3.2.7",
     "yjs": "^13.6.32"
   }
 }
