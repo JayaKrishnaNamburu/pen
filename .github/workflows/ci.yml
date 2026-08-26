@@ -195,7 +195,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: Summary
+    name: All CI jobs
     if: always()
     needs: [changes, validate, e2e]
     timeout-minutes: 5

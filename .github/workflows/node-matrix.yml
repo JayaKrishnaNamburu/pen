@@ -61,7 +61,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: Summary
+    name: All Node jobs
     if: always()
     needs: [host3-node-matrix]
     timeout-minutes: 5

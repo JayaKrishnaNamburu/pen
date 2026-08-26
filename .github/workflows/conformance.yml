@@ -79,7 +79,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: Summary
+    name: All engines
     if: always()
     needs: [conformance-engine]
     timeout-minutes: 5

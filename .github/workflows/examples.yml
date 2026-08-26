@@ -73,7 +73,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: Summary
+    name: All examples
     if: always()
     needs: [smoke]
     timeout-minutes: 5

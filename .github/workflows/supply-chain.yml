@@ -224,7 +224,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: Summary
+    name: All audits
     if: always()
     needs: [prod-audit, no-install-scripts, sec8-dynamic-code-lint]
     timeout-minutes: 5

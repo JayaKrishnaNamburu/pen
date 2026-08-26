@@ -52,21 +52,25 @@ pnpm --filter @input/pen-conformance run test:chromium # browser conformance
 
 ## What CI Runs
 
-A pull request lands on nine workflows. GitHub names every check
-`Workflow / Job`, and each workflow that fans out ends in a `Summary`
-check that depends on all of its jobs. Those `Summary` names are what
+A pull request lands on nine workflows. The pull-request page labels
+every check `Workflow / Job`, and each workflow that fans out ends in
+one aggregate job depending on all the others. Those aggregates are what
 branch protection requires, so a new matrix leg or a new gate blocks
 merges the moment it exists, with no repository-settings change.
 
+Branch protection matches the job name on its own, not the
+`Workflow / Job` label — which is why no two jobs in this repository
+share a name, and why `workflow-integrity` fails if two ever do.
+
 | Required check                       | What it protects                                                                     |
 | ------------------------------------ | ------------------------------------------------------------------------------------ |
-| `CI / Summary`                       | Lint, build, API reports, typecheck, unit and integration tests, playground e2e      |
-| `Static analysis / Summary`          | The gate list in `scripts/gates.json`, plus changeset coverage                       |
-| `Conformance / Summary`              | Real-browser selection, IME, geometry, and a11y conformance                          |
-| `Examples / Summary`                 | The React, Vue, and vanilla examples still build and mount against workspace sources |
-| `Node / Summary`                     | The tree builds and tests on Node 22, Node 26, and macOS                             |
-| `Docs / Summary`                     | The docs site compiles and its samples typecheck                                     |
-| `Supply chain / Summary`             | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
+| `CI / All CI jobs`                   | Lint, build, API reports, typecheck, unit and integration tests, playground e2e      |
+| `Static analysis / All gates`        | The gate list in `scripts/gates.json`, plus changeset coverage                       |
+| `Conformance / All engines`          | Real-browser selection, IME, geometry, and a11y conformance                          |
+| `Examples / All examples`            | The React, Vue, and vanilla examples still build and mount against workspace sources |
+| `Node / All Node jobs`               | The tree builds and tests on Node 22, Node 26, and macOS                             |
+| `Docs / All docs jobs`               | The docs site compiles and its samples typecheck                                     |
+| `Supply chain / All audits`          | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
 | `Performance / Budgets`              | CH8 performance budgets and the SCALE1 envelope                                      |
 | `CodeQL / JavaScript and TypeScript` | Static security analysis                                                             |
 

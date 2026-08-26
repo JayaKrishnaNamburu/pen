@@ -39,12 +39,16 @@
  *              dependabot updates both forms anyway.
  *
  *   NAMES      Every job declares a `name`, does not repeat its workflow's
- *              name, and — when it fans out over a matrix — interpolates a
- *              matrix value. `<workflow> / <job>` is the whole vocabulary a
- *              contributor reads on a pull request, and each of those three
- *              omissions produced a name nobody chose: a raw job id, a
- *              stutter like `Docs / docs`, and the tuple GitHub appends to a
- *              matrix job that does not name its own axis.
+ *              name, interpolates a matrix value when it fans out over one,
+ *              and does not reuse a name another workflow already produces.
+ *              `<workflow> / <job>` is the whole vocabulary a contributor
+ *              reads on a pull request, and the first three omissions each
+ *              produced a name nobody chose: a raw job id, a stutter like
+ *              `Docs / docs`, and the tuple GitHub appends to a matrix job
+ *              that does not name its own axis. The fourth is not cosmetic.
+ *              A check run is named for its job alone, so two workflows
+ *              sharing a job name collapse into one required context and
+ *              whichever finished last decides it.
  *
  *   CONTEXT    A composite action manifest references no job-level context.
  *              The runner evaluates expressions while it parses the
@@ -240,6 +244,60 @@ export function nameProblems({ workflowName, id, job }) {
 	return problems;
 }
 
+const MATRIX_REF_RE = /\$\{\{\s*matrix\.([a-zA-Z0-9_-]+)\s*\}\}/g;
+
+/**
+ * The check names one job produces. A matrix leg gets one name per row, which
+ * is why `include` is expanded here. Other matrix shapes keep the raw template
+ * — every matrix in this repository uses `include`, and an unexpanded template
+ * can still only collide with an identical template, which is itself a defect
+ * worth naming.
+ */
+function checkNamesFor(id, job) {
+	const name = job.name ?? id;
+	const rows = job.strategy?.matrix?.include;
+	if (!Array.isArray(rows) || !name.includes("matrix.")) {
+		return [name];
+	}
+	return rows.map((row) =>
+		name.replace(MATRIX_REF_RE, (raw, key) => row[key] ?? raw),
+	);
+}
+
+/** Every pull-request check name in the repository, mapped to its sources. */
+function collectCheckNames(workflows) {
+	const owners = new Map();
+	for (const { file, workflow } of workflows) {
+		if (!runsOnPullRequest(workflow)) {
+			continue;
+		}
+		for (const [id, job] of Object.entries(workflow.jobs ?? {})) {
+			for (const name of checkNamesFor(id, job)) {
+				owners.set(name, [...(owners.get(name) ?? []), file]);
+			}
+		}
+	}
+	return owners;
+}
+
+/**
+ * A check run is named for its job alone — GitHub renders `Workflow / Job` in
+ * the pull-request UI, but the name branch protection matches on, and the one
+ * the API reports, is just the job's. Two workflows using the same job name
+ * therefore produce one required context covering whichever ran last, and the
+ * other workflow silently stops gating anything. Seven aggregate jobs named
+ * `Summary` is how this was found, so the rule outlives the fix.
+ */
+export function evaluateCheckNameCollisions(workflows) {
+	const problems = [...collectCheckNames(workflows)]
+		.filter(([, files]) => files.length > 1)
+		.map(([name, files]) => ({
+			rule: "NAMES",
+			detail: `check name \`${name}\` is produced by ${files.join(" and ")} — branch protection sees one context, so all but one stop gating`,
+		}));
+	return { kind: "collisions", file: WORKFLOW_DIR, jobCount: 0, problems };
+}
+
 export function evaluateWorkflow({ file, workflow }) {
 	const problems = [];
 	const jobs = workflow.jobs ?? {};
@@ -331,7 +389,7 @@ export function formatReport(results) {
 	if (failing.length === 0) {
 		lines.push("");
 		lines.push(
-			"OK: every workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, names every job readably, and pins third-party actions; no composite action names a job-level context.",
+			"OK: every workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, gives every job a readable name no other workflow uses, and pins third-party actions; no composite action names a job-level context.",
 		);
 		return lines.join("\n");
 	}
@@ -589,6 +647,53 @@ export function runSelfTests() {
 		}).length === 0,
 		"self-test: a matrix job naming its own axis must pass",
 	);
+
+	// The literal shape that hid six of seven aggregate jobs behind one
+	// required context.
+	const shared = [
+		{
+			file: "ci.yml",
+			workflow: {
+				on: { pull_request: null },
+				jobs: { a: { name: "Summary" } },
+			},
+		},
+		{
+			file: "docs.yml",
+			workflow: {
+				on: { pull_request: null },
+				jobs: { b: { name: "Summary" } },
+			},
+		},
+	];
+	assert(
+		ruleIds(evaluateCheckNameCollisions(shared)).includes("NAMES"),
+		"self-test: one check name from two workflows must fail",
+	);
+	assert(
+		evaluateCheckNameCollisions([
+			...shared.slice(0, 1),
+			{
+				file: "docs.yml",
+				workflow: {
+					on: { pull_request: null },
+					jobs: { b: { name: "All docs jobs" } },
+				},
+			},
+		]).problems.length === 0,
+		"self-test: distinct check names must pass",
+	);
+	assert(
+		checkNamesFor("e2e", {
+			name: "Browser tests (${{ matrix.label }})",
+			strategy: {
+				matrix: {
+					include: [{ label: "WebKit" }, { label: "Firefox" }],
+				},
+			},
+		}).join(",") === "Browser tests (WebKit),Browser tests (Firefox)",
+		"self-test: a matrix job's names expand per include row",
+	);
 }
 
 export function loadWorkflows(repoRoot) {
@@ -657,7 +762,7 @@ function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
 	console.log(
-		"workflow-integrity self-test ok (an unaggregated job, a missing always(), an unbounded job, a default-permission workflow, a floating third-party tag, an unnamed or self-named or matrix-blind job, and a job-level context in an action manifest all fail closed)",
+		"workflow-integrity self-test ok (an unaggregated job, a missing always(), an unbounded job, a default-permission workflow, a floating third-party tag, an unnamed or self-named or matrix-blind job, one check name shared by two workflows, and a job-level context in an action manifest all fail closed)",
 	);
 	if (args.selfTestOnly) {
 		return;
@@ -676,6 +781,7 @@ function main() {
 	const results = [
 		...workflows.map(evaluateWorkflow),
 		...manifests.map(evaluateActionManifest),
+		evaluateCheckNameCollisions(workflows),
 	];
 	console.log("");
 	console.log(

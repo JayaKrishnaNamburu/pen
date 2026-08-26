@@ -137,7 +137,11 @@ export function buildGatePlan(gates) {
 	if (built.length === 0) {
 		return source.map(asGateStep);
 	}
-	return [...source.map(asGateStep), BUILD_STAGE[0], ...built.map(asGateStep)];
+	return [
+		...source.map(asGateStep),
+		BUILD_STAGE[0],
+		...built.map(asGateStep),
+	];
 }
 
 function loadGates() {
@@ -256,9 +260,9 @@ function parseArgs(argv) {
 function main() {
 	const args = parseArgs(process.argv.slice(2));
 	const gates = loadGates();
-	const plan = (args.gatesOnly ? buildGatePlan(gates) : buildPlan(gates)).filter(
-		(step) => args.filter == null || step.id.includes(args.filter),
-	);
+	const plan = (
+		args.gatesOnly ? buildGatePlan(gates) : buildPlan(gates)
+	).filter((step) => args.filter == null || step.id.includes(args.filter));
 
 	if (plan.length === 0) {
 		throw new Error(`verify: --only ${args.filter} matched no step`);
