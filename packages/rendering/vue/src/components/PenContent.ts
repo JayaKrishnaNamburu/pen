@@ -22,6 +22,11 @@ import {
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
 import { PenBlock } from "./PenBlock";
 
+/**
+ * Renders the document's top-level blocks and hosts the text-entry
+ * surface. Must appear inside a `PenEditor`, which provides the editor
+ * context and the field editor this component attaches to.
+ */
 export const PenContent = defineComponent({
   name: "PenContent",
   props: {

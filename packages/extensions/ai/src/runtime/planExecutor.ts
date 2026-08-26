@@ -1,7 +1,2 @@
-export type {
-	PlanExecutionIssue,
-	PlanExecutionResult,
-	PlanExecutionMetrics,
-	FlowPatchAlignmentMetrics,
-} from "./planExecutor/types";
+export type { FlowPatchAlignmentMetrics } from "./planExecutor/types";
 export { buildDocumentMutationPlanExecution } from "./planExecutor/execute";

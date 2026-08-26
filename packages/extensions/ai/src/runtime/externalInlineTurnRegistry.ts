@@ -17,10 +17,6 @@ export class ExternalInlineTurnRegistry {
 		return this.results.has(historyId);
 	}
 
-	get(historyId: string): StoredExternalInlineTurnResult | undefined {
-		return this.results.get(historyId);
-	}
-
 	set(
 		historyId: string,
 		result: StoredExternalInlineTurnResult,

@@ -5,10 +5,21 @@ import type {
 import { shortcutsToKeymapProviders } from "./providers";
 import { toggleInlineMark, setInlineMark } from "./toggleInlineMark";
 
+/** Extension name under which the rich-text shortcuts register. */
 export const RICH_TEXT_SHORTCUTS_EXTENSION_NAME = "rich-text-shortcuts";
 
 type ShortcutMark = "bold" | "italic" | "underline";
 
+/**
+ * Host configuration for {@link richTextShortcutsExtension}.
+ *
+ * `bindings` overrides the default key for a mark; passing `null` or an
+ * empty array for a mark unbinds it rather than restoring the default,
+ * which is how a host suppresses a shortcut it handles itself.
+ * `onToggleLink` opts into `Mod-k`: linking needs a URL the editor
+ * cannot invent, so the extension binds the key only when the host
+ * supplies a handler.
+ */
 export interface RichTextShortcutsOptions {
 	bindings?: Partial<Record<ShortcutMark, readonly string[] | null>>;
 	onToggleLink?: (editor: Parameters<typeof setInlineMark>[0]) => boolean;
@@ -27,6 +38,12 @@ const BINDING_DESCRIPTIONS: Record<ShortcutMark, string> = {
 	underline: "Toggle underline formatting",
 };
 
+/**
+ * Bind the standard rich-text formatting shortcuts — `Mod-b` bold,
+ * `Mod-i` italic, `Mod-u` underline, and `Mod-k` when the host supplies
+ * `onToggleLink`. The bindings are contributed through the keymap facet,
+ * so a host keymap at a higher precedence still wins.
+ */
 export function richTextShortcutsExtension(
 	options: RichTextShortcutsOptions = {},
 ): Extension {

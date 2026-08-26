@@ -1,16 +1,11 @@
 import type {
-	Editor,
 	DocumentOp,
 	InlineCompletionController as CoreInlineCompletionController,
 	InlineCompletionState as CoreInlineCompletionState,
 	ModelAdapter,
-	ModelMessage,
 	ModelOperationScopedRangeTarget,
 	ModelOperationSelectionTarget,
-	ModelRequestedOperation,
-	SelectionState,
 	TextSelection,
-	ToolRuntime,
 } from "@input/pen-types";
 import type { AIToolConfirmFn } from "../tools";
 import type { EditDocumentPreviewUpdate } from "../runtime/editDocumentPreview";
@@ -22,45 +17,20 @@ import type {
 	AIContentFormat,
 	AIBlockAdapterId,
 	AIBlockClass,
-	AIExecutionMode,
-	AIQualityMetricId,
 	AITargetKind,
 	AITransportKind,
-	AIWorkingSetViewMode,
 } from "../runtime/contracts";
 import type { DocumentMutationPlan } from "../runtime/planTypes";
-import type { FlowPatchAlignmentMetrics } from "../runtime/planExecutor";
 import type {
 	StructuralReviewItem,
 	StructuredPreviewTargetState,
 } from "../runtime/reviewArtifacts";
 import type { StructuredIntent } from "../runtime/structuredIntent";
 import type {
-	PersistentBlockSuggestion,
-	PersistentSuggestion,
-	BlockSuggestionMeta,
-	AIAwarenessState,
-	AICommandContext,
-	AICommandGuard,
 	AICommandBinding,
-	AIControllerState,
 	AIPromptTarget,
-	AISessionResolution,
-	AIInlineHistoryDirection,
-	AIInlineHistoryController,
-	AIReviewController,
-	AICommandExecutionOptions,
 	AIRequestedOperation,
-	AIController,
-	AgenticLoopOptions,
-	AIWorkingSetEnvelope,
-	AIWorkingSetRetrievedSpan,
 	GenerationDebugState,
-	StructuredGenerationDebugState,
-	FastApplyDebugState,
-	FastApplyFallbackMetrics,
-	AIMutationReceiptStatus,
-	AIMutationReceiptEvidence,
 	AIMutationReceipt,
 } from "./controller";
 

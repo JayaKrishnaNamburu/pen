@@ -8,7 +8,6 @@ import {
 	AI_EGRESS_INVENTORY_CODE,
 	AI_REQUEST_REFUSED_CODE,
 	type AIRequestContext,
-	type AIRequestFilter,
 	type Editor,
 	type ModelRequestedOperation,
 } from "@input/pen-types";
@@ -202,4 +201,3 @@ export function excerptKindsOf(
 	return AI_FEATURE_CONTENT[feature].excerptKinds;
 }
 
-export type { AIRequestContext, AIRequestFilter };

@@ -10,6 +10,19 @@ import type {
 	TextSelection,
 } from "@input/pen-types";
 
+/**
+ * Toggle an inline mark over the current text selection, returning
+ * whether the toggle was expressible. The mark is removed only when
+ * every character in range already carries it; a partially marked range
+ * gains the mark instead, which is what makes repeated presses
+ * converge. On a collapsed selection there is no text to format, so the
+ * mark becomes a pending mark on the attached field editor and applies
+ * to the next typed character.
+ *
+ * Returns `false` when the selection is not text, the mark is not in the
+ * schema, or a collapsed toggle has no rich-text field editor to hold
+ * the pending mark.
+ */
 export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	const selection = editor.selection;
 	if (!selection || selection.type !== "text") return false;
@@ -109,6 +122,17 @@ function hasMarkAcrossSegments(
 	return true;
 }
 
+/**
+ * Set an inline mark to an explicit value over the current text
+ * selection, or clear it with `null`. Unlike
+ * {@link toggleInlineMark} this does not read the existing marks, so it
+ * suits marks carrying attributes a caller already holds — a link href,
+ * a comment id — where toggling would discard them.
+ *
+ * Returns `false` when the selection is collapsed, is not text, or the
+ * mark is not in the schema: there is no pending-mark equivalent for a
+ * value the caller chose.
+ */
 export function setInlineMark(
 	editor: Editor,
 	markType: string,

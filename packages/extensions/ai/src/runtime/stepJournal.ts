@@ -18,12 +18,10 @@ export interface BuildAgentMessagesInput {
 // read_document on a mid-sized document must survive intact, and anything
 // that is cut must say so explicitly so the model can re-read a narrower
 // range instead of guessing.
-export const AI_TOOL_RESULT_MAX_OBJECT_KEYS = 32;
-export const AI_TOOL_RESULT_MAX_ARRAY_ITEMS = 200;
 export const AI_TOOL_RESULT_MAX_CHARS = 24_000;
 
-const MAX_OBJECT_KEYS = AI_TOOL_RESULT_MAX_OBJECT_KEYS;
-const MAX_ARRAY_ITEMS = AI_TOOL_RESULT_MAX_ARRAY_ITEMS;
+const MAX_OBJECT_KEYS = 32;
+const MAX_ARRAY_ITEMS = 200;
 const MAX_STRING_LENGTH = AI_TOOL_RESULT_MAX_CHARS;
 
 export function buildAgentMessages(

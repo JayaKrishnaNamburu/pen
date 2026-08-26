@@ -35,6 +35,12 @@ import type { PenBlockRenderContext } from "../types";
 import { PenInlineContent } from "./PenInlineContent";
 import { PenTableCellContent } from "./PenTableCellContent";
 
+/**
+ * Renders one block by id, dispatching to the matching entry in the
+ * `renderers` override map and falling back to the built-in rendering
+ * for the block's schema type. Handles selection and direction
+ * attributes, nested children, and table cells.
+ */
 export const PenBlock = defineComponent({
 	name: "PenBlock",
 	props: {

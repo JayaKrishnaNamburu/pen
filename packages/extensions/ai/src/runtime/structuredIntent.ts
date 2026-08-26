@@ -1,6 +1,4 @@
-export { STRUCTURED_INTENT_REQUEST_PREFIX } from "./structuredIntent/types";
 export type {
-	StructuredIntentKind,
 	StructuredInsertPosition,
 	InsertBlockIntent,
 	UpdateBlockIntent,
@@ -9,10 +7,7 @@ export type {
 	TextEditIntent,
 	ReviewBundleIntent,
 	StructuredIntent,
-	StructuredIntentParseIssue,
 	StructuredIntentParseResult,
-	StructuredIntentRequestEnvelope,
-	StructuredIntentPromptConfig,
 } from "./structuredIntent/types";
 export {
 	parseStructuredIntentResult,

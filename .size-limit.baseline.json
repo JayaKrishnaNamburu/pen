@@ -75,9 +75,9 @@
     {
       "name": "@input/pen-document-ops",
       "path": "packages/extensions/document-ops/dist/index.mjs",
-      "baselineBytes": 71065,
-      "limitBytes": 71065,
-      "note": "v4 Wave 3 DL13 re-record 2026-08-25. The content-ops shims were deleted, so the block-capability, block-type-policy and payload-validation sources this package used to reach through @input/pen-content-ops are now its own. 58134 \u2192 71065. content-ops stays external in tsup, so this is moved source, not a newly bundled dependency."
+      "baselineBytes": 81629,
+      "limitBytes": 81629,
+      "note": "v5 Wave 0 re-record 2026-08-26. 71065 \u2192 81629, inherited drift rather than a change to this package: its own source moved by 4 lines since the previous record (b6432f4), and tsup marks content-ops, markdown-serialization and types external but NOT @input/pen-core, so this bundle carries a slice of core. Core itself drifted 405550 \u2192 429672 over the same span while staying under its +10% ceiling, which is why the overflow surfaced here first. Byte total reproduced across two clean rebuilds. Wave 3 touches this package's mount lists (UC7); if that work does not bring the number down, the external list is the thing to revisit, not this budget. Previously: v4 Wave 3 DL13 re-record 2026-08-25, 58134 \u2192 71065, when the content-ops shims were deleted and the block-capability, block-type-policy and payload-validation sources became this package's own."
     },
     {
       "name": "@input/pen-dom",

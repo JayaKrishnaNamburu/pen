@@ -32,6 +32,12 @@ import { resolveEditorSchemaPlaceholder } from "../internal/displayCopy";
 import { useEditorContext } from "../internal/editorContext";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
 
+/**
+ * Renders a block's editable text, including inline decorations and the
+ * empty-block placeholder. Pen reconciles this subtree directly from the
+ * document rather than through Vue's renderer, which is what keeps
+ * typing, composition, and selection intact.
+ */
 export const PenInlineContent = defineComponent({
 	name: "PenInlineContent",
 	props: {

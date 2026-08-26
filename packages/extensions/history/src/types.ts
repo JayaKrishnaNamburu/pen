@@ -34,6 +34,12 @@ export interface OpaqueClientHandle {
 	clientId: number;
 }
 
+/**
+ * Who Pen is willing to name as the author of a change. Either a
+ * host-resolved identity or, when no resolver is configured, the opaque
+ * client handle — the `verified` discriminant is what a renderer checks
+ * before presenting a name as authorship.
+ */
 export type HistoryAuthor = VerifiedHistoryAuthor | OpaqueClientHandle;
 
 /**
@@ -47,6 +53,12 @@ export interface PresenceDisplayHint {
 	color?: string;
 }
 
+/**
+ * One authored run of characters inside a block, as reported by the CRDT
+ * adapter. `offset` and `length` address the block's text; `author` is
+ * the trust-checked identity while `displayHint` is the peer-asserted
+ * presence name and must not be rendered as authorship.
+ */
 export interface CharacterAttribution {
 	blockId: string;
 	offset: number;
@@ -60,6 +72,12 @@ export interface CharacterAttribution {
 	timestamp: number;
 }
 
+/**
+ * A blame span over a block's text, as `[from, to)` offsets. The
+ * render-facing shape of {@link CharacterAttribution}: same trust
+ * boundary, without the per-character bookkeeping a decoration layer
+ * does not need.
+ */
 export interface BlameRange {
 	from: number;
 	to: number;
@@ -68,6 +86,12 @@ export interface BlameRange {
 	timestamp: number;
 }
 
+/**
+ * When the history extension takes a snapshot on its own. Every field is
+ * optional and unset triggers stay off, so a host opts into each one;
+ * passing `false` for `autoSnapshot` instead disables automatic
+ * snapshots entirely and leaves only explicit `createSnapshot` calls.
+ */
 export interface AutoSnapshotConfig {
 	intervalMs?: number;
 	opThreshold?: number;
@@ -75,6 +99,7 @@ export interface AutoSnapshotConfig {
 	onAIGeneration?: boolean;
 }
 
+/** Host configuration for {@link historyExtension}. */
 export interface HistoryConfig {
 	persistence: PenPersistence;
 	docId: string;
@@ -83,11 +108,22 @@ export interface HistoryConfig {
 	resolveAuthor?: ResolveHistoryAuthor;
 }
 
+/**
+ * Snapshot state a host renders from. `isRestoring` is true while a
+ * restore is in flight, which is the window a version UI should treat as
+ * busy rather than as a settled document.
+ */
 export interface HistoryState {
 	snapshots: readonly VersionEntry[];
 	isRestoring: boolean;
 }
 
+/**
+ * The history extension's host-facing handle: snapshot listing and
+ * creation, restore, and per-block attribution. Reach it with
+ * {@link getHistoryController} rather than constructing one — the
+ * extension owns its lifetime and clears the slot on deactivate.
+ */
 export interface HistoryController {
 	getState(): HistoryState;
 	subscribe(listener: () => void): Unsubscribe;

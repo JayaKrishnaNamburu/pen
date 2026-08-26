@@ -5,6 +5,15 @@ import {
 } from "./identityResolver";
 import type { CharacterAttribution, ResolveHistoryAuthor } from "../types";
 
+/**
+ * Read per-character authorship for one block from the CRDT adapter.
+ * Returns an empty array when the adapter does not track attribution, so
+ * a host can call this without first checking adapter capabilities.
+ *
+ * Without `resolveAuthor` every range reports an opaque client handle;
+ * peer-asserted presence names ride along as `displayHint` and are never
+ * promoted into `author`.
+ */
 export function getCharacterAttribution(
 	editor: Editor,
 	blockId: string,

@@ -1,5 +1,7 @@
 # Wave 0: Evidence and Net
 
+Completed 2026-08-26: `spec-v5/evidence/baseline.md` written with all six sections; gates 0.1–0.9 green. Two instruments were red at entry from drift predating v5 and were closed rather than recorded as known-red — `api-docs-coverage` (1810 undocumented vs ratchet 1775; closed by documenting the `@input/pen-vue`, `@input/pen-history` and `@input/pen-shortcuts` public surfaces, 35 symbols, ratchet unchanged) and `size-limit` (`@input/pen-document-ops` over its ceiling on inherited `@input/pen-core` growth; re-recorded with a Wave-named note). The wave also produced three findings the later waves inherit as work rather than opinion: `AIQualityMetricId` has no production consumer for any of its eight members, `AITransportKind.app-structured` and `AIStructuredLane.block-structure` are unreached, and `DomScheduler.acceptCommit` has zero production callers. The "no production source changes" boundary held for behavior; the TSDoc and the budget re-record are evidence work, and both are listed in the wave's changeset.
+
 Depends on: nothing. Blocks: every other v5 wave.
 Packages touched: none — this wave writes `spec-v5/evidence/`, verifies instruments, and records baselines. No production source changes.
 

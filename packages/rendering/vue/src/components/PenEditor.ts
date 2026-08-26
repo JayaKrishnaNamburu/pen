@@ -46,6 +46,15 @@ import {
 import type { PasteImporters, RendererOverrides } from "../types";
 import { PenContent } from "./PenContent";
 
+/**
+ * The editor root. Owns the field editor, key handling, paste importers,
+ * and focus state, and provides the editor context every other Pen
+ * component and composable reads — so it must wrap them.
+ *
+ * Renders `PenContent` by default; supplying a default slot replaces
+ * that, and the slot content is then responsible for rendering the
+ * document.
+ */
 export const PenEditor = defineComponent({
 	name: "PenEditor",
 	props: {

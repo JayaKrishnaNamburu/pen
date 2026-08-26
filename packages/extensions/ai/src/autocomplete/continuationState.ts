@@ -54,13 +54,6 @@ export class AutocompleteContinuationState {
 		return this._prefetchedContinuation !== null;
 	}
 
-	get hasPendingOrPrefetchedContinuation(): boolean {
-		return (
-			this._pendingAcceptedContinuation !== null ||
-			this._prefetchedContinuation !== null
-		);
-	}
-
 	setSequence(sequence: AutocompleteSequence, editor?: Editor): void {
 		this._sequence = sequence;
 		this._sequenceAnchor = mintPoint(
@@ -81,11 +74,6 @@ export class AutocompleteContinuationState {
 		this._pendingAcceptedContinuation = null;
 		this._prefetchedAnchor = null;
 		this._pendingAnchor = null;
-	}
-
-	reset(): void {
-		this.clearSequence();
-		this.clearContinuations();
 	}
 
 	beginAcceptingSequenceSegment(): void {
