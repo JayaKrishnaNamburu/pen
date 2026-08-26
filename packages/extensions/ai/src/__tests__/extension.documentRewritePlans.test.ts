@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: document rewrite plans", () => {
 	it("treats whole-document rewrite prompts as explicit multi-block replace plans", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: inline history shortcut guards", () => {
 	it("does not reopen raw inline UI history through keyboard shortcuts without a turn boundary", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

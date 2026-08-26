@@ -75,7 +75,7 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-describe("@input/pen-core createEditor", () => {
+describe("@input/pen-core createEditor: teardown, undo rebinding, and diagnostics", () => {
 	it("preserves formatted suffix text when deleting across blocks", () => {
 		const editor = createEditor();
 

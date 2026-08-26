@@ -118,7 +118,7 @@ function createRect({
 	} as DOMRect;
 }
 
-describe("Pen inline atom editing", () => {
+describe("Pen inline atom editing: destructure and drag", () => {
 	it("fires onAfterDestructure once after a successful wrapper double-click destructure", async () => {
 		const editor = createPresetEditor();
 		const blockId = seedInlineAtomDocument(editor);

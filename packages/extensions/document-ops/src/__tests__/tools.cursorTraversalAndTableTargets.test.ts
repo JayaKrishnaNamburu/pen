@@ -265,7 +265,7 @@ function createNestedDocumentEditor(): Editor {
 	} as unknown as Editor;
 }
 
-describe("@input/pen-document-ops tools", () => {
+describe("@input/pen-document-ops tools: cursor traversal and table targets", () => {
 	it("uses bounded neighbor traversal for cursor context when block links exist", async () => {
 		const blocks: Array<{
 			id: string;

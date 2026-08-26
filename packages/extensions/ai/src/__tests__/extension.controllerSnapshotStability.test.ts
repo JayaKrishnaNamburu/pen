@@ -6,7 +6,7 @@ import { documentOpsExtension } from "@input/pen-document-ops";
 import { aiExtension, getAIController } from "../index";
 import { defaultSchema } from "@input/pen-schema-default";
 
-describe("aiExtension", () => {
+describe("aiExtension: controller snapshot stability", () => {
 	it("keeps the controller state snapshot stable for no-op updates", () => {
 		const editor = createEditor({
 			schema: defaultSchema,

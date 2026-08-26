@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: partial suggestion group resolution", () => {
 	it("keeps inline suggestion controls visible when only part of a group resolves", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

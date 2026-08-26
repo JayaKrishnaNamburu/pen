@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: a fresh session per selection", () => {
 	it("opens a fresh inline session for a new selection instead of reusing old review state", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

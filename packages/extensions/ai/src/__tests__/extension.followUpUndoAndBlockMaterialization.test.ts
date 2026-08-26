@@ -6,7 +6,7 @@ import { documentOpsExtension } from "@input/pen-document-ops";
 import { aiExtension, getAIController } from "../index";
 import { defaultSchema } from "@input/pen-schema-default";
 
-describe("aiExtension", () => {
+describe("aiExtension: follow-up undo and block materialization", () => {
 	it("restores the previous accepted story when undoing a kept follow-up rewrite", async () => {
 		let streamCount = 0;
 		const editor = createEditor({

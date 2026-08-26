@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: prompt input isolation", () => {
 	it("does not cancel pointer interaction on the inline session textarea", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

@@ -59,7 +59,7 @@ function createDragEvent(
 	return event;
 }
 
-describe("@input/pen-react image drag and drop", () => {
+describe("@input/pen-react image drag and drop: caret drop targets", () => {
 	it("splits inline text when dropping an image at a caret position", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

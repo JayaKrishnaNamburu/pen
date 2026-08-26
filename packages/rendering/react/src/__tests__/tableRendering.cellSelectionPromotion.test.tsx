@@ -107,7 +107,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@input/pen-react table rendering", () => {
+describe("@input/pen-react table rendering: cell selection promotion", () => {
 	it("does not route printable keys through cell-selection shortcuts while editing a cell", async () => {
 		const editor = createEditor();
 

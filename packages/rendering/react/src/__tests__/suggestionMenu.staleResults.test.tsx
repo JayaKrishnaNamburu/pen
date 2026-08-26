@@ -80,7 +80,7 @@ function requireMenu<TItem>(
 	return menu;
 }
 
-describe("@input/pen-react suggestion menu", () => {
+describe("@input/pen-react suggestion menu: stale results", () => {
 	it("ignores stale async results after the query changes", async () => {
 		const editor = createSuggestionMenuEditor();
 		const blockId = editor.firstBlock()!.id;

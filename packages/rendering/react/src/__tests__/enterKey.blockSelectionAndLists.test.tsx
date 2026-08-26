@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react Enter: block selections and list continuation", () => {
 	it("inserts a paragraph on Enter from a selected content-first flow paragraph", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

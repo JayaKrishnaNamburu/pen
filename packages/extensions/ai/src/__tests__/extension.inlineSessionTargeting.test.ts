@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: inline session targeting", () => {
 	it("creates a fresh inline session when the selection target changes", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

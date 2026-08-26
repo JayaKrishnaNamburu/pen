@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react active inline sync: EditContext across rerenders", () => {
 	it("keeps active EditContext text visible after a parent rerender", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

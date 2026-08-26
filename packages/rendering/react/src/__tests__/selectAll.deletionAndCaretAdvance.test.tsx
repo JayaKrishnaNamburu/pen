@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react cmd+a: deletion and caret advance", () => {
 	it(
 		"resets an empty heading to paragraph on backspace keydown",
 		async () => {

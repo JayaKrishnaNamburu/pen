@@ -49,7 +49,7 @@ function createBlockTypeEditor(
 	});
 }
 
-describe("@input/pen-react block type rendering", () => {
+describe("@input/pen-react block type rendering: nested blocks and list markers", () => {
 	it("renders parentId child blocks inside an open toggle and hides them from the root flow", async () => {
 		const editor = createBlockTypeEditor();
 		const toggleBlockId = editor.firstBlock()!.id;

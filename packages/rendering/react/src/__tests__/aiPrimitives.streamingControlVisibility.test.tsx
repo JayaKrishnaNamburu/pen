@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: control visibility while streaming", () => {
 	it("keeps inline suggestion controls visible while a local AI diff is still streaming", async () => {
 		const releaseFinalDelta = createDeferred();
 		const editor = createEditor({

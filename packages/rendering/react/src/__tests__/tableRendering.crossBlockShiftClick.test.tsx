@@ -107,7 +107,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@input/pen-react table rendering", () => {
+describe("@input/pen-react table rendering: cross-block shift-click", () => {
 	it("creates a canonical cross-block selection when shift-clicking from a table into text in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",

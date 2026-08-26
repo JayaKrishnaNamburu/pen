@@ -23,7 +23,7 @@ async function waitForCondition(
 	throw new Error("Condition was not met in time.");
 }
 
-describe("@input/pen-ai/autocomplete", () => {
+describe("@input/pen-ai/autocomplete: deep prose promotion", () => {
 	it("promotes long depth-two prose continuations into a new paragraph earlier", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		let callCount = 0;

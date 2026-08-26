@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: contextual prompt spacing", () => {
 	it("closes the inline prompt when resolving a turn from the prompt buttons", async () => {
 		async function runResolutionCase(resolution: "accept" | "reject") {
 			const restoreSelectionRect = mockSelectionToolbarRect({

@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: bottom-chat preview and session hooks", () => {
 	it("previews bottom-chat markdown as text while streaming, then renders schema blocks", async () => {
 		const releaseFinalDelta = createDeferred();
 		const editor = createEditor({

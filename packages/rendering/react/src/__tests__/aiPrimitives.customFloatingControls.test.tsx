@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: custom floating inline controls", () => {
 	it("supports custom floating inline suggestion controls built from primitives", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

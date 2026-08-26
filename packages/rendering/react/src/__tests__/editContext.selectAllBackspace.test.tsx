@@ -14,7 +14,7 @@ import {
 	getFieldEditor,
 	setNativeSelectionRange,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react EditContext: cmd+a backspace", () => {
 	it("deletes a cmd+a selection on Backspace when the native EditContext range is collapsed", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

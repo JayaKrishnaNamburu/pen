@@ -40,7 +40,7 @@ afterEach(() => {
 	registerRenderer("paragraph", ParagraphRenderer);
 });
 
-describe("@input/pen-react placeholder behavior", () => {
+describe("@input/pen-react placeholder behavior: the document placeholder", () => {
 	it("shows the document empty placeholder for a single empty block", async () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 

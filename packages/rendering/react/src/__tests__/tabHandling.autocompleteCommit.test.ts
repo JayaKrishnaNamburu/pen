@@ -142,7 +142,7 @@ function createPresetEditor(
 	});
 }
 
-describe("@input/pen-react field editor Tab handling", () => {
+describe("@input/pen-react field editor Tab handling: autocomplete commit", () => {
 	it("commits programmatic selection after accepting raw inline completions", () => {
 		const editor = createPresetEditor({
 			preset: {

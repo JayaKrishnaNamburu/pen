@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: affected-range decoration", () => {
 	it("submits a new inline selection edit after keeping bottom-chat changes", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

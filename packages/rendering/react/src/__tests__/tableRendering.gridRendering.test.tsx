@@ -107,7 +107,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@input/pen-react table rendering", () => {
+describe("@input/pen-react table rendering: the cell grid", () => {
 	it("renders a table block with cells from the canonical model", async () => {
 		const editor = createEditor();
 

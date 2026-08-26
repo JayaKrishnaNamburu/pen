@@ -49,7 +49,7 @@ function createBlockTypeEditor(
 	});
 }
 
-describe("@input/pen-react block type rendering", () => {
+describe("@input/pen-react block type rendering: conversion and toolbar options", () => {
 	it("derives flow-aware default block type options from schema metadata", async () => {
 		const editor = createBlockTypeEditor({
 			documentProfile: "flow",

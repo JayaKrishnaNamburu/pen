@@ -93,7 +93,7 @@ function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
 	});
 }
 
-describe("@input/pen-react escape key handling", () => {
+describe("@input/pen-react expanded backend: stale textupdate carets", () => {
 	it("uses the programmatic post-commit caret for stale EditContext text updates", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

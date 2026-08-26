@@ -67,7 +67,7 @@ function tableEditor() {
 	return editor;
 }
 
-describe("@input/pen-interop/html dom-to-blocks", () => {
+describe("@input/pen-interop/html dom-to-blocks: schema hooks and flow documents", () => {
 	it("server-side parsing produces identical blocks as browser-side for same input (AC 43)", () => {
 		const inputs = [
 			"<h1>Title</h1><p>Body</p>",

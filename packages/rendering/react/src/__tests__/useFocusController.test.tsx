@@ -13,7 +13,7 @@ import { defaultSchema } from "@input/pen-schema-default";
 import {
 	useFocusController,
 	type PenFocusController,
-} from "./useFocusController";
+} from "../hooks/useFocusController";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }

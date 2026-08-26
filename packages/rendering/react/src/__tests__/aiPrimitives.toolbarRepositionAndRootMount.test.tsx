@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: toolbar reposition and root mount", () => {
 	it("repositions the selection toolbar when the editor viewport scrolls", async () => {
 		const selectionRect = mockMutableSelectionToolbarRect({
 			top: 180,

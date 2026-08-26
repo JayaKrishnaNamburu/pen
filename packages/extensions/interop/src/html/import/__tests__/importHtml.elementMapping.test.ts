@@ -22,7 +22,7 @@ function convert(html: string, registry: SchemaRegistry = stubRegistry) {
 	return domToBlocks(dom, registry);
 }
 
-describe("@input/pen-interop/html dom-to-blocks", () => {
+describe("@input/pen-interop/html dom-to-blocks: element mapping", () => {
 	it("heading + paragraph (AC 28)", () => {
 		const blocks = convert("<h1>Title</h1><p>Body</p>");
 

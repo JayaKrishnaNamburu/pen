@@ -18,7 +18,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react undo reconciliation: EditContext with toolbar focus", () => {
 	it("reconciles repeated undo steps with EditContext while focus is on a toolbar button", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

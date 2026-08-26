@@ -249,7 +249,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: session rail and tool activity", () => {
 	it("renders active inline session controls as a right-edge rail", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

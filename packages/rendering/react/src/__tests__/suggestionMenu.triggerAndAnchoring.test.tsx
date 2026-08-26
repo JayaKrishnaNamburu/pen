@@ -80,7 +80,7 @@ function requireMenu<TItem>(
 	return menu;
 }
 
-describe("@input/pen-react suggestion menu", () => {
+describe("@input/pen-react suggestion menu: trigger and anchoring", () => {
 	it("opens from a typed trigger and confirms the selected item", async () => {
 		const editor = createSuggestionMenuEditor();
 		const blockId = editor.firstBlock()!.id;

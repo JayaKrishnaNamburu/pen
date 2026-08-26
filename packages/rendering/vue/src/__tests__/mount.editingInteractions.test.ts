@@ -123,7 +123,7 @@ async function flushTransfer() {
   await nextTick();
 }
 
-describe("@input/pen-vue", () => {
+describe("@input/pen-vue: editing interactions", () => {
   it("transitions from text editing to block selection on Escape", async () => {
     const editor = createParagraphEditor();
 

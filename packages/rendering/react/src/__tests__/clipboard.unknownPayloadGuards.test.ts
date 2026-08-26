@@ -54,7 +54,7 @@ function createFieldEditorStub(): FieldEditorImpl {
 	} as unknown as FieldEditorImpl;
 }
 
-describe("@input/pen-react clipboard", () => {
+describe("@input/pen-react clipboard: unknown payload guards", () => {
 	it("does not direct-paste unknown pen block payloads in flow documents", () => {
 		const targetEditor = createEditor({
 			documentProfile: "flow",

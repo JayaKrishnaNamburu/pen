@@ -11,7 +11,7 @@ import {
 	flushAnimationFrames,
 	getFieldEditor,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react beforeinput: deletion and list rules", () => {
 	it("collapses backspace deletion to the normalized range start", async () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;

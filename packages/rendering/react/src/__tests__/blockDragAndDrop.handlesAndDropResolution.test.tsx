@@ -214,7 +214,7 @@ function GlobalHandle(props: BlockControlsProps): React.ReactElement {
 	);
 }
 
-describe("@input/pen-react block drag and drop", () => {
+describe("@input/pen-react block drag and drop: handles and drop resolution", () => {
 	it("enables custom block handles in structured mode and disables them in flow mode by default", async () => {
 		const structuredEditor = createBlockDragEditor();
 		seedBlocks(structuredEditor, 3);

@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react click gestures: collapsing inside a selection", () => {
 	it("collapses a selected inline range to a caret when clicking inside it", async () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;

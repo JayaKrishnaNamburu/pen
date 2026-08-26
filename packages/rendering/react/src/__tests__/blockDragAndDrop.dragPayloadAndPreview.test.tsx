@@ -214,7 +214,7 @@ function GlobalHandle(props: BlockControlsProps): React.ReactElement {
 	);
 }
 
-describe("@input/pen-react block drag and drop", () => {
+describe("@input/pen-react block drag and drop: drag payload and preview", () => {
 	it("uses a block preview element as the native drag image", async () => {
 		const editor = createBlockDragEditor();
 		const [blockA] = seedBlocks(editor, 1);

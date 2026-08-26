@@ -9,7 +9,7 @@ import { aiExtension, getAIController } from "../index";
 /**
  * UC3: the text-parsed plan channel is gone.
  *
- * `extension.part13.test.ts` shows the migrated path — a block conversion
+ * `extension.editDocumentBlockConversion.test.ts` shows the migrated path — a block conversion
  * staged through `edit_document`. This file carries the other half of the
  * claim: that the door it replaced is shut. A model that puts a document
  * mutation plan in its assistant text gets no mutation from it, on any lane,

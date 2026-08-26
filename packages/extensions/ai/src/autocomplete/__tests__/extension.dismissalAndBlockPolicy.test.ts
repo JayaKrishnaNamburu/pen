@@ -23,7 +23,7 @@ async function waitForCondition(
 	throw new Error("Condition was not met in time.");
 }
 
-describe("@input/pen-ai/autocomplete", () => {
+describe("@input/pen-ai/autocomplete: dismissal and block policy", () => {
 	it("dismisses visible suggestions when the selection changes after showing", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		const fieldEditor = {

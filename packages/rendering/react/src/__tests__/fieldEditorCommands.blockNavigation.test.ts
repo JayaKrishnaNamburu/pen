@@ -57,7 +57,7 @@ function editorOpts() {
 	};
 }
 
-describe("@input/pen-react field-editor commands", () => {
+describe("@input/pen-react field-editor commands: block navigation", () => {
 	it("moves to the previous block at the logical start", () => {
 		const editor = createEditor(editorOpts());
 		const firstBlockId = editor.firstBlock()!.id;

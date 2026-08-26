@@ -56,7 +56,7 @@ function createFlowEditorFromSeededDocument(
 	return editor;
 }
 
-describe("@input/pen-interop/html", () => {
+describe("@input/pen-interop/html: table cells and flow blocks", () => {
 	it("supports resolved suggestion export inside table cells", () => {
 		const editor = editorWithTable(
 			{

@@ -93,7 +93,7 @@ function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
 	});
 }
 
-describe("@input/pen-react escape key handling", () => {
+describe("@input/pen-react cmd+a: structured and block-first escalation", () => {
 	it("maps cmd+a from a collapsed EditContext selection via the root handler", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

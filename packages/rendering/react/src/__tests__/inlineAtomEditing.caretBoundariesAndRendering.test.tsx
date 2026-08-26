@@ -118,7 +118,7 @@ function createRect({
 	} as DOMRect;
 }
 
-describe("Pen inline atom editing", () => {
+describe("Pen inline atom editing: caret boundaries and rendering", () => {
 	it("selects an inline atom with ArrowLeft and then collapses before it", () => {
 		const editor = createPresetEditor();
 		const blockId = seedInlineAtomDocument(editor);

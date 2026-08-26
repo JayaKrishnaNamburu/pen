@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: review fallback and inline sessions", () => {
 	it("falls back to document review mode for bottom-chat rewrites on non-text blocks", async () => {
 		let requestMode: string | undefined;
 		const editor = createEditor({

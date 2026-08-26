@@ -59,7 +59,7 @@ function createDragEvent(
 	return event;
 }
 
-describe("@input/pen-react image drag and drop", () => {
+describe("@input/pen-react image drag and drop: structural targets and native guards", () => {
 	it("shows the insertion side on structural block drop targets", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

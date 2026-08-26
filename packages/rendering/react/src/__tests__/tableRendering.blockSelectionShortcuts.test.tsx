@@ -107,7 +107,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@input/pen-react table rendering", () => {
+describe("@input/pen-react table rendering: block selection shortcuts", () => {
 	it("maps cmd+a from a selected table to top-level BlockSelection in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",

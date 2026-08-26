@@ -118,7 +118,7 @@ function createRect({
 	} as DOMRect;
 }
 
-describe("Pen inline atom editing", () => {
+describe("Pen inline atom editing: focus policy and selection projection", () => {
 	it("maps atom-only pointer positions by chip geometry", () => {
 		const root = document.createElement("div");
 		const block = document.createElement("div");

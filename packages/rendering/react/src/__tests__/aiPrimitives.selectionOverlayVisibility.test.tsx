@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: selection overlay visibility", () => {
 	it("keeps the inline AI selection overlay visible from the captured session target", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

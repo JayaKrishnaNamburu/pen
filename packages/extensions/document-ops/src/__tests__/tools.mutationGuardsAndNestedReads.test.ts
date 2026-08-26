@@ -265,7 +265,7 @@ function createNestedDocumentEditor(): Editor {
 	} as unknown as Editor;
 }
 
-describe("@input/pen-document-ops tools", () => {
+describe("@input/pen-document-ops tools: mutation guards and nested reads", () => {
 	it("rejects block mutations against read-only targets", async () => {
 		const editor = createStructuredTargetEditor("subdocument-1");
 

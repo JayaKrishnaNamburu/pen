@@ -102,7 +102,7 @@ function createThreeBlockEditor() {
 	return { editor, firstBlockId, secondBlockId, thirdBlockId };
 }
 
-describe("@input/pen-react region selection", () => {
+describe("@input/pen-react region selection: marquee bounds", () => {
 	it("clips the marquee overlay to the configured region rect", async () => {
 		const { editor, firstBlockId } = createThreeBlockEditor();
 		const container = document.createElement("div");

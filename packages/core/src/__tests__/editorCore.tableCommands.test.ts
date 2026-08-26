@@ -71,7 +71,7 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-describe("@input/pen-core table operations", () => {
+describe("@input/pen-core table operations: row, column, and cell commands", () => {
 	it("insert-block with table type produces seeded 2x2 grid", () => {
 		const editor = createEditor();
 

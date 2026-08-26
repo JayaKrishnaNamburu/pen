@@ -46,7 +46,7 @@ function dispatchKey(key: string, target: EventTarget = document) {
 	);
 }
 
-describe("@input/pen-react slash menu", () => {
+describe("@input/pen-react slash menu: navigation and catalog copy", () => {
 	it("handles navigation keys without transform-based placement or downstream propagation", async () => {
 		const editor = createSlashMenuEditor();
 		const blockId = editor.firstBlock()!.id;

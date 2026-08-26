@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: inline session from the selection toolbar", () => {
 	it("renders an inline AI session from the selection toolbar", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

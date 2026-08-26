@@ -146,7 +146,7 @@ function createPresetEditor(
 	});
 }
 
-describe("@input/pen-react key binding contexts", () => {
+describe("@input/pen-react key binding contexts: history and search shortcuts", () => {
 	it("handles macOS undo and redo shortcuts without native history events", () => {
 		const editor = createPresetEditor({
 			preset: {

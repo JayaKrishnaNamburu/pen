@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: the inline session shortcut", () => {
 	it("opens the inline session from the configured shortcut", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

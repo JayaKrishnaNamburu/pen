@@ -70,7 +70,7 @@ function seedInlineAtomDocument(editor: ReturnType<typeof createPresetEditor>) {
 	return blockId;
 }
 
-describe("Pen inline atom DOM operations", () => {
+describe("Pen inline atom DOM operations: metadata and selection offsets", () => {
 	it("refreshes inline atom metadata when reconciliation changes atom props", () => {
 		const editor = createPresetEditor();
 		const element = document.createElement("span");

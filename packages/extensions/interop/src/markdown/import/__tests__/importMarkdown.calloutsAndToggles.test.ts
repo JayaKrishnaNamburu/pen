@@ -64,7 +64,7 @@ function tableEditor() {
 	return editor;
 }
 
-describe("@input/pen-interop/markdown", () => {
+describe("@input/pen-interop/markdown: callouts and toggles", () => {
 	it("preserves inline formatting after a markdown callout prefix", () => {
 		const blocks = convert(
 			"> **Note:** This is *very* [important](https://example.com)",

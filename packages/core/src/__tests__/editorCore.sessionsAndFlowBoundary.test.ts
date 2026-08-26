@@ -97,7 +97,7 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-describe("@input/pen-core createEditor", () => {
+describe("@input/pen-core createEditor: sessions, profiles, and the flow mutation boundary", () => {
 	it("installs extensions from presets before user extensions", () => {
 		let presetInstalled = false;
 		const editor = createEditor({

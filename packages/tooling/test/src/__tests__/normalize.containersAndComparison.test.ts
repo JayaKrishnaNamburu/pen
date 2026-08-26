@@ -42,7 +42,7 @@ function stateVector(ydoc: Y.Doc): Uint8Array {
   return Y.encodeStateVector(ydoc);
 }
 
-describe("SchemaEngineImpl — Normalization Rules", () => {
+describe("SchemaEngineImpl — layout containers and deep comparison", () => {
   describe("Rule 6: normalizeLayout", () => {
     it("collapses empty layout containers", () => {
       const ydoc = new Y.Doc();

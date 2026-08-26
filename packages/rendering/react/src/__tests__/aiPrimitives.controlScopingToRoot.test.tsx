@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: control scoping to the editor root", () => {
 	it("scopes inline suggestion controls to the active editor root", async () => {
 		const secondaryEditor = createEditor({
 			schema: defaultSchema,

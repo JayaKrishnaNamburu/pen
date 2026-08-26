@@ -9,7 +9,7 @@ import {
 	flushAnimationFrames,
 	getFieldEditor,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react undo reconciliation: passive blocks", () => {
 	it("reconciles history changes for passive blocks outside activeBlockIds", async () => {
 		const editor = createUndoSelectionDeletionEditor();
 		const firstBlockId = editor.firstBlock()!.id;

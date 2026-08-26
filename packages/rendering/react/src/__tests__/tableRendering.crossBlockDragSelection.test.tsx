@@ -108,7 +108,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@input/pen-react table rendering", () => {
+describe("@input/pen-react table rendering: cross-block drag selection", () => {
 	it("escalates cmd+a from a selected cell to top-level BlockSelection in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",

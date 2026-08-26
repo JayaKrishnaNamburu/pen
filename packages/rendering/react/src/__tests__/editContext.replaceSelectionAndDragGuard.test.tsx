@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react EditContext: replaceSelection and drag guards", () => {
 	it("reconciles expanded active blocks after replaceSelection commits", async () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const firstBlockId = editor.firstBlock()!.id;

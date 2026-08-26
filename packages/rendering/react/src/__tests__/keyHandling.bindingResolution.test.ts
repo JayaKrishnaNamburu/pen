@@ -146,7 +146,7 @@ function createPresetEditor(
 	});
 }
 
-describe("@input/pen-react key binding contexts", () => {
+describe("@input/pen-react key binding contexts: binding resolution", () => {
 	it("selects inline atoms before arrow navigation moves past them", () => {
 		const editor = createPresetEditor({
 			preset: {

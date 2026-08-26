@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: debug logs and commit metrics", () => {
 	it("exposes AI debug logs through a React hook", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

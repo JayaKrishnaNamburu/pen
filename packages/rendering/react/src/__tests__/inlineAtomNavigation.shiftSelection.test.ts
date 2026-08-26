@@ -142,7 +142,7 @@ function createPresetEditor(
 	});
 }
 
-describe("@input/pen-react field editor inline atom navigation", () => {
+describe("@input/pen-react field editor inline atom navigation: shift selection", () => {
 	const createAtomText = (): FieldEditorTextLike => ({
 		length: 1,
 		toString: () => "",

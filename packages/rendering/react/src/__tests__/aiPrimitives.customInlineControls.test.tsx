@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: custom non-floating inline controls", () => {
 	it("supports custom non-floating inline suggestion keep and undo controls", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

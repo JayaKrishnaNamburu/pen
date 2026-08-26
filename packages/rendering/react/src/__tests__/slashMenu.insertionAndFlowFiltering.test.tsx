@@ -46,7 +46,7 @@ function dispatchKey(key: string, target: EventTarget = document) {
 	);
 }
 
-describe("@input/pen-react slash menu", () => {
+describe("@input/pen-react slash menu: insertion and flow filtering", () => {
 	it("inserts a non-empty nested block after its visible subtree", async () => {
 		const editor = createSlashMenuEditor();
 		const toggleBlockId = editor.firstBlock()!.id;

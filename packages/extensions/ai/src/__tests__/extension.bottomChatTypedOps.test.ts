@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: bottom-chat typed local operations", () => {
 	it("keeps document-targeted bottom-chat rewrites off selection-rewrite even with a live selection", async () => {
 		let requestMode: string | undefined;
 		let operationKind: string | undefined;

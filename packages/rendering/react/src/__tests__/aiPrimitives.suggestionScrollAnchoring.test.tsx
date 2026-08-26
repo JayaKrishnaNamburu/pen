@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: suggestion scroll anchoring", () => {
 	it("does not auto-scroll the same inline suggestion while the viewport scrolls", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

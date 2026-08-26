@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildAutocompleteMessages } from "./promptBuilder";
-import { builtinAutocompleteProviders } from "./providers/builtins";
-import { AutocompleteProviderRegistry } from "./providers/registry";
+import { buildAutocompleteMessages } from "../promptBuilder";
+import { builtinAutocompleteProviders } from "../providers/builtins";
+import { AutocompleteProviderRegistry } from "../providers/registry";
 
 describe("buildAutocompleteMessages", () => {
 	it("includes neighboring block text for local draft context", async () => {

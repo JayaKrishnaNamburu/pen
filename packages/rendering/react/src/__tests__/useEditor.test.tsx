@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { Editor } from "@input/pen-types";
-import { useEditor } from "./useEditor";
+import { useEditor } from "../hooks/useEditor";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }

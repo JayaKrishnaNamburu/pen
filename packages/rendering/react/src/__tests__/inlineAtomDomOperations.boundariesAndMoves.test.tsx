@@ -70,7 +70,7 @@ function seedInlineAtomDocument(editor: ReturnType<typeof createPresetEditor>) {
 	return blockId;
 }
 
-describe("Pen inline atom DOM operations", () => {
+describe("Pen inline atom DOM operations: boundaries and moves", () => {
 	it("applies text deltas around inline atoms at logical boundaries", () => {
 		const editor = createPresetEditor();
 		const element = document.createElement("span");

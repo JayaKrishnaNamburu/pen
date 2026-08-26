@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: tool loop and markdown preview", () => {
 	it("keeps selection rewrites text-only when markdown block generation is enabled", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

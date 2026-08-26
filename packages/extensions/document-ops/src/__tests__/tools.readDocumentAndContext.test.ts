@@ -274,7 +274,7 @@ function createNestedDocumentEditor(): Editor {
 	} as unknown as Editor;
 }
 
-describe("@input/pen-document-ops tools", () => {
+describe("@input/pen-document-ops tools: read_document and context", () => {
 	it("guards ToolContext block insertion with the same policy", () => {
 		const editor = createFakeEditor("flow");
 		const emit = vi.fn();

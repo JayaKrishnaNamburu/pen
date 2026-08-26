@@ -60,7 +60,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@input/pen-react escape key handling", () => {
+describe("@input/pen-react Escape: the selection ladder", () => {
 	it("preserves backwards same-block selection direction when collapsing", async () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

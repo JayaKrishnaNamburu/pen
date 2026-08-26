@@ -23,7 +23,7 @@ async function waitForCondition(
 	throw new Error("Condition was not met in time.");
 }
 
-describe("@input/pen-ai/autocomplete", () => {
+describe("@input/pen-ai/autocomplete: runtime policy cancellation", () => {
 	it("cancels a scheduled request when runtime policy becomes ineligible", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		let modelCalled = false;

@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: prompt focus retention", () => {
 	it("keeps the inline prompt focused after submitting a prompt", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

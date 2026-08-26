@@ -93,7 +93,7 @@ function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
 	});
 }
 
-describe("@input/pen-react escape key handling", () => {
+describe("@input/pen-react cross-block drag: starting unfocused", () => {
 	it("preserves a cross-block drag when the native range clears before mouseup", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;

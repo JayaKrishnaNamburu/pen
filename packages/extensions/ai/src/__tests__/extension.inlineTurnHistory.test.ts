@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: inline turn history", () => {
 	it("only restores a suspended inline session through history", () => {
 		const editor = createEditor({
 			schema: defaultSchema,

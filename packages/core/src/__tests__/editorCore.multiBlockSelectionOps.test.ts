@@ -71,7 +71,7 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-describe("@input/pen-core createEditor", () => {
+describe("@input/pen-core createEditor: multi-block selection operations", () => {
 	it("emits one commit for observed CRDT updates", () => {
 		const observed: unknown[][] = [];
 		const ext = defineExtension({

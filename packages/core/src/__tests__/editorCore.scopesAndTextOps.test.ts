@@ -75,7 +75,7 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-describe("@input/pen-core createEditor", () => {
+describe("@input/pen-core createEditor: subdocument scopes and text operations", () => {
 	it("discovers subdocument scopes and lets nested editors edit them", () => {
 		const session = createDocumentSession({
 			adapter: yjsAdapter(),

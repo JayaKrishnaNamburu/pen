@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: keep cancels a streaming suggestion", () => {
 	it("cancels a streaming inline suggestion when keep is clicked", async () => {
 		const abortObserved = createDeferred();
 		const editor = createEditor({

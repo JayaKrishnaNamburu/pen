@@ -265,7 +265,7 @@ function createNestedDocumentEditor(): Editor {
 	} as unknown as Editor;
 }
 
-describe("@input/pen-document-ops tools", () => {
+describe("@input/pen-document-ops tools: input validation", () => {
 	it("rejects invalid tool inputs at the document-ops runtime boundary", async () => {
 		const runtime = new ToolRuntimeImpl();
 		const searchEditor = createReadDocumentEditor();

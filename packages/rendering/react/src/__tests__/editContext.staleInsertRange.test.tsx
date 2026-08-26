@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react EditContext: stale collapsed insert ranges", () => {
 	it("uses the editor caret when EditContext reports a stale collapsed insert range", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

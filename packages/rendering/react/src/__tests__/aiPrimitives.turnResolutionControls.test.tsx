@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: turn resolution controls", () => {
 	it("rejects and closes the inline session on Escape even when unfocused", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

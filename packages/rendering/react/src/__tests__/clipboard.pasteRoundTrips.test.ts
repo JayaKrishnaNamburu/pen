@@ -104,7 +104,7 @@ function seedTable(
 	]);
 }
 
-describe("@input/pen-react clipboard", () => {
+describe("@input/pen-react clipboard: paste round-trips", () => {
 	it("preserves inline formatting for internal copy/paste round-trips", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

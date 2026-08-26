@@ -24,7 +24,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: suggest mode and generation", () => {
 	it("marks inserted and deleted text in suggest mode", () => {
 		const editor = createEditor({
 			schema: defaultSchema,

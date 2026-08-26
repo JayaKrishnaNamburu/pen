@@ -13,7 +13,7 @@ import {
 	flushAnimationFrames,
 	getFieldEditor,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react beforeinput: heading guards and select-all deletion", () => {
 	it("does not convert headings with list triggers via beforeinput", async () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;

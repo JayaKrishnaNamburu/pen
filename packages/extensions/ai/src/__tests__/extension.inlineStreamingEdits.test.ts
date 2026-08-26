@@ -25,7 +25,7 @@ async function awaitExtensionLifecycle(
 	await editor.whenReady();
 }
 
-describe("aiExtension", () => {
+describe("aiExtension: inline streaming edits", () => {
 	it("routes inline local-edit prompts to block streaming suggestions", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

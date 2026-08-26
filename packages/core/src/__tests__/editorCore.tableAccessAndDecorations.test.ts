@@ -75,7 +75,7 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-describe("@input/pen-core table operations", () => {
+describe("@input/pen-core table operations: cell access and decoration caching", () => {
 	it("convert-block to table preserves inline text in the first cell", () => {
 		const editor = createEditor();
 

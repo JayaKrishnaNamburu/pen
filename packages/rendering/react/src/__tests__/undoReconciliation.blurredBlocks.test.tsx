@@ -9,7 +9,7 @@ import {
 	flushAnimationFrames,
 	getFieldEditor,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react undo reconciliation: blurred blocks", () => {
 	it("reconciles blurred active blocks during undo and redo", async () => {
 		const editor = createUndoSelectionDeletionEditor();
 		const blockId = editor.firstBlock()!.id;

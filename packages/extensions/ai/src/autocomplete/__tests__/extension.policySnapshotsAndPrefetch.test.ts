@@ -23,7 +23,7 @@ async function waitForCondition(
 	throw new Error("Condition was not met in time.");
 }
 
-describe("@input/pen-ai/autocomplete", () => {
+describe("@input/pen-ai/autocomplete: policy snapshots and prefetch", () => {
 	it("returns defensive block policy snapshots from both getters", () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		const fieldEditor = {

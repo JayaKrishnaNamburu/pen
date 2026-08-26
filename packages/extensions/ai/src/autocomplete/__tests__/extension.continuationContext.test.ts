@@ -23,7 +23,7 @@ async function waitForCondition(
 	throw new Error("Condition was not met in time.");
 }
 
-describe("@input/pen-ai/autocomplete", () => {
+describe("@input/pen-ai/autocomplete: continuation context", () => {
 	it("preserves a leading newline when a continuation starts with markdown blocks", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		const fieldEditor = {

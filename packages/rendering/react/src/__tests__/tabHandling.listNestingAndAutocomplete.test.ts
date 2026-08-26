@@ -142,7 +142,7 @@ function createPresetEditor(
 	});
 }
 
-describe("@input/pen-react field editor Tab handling", () => {
+describe("@input/pen-react field editor Tab handling: list nesting and autocomplete", () => {
 	it("handles Tab for list nesting and preserves selection", () => {
 		const editor = createPresetEditor({
 			preset: {

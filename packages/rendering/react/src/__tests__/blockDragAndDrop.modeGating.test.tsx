@@ -214,7 +214,7 @@ function GlobalHandle(props: BlockControlsProps): React.ReactElement {
 	);
 }
 
-describe("@input/pen-react block drag and drop", () => {
+describe("@input/pen-react block drag and drop: mode gating", () => {
 	it("does not auto-enable handle drag in flow mode when block-first interaction is enabled", async () => {
 		const editor = createBlockDragEditor({
 			editorViewMode: "flow",

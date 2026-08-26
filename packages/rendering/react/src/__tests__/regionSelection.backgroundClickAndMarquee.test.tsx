@@ -102,7 +102,7 @@ function createThreeBlockEditor() {
 	return { editor, firstBlockId, secondBlockId, thirdBlockId };
 }
 
-describe("@input/pen-react region selection", () => {
+describe("@input/pen-react region selection: background click and marquee", () => {
 	it("focuses the existing empty placeholder block on background click", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

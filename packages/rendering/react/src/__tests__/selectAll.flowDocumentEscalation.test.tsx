@@ -93,7 +93,7 @@ function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
 	});
 }
 
-describe("@input/pen-react escape key handling", () => {
+describe("@input/pen-react cmd+a: escalation in flow documents", () => {
 	it("re-homes the active field editor when native selection moves into another block", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;

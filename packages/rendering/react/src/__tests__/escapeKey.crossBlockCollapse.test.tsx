@@ -93,7 +93,7 @@ function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
 	});
 }
 
-describe("@input/pen-react escape key handling", () => {
+describe("@input/pen-react Escape: collapsing cross-block selections", () => {
 	it("collapses cross-block selections to the focus caret", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;

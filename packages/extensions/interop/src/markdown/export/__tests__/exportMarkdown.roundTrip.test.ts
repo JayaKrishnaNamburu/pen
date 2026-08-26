@@ -57,7 +57,7 @@ function createFlowEditorFromSeededDocument(
   return editor;
 }
 
-describe("table markdown round-trip", () => {
+describe("@input/pen-interop/markdown: table round-trip", () => {
   it("import → editor → export produces equivalent markdown", () => {
     const inputBlocks: PendingBlock[] = [
       {

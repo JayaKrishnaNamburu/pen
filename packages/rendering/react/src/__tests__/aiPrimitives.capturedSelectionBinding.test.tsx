@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: captured selection binding", () => {
 	it("keeps the inline AI session bound to its captured selection", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

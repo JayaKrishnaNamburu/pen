@@ -61,7 +61,7 @@ function editorOpts() {
 	};
 }
 
-describe("@input/pen-react field-editor commands", () => {
+describe("@input/pen-react field-editor commands: inline marks and input rules", () => {
 	it("toggles an inline mark across a single-block text selection", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;

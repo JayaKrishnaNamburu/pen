@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: inline review restore and session metrics", () => {
 	it("does not reopen accepted inline review for unrelated undo operations", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,

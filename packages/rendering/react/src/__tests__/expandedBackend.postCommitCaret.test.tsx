@@ -93,7 +93,7 @@ function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
 	});
 }
 
-describe("@input/pen-react escape key handling", () => {
+describe("@input/pen-react expanded backend: the programmatic post-commit caret", () => {
 	it("prevents native drag start on the expanded host", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;

@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react EditContext: textupdate selection projection", () => {
 	it("updates EditContext text before projecting the post-insert selection", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

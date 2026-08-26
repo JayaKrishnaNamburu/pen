@@ -6,7 +6,7 @@ import { documentOpsExtension } from "@input/pen-document-ops";
 import { acceptAllSuggestions, aiExtension, getAIController } from "../index";
 import { defaultSchema } from "@input/pen-schema-default";
 
-describe("aiExtension", () => {
+describe("aiExtension: edit_document block conversion", () => {
 	it("stages a review-safe block conversion from an edit_document call", async () => {
 		let blockId = "";
 		const editor = createEditor({

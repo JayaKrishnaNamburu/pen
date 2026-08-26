@@ -104,7 +104,7 @@ function seedTable(
 	]);
 }
 
-describe("@input/pen-react clipboard", () => {
+describe("@input/pen-react clipboard: importer parsing", () => {
 	it("keeps HTML paragraph parsing when inline marks are preserved", async () => {
 		const editor = createEditor();
 		const emptyBlockId = editor.firstBlock()!.id;

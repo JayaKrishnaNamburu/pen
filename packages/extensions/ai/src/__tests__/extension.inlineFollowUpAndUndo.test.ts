@@ -23,7 +23,7 @@ import {
 	waitForPreview,
 } from "./extension.testUtils";
 
-describe("aiExtension", () => {
+describe("aiExtension: inline follow-up targets and undo", () => {
 	it("refreshes the inline follow-up target after keeping a rewritten selection", async () => {
 		let streamCount = 0;
 		const editor = createEditor({

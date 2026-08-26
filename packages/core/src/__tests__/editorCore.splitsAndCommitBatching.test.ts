@@ -66,7 +66,7 @@ type TestTableContentLike = {
 	get(index: number): TestTableRowLike;
 };
 
-describe("@input/pen-core createEditor", () => {
+describe("@input/pen-core createEditor: block splits and commit batching", () => {
 	it("splits at offset zero by inserting an empty block above", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

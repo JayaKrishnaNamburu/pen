@@ -19,7 +19,7 @@ import {
 	setNativeSelectionRange,
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
-describe("@input/pen-react selected text deletion", () => {
+describe("@input/pen-react EditContext: list rules and stale backspace", () => {
 	it("converts '3. ' into a numbered list item via EditContext textupdate", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {

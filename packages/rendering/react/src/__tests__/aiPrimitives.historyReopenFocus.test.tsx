@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: focus when history reopens a prompt", () => {
 	it("does not autofocus the inline session input when history reopens it", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,

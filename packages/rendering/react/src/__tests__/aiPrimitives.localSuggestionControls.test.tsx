@@ -248,7 +248,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@input/pen-react AI primitives", () => {
+describe("@input/pen-react AI primitives: local inline suggestion controls", () => {
 	it("renders local inline suggestion controls for non-session AI diffs", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
