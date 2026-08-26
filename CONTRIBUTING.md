@@ -58,17 +58,17 @@ check that depends on all of its jobs. Those `Summary` names are what
 branch protection requires, so a new matrix leg or a new gate blocks
 merges the moment it exists, with no repository-settings change.
 
-| Required check              | What it protects                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------ |
-| `CI / Summary`              | Lint, build, API reports, typecheck, unit and integration tests, playground e2e      |
-| `Static analysis / Summary` | The gate list in `scripts/gates.json`, plus changeset coverage                       |
-| `Conformance / Summary`     | Real-browser selection, IME, geometry, and a11y conformance                          |
-| `Examples / Summary`        | The React, Vue, and vanilla examples still build and mount against workspace sources |
-| `Node / Summary`            | The tree builds and tests on Node 22, Node 26, and macOS                             |
-| `Docs / Summary`            | The docs site compiles and its samples typecheck                                     |
-| `Supply chain / Summary`    | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
-| `Performance / Budgets`     | CH8 performance budgets and the SCALE1 envelope                                      |
-| `CodeQL / JavaScript and TypeScript` | Static security analysis                                                    |
+| Required check                       | What it protects                                                                     |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| `CI / Summary`                       | Lint, build, API reports, typecheck, unit and integration tests, playground e2e      |
+| `Static analysis / Summary`          | The gate list in `scripts/gates.json`, plus changeset coverage                       |
+| `Conformance / Summary`              | Real-browser selection, IME, geometry, and a11y conformance                          |
+| `Examples / Summary`                 | The React, Vue, and vanilla examples still build and mount against workspace sources |
+| `Node / Summary`                     | The tree builds and tests on Node 22, Node 26, and macOS                             |
+| `Docs / Summary`                     | The docs site compiles and its samples typecheck                                     |
+| `Supply chain / Summary`             | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
+| `Performance / Budgets`              | CH8 performance budgets and the SCALE1 envelope                                      |
+| `CodeQL / JavaScript and TypeScript` | Static security analysis                                                             |
 
 Two of these are staged rather than all-or-nothing. Under `CI`, the
 Firefox browser leg reports without blocking; under `Conformance`,
