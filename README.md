@@ -2,7 +2,7 @@
 <img width="100%" height="auto" alt="logo_black@2x" src="https://github.com/user-attachments/assets/6eb68df5-c70f-4a38-ac6f-f69530f0b355" />
 
 <h3 align="center">
-  Headless, extension-first rich text<br/>editor engine for AI collaboration
+  Headless, extension-first rich text<br/>editor engine for Human/AI collaboration.
 </h3>
 
 <p align="center">
@@ -28,8 +28,6 @@ Pen is a block-native rich text editor SDK for applications where people and AI 
 **Runs without a DOM.** The same runtime works in Node, so agents, servers, and pipelines edit documents through the API the editor uses.
 
 ## Quick Start
-
-Pen has not shipped its first release train: every package is still the placeholder `0.0.1`, the first `changeset version` stamps **0.3.0**, and until that lands `pnpm add @input/pen-*` 404s on the public npm registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts — the commands below are the post-publish path. Versioning is a single `0.x` train (v3 ships as 0.3); the policy lives in [`spec/rules/api.md`](spec/rules/api.md) (API7).
 
 Every host follows the same two steps: build an editor with `defaultPreset()`, then mount it. The preset supplies the default schema, undo, and formatting shortcuts.
 

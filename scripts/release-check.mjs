@@ -106,7 +106,7 @@ function versionPackagesScriptProblems(versionPackagesScript) {
 		!versionPackagesScript.includes("stamp-first-train.mjs")
 	) {
 		problems.push(
-			'root package.json "version-packages" must stamp the first train to 0.3.0',
+			'root package.json "version-packages" must stamp the first train to 0.1.0',
 		);
 	}
 	return problems;
