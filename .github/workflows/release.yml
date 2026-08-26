@@ -91,8 +91,8 @@ jobs:
         # empty one that would shadow the OIDC exchange.
         uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          version: pnpm version-packages
-          publish: env -u NODE_AUTH_TOKEN pnpm release
+          version-script: pnpm version-packages
+          publish-script: env -u NODE_AUTH_TOKEN pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
