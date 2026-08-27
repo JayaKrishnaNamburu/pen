@@ -26,6 +26,12 @@
 
 **Runs without a DOM.** The same runtime works in Node, so agents, servers, and pipelines edit documents through the API the editor uses.
 
+## Try it out
+
+https://pen-playground.input.so
+
+<img width="1543" alt="Web preview of the Pen playground" src="https://input-pr-z1wpxj.s3.us-west-2.amazonaws.com/pen/pen-playground-preview.png" />
+
 ## Quick Start
 
 Every host follows the same two steps: build an editor, then mount it. `createEditor()` from `@input/pen` comes with the batteries preset applied; the default schema, undo, formatting shortcuts, document tools, and the streaming writer. The React and Vue hooks own the editor's lifetime themselves, so they take the preset as an option instead.
