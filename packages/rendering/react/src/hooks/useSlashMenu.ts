@@ -1,12 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import {
-	blockLogicalText,
 	foldAndNormalize,
 	isCollapsed,
 	localeFacet,
 	orderSlashMenuItemsByGroup,
 } from "@input/pen-core";
-import type { BlockDisplay, BlockSchema, Editor } from "@input/pen-types";
+import type {
+	BlockDisplay,
+	BlockSchema,
+	DocumentOp,
+	Editor,
+} from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import {
 	displayCatalogForEditor,
@@ -143,9 +147,18 @@ export function useSlashMenu(
 			let insertedOrConvertedBlockId: string | null = null;
 
 			if (block) {
-				const currentText = blockLogicalText(ed, blockId);
-				const isEmptyOrSlash =
-					currentText.length === 0 || currentText === "/";
+				const trigger = getSlashTarget(ed);
+				const triggerRange =
+					trigger && trigger.blockId === blockId ? trigger : null;
+				// the trigger is menu state that happens to live in the
+				// document, so it never survives confirm; what is left over
+				// decides whether the block is replaced or kept. Measured in
+				// the logical domain the splice uses, where an inline atom
+				// inside the query counts as one.
+				const triggerLength = triggerRange
+					? triggerRange.endOffset - triggerRange.startOffset
+					: 0;
+				const lengthOutsideTrigger = block.length() - triggerLength;
 				const isTableInsert = item.type === "table";
 				const tableActivationTarget = isTableInsert
 					? getTableActivationTarget(undefined)
@@ -154,17 +167,18 @@ export function useSlashMenu(
 					? getStarterTableProps()
 					: undefined;
 
-				if (isEmptyOrSlash) {
-					const ops = [];
-					if (currentText === "/") {
-						ops.push({
-							type: "splice-text" as const,
-							blockId,
-							from: 0,
-							to: 0 + 1,
-							insert: "",
-						});
-					}
+				const ops: DocumentOp[] = [];
+				if (triggerRange && triggerLength > 0) {
+					ops.push({
+						type: "splice-text",
+						blockId,
+						from: triggerRange.startOffset,
+						to: triggerRange.endOffset,
+						insert: "",
+					});
+				}
+
+				if (lengthOutsideTrigger === 0) {
 					if (block.type !== item.type) {
 						ops.push(
 							...getConvertBlockOps(ed, {
@@ -173,25 +187,23 @@ export function useSlashMenu(
 								newProps: tableProps,
 							}),
 						);
-						insertedOrConvertedBlockId = blockId;
 					}
-					if (ops.length > 0) {
-						ed.apply(ops, { origin: "user", undoGroup: true });
-					}
+					insertedOrConvertedBlockId = blockId;
 				} else {
 					const newBlockId = generateId();
-					ed.apply(
-						[
-							getInsertSiblingBlockOp(ed, {
-								siblingBlockId: blockId,
-								blockId: newBlockId,
-								blockType: item.type,
-								props: tableProps ?? {},
-							}),
-						],
-						{ origin: "user", undoGroup: true },
+					ops.push(
+						getInsertSiblingBlockOp(ed, {
+							siblingBlockId: blockId,
+							blockId: newBlockId,
+							blockType: item.type,
+							props: tableProps ?? {},
+						}),
 					);
 					insertedOrConvertedBlockId = newBlockId;
+				}
+
+				if (ops.length > 0) {
+					ed.apply(ops, { origin: "user", undoGroup: true });
 				}
 
 				if (

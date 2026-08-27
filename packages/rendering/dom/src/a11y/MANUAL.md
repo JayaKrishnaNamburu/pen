@@ -18,7 +18,6 @@ Do **VO-mac first** (VoiceOver + Safari on macOS). That is the cheapest required
 
 Known product bugs, so a fail here is not a setup error (rechecked 2026-08-21; do not treat an earlier "known failure" label as a diagnosis):
 
-- **Slash leftover query — still reproduces.** Confirm on `/query` (for example `/head`) still leaves the query in the field. `useSlashMenu` confirm (`packages/rendering/react/src/hooks/useSlashMenu.ts` ~141–188) only deletes the trigger when `blockLogicalText === "/"`; a filtered query takes the sibling-insert branch and leaves `/head` in place. `getSlashTarget` (~234–256) then sees a paragraph that still starts with `/`, so the listbox reopens if selection stays there. Confirm on a lone `/` is the path that closes. The AX3 scenario `scenarios/ax3-keyboard.spec.ts` types `/head` + Enter but only asserts a heading exists and the menu closed — leftover `/head` would still pass. Outside `a11y/`.
 - **Autocomplete caret — original diagnosis is stale; whether speech/caret still fail is a real-browser question.** `contenteditableBackend.updateSelection` is no longer a no-op (it calls `restoreDOMSelectionFromEditor`). Accept already calls `selectText` + `commitProgrammaticTextSelection` (`packages/extensions/ai/src/autocomplete/autocompleteControllerLifecycle.ts` ~243–257). `DomScheduler.projectSelection` is no longer a stub: the field editor sets itself as the scheduler's projector, so the flush projects the queued record and honours a parked result. jsdom cannot tell whether WebKit/Firefox still leave the DOM caret behind. Outside `a11y/`.
 - **Empty-document / block click — attributes are assertable; AT speech is not.** Pointer activation now resolves the clicked `[data-pen-editor-block]` (or host-chrome fallback to the first/last text block) rather than listening on a zero-width inline span (`packages/rendering/dom/src/host/pointerActivation.ts`). That path calls `activateTextSelection` + `attachElement` on the inline. The editor selection is a text caret, so `syncFocusSink` keeps the sink `aria-hidden="true"` / `tabIndex=-1` / no role. `bindEditorAnnouncer` does not write the live region (text caret, no atom). Focus stays on the field, not the sink — routing focus onto the sink is left to the selection redesign. Tab order: the sink is out of it; the textbox is the accessible surface. jsdom can lock the attributes and the empty live region. Whether VoiceOver/NVDA announce the empty textbox on click needs a real AT session (scenario 2).
 - **Below-last-block host chrome activates, it does not stay inactive.** A click on the editor root / blocks host with `clientY` strictly below the last text block activates that block at its end offset (`pointerActivation.ts` ~167; `pointerActivation.hostClick.test.ts`). The a11y outcome is the same text-caret path as a block click (sink hidden, live region silent). The inactive case is the **gap between blocks** (and the jsdom zero-rect host-gap). Do not treat a tall-host click below the last block as a dead zone.
@@ -94,7 +93,7 @@ Pass when those phrases (or the host catalog override) are spoken once, politely
 
 Keyboard only. DOM focus must stay in the editing field for caret-anchored popups.
 
-1. **Slash menu** — type `/`, ArrowUp/Down/Home/End through options, Escape closes to plain typing, reopen and Enter/Tab accept an insertion.
+1. **Slash menu** — type `/`, ArrowUp/Down/Home/End through options, Escape closes to plain typing, reopen, type a query such as `/head`, and Enter/Tab accept an insertion.
 2. **Autocomplete** (if the host enables it) — same activedescendant pattern; accept one completion.
 3. **Link editor** — open from the keyboard, edit, Escape restores the editing position.
 4. **Drag-handle menu** — focus the handle, Enter/Space opens the menu, invoke move up/down, Escape restores origin.
@@ -105,6 +104,7 @@ Pass when:
 - the field reports expanded/controls while a caret-anchored popup is open
 - the active option is spoken as the user arrows
 - Enter/Tab accepts and Escape closes
+- accepting a slash-menu insertion leaves no `/query` text behind, so the listbox does not reopen when selection returns to that block
 - no popup except an explicit dialog traps focus
 - Vue hosts match React for every shipped primitive in this list
 

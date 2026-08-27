@@ -57,6 +57,15 @@ scenario(
 			page.locator('[data-pen-editor-block][data-block-type="heading"]'),
 		).toBeVisible();
 		await expect(page.locator("[data-pen-slash-menu-item]")).toHaveCount(0);
+		// a heading existing is not enough: a leftover "/head" paragraph
+		// reopens the listbox as soon as selection returns to it.
+		const documentText = await page.evaluate(
+			() => window.__penConformance.documentText,
+		);
+		expect(
+			documentText,
+			"confirm must not leave the slash trigger in the document",
+		).not.toContain("/head");
 		await s.assert.focusInsideEditor();
 		await assertNoPointerEvents(page);
 	},

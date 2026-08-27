@@ -162,6 +162,118 @@ describe("@input/pen-react slash menu: insertion and flow filtering", () => {
 		editor.destroy();
 	});
 
+	it("replaces the trigger block instead of leaving the query behind", async () => {
+		const editor = createSlashMenuEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "/ta" },
+		]);
+		editor.selectText(blockId, 3, 3);
+
+		let slashMenu: ReturnType<typeof useSlashMenu> | null = null;
+
+		function Harness() {
+			slashMenu = useSlashMenu(editor);
+
+			return (
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>
+			);
+		}
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(<Harness />);
+		});
+
+		expect(slashMenu!.open).toBe(true);
+		expect(slashMenu!.query).toBe("ta");
+		const tableIndex = slashMenu!.items.findIndex(
+			(item) => item.type === "table",
+		);
+		expect(tableIndex).toBeGreaterThanOrEqual(0);
+
+		await act(async () => {
+			slashMenu?.confirm(tableIndex);
+		});
+
+		// the trigger block becomes the table; a leftover "/ta" paragraph
+		// would also reopen the listbox on the next selection change.
+		expect(editor.documentState.blockOrder).toEqual([blockId]);
+		expect(editor.getBlock(blockId)?.type).toBe("table");
+		expect(editor.getBlock(blockId)?.textContent()).toBe("");
+		expect(slashMenu!.open).toBe(false);
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("drops the trigger but keeps text the query did not cover", async () => {
+		const editor = createSlashMenuEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
+				to: 0,
+				insert: "/headline",
+			},
+		]);
+		// caret mid-word: "/head" is the trigger, "line" is the author's text.
+		editor.selectText(blockId, 5, 5);
+
+		let slashMenu: ReturnType<typeof useSlashMenu> | null = null;
+
+		function Harness() {
+			slashMenu = useSlashMenu(editor);
+
+			return (
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>
+			);
+		}
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(<Harness />);
+		});
+
+		const headingIndex = slashMenu!.items.findIndex(
+			(item) => item.type === "heading",
+		);
+		expect(headingIndex).toBeGreaterThanOrEqual(0);
+
+		await act(async () => {
+			slashMenu?.confirm(headingIndex);
+		});
+
+		const insertedBlockId = editor.documentState.blockOrder.find(
+			(id) => id !== blockId,
+		);
+		expect(insertedBlockId).toBeDefined();
+		expect(editor.getBlock(insertedBlockId!)?.type).toBe("heading");
+		expect(editor.getBlock(blockId)?.type).toBe("paragraph");
+		expect(editor.getBlock(blockId)?.textContent()).toBe("line");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 	it("AX3: auto list confirms the block type it rendered and names the visible option active", async () => {
 		const editor = createSlashMenuEditor();
 		const blockId = editor.firstBlock()!.id;
