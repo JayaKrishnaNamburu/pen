@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
 import type { ModelAdapter, ModelStreamEvent } from "@input/pen-types";
@@ -22,7 +22,7 @@ function createChatEditor(model: ModelAdapter) {
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension({
 				model,
 				contentFormat: { blockGeneration: "markdown" },
@@ -245,7 +245,7 @@ async function loopWithStaleWorkingSetAfterFirstPass(options: {
 }): Promise<{ passes: number; validations: number }> {
 	const editor = createEditor({
 		schema: defaultSchema,
-		extensions: [undoExtension(), documentOpsExtension()],
+		extensions: [undoExtension(), toolsExtension()],
 	});
 	await editor.whenReady();
 	const toolRuntime = getDocumentToolRuntime(editor)!;

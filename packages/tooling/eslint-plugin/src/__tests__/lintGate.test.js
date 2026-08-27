@@ -132,7 +132,7 @@ describe("CH2 lint gate", () => {
 		const messages = await lintSeededViolation(
 			'import { defineExtension } from "@input/pen-core";\nexport const ext = defineExtension({ name: "x", keyBindings: [] });\n',
 			"src/seeded-v1-field.ts",
-			"packages/extensions/history",
+			"packages/extensions/snapshots",
 		);
 
 		expect(

@@ -237,7 +237,7 @@ export {
 	useFieldEditor,
 	useEditorFocusController,
 	useFocusController,
-	useHistory,
+	useSnapshots,
 	useSearch,
 	useMultiplayer,
 	useRemoteCursors,
@@ -397,8 +397,8 @@ export type {
 export type {
 	BlameRange,
 	CharacterAttribution,
-	HistoryState,
-} from "@input/pen-history";
+	SnapshotsState,
+} from "@input/pen-snapshots";
 export type { MultiplayerState, PeerState } from "@input/pen-multiplayer";
 export type {
 	RemoteCursorState,

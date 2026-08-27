@@ -4,7 +4,7 @@ import {
 	createHeadlessEditor,
 	keymapFacet,
 } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import {
 	expandFieldEditorRange,
 	contractFieldEditorRange,
@@ -16,7 +16,7 @@ import { ContentEditableBackend } from "@input/pen-dom/field-editor/contentedita
 import { EditContextBackend } from "@input/pen-dom/field-editor/editContextBackend";
 import { ExpandedContentEditableBackend } from "@input/pen-dom/field-editor/expandedContentEditableBackend";
 import { FieldEditorImpl } from "@input/pen-dom";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	EditorRegionSelector,
 	Pen,
@@ -27,7 +27,7 @@ function createFieldEditorExportsEditor() {
 	return createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

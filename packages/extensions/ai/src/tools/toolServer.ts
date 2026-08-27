@@ -3,7 +3,7 @@ import {
 	getDocumentToolRuntime,
 	ToolContextImpl,
 	ToolRuntimeImpl,
-} from "@input/pen-document-ops";
+} from "@input/pen-tools";
 import type { AIToolRuntime } from "./types";
 
 export function getAIToolRuntime(editor: Editor): AIToolRuntime | null {

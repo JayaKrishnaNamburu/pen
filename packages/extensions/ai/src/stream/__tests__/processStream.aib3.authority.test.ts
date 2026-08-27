@@ -1,9 +1,9 @@
 import { createEditor, streamingTargetFacet } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import type { DiagnosticEvent, PenStreamPart } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
@@ -13,7 +13,7 @@ import { processStream } from "../processStream";
 function createLiveEditor() {
 	return createEditor({
 		schema: defaultSchema,
-		extensions: [documentOpsExtension(), deltaStreamExtension()],
+		extensions: [toolsExtension(), deltaStreamExtension()],
 	});
 }
 

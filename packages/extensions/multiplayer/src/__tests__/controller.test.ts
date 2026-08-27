@@ -5,7 +5,7 @@ import { MultiplayerControllerImpl } from "../controller";
 import { AuthorLedger } from "../presence/authorLedger";
 import { ClientIdentityMap } from "../presence/identityMap";
 import type { MultiplayerAwarenessState } from "../types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { wireCursor, wireTextSelection } from "./presenceAnchors";
 
 function createDocumentEditor() {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import {
 	EM8_CELL_CONTROL,
 	EM8_KEEP,

@@ -2,7 +2,7 @@ import {
 	initBlockMap,
 	yjsAdapter,
 	type YjsCRDTDocument,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";

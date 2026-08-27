@@ -11,9 +11,9 @@ import {
 } from "@input/pen-ai";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "@input/pen-ai/stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import { Pen } from "../primitives/index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -41,7 +41,7 @@ function createCommandMenuEditor() {
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension({ author: "tester" }),
 		],
 	});

@@ -4,7 +4,7 @@ import { act, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import type { Editor } from "@input/pen-types";
 import { useEditor } from "../hooks/useEditor";
 
@@ -19,7 +19,7 @@ function isDestroyed(editor: Editor): boolean {
 function presetOptions() {
 	return {
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

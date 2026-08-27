@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import { acceptAllSuggestions, aiExtension, getAIController } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 describe("aiExtension: edit_document block conversion", () => {
 	it("stages a review-safe block conversion from an edit_document call", async () => {
@@ -14,7 +14,7 @@ describe("aiExtension: edit_document block conversion", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {

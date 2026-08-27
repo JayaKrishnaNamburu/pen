@@ -1,4 +1,4 @@
-import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { yjsAdapter } from "@input/pen-yjs";
 import { type DocumentSession, type PenStreamPart } from "@input/pen-types";
 import {
 	decorationsFacet,

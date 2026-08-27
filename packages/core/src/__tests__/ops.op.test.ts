@@ -421,7 +421,7 @@ describe("ops OP1–OP5", () => {
 		);
 
 		const toolTable = readRepoFile(
-			"../../../extensions/document-ops/src/constants/payloadValidation.ts",
+			"../../../extensions/tools/src/constants/payloadValidation.ts",
 		);
 		expectClosedTypeSet(documentOpFlagKeys(toolTable));
 		expect(toolTable).toContain(

@@ -11,14 +11,14 @@ import {
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "@input/pen-dom/field-editor/keyHandling";
 import { resolveShiftClickInlineAtomSelection } from "@input/pen-dom";
 import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 type BlocksMapLike = {
 	get(key: string): { get(field: string): unknown } | undefined;
@@ -150,7 +150,7 @@ describe("@input/pen-react key binding contexts: binding resolution", () => {
 	it("selects inline atoms before arrow navigation moves past them", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -226,7 +226,7 @@ describe("@input/pen-react key binding contexts: binding resolution", () => {
 		let handled = 0;
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -278,7 +278,7 @@ describe("@input/pen-react key binding contexts: binding resolution", () => {
 		let handled = 0;
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -323,7 +323,7 @@ describe("@input/pen-react key binding contexts: binding resolution", () => {
 	it("maps select-all shortcuts through the T1 ladder", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -387,7 +387,7 @@ describe("@input/pen-react key binding contexts: binding resolution", () => {
 	it("matches Mod-* bindings on macOS using Meta", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			},
@@ -421,7 +421,7 @@ describe("@input/pen-react key binding contexts: binding resolution", () => {
 	it("matches Mod-* bindings on non-mac platforms using Ctrl", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			},

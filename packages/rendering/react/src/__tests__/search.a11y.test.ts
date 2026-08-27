@@ -6,7 +6,7 @@ import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
 import { searchExtension } from "@input/pen-search";
 import { Pen } from "../primitives/index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }

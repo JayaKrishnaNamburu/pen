@@ -19,7 +19,7 @@ It stays narrow on purpose. A surface is added here only when a first-time embed
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-input-rules`, `@input/pen-multiplayer`, `@input/pen-preset-default`, `@input/pen-react`, `@input/pen-types`, `@y/websocket-server`, `react`, `react-dom`, `ws`, `yjs`, `y-websocket`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-yjs`, `@input/pen-autoformat`, `@input/pen-multiplayer`, `@input/pen`, `@input/pen-react`, `@input/pen-types`, `@y/websocket-server`, `react`, `react-dom`, `ws`, `yjs`, `y-websocket`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This is a private app for development, experimentation, and demos.
 - It resolves Pen from built packages rather than source aliases, so it fails the way a real consumer would when an export map or `dist` build is wrong.

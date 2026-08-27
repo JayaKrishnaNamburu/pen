@@ -218,7 +218,7 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 			rules["no-v1-extension-fields"],
 			{
 				code: 'import { defineExtension } from "@input/pen-core";\nexport const ext = defineExtension({ name: "x", keyBindings: [] });\n',
-				filename: "packages/extensions/history/src/seeded-v1-field.ts",
+				filename: "packages/extensions/snapshots/src/seeded-v1-field.ts",
 				errors: [{ messageId: "v1Field" }],
 			},
 		);
@@ -414,7 +414,7 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 			rules["no-pen-deep-imports"],
 			{
 				code: 'import { createEditor } from "@input/pen-core/src/editor";\n',
-				filename: "packages/extensions/history/src/seeded-deep.ts",
+				filename: "packages/extensions/snapshots/src/seeded-deep.ts",
 				errors: [{ messageId: "deep" }],
 			},
 		);

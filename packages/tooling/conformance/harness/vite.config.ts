@@ -29,12 +29,12 @@ const PEN_SOURCE_ALIASES = {
 	"@input/pen-core": fileURLToPath(
 		new URL("../../../../packages/core/src/index.ts", import.meta.url),
 	),
-	"@input/pen-crdt-yjs": fileURLToPath(
+	"@input/pen-yjs": fileURLToPath(
 		new URL("../../../../packages/crdt/yjs/src/index.ts", import.meta.url),
 	),
-	"@input/pen-document-ops": fileURLToPath(
+	"@input/pen-tools": fileURLToPath(
 		new URL(
-			"../../../../packages/extensions/document-ops/src/index.ts",
+			"../../../../packages/extensions/tools/src/index.ts",
 			import.meta.url,
 		),
 	),
@@ -53,8 +53,8 @@ const PEN_SOURCE_ALIASES = {
 			import.meta.url,
 		),
 	),
-	"@input/pen-preset-default": fileURLToPath(
-		new URL("../../../../packages/presets/default/src/index.ts", import.meta.url),
+	"@input/pen": fileURLToPath(
+		new URL("../../../../packages/pen/src/index.ts", import.meta.url),
 	),
 	"@input/pen-react": fileURLToPath(
 		new URL(
@@ -62,8 +62,8 @@ const PEN_SOURCE_ALIASES = {
 			import.meta.url,
 		),
 	),
-	"@input/pen-schema-default": fileURLToPath(
-		new URL("../../../../packages/schema/default/src/index.ts", import.meta.url),
+	"@input/pen-schema": fileURLToPath(
+		new URL("../../../../packages/schema/src/index.ts", import.meta.url),
 	),
 	"@input/pen-shortcuts": fileURLToPath(
 		new URL(

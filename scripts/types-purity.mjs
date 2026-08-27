@@ -5,7 +5,8 @@
  * `@input/pen-types` must have zero `dependencies`. Its API report may contain
  * types, frozen values, brand constructors, and type-predicate guards. Any
  * other function or class is a P.3 leftover and must be listed in
- * `scripts/types-runtime-allowlist.json` until it relocates to core.
+ * `scripts/types-runtime-allowlist.json` with a reason, either until it
+ * relocates to core or, where relocation would invert the DAG, for good.
  *
  * Dist freshness is a local guard. CI runs `pnpm build` first
  * (`ci.yml` / `release.yml`), so the `.d.ts` is current by construction
@@ -29,8 +30,9 @@
  * invisible: a fixture of four of them plus a matching empty `.d.ts`
  * printed "source-level runtime 0" and exited 0. They now fail the
  * gate unless allowlisted as kind `helper`. Chasing zero leftover
- * *exports* would invert the DAG: generateId is required by crdt-yjs
- * (below core). Amend API3 to a bounded set.
+ * *exports* would invert the DAG: generateId is required by the yjs adapter
+ * (below core), which is why API3 bounds this set rather than
+ * emptying it.
  */
 
 import fs from "node:fs/promises";
@@ -302,7 +304,7 @@ export function formatReport(result) {
 	}
 	lines.push("");
 	lines.push(
-		"API3 leftover count is the published artifact, not source purity. Chasing zero inverts the DAG: generateId is required by crdt-yjs (below core). Amend API3 to a bounded set.",
+		"API3 leftover count is the published artifact, not source purity. API3 bounds this set rather than emptying it: chasing zero inverts the DAG, because generateId is required by @input/pen-yjs (below core).",
 	);
 	appendOutdatedDistLines(lines, result.outdatedDist ?? []);
 	if (!hasFailures(result) && !hasInconclusive(result)) {

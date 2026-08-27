@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultBlocks, defaultInlines } from "@input/pen-schema-default";
+import { defaultBlocks, defaultInlines } from "@input/pen-schema";
 import type { DocumentOp } from "@input/pen-types";
 import { xmlExporter } from "../exporter";
 import {
@@ -12,7 +12,7 @@ import {
 	type ExportFidelityRow,
 } from "../fidelityTable";
 import { xmlImporter } from "../importer";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

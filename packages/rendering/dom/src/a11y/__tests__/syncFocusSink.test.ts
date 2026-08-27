@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { FOCUS_SINK_ATTR, createFocusSink } from "../focusSink";
 import { syncFocusSink } from "../syncFocusSink";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const sinks: Array<{ dispose(): void }> = [];
 

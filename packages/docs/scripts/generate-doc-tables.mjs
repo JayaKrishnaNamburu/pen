@@ -31,8 +31,8 @@ const SCAN_ROOTS = [
 	"packages/rendering",
 	"packages/shared",
 	"packages/schema",
-	"packages/presets",
-	"packages/transports",
+	"packages/pen",
+	"packages/transport",
 ];
 
 const SINK_RE =

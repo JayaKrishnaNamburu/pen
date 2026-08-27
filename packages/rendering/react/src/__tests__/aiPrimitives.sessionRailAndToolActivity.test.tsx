@@ -3,15 +3,15 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor, documentOpsToolRuntimeFacet } from "@input/pen-core";
+import { createEditor, toolRuntimeFacet } from "@input/pen-core";
 import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "@input/pen-ai/stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultPreset } from "@input/pen-preset-default";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultPreset } from "@input/pen";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	Pen,
 	useAIActions,
@@ -218,11 +218,11 @@ function testStreamingToolExtension() {
 
 	return defineExtension({
 		name: "test-streaming-tool",
-		dependencies: ["document-ops"],
+		dependencies: ["tools"],
 		activateClient: async ({ editor }) => {
 			toolRuntime =
 				(editor.facet(
-					documentOpsToolRuntimeFacet,
+					toolRuntimeFacet,
 				) as ToolRuntime | null) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
@@ -256,7 +256,7 @@ describe("@input/pen-react AI primitives: session rail and tool activity", () =>
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -392,7 +392,7 @@ describe("@input/pen-react AI primitives: session rail and tool activity", () =>
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					allowedMutatingTools: ["test_search"],
 					model: {

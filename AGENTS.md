@@ -10,15 +10,15 @@ Pen is a headless, extension-first, block-native rich text editor SDK built on a
 
 The monorepo is layered; dependencies point strictly downward:
 
-- `packages/types` (`@input/pen-types`) — shared contracts: types, constants, guards. Target state is types-only (see `spec/rules/api.md` API3); today it still carries schema builders and the registry.
-- `packages/crdt/yjs` (`@input/pen-crdt-yjs`) — the Yjs adapter: document shape (`blockOrder`, `blocks`, `apps`, `metadata`), transactions, update handling, undo integration.
+- `packages/types` (`@input/pen-types`) — shared contracts: types, constants, guards. The schema builders and registry moved to `packages/core/src/schema/` and re-export from core; what remains is `generateId`, which cannot follow them because `@input/pen-yjs` sits below core (see `spec/rules/api.md` API3, enforced by `scripts/types-purity.mjs`).
+- `packages/crdt/yjs` (`@input/pen-yjs`) — the Yjs adapter: document shape (`blockOrder`, `blocks`, `apps`, `metadata`), transactions, update handling, undo integration.
 - `packages/core` (`@input/pen-core`) — the editor runtime: `editor.apply(ops, options)` pipeline, validation, normalization, selection, extension manager, events. Runtime authority for everything.
-- `packages/schema/default` — the default block/inline schema set.
+- `packages/schema` — the default block/inline schema set.
 - `packages/rendering/dom` (`@input/pen-dom`) — the framework-free DOM engine: field editors (EditContext + contenteditable backends), selection bridge, key handling, clipboard/transfer, reconciliation, overlays. The hardest code in the repo lives here.
 - `packages/rendering/react` / `packages/rendering/vue` — thin framework bindings over pen-dom. Behavior belongs in pen-dom or core, never here.
-- `packages/extensions/*` — undo, history, search, input-rules, shortcuts, multiplayer, document-ops, `@input/pen-ai` (subpaths: suggestions, autocomplete, skills, tools, stream), and `@input/pen-interop` (subpaths: html, markdown, json, xml).
-- `packages/presets/default` — batteries-included assembly of core + default schema + recommended extensions.
-- `packages/shared/*`, `packages/transports/*` (direct, sse), `packages/tooling/*` (test, bench, assets-memory), `packages/docs`, `playground/` (reference app; `pnpm test:e2e` runs against it).
+- `packages/extensions/*` — undo, snapshots, search, autoformat, shortcuts, multiplayer, tools, `@input/pen-ai` (subpaths: suggestions, autocomplete, skills, tools, stream), and `@input/pen-interop` (subpaths: html, markdown, json, xml).
+- `packages/pen` — `@input/pen`, the batteries-included starter: default schema + recommended extensions, with `createEditor` / `createHeadlessEditor` wrapping core's to default an omitted `preset` to `defaultPreset()`.
+- `packages/shared/*` (ingest, markdown), `packages/transport` (`./direct`, `./sse` subpaths), `packages/tooling/*` (test, bench, assets), `packages/docs`, `playground/` (reference app; `pnpm test:e2e` runs against it).
 
 ## Specs Are The Contract
 

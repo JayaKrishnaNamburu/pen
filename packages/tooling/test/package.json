@@ -51,9 +51,9 @@
   },
   "dependencies": {
     "@input/pen-core": "workspace:^",
-    "@input/pen-crdt-yjs": "workspace:^",
+    "@input/pen-yjs": "workspace:^",
     "@input/pen-interop": "workspace:^",
-    "@input/pen-schema-default": "workspace:^",
+    "@input/pen-schema": "workspace:^",
     "@input/pen-types": "workspace:^",
     "yjs": "^13.6.32"
   },

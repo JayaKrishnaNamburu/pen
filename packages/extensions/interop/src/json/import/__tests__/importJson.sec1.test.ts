@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { urlPolicy } from "@input/pen-core";
 import { createEditor } from "@input/pen-core";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { parseJsonToBlocks } from "../importer";
 
 const noDefaultExtensionsPreset = {

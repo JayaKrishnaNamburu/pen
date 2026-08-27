@@ -18,8 +18,8 @@ import {
 	assertToolCanUseBlockType,
 	getDocumentToolRuntime,
 	ToolContextImpl,
-} from "@input/pen-document-ops";
-import type { ToolRuntimeImpl } from "@input/pen-document-ops";
+} from "@input/pen-tools";
+import type { ToolRuntimeImpl } from "@input/pen-tools";
 import {
 	createAIToolTurn,
 	executeAITool,

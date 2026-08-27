@@ -1,4 +1,4 @@
-import { buildDocumentWriteOps } from "@input/pen-content-ops";
+import { buildDocumentWriteOps } from "@input/pen-ingest";
 import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
 import { applyAIOpsForBoundMutationMode } from "../tools/execution";
 import type { EditDocumentPreviewUpdate } from "./editDocumentPreview";

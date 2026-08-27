@@ -2,10 +2,10 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { createEditor as createCoreEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { handleClipboardPaste } from "@input/pen-dom/field-editor/clipboard";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 function createEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
@@ -17,7 +17,7 @@ function createEditor(
 		schema: defaultSchema,
 		...options,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: config.undo ?? false,
 		}),

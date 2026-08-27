@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { bindEditorAnnouncer } from "../bindEditorAnnouncer";
 import { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 
 const fixtures: Array<{

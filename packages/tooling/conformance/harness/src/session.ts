@@ -12,7 +12,7 @@ import {
 	encodeYjsAwarenessUpdate,
 	wrapYjsDocument,
 	yjsAdapter,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import {
 	BEFOREINPUT_MAP,
 	mapBeforeInput,
@@ -21,15 +21,15 @@ import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
 } from "@input/pen-dom/field-editor";
-import { applyValidatedOps } from "@input/pen-document-ops";
+import { applyValidatedOps } from "@input/pen-tools";
 import { parsePenClipboardPayload } from "@input/pen-dom/utils/clipboardPayload";
 import {
 	clearInlineAtomDragPreview,
 	createInlineAtomDragPreview,
 } from "@input/pen-dom/utils/inlineAtomDragPreview";
 import { htmlImporter } from "@input/pen-interop/html";
-import { defaultPreset } from "@input/pen-preset-default";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultPreset } from "@input/pen";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	createDeterministicYDocFixture,
 	populateYDoc,

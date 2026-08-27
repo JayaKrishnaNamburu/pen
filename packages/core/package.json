@@ -51,7 +51,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-crdt-yjs": "workspace:^",
+    "@input/pen-yjs": "workspace:^",
     "@input/pen-types": "workspace:^"
   },
   "devDependencies": {

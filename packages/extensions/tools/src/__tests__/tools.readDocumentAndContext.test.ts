@@ -1,0 +1,429 @@
+import { defaultSchema } from "./fixtures/testSchema";
+import type { ApplyOptions, DocumentOp, Editor } from "@input/pen-types";
+import { describe, expect, it, vi } from "vitest";
+import { ToolContextImpl } from "../toolContext";
+import { ToolRuntimeImpl } from "../toolServer";
+import { getContextTool } from "../tools/getContext";
+import { getCursorContextTool } from "../tools/getCursorContext";
+import { inspectTargetTool } from "../tools/inspectTarget";
+import { insertBlockTool } from "../tools/insertBlock";
+import { listBlockTypesTool } from "../tools/listBlockTypes";
+import { listValidOperationsTool } from "../tools/listValidOperations";
+import { readDocumentTool } from "../tools/readDocument";
+import { searchDocumentTool } from "../tools/searchDocument";
+import { retrieveDocumentSpansTool } from "../tools/retrieveDocumentSpans";
+import { deleteBlockTool } from "../tools/deleteBlock";
+import { moveBlockTool } from "../tools/moveBlock";
+import { updateBlockTool } from "../tools/updateBlock";
+import { writeDocumentTool } from "../tools/writeDocument";
+
+function createFakeEditor(documentProfile: Editor["documentProfile"]): Editor {
+	return {
+		documentProfile,
+		schema: defaultSchema,
+		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
+		facet: () => null,
+		internals: {
+			emit: vi.fn(),
+		},
+	} as unknown as Editor;
+}
+
+function createMockBlockHandle(input: {
+	id: string;
+	type: string;
+	props?: Record<string, unknown>;
+	children?: unknown[];
+	textContent: (options?: { resolved?: boolean }) => string;
+	textDeltas: () => Array<{
+		insert: string;
+		attributes?: Record<string, unknown>;
+	}>;
+	prev?: unknown;
+	next?: unknown;
+}): {
+	id: string;
+	type: string;
+	props: Record<string, unknown>;
+	children: unknown[];
+	textContent: (options?: { resolved?: boolean }) => string;
+	textDeltas: () => Array<{
+		insert: string;
+		attributes?: Record<string, unknown>;
+	}>;
+	tableRowCount: () => number;
+	tableColumnCount: () => number;
+	tableCell: () => null;
+	tableRow: () => null;
+	tableColumns: () => never[];
+	prev?: unknown;
+	next?: unknown;
+	as: (capability: string) => unknown;
+} {
+	const handle = {
+		props: {},
+		children: [],
+		prev: null,
+		next: null,
+		...input,
+		tableRowCount: () => 0,
+		tableColumnCount: () => 0,
+		tableCell: () => null,
+		tableRow: () => null,
+		tableColumns: () => [],
+		as(capability: string) {
+			return capability === "table" && handle.type === "table"
+				? handle
+				: null;
+		},
+	};
+	return handle;
+}
+
+function createReadDocumentEditor(): Editor {
+	const blocks = [
+		createMockBlockHandle({
+			id: "block-1",
+			type: "paragraph",
+			props: {},
+			children: [],
+			textContent: (options?: { resolved?: boolean }) =>
+				options?.resolved ? "First accepted" : "First accepted",
+			textDeltas: () => [{ insert: "First accepted" }],
+		}),
+		createMockBlockHandle({
+			id: "block-2",
+			type: "paragraph",
+			props: {},
+			children: [],
+			textContent: (options?: { resolved?: boolean }) =>
+				options?.resolved ? "Second" : "Second draft",
+			textDeltas: () => [
+				{ insert: "Second" },
+				{
+					insert: " draft",
+					attributes: { suggestion: { action: "delete" } },
+				},
+			],
+		}),
+		createMockBlockHandle({
+			id: "block-3",
+			type: "heading",
+			props: {},
+			children: [],
+			textContent: (options?: { resolved?: boolean }) =>
+				options?.resolved ? "Third" : "Third",
+			textDeltas: () => [{ insert: "Third" }],
+		}),
+	] as const;
+	for (const block of blocks) {
+		delete (block as { prev?: unknown }).prev;
+		delete (block as { next?: unknown }).next;
+	}
+
+	return {
+		documentProfile: "structured",
+		schema: defaultSchema,
+		facet: () => null,
+		blockCount: () => 3,
+		blocks: () => blocks,
+		getBlock: (blockId: string) =>
+			blocks.find((block) => block.id === blockId) ?? null,
+		internals: {
+			doc: {
+				blockOrder: {
+					length: 3,
+					get: (index: number) =>
+						["block-1", "block-2", "block-3"][index],
+				},
+			},
+		},
+		getSelection: () => ({
+			type: "text",
+			anchor: { blockId: "block-2", offset: 0 },
+			focus: { blockId: "block-2", offset: 6 },
+		}),
+		getSelectedText: () => "Second",
+	} as unknown as Editor;
+}
+
+function createStructuredTargetEditor(
+	activeBlockId: string,
+	documentProfile: Editor["documentProfile"] = "structured",
+): Editor {
+	const blocks = [
+		{
+			id: "paragraph-1",
+			type: "paragraph",
+			props: {},
+			children: [],
+			textContent: () => "Paragraph",
+			textDeltas: () => [{ insert: "Paragraph" }],
+			tableRowCount: () => 0,
+			tableColumnCount: () => 0,
+			tableColumns: () => [],
+			as(capability: string) {
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
+		},
+		{
+			id: "table-1",
+			type: "table",
+			props: { hasHeaderRow: true },
+			children: [],
+			textContent: () => "",
+			textDeltas: () => [],
+			tableRowCount: () => 3,
+			tableColumnCount: () => 2,
+			tableColumns: () => [
+				{ id: "col-1", title: "Name", type: "text" as const },
+				{ id: "col-2", title: "Status", type: "text" as const },
+			],
+			as(capability: string) {
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
+		},
+		{
+			id: "subdocument-1",
+			type: "subdocument",
+			props: {},
+			children: [],
+			textContent: () => "",
+			textDeltas: () => [],
+			tableRowCount: () => 0,
+			tableColumnCount: () => 0,
+			tableColumns: () => [],
+			as(capability: string) {
+				return capability === "table" && this.type === "table"
+					? this
+					: null;
+			},
+		},
+	];
+
+	return {
+		documentProfile,
+		schema: defaultSchema,
+		facet: () => null,
+		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
+		blocks: () => blocks,
+		getBlock: (blockId: string) =>
+			blocks.find((block) => block.id === blockId) ?? null,
+		getSelection: () => ({
+			type: "block",
+			blockIds: [activeBlockId],
+		}),
+		getSelectedText: () => "",
+	} as unknown as Editor;
+}
+
+function createNestedDocumentEditor(): Editor {
+	const topLevelBlocks = [
+		createMockBlockHandle({
+			id: "heading-1",
+			type: "heading",
+			props: { level: 1 },
+			children: [],
+			textContent: () => "Architecture",
+			textDeltas: () => [{ insert: "Architecture" }],
+		}),
+		createMockBlockHandle({
+			id: "layout-1",
+			type: "columns",
+			props: {},
+			children: [],
+			textContent: () => "",
+			textDeltas: () => [],
+		}),
+	];
+	const nestedBlocks = [
+		topLevelBlocks[0],
+		topLevelBlocks[1],
+		createMockBlockHandle({
+			id: "paragraph-1",
+			type: "paragraph",
+			props: {},
+			children: [],
+			textContent: () => "Fast apply preserves stable block identity.",
+			textDeltas: () => [
+				{ insert: "Fast apply preserves stable block identity." },
+			],
+		}),
+	];
+
+	return {
+		documentProfile: "structured",
+		schema: defaultSchema,
+		facet: () => null,
+		blocks: () => topLevelBlocks,
+		documentState: {
+			allBlocks: () => nestedBlocks,
+		},
+		getBlock: (blockId: string) =>
+			nestedBlocks.find((block) => block.id === blockId) ?? null,
+		getSelection: () => ({
+			type: "text",
+			anchor: { blockId: "paragraph-1", offset: 0 },
+			focus: { blockId: "paragraph-1", offset: 4 },
+		}),
+		getSelectedText: () => "Fast",
+	} as unknown as Editor;
+}
+
+describe("@input/pen-tools tools: read_document and context", () => {
+	it("guards ToolContext block insertion with the same policy", () => {
+		const editor = createFakeEditor("flow");
+		const emit = vi.fn();
+		const context = new ToolContextImpl(editor, "doc-1", emit);
+
+		expect(() => context.insertBlock("subdocument", {}, "last")).toThrow(
+			'Block type "subdocument" is not available in flow documents.',
+		);
+
+		expect(emit).not.toHaveBeenCalled();
+		expect(editor.apply).not.toHaveBeenCalled();
+	});
+
+	it("allows ToolContext streaming without an undo manager", () => {
+		const streaming = {
+			beginStreaming: vi.fn(),
+			appendDelta: vi.fn(),
+			endStreaming: vi.fn(),
+		};
+		const editor = {
+			...createFakeEditor("structured"),
+			facet: (facet: { name: string }) =>
+				facet.name === "deltaStream.target" ? streaming : null,
+			internals: {
+				emit: vi.fn(),
+			},
+		} as unknown as Editor;
+		const emit = vi.fn();
+		const context = new ToolContextImpl(editor, "doc-1", emit);
+
+		expect(() => {
+			context.beginStreaming("zone-1", "block-1");
+			context.appendDelta("Hello");
+			context.endStreaming("complete");
+		}).not.toThrow();
+
+		expect(emit).toHaveBeenCalledWith({
+			type: "gen-start",
+			zoneId: "zone-1",
+			blockId: "block-1",
+		});
+		expect(emit).toHaveBeenCalledWith({
+			type: "gen-delta",
+			zoneId: "zone-1",
+			delta: "Hello",
+		});
+		expect(emit).toHaveBeenCalledWith({
+			type: "gen-end",
+			zoneId: "zone-1",
+			status: "complete",
+		});
+		expect(streaming.beginStreaming).toHaveBeenCalledWith(
+			"zone-1",
+			"block-1",
+		);
+		expect(streaming.appendDelta).toHaveBeenCalledWith("Hello");
+		expect(streaming.endStreaming).toHaveBeenCalledWith("complete");
+	});
+
+	it("defaults read_document to a compact summary", async () => {
+		const editor = createReadDocumentEditor();
+
+		const result = (await readDocumentTool(editor).handler(
+			{},
+			{} as never,
+		)) as {
+			blockCount: number;
+			preview: Array<{ id: string; type: string; content: string }>;
+		};
+
+		expect(result.blockCount).toBe(3);
+		expect(result.preview).toEqual([
+			{ id: "block-1", type: "paragraph", content: "First accepted" },
+			{ id: "block-2", type: "paragraph", content: "Second" },
+			{ id: "block-3", type: "heading", content: "Third" },
+		]);
+	});
+
+	it("limits read_document to the requested block range", async () => {
+		const editor = createReadDocumentEditor();
+
+		const result = (await readDocumentTool(editor).handler(
+			{
+				format: "markdown",
+				range: {
+					startBlockId: "block-2",
+					endBlockId: "block-3",
+				},
+			},
+			{} as never,
+		)) as string;
+
+		expect(result).toBe("Second\n\n# Third");
+	});
+
+	it("returns summary context with selection details", async () => {
+		const editor = createReadDocumentEditor();
+
+		const result = (await getContextTool(editor).handler(
+			{
+				format: "summary",
+				includeSelection: true,
+			},
+			{} as never,
+		)) as {
+			blockCount: number;
+			activeBlockId: string;
+			selectedText: string;
+			blocks: Array<{ id: string; preview: string }>;
+		};
+
+		expect(result.blockCount).toBe(3);
+		expect(result.activeBlockId).toBe("block-2");
+		expect(result.selectedText).toBe("Second");
+		expect(result.blocks.map((block) => block.id)).toEqual([
+			"block-1",
+			"block-2",
+			"block-3",
+		]);
+	});
+
+	it("returns cursor context without reading the full document", async () => {
+		const editor = createReadDocumentEditor();
+
+		const result = (await getCursorContextTool(editor).handler(
+			{},
+			{} as never,
+		)) as {
+			activeBlockId: string | null;
+			activeBlockType: string | null;
+			selectedText: string | null;
+			surroundingBlocks: Array<{ id: string }>;
+			structuredTarget: {
+				target: { kind: string };
+				validOperations: string[];
+			} | null;
+		};
+
+		expect(result.activeBlockId).toBe("block-2");
+		expect(result.activeBlockType).toBe("paragraph");
+		expect(result.selectedText).toBe("Second");
+		expect(result.surroundingBlocks.map((block) => block.id)).toEqual([
+			"block-1",
+			"block-2",
+			"block-3",
+		]);
+		expect(result.structuredTarget?.target.kind).toBe("block");
+		expect(result.structuredTarget?.validOperations).toContain(
+			"replace_text",
+		);
+	});
+});

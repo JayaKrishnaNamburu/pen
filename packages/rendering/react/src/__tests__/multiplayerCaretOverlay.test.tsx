@@ -9,7 +9,7 @@ import {
 	multiplayerExtension,
 } from "@input/pen-multiplayer";
 import { Pen } from "../primitives/index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }

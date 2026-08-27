@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import { createHeadlessEditor } from "@input/pen-core";
 import type { Editor, TableColumnSchema } from "@input/pen-types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { ColumnHeaderMenu } from "../renderers/tableColumnMenu";
 
 (

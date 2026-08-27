@@ -1,4 +1,4 @@
-import type { YjsCRDTDocument } from "@input/pen-crdt-yjs";
+import type { YjsCRDTDocument } from "@input/pen-yjs";
 import { describe, expect, it } from "vitest";
 import { bench, runSuite } from "../bench";
 import { CRDT_FORK_MERGE_100_BENCH } from "../constants/benchmarks";

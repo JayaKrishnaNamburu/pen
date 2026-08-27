@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createHeadlessEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { createInlineAtomElement } from "../inlineAtomDom";

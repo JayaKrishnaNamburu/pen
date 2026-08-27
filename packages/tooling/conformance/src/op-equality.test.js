@@ -27,8 +27,8 @@ import {
 	initBlockMap,
 	readFormatStamp,
 	yjsAdapter,
-} from "@input/pen-crdt-yjs";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-yjs";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	MIGRATION_LEDGER_METADATA_KEY,
 	PEN_FORMAT_METADATA_KEY,

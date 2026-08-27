@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import type {
 	CommitEvent,
@@ -71,7 +71,7 @@ function createChatEditor(
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension({
 				model,
 				contentFormat: { blockGeneration: "markdown" },

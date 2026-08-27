@@ -76,7 +76,7 @@ The host owns identity. Peer-asserted `user.id` / `user.name` are unverified dis
 
 - `config.user` is what this client publishes. Every peer will see it.
 - `resolvePeerIdentity` customizes live caret labels only. Identities that come from awareness or the author ledger are stamped `unverified: true` and export as `asPresenceDisplayHint`. They are never verified authorship.
-- Attribution in `@input/pen-history` does not treat awareness names as authors. Without a host `resolveAuthor`, blame shows an opaque client handle (`User 77`), never a peer-supplied name.
+- Attribution in `@input/pen-snapshots` does not treat awareness names as authors. Without a host `resolveAuthor`, blame shows an opaque client handle (`User 77`), never a peer-supplied name.
 
 ## Design
 
@@ -143,14 +143,14 @@ multiplayerExtension({
 If you are using Yjs, prefer:
 
 - `@input/pen-multiplayer` for the multiplayer extension and controller state
-- `@input/pen-crdt-yjs` for Yjs integration helpers
+- `@input/pen-yjs` for Yjs integration helpers
 - an external provider such as [`y-websocket`](https://docs.yjs.dev/ecosystem/connection-provider/y-websocket) for transport
 
 That keeps Pen transport-agnostic and lets the application choose its own provider model.
 
 ## Example
 
-See `@input/pen-crdt-yjs` for the canonical `y-websocket` integration example using:
+See `@input/pen-yjs` for the canonical `y-websocket` integration example using:
 
 - `getYjsDoc()`
 - `getYjsAwareness()`

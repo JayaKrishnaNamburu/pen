@@ -15,7 +15,7 @@
  *
  * Distinct from `core-clean-install.mjs`: that script walks published
  * manifests in-memory and asserts core's production closure stays in
- * {core, crdt-yjs, types}. It never packs, publishes, or installs. This
+ * {core, yjs, types}. It never packs, publishes, or installs. This
  * script reuses `productionClosure` / `loadConsumerPackages` for the
  * graph walk and then does the host-shaped remainder.
  *
@@ -48,7 +48,7 @@ export const EXIT_INCONCLUSIVE = 2;
 
 export const DEFAULT_TOP_LEVEL = [
 	"@input/pen-core",
-	"@input/pen-preset-default",
+	"@input/pen",
 	"@input/pen-react",
 	"@input/pen-vue",
 	"@input/pen-dom",
@@ -58,7 +58,7 @@ const HOST_PEERS = ["react", "react-dom", "vue", "yjs", "y-protocols"];
 /** CS8 optional peers on @input/pen-react. */
 export const REACT_OPTIONAL_PEERS = [
 	"@input/pen-ai",
-	"@input/pen-history",
+	"@input/pen-snapshots",
 	"@input/pen-interop",
 	"@input/pen-multiplayer",
 	"@input/pen-search",
@@ -564,14 +564,14 @@ export function runSelfTests() {
 		dependencies: [],
 	};
 	const crdt = {
-		name: "@input/pen-crdt-yjs",
+		name: "@input/pen-yjs",
 		dir: "packages/crdt/yjs",
 		dependencies: ["@input/pen-types"],
 	};
 	const core = {
 		name: "@input/pen-core",
 		dir: "packages/core",
-		dependencies: ["@input/pen-types", "@input/pen-crdt-yjs"],
+		dependencies: ["@input/pen-types", "@input/pen-yjs"],
 	};
 	const react = {
 		name: "@input/pen-react",
@@ -1045,13 +1045,10 @@ async function createHostProject({
 		[
 			'"use client";',
 			"",
-			'import { createEditor } from "@input/pen-core";',
-			'import { defaultPreset } from "@input/pen-preset-default";',
+			'import { createEditor } from "@input/pen";',
 			'import { PenEditor } from "@input/pen-react";',
 			"",
-			"const editor = createEditor({",
-			"  preset: defaultPreset(),",
-			"});",
+			"const editor = createEditor();",
 			"",
 			"export function App() {",
 			"  return <PenEditor editor={editor} />;",

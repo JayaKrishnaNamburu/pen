@@ -114,7 +114,7 @@ describe("SCALE3 realistic-stack keystroke", () => {
 
 	it("SCALE3: documents the shipped stack as default preset plus no-op extras", () => {
 		expect(SCALE3_SHIPPED_STACK).toEqual([
-			"document-ops",
+			"tools",
 			"delta-stream",
 			"undo",
 			"rich-text-shortcuts",

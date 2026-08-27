@@ -42,7 +42,7 @@ function seedParagraph(adapter: ReturnType<typeof yjsAdapter>): {
 	};
 }
 
-describe("@input/pen-crdt-yjs origin shape contract", () => {
+describe("@input/pen-yjs origin shape contract", () => {
 	it("captures a fresh structured user origin so undo restores the document", () => {
 		const adapter = yjsAdapter();
 		const { doc, ytext } = seedParagraph(adapter);

@@ -1,6 +1,6 @@
 // B1 map suite. synthetic cases drop EditContext so Chromium uses the
 // contenteditable backend that owns the map (same HOST4 seam). typing keeps
-// each engine's native backend. f39-beforeinput-structure covers input-rules.
+// each engine's native backend. f39-beforeinput-structure covers autoformat.
 import {
 	BEFOREINPUT_MAP,
 	mapBeforeInput,

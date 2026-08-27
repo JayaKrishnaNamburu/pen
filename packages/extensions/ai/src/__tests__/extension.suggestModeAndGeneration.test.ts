@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -16,7 +16,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	createDeferred,
 	scriptedModel,
@@ -31,7 +31,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -77,7 +77,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -109,7 +109,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -143,7 +143,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -191,7 +191,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -233,7 +233,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -282,7 +282,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: scriptedModel(" world"),
 				}),
@@ -308,7 +308,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: { blockGeneration: "markdown" },
 					model: scriptedModel("# Title\n\n- One"),
@@ -379,7 +379,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: scriptedModel("planet"),
 				}),
@@ -422,7 +422,7 @@ describe("aiExtension: suggest mode and generation", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream(options) {

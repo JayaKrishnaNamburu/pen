@@ -1,4 +1,4 @@
-import { getDocumentToolRuntime } from "@input/pen-document-ops";
+import { getDocumentToolRuntime } from "@input/pen-tools";
 import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import {
@@ -22,7 +22,7 @@ export function testStreamingToolExtension() {
 
 	return defineExtension({
 		name: "test-streaming-tool",
-		dependencies: ["document-ops"],
+		dependencies: ["tools"],
 		activateClient: async ({ editor }) => {
 			toolRuntime = getDocumentToolRuntime(editor);
 			const definition = {

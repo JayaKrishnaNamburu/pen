@@ -2,7 +2,7 @@ import {
 	createYjsProviderSession,
 	getYjsAwareness,
 	getYjsDoc,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import { multiplayerExtension } from "@input/pen-multiplayer";
 import { generateId, type Extension } from "@input/pen-types";
 import { WebsocketProvider } from "y-websocket";

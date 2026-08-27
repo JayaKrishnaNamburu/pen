@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, getNumberedListItemValue } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import {
 	applyDeleteBehavior,
 	applyListInputRule,
@@ -50,7 +50,7 @@ function getYText(
 function editorOpts() {
 	return {
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

@@ -8,7 +8,7 @@
 
 This package sits just outside the editor runtime. It turns untrusted external markup or structured documents into pending blocks and operations, and it serializes editor state into host-owned artifacts. It does not become a second editor, a renderer, or a competing document model.
 
-`@input/pen-markdown-serialization` stays a separate shared package. Document-ops and the Markdown exporter consume it; it is not folded in here.
+`@input/pen-markdown` stays a separate shared package. Document-ops and the Markdown exporter consume it; it is not folded in here.
 
 ## Key Exports / Entrypoints
 
@@ -18,7 +18,7 @@ This package sits just outside the editor runtime. It turns untrusted external m
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-core`, `@input/pen-markdown-serialization`, `@input/pen-types`, `domhandler`, `htmlparser2`, `isomorphic-dompurify`
+- Runtime dependencies: `@input/pen-ingest`, `@input/pen-core`, `@input/pen-markdown`, `@input/pen-types`, `domhandler`, `htmlparser2`, `isomorphic-dompurify`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns safe ingest and serialization. Durable writes still go through `editor.apply(...)`. JSON is the canonical machine-readable envelope; XML is a syntax layered on that envelope.
 
@@ -92,7 +92,7 @@ flowchart TD
 
 ## Markdown (`@input/pen-interop/markdown`)
 
-Markdown is the plain-text authoring ingest layer and the exporter wrapper around `@input/pen-markdown-serialization`.
+Markdown is the plain-text authoring ingest layer and the exporter wrapper around `@input/pen-markdown`.
 
 - Import: `markdownImporter`, `parseMarkdownToBlocks()`, `parseMarkdownWithReport()`, ingest-envelope constants including `INGEST_TIME_BUDGET_MS`
 - Export: `markdownExporter`, plus `exportMarkdownForBlocks()` / `exportMarkdownRange()` from the serialization package
@@ -116,7 +116,7 @@ flowchart TD
 - Cap-before-parse: `parseCappedMarkdownToBlocks(input)` is `parseMarkdownSource(capRawMarkdownSource(input))`. Overflow is a `text-size-exceeded` drop, not a hard refuse. JSON ingest is different: it refuses rather than slices, because a sliced JSON string is invalid.
 - `INGEST_TIME_BUDGET_MS` (1000) is advisory. It is not a unit-suite gate and is not enforced as a wall-clock abort. The enforceable bound is the pre-parse source cap.
 - Markdown parsing produces pending blocks, not final document truth. The current editor schema and document profile still decide what survives.
-- Export serialization lives in `@input/pen-markdown-serialization`. This subpath is the exporter wrapper (URL admission, `markdownExporter`).
+- Export serialization lives in `@input/pen-markdown`. This subpath is the exporter wrapper (URL admission, `markdownExporter`).
 
 ## JSON (`@input/pen-interop/json`)
 
@@ -185,7 +185,7 @@ flowchart TD
 
 - Path in workspace: `packages/extensions/interop`
 - Spec path mirrors workspace path: `packages/extensions/interop.md`
-- `@input/pen-preset-default` takes the default HTML paste importer from `./html` (`htmlClipboardExtension` assigns `htmlImporter` to `paste:importers`). `@input/pen-vue` still defaults `paste:importers.html` to `htmlImporter` when the host does not pass one. `@input/pen-react` does not install a default HTML importer. Markdown ingest stays an optional React peer on `@input/pen-interop`.
+- `@input/pen` takes the default HTML paste importer from `./html` (`htmlClipboardExtension` assigns `htmlImporter` to `paste:importers`). `@input/pen-vue` still defaults `paste:importers.html` to `htmlImporter` when the host does not pass one. `@input/pen-react` does not install a default HTML importer. Markdown ingest stays an optional React peer on `@input/pen-interop`.
 - `@input/pen-test` uses JSON export from `./json` for headless export contracts.
 - Prefer `./json` as the conceptual starting point when reasoning about data shape; XML stays aligned with that shape.
 - `parse*ToBlocks()` / `parse*WithReport()` are useful when a host wants pending blocks without immediately applying them. `*Importer.import()` is the live-editor path.
@@ -202,4 +202,4 @@ Workspace package at version `0.0.1`; intended usage is current-state but still 
 - Do not treat the export-side JSON importer as the ingest envelope.
 - Do not create a separate XML-specific mutation pipeline.
 - Do not make host delivery policy, CSS inlining, or provider quirks part of this package.
-- Do not fold `@input/pen-markdown-serialization` into this package.
+- Do not fold `@input/pen-markdown` into this package.

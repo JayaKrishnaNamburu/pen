@@ -4,7 +4,7 @@ import {
 	FIELD_EDITOR_SLOT_KEY,
 	INPUT_RULES_ENGINE_SLOT_KEY,
 } from "@input/pen-types";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import {
 	applyDeleteBehavior,
 	applyListInputRule,
@@ -54,7 +54,7 @@ function getYText(
 function editorOpts() {
 	return {
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

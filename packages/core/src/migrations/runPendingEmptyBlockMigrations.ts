@@ -1,4 +1,4 @@
-import { readFormatStamp } from "@input/pen-crdt-yjs";
+import { readFormatStamp } from "@input/pen-yjs";
 import type { Editor } from "@input/pen-types";
 
 import { runMigrations } from "./runMigrations";

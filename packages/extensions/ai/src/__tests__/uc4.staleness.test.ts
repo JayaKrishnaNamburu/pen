@@ -3,8 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import { refuseStaleEditDocumentCall } from "../runtime/viewHashes";
 
@@ -19,7 +19,7 @@ const AI_SRC = join(dirname(fileURLToPath(import.meta.url)), "..");
 function seedEditor() {
 	const editor = createEditor({
 		schema: defaultSchema,
-		extensions: [undoExtension(), documentOpsExtension()],
+		extensions: [undoExtension(), toolsExtension()],
 	});
 	const headingId = editor.firstBlock()!.id;
 	editor.apply(

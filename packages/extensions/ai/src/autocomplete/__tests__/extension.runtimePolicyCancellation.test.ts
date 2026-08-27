@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor, getInlineCompletionController } from "@input/pen-core";
 import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,

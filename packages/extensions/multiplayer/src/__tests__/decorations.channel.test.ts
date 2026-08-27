@@ -12,7 +12,7 @@ import type {
 	Extension,
 	InlineDecoration,
 } from "@input/pen-types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { describe, expect, it } from "vitest";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 import { MultiplayerControllerImpl } from "../controller";

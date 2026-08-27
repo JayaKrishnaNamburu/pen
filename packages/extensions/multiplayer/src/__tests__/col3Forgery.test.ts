@@ -1,7 +1,7 @@
 import { createEditor } from "@input/pen-core";
 import { createTestDocument } from "@input/pen-test";
 import { describe, expect, it } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { MultiplayerControllerImpl } from "../controller";
 import { AuthorLedger } from "../presence/authorLedger";
 import { assignMultiplayerColor } from "../presence/colorAssignment";

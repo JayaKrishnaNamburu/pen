@@ -6,8 +6,8 @@ import {
 	type DocumentMigration,
 	type MigrationReport,
 } from "@input/pen-core";
-import { yjsAdapter } from "@input/pen-crdt-yjs";
-import { defaultSchema } from "@input/pen-schema-default";
+import { yjsAdapter } from "@input/pen-yjs";
+import { defaultSchema } from "@input/pen-schema";
 import { ASSERT_DOC_EQUALS_FIELDS, assertDocEquals } from "@input/pen-test";
 import type { Editor } from "@input/pen-types";
 import type { Session } from "../harness/src/session";

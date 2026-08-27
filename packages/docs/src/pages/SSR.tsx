@@ -49,7 +49,7 @@ export function SSRPage() {
 			<pre>
 				<code>{`import { createHeadlessEditor } from "@input/pen-core";
 import { htmlExporter } from "@input/pen-interop/html";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import type { CRDTDocument } from "@input/pen-types";
 
 function renderHtml(hostDocument: CRDTDocument) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { PenStreamPart } from "@input/pen-types";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";

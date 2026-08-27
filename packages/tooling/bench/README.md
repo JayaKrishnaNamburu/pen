@@ -28,7 +28,7 @@ The concurrent-peers row is verified as a count (2) plus observation: peer A ins
 
 ## SCALE3
 
-The SCALE3 suite measures one user keystroke in an envelope-sized document with the stack hosts ship: the default preset (`document-ops`, `delta-stream`, `undo`, `rich-text-shortcuts`) plus no-op stand-ins for AI, suggestions, autocomplete, search, and multiplayer. The stand-ins keep those extension names and the observe/decoration hooks; they do not import the AI packages, so the number is commit-dispatch cost rather than model runtime.
+The SCALE3 suite measures one user keystroke in an envelope-sized document with the stack hosts ship: the default preset (`tools`, `delta-stream`, `undo`, `rich-text-shortcuts`) plus no-op stand-ins for AI, suggestions, autocomplete, search, and multiplayer. The stand-ins keep those extension names and the observe/decoration hooks; they do not import the AI packages, so the number is commit-dispatch cost rather than model runtime.
 
 Each bench isolates one axis at a declared point. The set covers document size (100 / 1000 blocks), extension count (shipped 9 / shipped+8), decoration count (0 / 256), and remote-caret count (0 / 8). The last axis is eight `data-pen-remote-caret` decorations on the multiplayer stand-in, not eight synced Y.Docs — N-synced-peer scaling is not a SCALE3 measurement (SCALE1 covers two concurrent peers). The 1000-block shipped stack is the shared second point on the last three axes.
 

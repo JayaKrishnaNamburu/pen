@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	createEditor,
 	flushAnimationFrames,

@@ -54,8 +54,8 @@
     "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
-    "@input/pen-crdt-yjs": "workspace:*",
-    "@input/pen-schema-default": "workspace:*",
+    "@input/pen-yjs": "workspace:*",
+    "@input/pen-schema": "workspace:*",
     "@input/pen-test": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",

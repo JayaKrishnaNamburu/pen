@@ -1,13 +1,13 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import * as Y from "yjs";
 import { createBlockHandle, createAppHandle } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
   createTestDocument,
   createTestEditor,
   resetTestIdCounter,
 } from "../index";
-import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@input/pen-crdt-yjs";
+import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@input/pen-yjs";
 
 type YBlockMap = Y.Map<unknown>;
 type YBlocksMap = Y.Map<YBlockMap>;

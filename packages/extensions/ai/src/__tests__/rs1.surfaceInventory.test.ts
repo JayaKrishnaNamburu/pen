@@ -6,8 +6,8 @@ import {
 	REVIEW_SURFACE_CLASSES,
 } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { deltaStreamExtension } from "../stream";
 import { aiExtension, getAIController } from "../index";
 import { createDeferred } from "./extension.testUtils";
@@ -180,7 +180,7 @@ function createTestEditor(
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension({
 				...(contentFormat ? { contentFormat } : {}),
 				model: {

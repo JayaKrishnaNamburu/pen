@@ -31,7 +31,7 @@ import {
 	textColor,
 	toggle,
 	underline,
-} from "@input/pen-schema-default";
+} from "@input/pen-schema";
 import type { BlockSchema, InlineSchema } from "@input/pen-types";
 
 describe("SchemaRegistryImpl", () => {

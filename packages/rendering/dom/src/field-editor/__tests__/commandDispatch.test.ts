@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, getCommandRegistry, splitBlock } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { handleFieldEditorKeyDown } from "../keyHandling";
 import { DIRECT_HANDLERS } from "../contenteditableDirectHandlers";
 import type { FieldEditorInputController } from "../controller";

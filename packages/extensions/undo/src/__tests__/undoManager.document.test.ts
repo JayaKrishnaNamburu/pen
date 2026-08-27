@@ -1,4 +1,4 @@
-import { yjsAdapter, type YjsCRDTDocument } from "@input/pen-crdt-yjs";
+import { yjsAdapter, type YjsCRDTDocument } from "@input/pen-yjs";
 import type { CRDTAdapter, OpOrigin } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";

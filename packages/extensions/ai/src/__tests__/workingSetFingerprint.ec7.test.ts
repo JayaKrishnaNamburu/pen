@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
 	resolveDocumentBlocks,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import type { ModelAdapter, ModelStreamEvent } from "@input/pen-types";
 import type { GenerationTarget } from "../helpers";
@@ -39,7 +39,7 @@ function createChatEditor(model: ModelAdapter) {
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension({
 				model,
 				contentFormat: { blockGeneration: "markdown" },

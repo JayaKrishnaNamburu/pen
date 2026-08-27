@@ -6,9 +6,9 @@ import { createRoot } from "react-dom/client";
 import { createReducedMotionSignal } from "@input/pen-dom";
 import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
 import { multiplayerExtension } from "@input/pen-multiplayer";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { Pen } from "../primitives/index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -23,7 +23,7 @@ describe("@input/pen-react caret overlay a11y", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -172,7 +172,7 @@ async function mountVisibleCaret(): Promise<{
 	const editor = createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

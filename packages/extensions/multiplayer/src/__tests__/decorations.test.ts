@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 import type { MultiplayerAwarenessState } from "../types";
 import { MultiplayerControllerImpl } from "../controller";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { serializePoint, wireCursor } from "./presenceAnchors";
 
 describe("multiplayer decorations", () => {

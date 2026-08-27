@@ -1,5 +1,5 @@
 import { selectionToRange, streamingTargetFacet } from "@input/pen-core";
-import { getDocumentToolRuntime } from "@input/pen-document-ops";
+import { getDocumentToolRuntime } from "@input/pen-tools";
 import { generateId, type StreamingTarget } from "@input/pen-types";
 import { buildFlowMarkdownRequestPrompt } from "../runtime/flowMarkdown";
 import { routeAIRequest } from "../runtime/router";

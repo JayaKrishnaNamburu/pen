@@ -6,7 +6,7 @@ export function ExtensionsPage() {
 				Extensions add behavior. They do not replace{" "}
 				<code>editor.apply</code>. Register them on{" "}
 				<code>createEditor({"{ extensions }"})</code> or through a
-				preset. <code>defaultPreset()</code> installs document-ops,
+				preset. <code>defaultPreset()</code> installs tools,
 				delta-stream, undo, shortcuts, and{" "}
 				<code>createDefaultSchema()</code> unless those options are
 				turned off. Facet rules live in{" "}
@@ -80,12 +80,10 @@ export function ExtensionsPage() {
 				<code>getAIController</code> read those facets.
 			</p>
 			<pre>
-				<code>{`import { createEditor, ariaReadOnlyFacet } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { ariaReadOnlyFacet } from "@input/pen-core";
+import { createEditor } from "@input/pen";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 
 const ariaReadOnly = editor.facet(ariaReadOnlyFacet);`}</code>
 			</pre>

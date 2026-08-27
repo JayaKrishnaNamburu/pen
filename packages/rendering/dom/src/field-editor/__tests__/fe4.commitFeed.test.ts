@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getRootGeometry } from "../../geometry/rootGeometry";
 import { mountEditor } from "../../host/mountEditor";

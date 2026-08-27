@@ -1,4 +1,4 @@
-# `@input/pen-crdt-yjs`
+# `@input/pen-yjs`
 
 Yjs integration for Pen.
 
@@ -16,7 +16,7 @@ It does **not** implement WebSocket transport or a custom Yjs sync provider.
 ## Install
 
 ```bash
-pnpm add @input/pen-crdt-yjs yjs y-protocols
+pnpm add @input/pen-yjs yjs y-protocols
 ```
 
 Required peers are `yjs` (`^13.6`) and `y-protocols` (`^1.0.7`). `engines.node` is `>=22`.
@@ -28,7 +28,7 @@ import * as Y from "yjs";
 import {
   encodeYjsStateVectorBase64,
   isYjsStateVectorBase64Satisfied,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 
 const ydoc = new Y.Doc();
 const required = encodeYjsStateVectorBase64(ydoc);
@@ -45,7 +45,7 @@ import * as Y from "yjs";
 import {
   createYArrayFieldAdapter,
   createYTextFieldAdapter,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 
 const ydoc = new Y.Doc();
 
@@ -70,7 +70,7 @@ Adapters are storage helpers only. Product validation, labels, contacts, auth, a
 
 ```ts
 import * as Y from "yjs";
-import { ensureExtensionRoot, readExtensionRoot } from "@input/pen-crdt-yjs";
+import { ensureExtensionRoot, readExtensionRoot } from "@input/pen-yjs";
 
 const ydoc = new Y.Doc();
 
@@ -98,14 +98,14 @@ What Pen guarantees versus what the host owns is stated in [COLLABORATION.md](./
 
 When using multiplayer with Yjs, Pen expects the application to choose the provider and hand Pen a `MultiplayerSession`.
 
-`@input/pen-crdt-yjs` exposes the minimal helpers needed for that:
+`@input/pen-yjs` exposes the minimal helpers needed for that:
 
 ```ts
 import {
   createYjsProviderSession,
   getYjsAwareness,
   getYjsDoc,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 ```
 
 ## Canonical `y-websocket` setup
@@ -118,7 +118,7 @@ import {
   createYjsProviderSession,
   getYjsAwareness,
   getYjsDoc,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import { multiplayerExtension } from "@input/pen-multiplayer";
 import { WebsocketProvider } from "y-websocket";
 
@@ -209,7 +209,7 @@ Pen reports document growth and does not compact documents. On load, a document 
 `PenPersistence.compact()` is host-implemented: Pen never calls it. Three mechanisms exist, and they do different things:
 
 - **`mergeUpdates` / `mergeYjsUpdates`.** `Y.mergeUpdates` folds a sequence of Yjs updates into one update that encodes the same document state. That shrinks an _update log_ a host has been appending. It does not remove tombstones — deleted blocks and characters stay in the CRDT until GC collects them.
-- **Snapshot retention.** `@input/pen-history` writes version snapshots through `PenPersistence.saveVersionSnapshot` and restores them with `loadVersion`. Pen does not delete snapshots. A host that drops older snapshot rows reclaims that snapshot storage and cannot restore those versions.
+- **Snapshot retention.** `@input/pen-snapshots` writes version snapshots through `PenPersistence.saveVersionSnapshot` and restores them with `loadVersion`. Pen does not delete snapshots. A host that drops older snapshot rows reclaims that snapshot storage and cannot restore those versions.
 - **`gc: true`.** `yjsAdapter()` defaults to `gc: false` so deleted Yjs content stays restorable for undo and history. Passing `yjsAdapter({ gc: true })` lets Yjs collect deleted items and gives up restore of those old deletions.
 
 Which combination a host uses depends on whether it ships version history. Pen does not pick one.

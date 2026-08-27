@@ -386,7 +386,7 @@ export function runSelfTests() {
 			},
 			{
 				field: "dependencies",
-				dependency: "@input/pen-schema-default",
+				dependency: "@input/pen-schema",
 				spec: DESIRED_PIN,
 			},
 		],
@@ -394,7 +394,7 @@ export function runSelfTests() {
 		sideEffects: false,
 	});
 	const history = fixturePkg({
-		name: "@input/pen-history",
+		name: "@input/pen-snapshots",
 		pins: [
 			{
 				field: "dependencies",
@@ -414,7 +414,7 @@ export function runSelfTests() {
 				reason: "P.8 conversion deferred — workspace:* packs to an exact version (F34).",
 			},
 			{
-				package: "@input/pen-history",
+				package: "@input/pen-snapshots",
 				field: "dependencies",
 				dependency: "@input/pen-types",
 				reason: "P.8 conversion deferred — workspace:* packs to an exact version (F34).",
@@ -422,7 +422,7 @@ export function runSelfTests() {
 		],
 		jsArtifacts: [
 			{
-				package: "@input/pen-history",
+				package: "@input/pen-snapshots",
 				reason: "P.8 conversion deferred — ESM export is ./dist/index.js (F34).",
 			},
 		],
@@ -445,12 +445,12 @@ export function runSelfTests() {
 	);
 	assert(
 		matching.caretPins.length === 1 &&
-			matching.caretPins[0].dependency === "@input/pen-schema-default",
+			matching.caretPins[0].dependency === "@input/pen-schema",
 		"self-test: workspace:^ is desired, not a violation",
 	);
 	assert(
 		matching.allowedJs.length === 1 &&
-			matching.allowedJs[0].package === "@input/pen-history",
+			matching.allowedJs[0].package === "@input/pen-snapshots",
 		"self-test: history .js export is allowlisted",
 	);
 	assert(
@@ -494,7 +494,7 @@ export function runSelfTests() {
 				pins: [
 					{
 						field: "dependencies",
-						dependency: "@input/pen-schema-default",
+						dependency: "@input/pen-schema",
 						spec: DESIRED_PIN,
 					},
 				],
@@ -569,7 +569,7 @@ export function runSelfTests() {
 				sideEffects: false,
 			}),
 			fixturePkg({
-				name: "@input/pen-history",
+				name: "@input/pen-snapshots",
 				pins: [
 					{
 						field: "dependencies",
@@ -627,7 +627,7 @@ export function runSelfTests() {
 		],
 		jsArtifacts: [
 			{
-				package: "@input/pen-history",
+				package: "@input/pen-snapshots",
 				reason: "P.8 / F34 dist/index.js",
 			},
 		],

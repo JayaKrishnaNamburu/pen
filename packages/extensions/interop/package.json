@@ -91,16 +91,16 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-content-ops": "workspace:^",
+    "@input/pen-ingest": "workspace:^",
     "@input/pen-core": "workspace:^",
-    "@input/pen-markdown-serialization": "workspace:^",
+    "@input/pen-markdown": "workspace:^",
     "@input/pen-types": "workspace:^",
     "domhandler": "^6.0.1",
     "htmlparser2": "^9.0.0",
     "isomorphic-dompurify": "~2.36.0"
   },
   "devDependencies": {
-    "@input/pen-schema-default": "workspace:^",
+    "@input/pen-schema": "workspace:^",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.2.7"

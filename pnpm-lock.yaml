@@ -54,12 +54,9 @@ importers:
 
   examples/react:
     dependencies:
-      '@input/pen-core':
+      '@input/pen':
         specifier: workspace:*
-        version: link:../../packages/core
-      '@input/pen-preset-default':
-        specifier: workspace:*
-        version: link:../../packages/presets/default
+        version: link:../../packages/pen
       '@input/pen-react':
         specifier: workspace:*
         version: link:../../packages/rendering/react
@@ -88,15 +85,12 @@ importers:
 
   examples/vanilla:
     dependencies:
-      '@input/pen-core':
+      '@input/pen':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/pen
       '@input/pen-dom':
         specifier: workspace:*
         version: link:../../packages/rendering/dom
-      '@input/pen-preset-default':
-        specifier: workspace:*
-        version: link:../../packages/presets/default
     devDependencies:
       typescript:
         specifier: ^5.7.3
@@ -107,12 +101,9 @@ importers:
 
   examples/vue:
     dependencies:
-      '@input/pen-core':
+      '@input/pen':
         specifier: workspace:*
-        version: link:../../packages/core
-      '@input/pen-preset-default':
-        specifier: workspace:*
-        version: link:../../packages/presets/default
+        version: link:../../packages/pen
       '@input/pen-vue':
         specifier: workspace:*
         version: link:../../packages/rendering/vue
@@ -132,12 +123,12 @@ importers:
 
   packages/core:
     dependencies:
-      '@input/pen-crdt-yjs':
-        specifier: workspace:^
-        version: link:../crdt/yjs
       '@input/pen-types':
         specifier: workspace:^
         version: link:../types
+      '@input/pen-yjs':
+        specifier: workspace:^
+        version: link:../crdt/yjs
     devDependencies:
       tsup:
         specifier: ^8.4.0
@@ -186,69 +177,63 @@ importers:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
     devDependencies:
+      '@input/pen':
+        specifier: workspace:*
+        version: link:../pen
       '@input/pen-ai':
         specifier: workspace:*
         version: link:../extensions/ai
-      '@input/pen-assets-memory':
+      '@input/pen-assets':
         specifier: workspace:*
-        version: link:../tooling/assets-memory
+        version: link:../tooling/assets
+      '@input/pen-autoformat':
+        specifier: workspace:*
+        version: link:../extensions/autoformat
       '@input/pen-bench':
         specifier: workspace:*
         version: link:../tooling/bench
-      '@input/pen-content-ops':
-        specifier: workspace:*
-        version: link:../shared/content-ops
       '@input/pen-core':
         specifier: workspace:*
         version: link:../core
-      '@input/pen-crdt-yjs':
-        specifier: workspace:*
-        version: link:../crdt/yjs
-      '@input/pen-document-ops':
-        specifier: workspace:*
-        version: link:../extensions/document-ops
       '@input/pen-dom':
         specifier: workspace:*
         version: link:../rendering/dom
-      '@input/pen-history':
+      '@input/pen-ingest':
         specifier: workspace:*
-        version: link:../extensions/history
-      '@input/pen-input-rules':
-        specifier: workspace:*
-        version: link:../extensions/input-rules
+        version: link:../shared/ingest
       '@input/pen-interop':
         specifier: workspace:*
         version: link:../extensions/interop
-      '@input/pen-markdown-serialization':
+      '@input/pen-markdown':
         specifier: workspace:*
-        version: link:../shared/markdown-serialization
+        version: link:../shared/markdown
       '@input/pen-multiplayer':
         specifier: workspace:*
         version: link:../extensions/multiplayer
-      '@input/pen-preset-default':
-        specifier: workspace:*
-        version: link:../presets/default
       '@input/pen-react':
         specifier: workspace:*
         version: link:../rendering/react
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../schema/default
+        version: link:../schema
       '@input/pen-search':
         specifier: workspace:*
         version: link:../extensions/search
       '@input/pen-shortcuts':
         specifier: workspace:*
         version: link:../extensions/shortcuts
+      '@input/pen-snapshots':
+        specifier: workspace:*
+        version: link:../extensions/snapshots
       '@input/pen-test':
         specifier: workspace:*
         version: link:../tooling/test
-      '@input/pen-transport-direct':
+      '@input/pen-tools':
         specifier: workspace:*
-        version: link:../transports/direct
-      '@input/pen-transport-sse':
+        version: link:../extensions/tools
+      '@input/pen-transport':
         specifier: workspace:*
-        version: link:../transports/sse
+        version: link:../transport
       '@input/pen-types':
         specifier: workspace:*
         version: link:../types
@@ -258,6 +243,9 @@ importers:
       '@input/pen-vue':
         specifier: workspace:*
         version: link:../rendering/vue
+      '@input/pen-yjs':
+        specifier: workspace:*
+        version: link:../crdt/yjs
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18
@@ -276,22 +264,22 @@ importers:
 
   packages/extensions/ai:
     dependencies:
-      '@input/pen-content-ops':
-        specifier: workspace:^
-        version: link:../../shared/content-ops
       '@input/pen-core':
         specifier: workspace:^
         version: link:../../core
-      '@input/pen-document-ops':
+      '@input/pen-ingest':
         specifier: workspace:^
-        version: link:../document-ops
+        version: link:../../shared/ingest
+      '@input/pen-tools':
+        specifier: workspace:^
+        version: link:../tools
       '@input/pen-types':
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:^
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-test':
         specifier: workspace:*
         version: link:../../tooling/test
@@ -308,69 +296,7 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/extensions/document-ops:
-    dependencies:
-      '@input/pen-content-ops':
-        specifier: workspace:^
-        version: link:../../shared/content-ops
-      '@input/pen-core':
-        specifier: workspace:^
-        version: link:../../core
-      '@input/pen-markdown-serialization':
-        specifier: workspace:^
-        version: link:../../shared/markdown-serialization
-      '@input/pen-types':
-        specifier: workspace:^
-        version: link:../../types
-    devDependencies:
-      '@input/pen-schema-default':
-        specifier: workspace:*
-        version: link:../../schema/default
-      '@input/pen-test':
-        specifier: workspace:*
-        version: link:../../tooling/test
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/extensions/history:
-    dependencies:
-      '@input/pen-core':
-        specifier: workspace:^
-        version: link:../../core
-      '@input/pen-types':
-        specifier: workspace:^
-        version: link:../../types
-    devDependencies:
-      '@input/pen-crdt-yjs':
-        specifier: workspace:*
-        version: link:../../crdt/yjs
-      '@input/pen-schema-default':
-        specifier: workspace:*
-        version: link:../../schema/default
-      '@input/pen-test':
-        specifier: workspace:*
-        version: link:../../tooling/test
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
-      yjs:
-        specifier: ^13.6.32
-        version: 13.6.32
-
-  packages/extensions/input-rules:
+  packages/extensions/autoformat:
     dependencies:
       '@input/pen-core':
         specifier: workspace:^
@@ -391,15 +317,15 @@ importers:
 
   packages/extensions/interop:
     dependencies:
-      '@input/pen-content-ops':
-        specifier: workspace:^
-        version: link:../../shared/content-ops
       '@input/pen-core':
         specifier: workspace:^
         version: link:../../core
-      '@input/pen-markdown-serialization':
+      '@input/pen-ingest':
         specifier: workspace:^
-        version: link:../../shared/markdown-serialization
+        version: link:../../shared/ingest
+      '@input/pen-markdown':
+        specifier: workspace:^
+        version: link:../../shared/markdown
       '@input/pen-types':
         specifier: workspace:^
         version: link:../../types
@@ -413,9 +339,9 @@ importers:
         specifier: ~2.36.0
         version: 2.36.0
     devDependencies:
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:^
-        version: link:../../schema/default
+        version: link:../../schema
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
@@ -435,18 +361,18 @@ importers:
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@input/pen-crdt-yjs':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../../crdt/yjs
-      '@input/pen-schema-default':
-        specifier: workspace:*
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-test':
         specifier: workspace:*
         version: link:../../tooling/test
       '@input/pen-undo':
         specifier: workspace:*
         version: link:../undo
+      '@input/pen-yjs':
+        specifier: workspace:*
+        version: link:../../crdt/yjs
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
@@ -466,9 +392,9 @@ importers:
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../../schema/default
+        version: link:../../schema
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
@@ -488,9 +414,71 @@ importers:
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../../schema/default
+        version: link:../../schema
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/extensions/snapshots:
+    dependencies:
+      '@input/pen-core':
+        specifier: workspace:^
+        version: link:../../core
+      '@input/pen-types':
+        specifier: workspace:^
+        version: link:../../types
+    devDependencies:
+      '@input/pen-schema':
+        specifier: workspace:*
+        version: link:../../schema
+      '@input/pen-test':
+        specifier: workspace:*
+        version: link:../../tooling/test
+      '@input/pen-yjs':
+        specifier: workspace:*
+        version: link:../../crdt/yjs
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
+      yjs:
+        specifier: ^13.6.32
+        version: 13.6.32
+
+  packages/extensions/tools:
+    dependencies:
+      '@input/pen-core':
+        specifier: workspace:^
+        version: link:../../core
+      '@input/pen-ingest':
+        specifier: workspace:^
+        version: link:../../shared/ingest
+      '@input/pen-markdown':
+        specifier: workspace:^
+        version: link:../../shared/markdown
+      '@input/pen-types':
+        specifier: workspace:^
+        version: link:../../types
+    devDependencies:
+      '@input/pen-schema':
+        specifier: workspace:*
+        version: link:../../schema
+      '@input/pen-test':
+        specifier: workspace:*
+        version: link:../../tooling/test
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
@@ -510,15 +498,15 @@ importers:
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@input/pen-crdt-yjs':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../../crdt/yjs
-      '@input/pen-schema-default':
-        specifier: workspace:*
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-test':
         specifier: workspace:*
         version: link:../../tooling/test
+      '@input/pen-yjs':
+        specifier: workspace:*
+        version: link:../../crdt/yjs
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
@@ -532,32 +520,32 @@ importers:
         specifier: ^13.6.32
         version: 13.6.32
 
-  packages/presets/default:
+  packages/pen:
     dependencies:
       '@input/pen-ai':
         specifier: workspace:^
-        version: link:../../extensions/ai
+        version: link:../extensions/ai
       '@input/pen-core':
         specifier: workspace:^
-        version: link:../../core
-      '@input/pen-document-ops':
-        specifier: workspace:^
-        version: link:../../extensions/document-ops
+        version: link:../core
       '@input/pen-interop':
         specifier: workspace:^
-        version: link:../../extensions/interop
-      '@input/pen-schema-default':
+        version: link:../extensions/interop
+      '@input/pen-schema':
         specifier: workspace:^
-        version: link:../../schema/default
+        version: link:../schema
       '@input/pen-shortcuts':
         specifier: workspace:^
-        version: link:../../extensions/shortcuts
+        version: link:../extensions/shortcuts
+      '@input/pen-tools':
+        specifier: workspace:^
+        version: link:../extensions/tools
       '@input/pen-types':
         specifier: workspace:^
-        version: link:../../types
+        version: link:../types
       '@input/pen-undo':
         specifier: workspace:^
-        version: link:../../extensions/undo
+        version: link:../extensions/undo
     devDependencies:
       tsup:
         specifier: ^8.4.0
@@ -581,9 +569,9 @@ importers:
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-undo':
         specifier: workspace:*
         version: link:../../extensions/undo
@@ -605,9 +593,9 @@ importers:
       '@input/pen-dom':
         specifier: workspace:^
         version: link:../dom
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:^
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-shortcuts':
         specifier: workspace:^
         version: link:../../extensions/shortcuts
@@ -615,27 +603,27 @@ importers:
         specifier: workspace:^
         version: link:../../types
     devDependencies:
+      '@input/pen':
+        specifier: workspace:*
+        version: link:../../pen
       '@input/pen-ai':
         specifier: workspace:*
         version: link:../../extensions/ai
-      '@input/pen-document-ops':
-        specifier: workspace:*
-        version: link:../../extensions/document-ops
-      '@input/pen-history':
-        specifier: workspace:*
-        version: link:../../extensions/history
       '@input/pen-interop':
         specifier: workspace:*
         version: link:../../extensions/interop
       '@input/pen-multiplayer':
         specifier: workspace:*
         version: link:../../extensions/multiplayer
-      '@input/pen-preset-default':
-        specifier: workspace:*
-        version: link:../../presets/default
       '@input/pen-search':
         specifier: workspace:*
         version: link:../../extensions/search
+      '@input/pen-snapshots':
+        specifier: workspace:*
+        version: link:../../extensions/snapshots
+      '@input/pen-tools':
+        specifier: workspace:*
+        version: link:../../extensions/tools
       '@input/pen-undo':
         specifier: workspace:*
         version: link:../../extensions/undo
@@ -675,16 +663,16 @@ importers:
       '@input/pen-interop':
         specifier: workspace:^
         version: link:../../extensions/interop
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:^
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-types':
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@input/pen-preset-default':
+      '@input/pen':
         specifier: workspace:*
-        version: link:../../presets/default
+        version: link:../../pen
       '@input/pen-test':
         specifier: workspace:*
         version: link:../../tooling/test
@@ -710,14 +698,14 @@ importers:
         specifier: ^3.5.41
         version: 3.5.41(typescript@5.9.3)
 
-  packages/schema/default:
+  packages/schema:
     dependencies:
       '@input/pen-core':
         specifier: workspace:^
-        version: link:../../core
+        version: link:../core
       '@input/pen-types':
         specifier: workspace:^
-        version: link:../../types
+        version: link:../types
     devDependencies:
       tsup:
         specifier: ^8.4.0
@@ -729,7 +717,7 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/shared/content-ops:
+  packages/shared/ingest:
     dependencies:
       '@input/pen-core':
         specifier: workspace:^
@@ -760,7 +748,7 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/shared/markdown-serialization:
+  packages/shared/markdown:
     dependencies:
       '@input/pen-core':
         specifier: workspace:^
@@ -779,7 +767,7 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/tooling/assets-memory:
+  packages/tooling/assets:
     dependencies:
       '@input/pen-types':
         specifier: workspace:^
@@ -803,24 +791,24 @@ importers:
       '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@input/pen-crdt-yjs':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../../crdt/yjs
-      '@input/pen-document-ops':
-        specifier: workspace:*
-        version: link:../../extensions/document-ops
-      '@input/pen-schema-default':
-        specifier: workspace:*
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-test':
         specifier: workspace:*
         version: link:../test
+      '@input/pen-tools':
+        specifier: workspace:*
+        version: link:../../extensions/tools
       '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       '@input/pen-undo':
         specifier: workspace:*
         version: link:../../extensions/undo
+      '@input/pen-yjs':
+        specifier: workspace:*
+        version: link:../../crdt/yjs
       '@types/node':
         specifier: ^25.4.0
         version: 25.4.0
@@ -842,39 +830,39 @@ importers:
 
   packages/tooling/conformance:
     dependencies:
+      '@input/pen':
+        specifier: workspace:*
+        version: link:../../pen
       '@input/pen-ai':
         specifier: workspace:*
         version: link:../../extensions/ai
       '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@input/pen-crdt-yjs':
-        specifier: workspace:*
-        version: link:../../crdt/yjs
-      '@input/pen-document-ops':
-        specifier: workspace:*
-        version: link:../../extensions/document-ops
       '@input/pen-dom':
         specifier: workspace:*
         version: link:../../rendering/dom
       '@input/pen-interop':
         specifier: workspace:*
         version: link:../../extensions/interop
-      '@input/pen-preset-default':
-        specifier: workspace:*
-        version: link:../../presets/default
       '@input/pen-react':
         specifier: workspace:*
         version: link:../../rendering/react
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:*
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-test':
         specifier: workspace:*
         version: link:../test
+      '@input/pen-tools':
+        specifier: workspace:*
+        version: link:../../extensions/tools
       '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
+      '@input/pen-yjs':
+        specifier: workspace:*
+        version: link:../../crdt/yjs
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -888,24 +876,21 @@ importers:
       '@axe-core/playwright':
         specifier: ^4.13.0
         version: 4.13.0(playwright-core@1.62.1)
-      '@input/pen-assets-memory':
+      '@input/pen-assets':
         specifier: workspace:*
-        version: link:../assets-memory
+        version: link:../assets
+      '@input/pen-autoformat':
+        specifier: workspace:*
+        version: link:../../extensions/autoformat
       '@input/pen-bench':
         specifier: workspace:*
         version: link:../bench
-      '@input/pen-content-ops':
+      '@input/pen-ingest':
         specifier: workspace:*
-        version: link:../../shared/content-ops
-      '@input/pen-history':
+        version: link:../../shared/ingest
+      '@input/pen-markdown':
         specifier: workspace:*
-        version: link:../../extensions/history
-      '@input/pen-input-rules':
-        specifier: workspace:*
-        version: link:../../extensions/input-rules
-      '@input/pen-markdown-serialization':
-        specifier: workspace:*
-        version: link:../../shared/markdown-serialization
+        version: link:../../shared/markdown
       '@input/pen-multiplayer':
         specifier: workspace:*
         version: link:../../extensions/multiplayer
@@ -915,12 +900,12 @@ importers:
       '@input/pen-shortcuts':
         specifier: workspace:*
         version: link:../../extensions/shortcuts
-      '@input/pen-transport-direct':
+      '@input/pen-snapshots':
         specifier: workspace:*
-        version: link:../../transports/direct
-      '@input/pen-transport-sse':
+        version: link:../../extensions/snapshots
+      '@input/pen-transport':
         specifier: workspace:*
-        version: link:../../transports/sse
+        version: link:../../transport
       '@input/pen-undo':
         specifier: workspace:*
         version: link:../../extensions/undo
@@ -966,18 +951,18 @@ importers:
       '@input/pen-core':
         specifier: workspace:^
         version: link:../../core
-      '@input/pen-crdt-yjs':
-        specifier: workspace:^
-        version: link:../../crdt/yjs
       '@input/pen-interop':
         specifier: workspace:^
         version: link:../../extensions/interop
-      '@input/pen-schema-default':
+      '@input/pen-schema':
         specifier: workspace:^
-        version: link:../../schema/default
+        version: link:../../schema
       '@input/pen-types':
         specifier: workspace:^
         version: link:../../types
+      '@input/pen-yjs':
+        specifier: workspace:^
+        version: link:../../crdt/yjs
       yjs:
         specifier: ^13.6.32
         version: 13.6.32
@@ -992,39 +977,17 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/transports/direct:
+  packages/transport:
     dependencies:
       '@input/pen-ai':
         specifier: workspace:^
-        version: link:../../extensions/ai
+        version: link:../extensions/ai
       '@input/pen-core':
         specifier: workspace:^
-        version: link:../../core
+        version: link:../core
       '@input/pen-types':
         specifier: workspace:^
-        version: link:../../types
-    devDependencies:
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(postcss@8.5.26)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.7
-        version: 3.2.7(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/transports/sse:
-    dependencies:
-      '@input/pen-ai':
-        specifier: workspace:^
-        version: link:../../extensions/ai
-      '@input/pen-core':
-        specifier: workspace:^
-        version: link:../../core
-      '@input/pen-types':
-        specifier: workspace:^
-        version: link:../../types
+        version: link:../types
     devDependencies:
       tsup:
         specifier: ^8.4.0
@@ -1050,33 +1013,33 @@ importers:
 
   playground:
     dependencies:
+      '@input/pen':
+        specifier: workspace:*
+        version: link:../packages/pen
       '@input/pen-ai':
         specifier: workspace:*
         version: link:../packages/extensions/ai
+      '@input/pen-autoformat':
+        specifier: workspace:*
+        version: link:../packages/extensions/autoformat
       '@input/pen-core':
         specifier: workspace:*
         version: link:../packages/core
-      '@input/pen-crdt-yjs':
-        specifier: workspace:*
-        version: link:../packages/crdt/yjs
       '@input/pen-dom':
         specifier: workspace:*
         version: link:../packages/rendering/dom
-      '@input/pen-input-rules':
-        specifier: workspace:*
-        version: link:../packages/extensions/input-rules
       '@input/pen-multiplayer':
         specifier: workspace:*
         version: link:../packages/extensions/multiplayer
-      '@input/pen-preset-default':
-        specifier: workspace:*
-        version: link:../packages/presets/default
       '@input/pen-react':
         specifier: workspace:*
         version: link:../packages/rendering/react
       '@input/pen-types':
         specifier: workspace:*
         version: link:../packages/types
+      '@input/pen-yjs':
+        specifier: workspace:*
+        version: link:../packages/crdt/yjs
       '@y/websocket-server':
         specifier: ^0.1.5
         version: 0.1.5(@y/y@14.0.0-16)

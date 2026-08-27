@@ -11,7 +11,7 @@ import {
 import {
 	parseMarkdownToBlocks,
 	splitPlainTextLineBlocks,
-} from "@input/pen-content-ops";
+} from "@input/pen-ingest";
 
 export interface AutocompleteStructuredCandidate {
 	rawText: string;

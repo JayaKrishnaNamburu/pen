@@ -2,9 +2,9 @@ import {
 	createEditor as createCoreEditor,
 	fieldEditorHostFacet,
 } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -46,7 +46,7 @@ export function createEditor(
 			schema: defaultSchema,
 			...options,
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -63,7 +63,7 @@ export function createUndoSelectionDeletionEditor(
 		schema: defaultSchema,
 		...options,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: true,
 		}),

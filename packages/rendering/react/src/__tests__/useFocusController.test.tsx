@@ -4,12 +4,12 @@ import React, { act, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import type { Editor } from "@input/pen-types";
 import type { PenFocusPolicy } from "@input/pen-dom";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { Pen } from "../primitives/index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	useFocusController,
 	type PenFocusController,
@@ -23,7 +23,7 @@ function createPresetEditor() {
 	return createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

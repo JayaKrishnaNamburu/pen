@@ -15,7 +15,7 @@ import {
 	CLIPBOARD_INGEST_MAX_NESTING_DEPTH,
 	CLIPBOARD_INGEST_MAX_TEXT_SIZE,
 } from "../utils/clipboardIngest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	PEN_CLIPBOARD_PAYLOAD_VERSION,
 	parsePenClipboardPayload,

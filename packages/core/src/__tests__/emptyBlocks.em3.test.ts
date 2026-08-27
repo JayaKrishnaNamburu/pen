@@ -3,7 +3,7 @@ import {
 	initBlockMap,
 	readFormatStamp,
 	yjsAdapter,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import { PEN_FORMAT_METADATA_KEY } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";

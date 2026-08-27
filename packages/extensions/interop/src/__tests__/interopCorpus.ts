@@ -1,6 +1,6 @@
 import { createEditor } from "@input/pen-core";
 import type { DocumentOp, Editor } from "@input/pen-types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 /** Preset that omits bundled extensions — matches interop export/import tests. */
 export const interopNoExtensionsPreset = {

@@ -20,11 +20,9 @@ export function AccessibilityPage() {
 				label. Attach later and the warning is consumed silently.
 			</p>
 			<pre>
-				<code>{`import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { createEditor } from "@input/pen";
 
 const editor = createEditor({
-  preset: defaultPreset(),
   a11yLabel: "Document",
 });`}</code>
 			</pre>

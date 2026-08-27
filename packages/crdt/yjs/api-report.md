@@ -1,4 +1,4 @@
-# @input/pen-crdt-yjs
+# @input/pen-yjs
 
 ## .
 

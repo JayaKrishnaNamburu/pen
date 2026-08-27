@@ -1,5 +1,5 @@
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	createPointerSelectionGesture,

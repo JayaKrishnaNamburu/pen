@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { createEditor as createCoreEditor } from "@input/pen-core";
 import { urlPolicyExtension, type UrlPolicy } from "@input/pen-dom";
-import { defaultPreset } from "@input/pen-preset-default";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultPreset } from "@input/pen";
+import { defaultSchema } from "@input/pen-schema";
 import { Pen } from "../primitives/index";
 
 (
@@ -48,7 +48,7 @@ function createEditor(
 		...options,
 		extensions: [urlPolicyExtension(wrap), ...(options.extensions ?? [])],
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

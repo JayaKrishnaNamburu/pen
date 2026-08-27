@@ -1,11 +1,11 @@
 import * as Y from "yjs";
 import { createHeadlessEditor } from "@input/pen-core";
-import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { yjsAdapter } from "@input/pen-yjs";
 import {
 	compareYjsStateVectors,
 	encodeYjsStateVector,
 	wrapYjsDocument,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import { exportEditorToJson, exportEditorToText } from "@input/pen-interop/json";
 import type { Editor, SchemaRegistry } from "@input/pen-types";
 import type {

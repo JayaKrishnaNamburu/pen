@@ -1,7 +1,7 @@
 import * as Y from "yjs";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { createEditor } from "@input/pen-core";
-import { yjsAdapter, wrapYjsDocument } from "@input/pen-crdt-yjs";
+import { yjsAdapter, wrapYjsDocument } from "@input/pen-yjs";
 import { createTestDocument } from "./createTestDocument";
 import type { SchemaEngine } from "@input/pen-types";
 import type { TestEditor, TestEditorOptions } from "./types";

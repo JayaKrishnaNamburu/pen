@@ -26,7 +26,7 @@ In current usage, `@input/pen-ai` is the headless orchestration layer for both i
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-core`, `@input/pen-document-ops`, `@input/pen-types`
+- Runtime dependencies: `@input/pen-ingest`, `@input/pen-core`, `@input/pen-tools`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: The extension composes through the core editor and slots/events rather than side channels. Network egress is owned by core `pen.aiEgress`, not by a second filter chain in this package.
 
@@ -91,7 +91,7 @@ A durable AI edit is an `edit_document` tool call. Prompt routing, mutation post
 
 ### The `edit_document` tool
 
-`documentOpsExtension()` registers `edit_document` as a mutating, destructive tool. Its envelope is `{ operations: [...] }` over a closed set of seven operations: `replace_block_text`, `replace_blocks`, `insert_blocks`, `delete_blocks`, `move_block`, `format_text`, and `set_block_props`. Content arrives as plain `text` or as `markdown` compiled through `buildDocumentWriteOps()`; structured operations carry `marks`, `blockType`, or `props` instead.
+`toolsExtension()` registers `edit_document` as a mutating, destructive tool. Its envelope is `{ operations: [...] }` over a closed set of seven operations: `replace_block_text`, `replace_blocks`, `insert_blocks`, `delete_blocks`, `move_block`, `format_text`, and `set_block_props`. Content arrives as plain `text` or as `markdown` compiled through `buildDocumentWriteOps()`; structured operations carry `marks`, `blockType`, or `props` instead.
 
 Operations compile to `DocumentOp[]`, pass batch validation, and land through `editor.apply(..., { origin: "ai" })`. The handler does not throw for semantic failures — it returns an `EditDocumentResult` in which good operations applied and rejected ones come back with a live outline of `{ blockId, blockType, preview }` so the model can re-target without re-reading the document.
 
@@ -174,7 +174,7 @@ Canonical AI tool surface. Transports authorize a model-driven call before execu
 
 ## Stream (`@input/pen-ai/stream`)
 
-Streaming protocol and processing pipeline. Optional runtime that turns a `PenStream` of parts into editor mutations. It is not installed by `createEditor()`. `defaultPreset()` is the path that includes it.
+Streaming protocol and processing pipeline. Optional runtime that turns a `PenStream` of parts into editor mutations. It is not installed by core's `createEditor()`. `defaultPreset()` is the path that includes it, which `@input/pen`'s constructors apply by default.
 
 - `deltaStreamExtension()`, `processStream()`
 - Install via `defaultPreset()` or `createEditor({ extensions: [deltaStreamExtension()] })`.
@@ -186,7 +186,7 @@ Streaming protocol and processing pipeline. Optional runtime that turns a `PenSt
 - Spec path mirrors workspace path: `packages/extensions/ai.md`
 - Typical integration installs `aiExtension()` on the editor and then uses renderer-specific primitives or hooks to expose AI UI
 - `@input/pen-react` provides the broadest AI UI surface today, but the extension itself stays headless
-- `@input/pen-document-ops` is a key dependency because AI flows need document-tool and mutation preparation helpers
+- `@input/pen-tools` is a key dependency because AI flows need document-tool and mutation preparation helpers
 - Hosts should treat the controller as the source of truth for AI session state, review items, and pending suggestion lifecycle
 - Renderer UIs may expose separate inline and chat surfaces, but both surfaces should flow through the same session and mutation contracts exposed here
 - Playground integration exercises the analyzer request path and the renderer lifecycle for underline, popover, apply, and dismiss

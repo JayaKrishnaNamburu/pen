@@ -4,7 +4,7 @@
  *
  * A consumer who installs `@input/pen-core` alone must receive zero
  * extension / feature / renderer / preset packages. The production
- * `@input/pen-*` closure is exactly core → crdt-yjs → types.
+ * `@input/pen-*` closure is exactly core → yjs → types.
  *
  * Asserts against published package.json manifests (dependencies,
  * optionalDependencies, and required @input/pen-* peers), walked
@@ -160,7 +160,7 @@ export function formatReport(result) {
 
 	lines.push("");
 	lines.push(
-		"OK: installing @input/pen-core pulls zero extension packages (closure is core, crdt-yjs, types).",
+		"OK: installing @input/pen-core pulls zero extension packages (closure is core, yjs, types).",
 	);
 	return lines.join("\n");
 }
@@ -179,12 +179,12 @@ function closurePath(viaByName, name) {
 
 export function runSelfTests() {
 	const types = fixturePkg("packages/types", "@input/pen-types", []);
-	const crdt = fixturePkg("packages/crdt/yjs", "@input/pen-crdt-yjs", [
+	const crdt = fixturePkg("packages/crdt/yjs", "@input/pen-yjs", [
 		"@input/pen-types",
 	]);
 	const core = fixturePkg("packages/core", "@input/pen-core", [
 		"@input/pen-types",
-		"@input/pen-crdt-yjs",
+		"@input/pen-yjs",
 	]);
 	const undo = fixturePkg("packages/extensions/undo", "@input/pen-undo", [
 		"@input/pen-types",
@@ -201,8 +201,8 @@ export function runSelfTests() {
 	assert(healthy.ok, "self-test: healthy core stack must pass");
 	assert(
 		healthy.closure.join(",") ===
-			"@input/pen-core,@input/pen-crdt-yjs,@input/pen-types",
-		"self-test: healthy closure must be core, crdt-yjs, types",
+			"@input/pen-core,@input/pen-types,@input/pen-yjs",
+		"self-test: healthy closure must be core, types, yjs",
 	);
 
 	const topLevel = evaluateCoreCleanInstall({
@@ -243,14 +243,14 @@ export function runSelfTests() {
 			shortcuts,
 		],
 	});
-	assert(!transitive.ok, "self-test: crdt-yjs → undo must fail");
+	assert(!transitive.ok, "self-test: yjs → undo must fail");
 	assert(
 		transitive.pulled.some(
 			(entry) =>
 				entry.name === "@input/pen-undo" &&
-				entry.via === "@input/pen-crdt-yjs",
+				entry.via === "@input/pen-yjs",
 		),
-		"self-test: transitive extension through crdt-yjs must be reported",
+		"self-test: transitive extension through yjs must be reported",
 	);
 
 	const fromManifest = evaluateCoreCleanInstall({
@@ -260,14 +260,14 @@ export function runSelfTests() {
 				devDependencies: { vitest: "^3.0.7" },
 			}),
 			fixtureFromManifest("packages/crdt/yjs", {
-				name: "@input/pen-crdt-yjs",
+				name: "@input/pen-yjs",
 				dependencies: { "@input/pen-types": "workspace:^" },
 				peerDependencies: { yjs: "^13.6" },
 			}),
 			fixtureFromManifest("packages/core", {
 				name: "@input/pen-core",
 				dependencies: {
-					"@input/pen-crdt-yjs": "workspace:^",
+					"@input/pen-yjs": "workspace:^",
 					"@input/pen-types": "workspace:^",
 				},
 				devDependencies: {
@@ -292,7 +292,7 @@ export function runSelfTests() {
 			fixtureFromManifest("packages/core", {
 				name: "@input/pen-core",
 				dependencies: {
-					"@input/pen-crdt-yjs": "workspace:^",
+					"@input/pen-yjs": "workspace:^",
 					"@input/pen-types": "workspace:^",
 				},
 				peerDependencies: {
@@ -317,7 +317,7 @@ export function runSelfTests() {
 			fixtureFromManifest("packages/core", {
 				name: "@input/pen-core",
 				dependencies: {
-					"@input/pen-crdt-yjs": "workspace:^",
+					"@input/pen-yjs": "workspace:^",
 					"@input/pen-types": "workspace:^",
 				},
 				peerDependencies: {
@@ -339,7 +339,7 @@ export function runSelfTests() {
 			fixtureFromManifest("packages/core", {
 				name: "@input/pen-core",
 				dependencies: {
-					"@input/pen-crdt-yjs": "workspace:^",
+					"@input/pen-yjs": "workspace:^",
 					"@input/pen-types": "workspace:^",
 				},
 				optionalDependencies: {

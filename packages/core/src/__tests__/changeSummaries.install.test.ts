@@ -1,4 +1,4 @@
-import { isYjsCRDTDocument, yjsAdapter } from "@input/pen-crdt-yjs";
+import { isYjsCRDTDocument, yjsAdapter } from "@input/pen-yjs";
 import type { CommitEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";

@@ -106,11 +106,11 @@ function rootEntry(entries, packageName) {
 }
 
 // Core registers no block types on its own — it cannot depend on
-// @input/pen-schema-default (API1). A host assembles the two, so the smoke
+// @input/pen-schema (API1). A host assembles the two, so the smoke
 // assembles them too, from the built artifacts rather than from source.
 async function runHeadlessPass(entries) {
 	const core = rootEntry(entries, "@input/pen-core");
-	const schemaPackage = rootEntry(entries, "@input/pen-schema-default");
+	const schemaPackage = rootEntry(entries, "@input/pen-schema");
 
 	const esmCore = await import(pathToFileURL(core.esmAbs).href);
 	if (typeof esmCore.createHeadlessEditor !== "function") {
@@ -121,7 +121,7 @@ async function runHeadlessPass(entries) {
 	const esmSchema = await import(pathToFileURL(schemaPackage.esmAbs).href);
 	if (!esmSchema.defaultSchema) {
 		throw new Error(
-			"HOST2: defaultSchema is not exported from @input/pen-schema-default ESM",
+			"HOST2: defaultSchema is not exported from @input/pen-schema ESM",
 		);
 	}
 	runHeadless(esmCore.createHeadlessEditor, esmSchema.defaultSchema, "ESM");
@@ -135,7 +135,7 @@ async function runHeadlessPass(entries) {
 	const cjsSchema = require(schemaPackage.cjsAbs);
 	if (!cjsSchema.defaultSchema) {
 		throw new Error(
-			"HOST2: defaultSchema is not exported from @input/pen-schema-default CJS",
+			"HOST2: defaultSchema is not exported from @input/pen-schema CJS",
 		);
 	}
 	runHeadless(cjsCore.createHeadlessEditor, cjsSchema.defaultSchema, "CJS");

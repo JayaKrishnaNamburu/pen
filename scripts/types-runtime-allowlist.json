@@ -4,7 +4,7 @@
     {
       "name": "generateId",
       "kind": "function",
-      "reason": "P.3: generateId stays; HOST4 requires a single ID helper and crdt-yjs still imports it from types"
+      "reason": "P.3: generateId stays; HOST4 requires a single ID helper and pen-yjs still imports it from types"
     },
     {
       "name": "formatUuidV4",

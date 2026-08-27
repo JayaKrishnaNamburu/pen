@@ -4,7 +4,7 @@ import {
 	defineExtension,
 	getInlineCompletionController,
 } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
 import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { Editor } from "@input/pen-types";
 import { serializeDeltasToFormat } from "../utils/clipboardSerialization";
 

@@ -12,9 +12,9 @@ import {
 	applySuggestedAIOperations,
 	getAIController,
 } from "@input/pen-ai";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { Pen } from "../primitives";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -26,7 +26,7 @@ describe("@input/pen-react suggestion rendering", () => {
 			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -414,7 +414,7 @@ describe("@input/pen-react suggestion rendering", () => {
 			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -495,7 +495,7 @@ describe("@input/pen-react suggestion rendering", () => {
 			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -577,7 +577,7 @@ describe("@input/pen-react suggestion rendering", () => {
 			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -666,7 +666,7 @@ describe("@input/pen-react suggestion rendering", () => {
 			schema: defaultSchema,
 			documentProfile: "flow",
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { createAutocompleteStructuredCandidate } from "../structuredCandidate";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 describe("createAutocompleteStructuredCandidate", () => {
 	it("uses single newlines for adjacent paragraph blocks", () => {

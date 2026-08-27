@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultBlocks, defaultInlines } from "@input/pen-schema-default";
+import { defaultBlocks, defaultInlines } from "@input/pen-schema";
 import type { DocumentOp } from "@input/pen-types";
 import { jsonExporter } from "../exporter";
 import {
@@ -13,7 +13,7 @@ import {
 } from "../fidelityTable";
 import { jsonImporter } from "../importer";
 import type { PenDocumentJSON } from "../types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

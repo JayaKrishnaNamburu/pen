@@ -178,7 +178,6 @@
 - fullReconcileDeltasToDOM
 - getAttachedFieldEditor
 - getAttachedFieldEditorStore
-- HistoryState
 - InlineAtomInteractions
 - InlineAtomRenderInteractionProps
 - InlineDecoration
@@ -230,6 +229,7 @@
 - SearchWholeWord
 - SelectionState
 - SelectionToolbarContext
+- SnapshotsState
 - ToolbarContext
 - useActiveAISession
 - useAI
@@ -245,13 +245,13 @@
 - useAttribution
 - UseContextualPromptPlacementOptions
 - useGeneration
-- useHistory
 - useInlineSuggestionControls
 - useMultiplayer
 - useRemoteCursors
 - useRemoteSelections
 - useSearch
 - useSearchContext
+- useSnapshots
 - useSuggestions
 - useSuggestMode
 
@@ -469,20 +469,20 @@
 - AISuggestionsPopoverProps
 - AISuggestionsRootProps
 
-## ./history
+## ./snapshots
 
-`./dist/history.d.ts`
+`./dist/snapshots.d.ts`
 
 ### function
 
 - useAttribution
-- useHistory
+- useSnapshots
 
 ### value
 
 - BlameRange
 - CharacterAttribution
-- HistoryState
+- SnapshotsState
 
 ### type
 

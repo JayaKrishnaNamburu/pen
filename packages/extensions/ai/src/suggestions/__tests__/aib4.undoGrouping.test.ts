@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import { aiSuggestionsExtension, getAISuggestionsController } from "../index";
 

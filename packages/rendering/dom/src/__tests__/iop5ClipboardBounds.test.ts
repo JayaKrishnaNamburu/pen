@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	CLIPBOARD_INGEST_MAX_IMAGE_COUNT,
 	CLIPBOARD_INGEST_MAX_NESTING_DEPTH,

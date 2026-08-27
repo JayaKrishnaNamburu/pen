@@ -1,4 +1,4 @@
-import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { yjsAdapter } from "@input/pen-yjs";
 import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	type BlockSchema,

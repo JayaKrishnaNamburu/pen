@@ -11,14 +11,14 @@ import {
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "@input/pen-dom/field-editor/keyHandling";
 import { resolveShiftClickInlineAtomSelection } from "@input/pen-dom";
 import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 type BlocksMapLike = {
 	get(key: string): { get(field: string): unknown } | undefined;
@@ -150,7 +150,7 @@ describe("@input/pen-react key binding contexts: history and search shortcuts", 
 	it("handles macOS undo and redo shortcuts without native history events", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				shortcuts: false,
 			},
@@ -187,7 +187,7 @@ describe("@input/pen-react key binding contexts: history and search shortcuts", 
 		let handled = 0;
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				shortcuts: false,
 			},
@@ -232,7 +232,7 @@ describe("@input/pen-react key binding contexts: history and search shortcuts", 
 	it("opens search with Mod-f on macOS and Windows", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -268,7 +268,7 @@ describe("@input/pen-react key binding contexts: history and search shortcuts", 
 	it("navigates and closes search with Enter, Shift-Enter, and Escape", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -323,7 +323,7 @@ describe("@input/pen-react key binding contexts: history and search shortcuts", 
 	it("navigates search with Mod-g and Shift-Mod-g on macOS and Windows", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,

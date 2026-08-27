@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createEditor } from "@input/pen-core";
 import type { SchemaRegistry } from "@input/pen-types";
 import { markdownExporter } from "../../export";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { markdownImporter, parseMarkdownToBlocks } from "../importer";
 
 const noDefaultExtensionsPreset = {

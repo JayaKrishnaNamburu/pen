@@ -7,7 +7,7 @@ AI extension, suggest mode, review state, planning/runtime helpers, proactive su
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-ai
+pnpm add @input/pen @input/pen-ai
 ```
 
 Most app integrations also pair it with a renderer such as `@input/pen-react`.
@@ -27,12 +27,10 @@ Most app integrations also pair it with a renderer such as `@input/pen-react`.
 ## Minimal Setup
 
 ```ts
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { aiExtension, getAIController } from "@input/pen-ai";
 
 const editor = createEditor({
-  preset: defaultPreset(),
   extensions: [
     aiExtension({
       suggestMode: true,
@@ -62,7 +60,7 @@ import { deltaStreamExtension, processStream } from "@input/pen-ai/stream";
 - Outbound model calls go through the single `pen.aiEgress` facet in `@input/pen-core` (re-exported here). Suggestions and autocomplete share that same facet.
 - Async request/response ranges: mint anchors when the request leaves, run the repair step on structural commits, and resolve when the response arrives. Do not map through `summaryLog.between`. A resolve of `null` is not deletion — check whether the block still exists (not-yet-seen) before dropping the range.
 - Playground request planning (`buildPlaygroundRequestPlan` and related helpers) lives in the playground app, not this package.
-- Mutating tools are default-deny until the host allowlists them. `@input/pen-ai/tools` does not replace `@input/pen-document-ops`.
+- Mutating tools are default-deny until the host allowlists them. `@input/pen-ai/tools` does not replace `@input/pen-tools`.
 - `@input/pen-ai/skills` is a packaging helper. Pen has no skill loader and never runs bundled scripts.
 - `processStream` does not mint an undo `groupId`; if you omit `groupId`, each apply uses `{ origin: "ai" }` only.
 
@@ -73,7 +71,7 @@ import { deltaStreamExtension, processStream } from "@input/pen-ai/stream";
 - `@input/pen-ai/suggestions` or `@input/pen-ai/autocomplete` for narrower inline flows
 - `@input/pen-ai/tools` when an agent should call the public tool surface
 - `@input/pen-ai/stream` when applying a `PenStreamPart` stream
-- `@input/pen-document-ops` when AI actions should route through document tools
+- `@input/pen-tools` when AI actions should route through document tools
 
 ## Options
 
@@ -82,7 +80,7 @@ import { deltaStreamExtension, processStream } from "@input/pen-ai/stream";
 | `suggestMode` | `false`       | Stage AI edits for review instead of applying them |
 | `author`      | `"assistant"` | Author label stored on AI-originated suggestions   |
 
-`aiExtension()` requires the `document-ops`, `delta-stream`, and `undo` extensions (`dependencies` on the extension record). `defaultPreset()` installs those three.
+`aiExtension()` requires the `tools`, `delta-stream`, and `undo` extensions (`dependencies` on the extension record). `defaultPreset()` installs those three.
 
 ### Suggestions (`./suggestions`)
 
@@ -147,13 +145,13 @@ This subpath has no options. `listDefaultAISkills` always includes the document-
 
 ## Facets and commands
 
-`aiExtension` contributes `beforeApplyFacet` (`pen.beforeApply`) when suggest mode is on, plus the AI controller facets read by `getAIController` and `getAIReviewController`. Commands: `ai:rewrite`, `ai:continue`, `ai:summarize`, `ai:fix-grammar`, `ai:simplify`, `ai:expand`, `ai:translate`. Key bindings cover inline undo/redo. Requires `document-ops`, `delta-stream`, and `undo`.
+`aiExtension` contributes `beforeApplyFacet` (`pen.beforeApply`) when suggest mode is on, plus the AI controller facets read by `getAIController` and `getAIReviewController`. Commands: `ai:rewrite`, `ai:continue`, `ai:summarize`, `ai:fix-grammar`, `ai:simplify`, `ai:expand`, `ai:translate`. Key bindings cover inline undo/redo. Requires `tools`, `delta-stream`, and `undo`.
 
 `aiSuggestionsExtension` contributes the suggestions controller facet (`aiSuggestionsControllerFacet` / `AI_SUGGESTIONS_CONTROLLER_SLOT`). It contributes no commands. Requires no other extensions. The host must provide `analyzer`.
 
 `autocompleteExtension` contributes the autocomplete controller facet (`aiAutocompleteControllerFacet` / `AI_AUTOCOMPLETE_CONTROLLER_SLOT`). It contributes no commands. Requires no other extensions. It shares the inline-completion controller with the package root when both are installed.
 
-`./skills`, `./tools`, and `./stream` contribute no facets and no commands. Tools depend on the document-ops tool runtime that `defaultPreset()` installs. `processStream` looks up that runtime when the stream contains tool parts, and works without it when those parts are absent.
+`./skills`, `./tools`, and `./stream` contribute no facets and no commands. Tools depend on the tools tool runtime that `defaultPreset()` installs. `processStream` looks up that runtime when the stream contains tool parts, and works without it when those parts are absent.
 
 ## Documentation
 

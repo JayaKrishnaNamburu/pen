@@ -18,7 +18,7 @@ export function HomePage() {
 
 			<h2>Getting started</h2>
 			<p>
-				Start with <code>@input/pen-preset-default</code> and a host
+				Start with <code>@input/pen</code> and a host
 				binding. Mount snippets for React, Vue, and vanilla live on{" "}
 				<a href="#/getting-started">Getting started</a>. Minimal apps
 				live in this repository at <code>examples/react</code>,{" "}

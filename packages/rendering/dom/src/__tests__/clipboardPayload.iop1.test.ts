@@ -7,7 +7,7 @@ import { SchemaRegistryImpl } from "@input/pen-core";
 import { handleCopy } from "../field-editor/clipboard";
 import { executePasteTransfer } from "../field-editor/transferPaste";
 import type { FieldEditorTransferController } from "../field-editor/controller";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	createPenClipboardPayload,
 	decodePenBlocksFromHtml,

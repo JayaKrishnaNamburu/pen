@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import type { Editor, ModelAdapter } from "@input/pen-types";
 import { aiExtension, getAIController } from "../index";
@@ -39,7 +39,7 @@ async function seedEditor(model: ModelAdapter): Promise<{
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension({
 				model,
 				contentFormat: { blockGeneration: "markdown" },

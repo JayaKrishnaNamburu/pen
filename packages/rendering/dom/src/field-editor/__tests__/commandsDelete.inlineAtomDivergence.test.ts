@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, getCommandRegistry } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { applyDeleteBehavior } from "../commandsDelete";
 import { DIRECT_HANDLERS } from "../contenteditableDirectHandlers";
 import { handleFieldEditorKeyDown } from "../keyHandling";

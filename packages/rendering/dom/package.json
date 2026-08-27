@@ -545,7 +545,7 @@
     "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
-    "@input/pen-schema-default": "workspace:*",
+    "@input/pen-schema": "workspace:*",
     "@input/pen-undo": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",

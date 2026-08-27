@@ -1,4 +1,4 @@
-import { initBlockMap, yjsAdapter } from "@input/pen-crdt-yjs";
+import { initBlockMap, yjsAdapter } from "@input/pen-yjs";
 import type { CRDTDocument, DiagnosticEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";

@@ -9,7 +9,7 @@ const yjsSourceEntry = fileURLToPath(
 export default defineConfig({
 	resolve: {
 		alias: {
-			"@input/pen-crdt-yjs": yjsSourceEntry,
+			"@input/pen-yjs": yjsSourceEntry,
 		},
 	},
 });

@@ -95,11 +95,11 @@
     },
     {
       "file": "packages/rendering/react/src/utils/displayCopy.ts",
-      "reason": "Imports @input/pen-schema-default; stays in the renderer until that inversion lands"
+      "reason": "Imports @input/pen-schema; stays in the renderer until that inversion lands"
     },
     {
       "file": "packages/rendering/react/src/utils/toolbarOptions.ts",
-      "reason": "Depends on displayCopy (schema-default); stays with that leftover"
+      "reason": "Depends on displayCopy (schema); stays with that leftover"
     },
     {
       "file": "packages/rendering/vue/src/composables/useBlockList.ts",

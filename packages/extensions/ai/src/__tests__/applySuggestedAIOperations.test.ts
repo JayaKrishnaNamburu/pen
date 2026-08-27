@@ -1,6 +1,6 @@
 import { createEditor } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,

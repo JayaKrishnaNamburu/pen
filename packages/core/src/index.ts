@@ -348,9 +348,9 @@ export {
 	aiSuggestionsControllerFacet,
 	searchControllerFacet,
 	multiplayerControllerFacet,
-	historyControllerFacet,
+	snapshotsControllerFacet,
 	assetProviderFacet,
-	documentOpsToolRuntimeFacet,
+	toolRuntimeFacet,
 	announcerFacet,
 	streamingTargetFacet,
 } from "./facets/controllerFacets";

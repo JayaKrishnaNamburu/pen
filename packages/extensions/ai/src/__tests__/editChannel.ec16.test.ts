@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import type {
 	ModelAdapter,
@@ -62,7 +62,7 @@ function capturingModel(
 async function createLoopEditor() {
 	const editor = createEditor({
 		schema: defaultSchema,
-		extensions: [undoExtension(), documentOpsExtension()],
+		extensions: [undoExtension(), toolsExtension()],
 	});
 	await editor.whenReady();
 	return editor;

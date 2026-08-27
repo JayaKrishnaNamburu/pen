@@ -59,7 +59,7 @@ describe("no-pen-deep-imports (API4)", () => {
 			valid: [
 				{
 					code: 'import { createEditor } from "@input/pen-core";\n',
-					filename: "packages/extensions/history/src/index.ts",
+					filename: "packages/extensions/snapshots/src/index.ts",
 					options: [{ allowlist: [], packages }],
 				},
 				{
@@ -69,13 +69,13 @@ describe("no-pen-deep-imports (API4)", () => {
 				},
 				{
 					code: 'import { createEditor } from "@input/pen-core/src/editor";\n',
-					filename: "packages/extensions/history/src/index.ts",
+					filename: "packages/extensions/snapshots/src/index.ts",
 					options: [
 						{
 							packages,
 							allowlist: [
 								{
-									file: "packages/extensions/history/src/index.ts",
+									file: "packages/extensions/snapshots/src/index.ts",
 									specifier: "@input/pen-core/src/editor",
 									reason: "temporary",
 								},
@@ -87,7 +87,7 @@ describe("no-pen-deep-imports (API4)", () => {
 			invalid: [
 				{
 					code: 'import { createEditor } from "@input/pen-core/src/editor";\n',
-					filename: "packages/extensions/history/src/index.ts",
+					filename: "packages/extensions/snapshots/src/index.ts",
 					options: [{ allowlist: [], packages }],
 					errors: [
 						{
@@ -100,7 +100,7 @@ describe("no-pen-deep-imports (API4)", () => {
 				},
 				{
 					code: 'const core = require("@input/pen-core/dist/index.js");\n',
-					filename: "packages/extensions/history/src/index.ts",
+					filename: "packages/extensions/snapshots/src/index.ts",
 					options: [{ allowlist: [], packages }],
 					errors: [
 						{

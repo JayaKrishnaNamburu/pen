@@ -18,9 +18,9 @@ import { createTestEditor } from "@input/pen-test";
 import type { ToolRuntime } from "@input/pen-types";
 import {
 	buildDocumentWriteOps,
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
+} from "@input/pen-tools";
 
 export const AI_BENCH_BLOCK_COUNT = 200;
 export const AI_RANGE_START_BLOCK_ID = "block-90";
@@ -34,7 +34,7 @@ export function createAIBenchEditor() {
 				`Benchmark block ${index}. ` +
 				"This is representative playground context for AI read latency measurement.",
 		})),
-		extensions: [documentOpsExtension()],
+		extensions: [toolsExtension()],
 	});
 	const targetBlockId = AI_RANGE_START_BLOCK_ID;
 	editor.selectTextRange(
@@ -47,7 +47,7 @@ export function createAIBenchEditor() {
 export function getToolRuntime(editor: ReturnType<typeof createTestEditor>): ToolRuntime {
 	const toolRuntime = getDocumentToolRuntime(editor);
 	if (!toolRuntime) {
-		throw new Error("AI bench editor is missing the document-ops tool runtime.");
+		throw new Error("AI bench editor is missing the tools tool runtime.");
 	}
 	return toolRuntime;
 }
@@ -67,7 +67,7 @@ export function createAutocompleteCancelChurnBenchEditor() {
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension(),
 			autocompleteExtension({
 				debounceMs: 10,
@@ -275,7 +275,7 @@ export function createAutocompleteBenchEditor(input: {
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension(),
 			autocompleteExtension({
 				debounceMs: input.debounceMs,

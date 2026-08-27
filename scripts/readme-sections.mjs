@@ -2,13 +2,12 @@
 /**
  * DOC4 per-package README section check (spec/rules/documentation.md).
  *
- * Every published package README must include: install with required
- * peers; a minimal working snippet; options with defaults; a docs-page
- * hash and api-report.md; the MIT license line. Scope ("what it does
- * not do") is README content, not a substring this gate can prove.
+ * Every published package README must state: what it does and does not do;
+ * install with required peers; a minimal working snippet; options with
+ * defaults; a docs-page hash and api-report.md; the MIT license line.
  *
- * Companion packages (@input/pen-types, @input/pen-content-ops,
- * @input/pen-markdown-serialization) must say in the first sentence that
+ * Companion packages (@input/pen-types, @input/pen-ingest,
+ * @input/pen-markdown) must say in the first sentence that
  * they are not installed alone and name the package to install instead.
  * Extension READMEs must name the facets and commands they contribute
  * and the extensions they require.
@@ -37,8 +36,8 @@ const IGNORE_DIR_NAMES = new Set([
 
 const COMPANION_PACKAGES = new Set([
 	"@input/pen-types",
-	"@input/pen-content-ops",
-	"@input/pen-markdown-serialization",
+	"@input/pen-ingest",
+	"@input/pen-markdown",
 ]);
 
 const DOCS_PAGE_RE =
@@ -60,6 +59,10 @@ const FACET_RE = /\bfacets?\b/i;
 const COMMAND_RE = /\bcommands?\b/i;
 const REQUIRED_EXTENSION_RE =
 	/\brequires?\b|\bdepend(?:s)? on\b|\bno other extension/i;
+
+export function stripEmphasis(text) {
+	return text.replace(/[*_]/g, "");
+}
 
 export function firstProseParagraph(readme) {
 	const withoutTitle = readme.replace(/^#\s+[^\n]+\n+/, "");
@@ -102,6 +105,7 @@ export function isCompanionPackage(name) {
 
 export function evaluateReadme({ name, dir, readme, peers }) {
 	const missing = [];
+	const collapsed = stripEmphasis(readme);
 	const companion = isCompanionPackage(name);
 	const extension = isExtensionPackage(dir);
 	const installBlocks = fencedBlocks(readme, ["bash", "sh", "shell"]);
@@ -115,6 +119,10 @@ export function evaluateReadme({ name, dir, readme, peers }) {
 		"typescript",
 		"vue",
 	]);
+
+	if (!/\bdoes not\b/i.test(collapsed) && !/\bdo not\b/i.test(collapsed)) {
+		missing.push("does-not");
+	}
 
 	const installTokens = installText.split(/\s+/).filter(Boolean);
 
@@ -364,7 +372,8 @@ export function runSelfTests() {
 		peers: [],
 	});
 	assert(
-		stub.missing.includes("install") &&
+		stub.missing.includes("does-not") &&
+			stub.missing.includes("install") &&
 			stub.missing.includes("snippet") &&
 			stub.missing.includes("options") &&
 			stub.missing.includes("docs") &&
@@ -559,8 +568,22 @@ Contributes the \`pen.keymap\` facet and the \`pen.toggleMark\` command. Require
 		"self-test: extension directory detection",
 	);
 	assert(
-		isCompanionPackage("@input/pen-markdown-serialization"),
-		"self-test: markdown-serialization is a companion package",
+		isCompanionPackage("@input/pen-markdown"),
+		"self-test: pen-markdown is a companion package",
+	);
+
+	const doNotCounts = evaluateReadme({
+		name: "@input/pen-transport",
+		dir: "packages/transport",
+		readme: completeReadme("@input/pen-transport").replace(
+			"It does not render a surface.",
+			"Do not ship it.",
+		),
+		peers: [],
+	});
+	assert(
+		!doNotCounts.missing.includes("does-not"),
+		"self-test: 'do not' satisfies the does-not section",
 	);
 
 	const defaultTable = evaluateReadme({

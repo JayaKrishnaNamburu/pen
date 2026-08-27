@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { PenEditor } from "@input/pen-vue";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 </script>
 
 <template>

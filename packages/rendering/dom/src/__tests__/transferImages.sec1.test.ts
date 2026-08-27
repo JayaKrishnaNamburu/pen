@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createHeadlessEditor } from "@input/pen-core";
 import type { DiagnosticEvent } from "@input/pen-types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	insertUploadedImages,
 	insertUploadedImagesAtDropTarget,

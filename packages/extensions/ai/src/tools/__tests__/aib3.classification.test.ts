@@ -37,8 +37,8 @@ function createRecordingEditor(slots: Record<string, unknown> = {}) {
 			if (facet.name === "deltaStream.target") {
 				return slots["delta-stream:target"] ?? null;
 			}
-			if (facet.name === "documentOps.toolRuntime") {
-				return slots["document-ops:toolRuntime"] ?? null;
+			if (facet.name === "tools.toolRuntime") {
+				return slots["tools:runtime"] ?? null;
 			}
 			return null;
 		},

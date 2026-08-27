@@ -1,5 +1,5 @@
 import { buildSplitBlockRecipe, createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { describe, expect, it } from "vitest";
 
 import { transformOpsForSuggestModeWithMetadata } from "../suggestions/suggestMode";

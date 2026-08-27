@@ -1,7 +1,7 @@
 /**
  * Host-owned persistence for a Pen document's Yjs bytes and version snapshots.
  *
- * `@input/pen-history` calls the version-snapshot members. The update-log
+ * `@input/pen-snapshots` calls the version-snapshot members. The update-log
  * members and {@link PenPersistence.compact} are host-implemented: Pen never
  * calls them (API10). See `PERSISTENCE.md` for the per-member disposition,
  * including {@link AssetProvider} / {@link AssetUploadOptions}.
@@ -64,7 +64,7 @@ export interface PenPersistence {
 	 * it wants to shrink its own update log. Compaction is a host storage
 	 * concern: `Y.mergeUpdates` folds an update log, not tombstones. Snapshot
 	 * retention and `gc: true` are separate tradeoffs — see the compaction
-	 * notes in `@input/pen-crdt-yjs`. Rejection is host-defined; Pen does not
+	 * notes in `@input/pen-yjs`. Rejection is host-defined; Pen does not
 	 * catch it. A rejected compact leaves the log as stored.
 	 */
 	compact(docId: string): Promise<void>;
@@ -72,7 +72,7 @@ export interface PenPersistence {
 	 * Persist a version snapshot.
 	 *
 	 * @remarks
-	 * Called by `@input/pen-history` `SnapshotManager.createSnapshot`.
+	 * Called by `@input/pen-snapshots` `SnapshotManager.createSnapshot`.
 	 * If this rejects, `createSnapshot` rejects and no version is listed.
 	 * Pen does not catch the rejection; the host chooses the error type.
 	 */
@@ -85,7 +85,7 @@ export interface PenPersistence {
 	 * List version snapshots.
 	 *
 	 * @remarks
-	 * Called by `@input/pen-history` `SnapshotManager.createSnapshot` (latest
+	 * Called by `@input/pen-snapshots` `SnapshotManager.createSnapshot` (latest
 	 * entry after write, `{ limit: 1 }`) and `SnapshotManager.listSnapshots`.
 	 * If this rejects, the calling method rejects. If `createSnapshot`
 	 * receives an empty list after a successful write, it synthesizes an
@@ -99,7 +99,7 @@ export interface PenPersistence {
 	 * Load a version snapshot for restore.
 	 *
 	 * @remarks
-	 * Called by `@input/pen-history` `SnapshotManager.restoreSnapshot`.
+	 * Called by `@input/pen-snapshots` `SnapshotManager.restoreSnapshot`.
 	 * Restore uses the returned `snapshot` bytes. A missing version throws
 	 * `Snapshot ${versionId} not found` from the manager. If this rejects,
 	 * restore rejects. Pen does not catch the rejection.

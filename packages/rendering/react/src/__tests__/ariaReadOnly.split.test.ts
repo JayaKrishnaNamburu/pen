@@ -9,8 +9,8 @@ import {
 	ariaReadOnlyFacet,
 	fieldEditorHostFacet,
 } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultPreset } from "@input/pen";
+import { defaultSchema } from "@input/pen-schema";
 import type { FieldEditorImpl } from "@input/pen-dom";
 import type { Editor } from "@input/pen-types";
 import { PenEditor } from "../penEditor";
@@ -23,7 +23,7 @@ function createTestEditor(ariaReadOnlyFacetValue?: boolean) {
 	return createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

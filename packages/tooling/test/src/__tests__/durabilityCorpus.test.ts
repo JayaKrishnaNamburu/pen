@@ -6,7 +6,7 @@ import * as Y from "yjs";
 import {
 	initBlockMap,
 	type BlockContentType,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import { exportEditorToJson, jsonDocumentImporter } from "@input/pen-interop/json";
 import type { PenBlockJSON, PenDocumentJSON } from "@input/pen-interop/json";
 import {

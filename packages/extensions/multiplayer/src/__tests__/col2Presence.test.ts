@@ -2,8 +2,8 @@ import { createEditor, defineExtension, urlPolicyFacet } from "@input/pen-core";
 import {
 	applyYjsAwarenessUpdate,
 	encodeYjsAwarenessUpdate,
-} from "@input/pen-crdt-yjs";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-yjs";
+import { defaultSchema } from "@input/pen-schema";
 import { createTestDocument } from "@input/pen-test";
 import type { DiagnosticEvent, Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";

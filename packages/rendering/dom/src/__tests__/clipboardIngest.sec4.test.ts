@@ -9,7 +9,7 @@ import {
 	admitClipboardBlocks,
 } from "../utils/clipboardIngest";
 import type { PenBlock } from "../utils/clipboardPayload";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

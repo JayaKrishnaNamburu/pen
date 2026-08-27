@@ -1,6 +1,6 @@
 import { useRef, useEffect, useReducer } from "react";
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { CreateEditorOptions, Editor } from "@input/pen-types";
 
 export function useEditor(

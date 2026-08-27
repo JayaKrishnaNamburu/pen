@@ -54,12 +54,9 @@ export function CoreConceptsPage() {
 				extension code.
 			</p>
 			<pre>
-				<code>{`import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { createEditor } from "@input/pen";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 const blockId = editor.firstBlock()?.id ?? "";
 
 editor.apply(
@@ -136,12 +133,15 @@ editor.apply(
 			<h2>Headless vs host</h2>
 			<p>
 				<code>createEditor</code> and <code>createHeadlessEditor</code>{" "}
-				are the constructors. Neither installs a schema or extensions.
-				Without <code>preset: defaultPreset()</code>,{" "}
-				<code>editor.undoManager</code> is an inert stub and Mod-Z does
-				nothing. Headless construction and apply work in Node. Only{" "}
-				<code>@input/pen-dom</code> may touch browser globals. React and
-				Vue are bindings over that DOM engine.
+				are the constructors. The <code>@input/pen</code> pair defaults
+				an omitted <code>preset</code> to <code>defaultPreset()</code>;
+				the <code>@input/pen-core</code> pair installs no schema and no
+				extensions, so there <code>editor.undoManager</code> is an
+				inert stub and Mod-Z does nothing until a preset or an{" "}
+				<code>extensions</code> list is passed. Headless construction
+				and apply work in Node. Only <code>@input/pen-dom</code> may
+				touch browser globals. React and Vue are bindings over that DOM
+				engine.
 			</p>
 			<p>
 				Each published package commits an <code>api-report.md</code>{" "}

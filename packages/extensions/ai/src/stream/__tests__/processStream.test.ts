@@ -75,7 +75,7 @@ function createToolRuntimeEditor(): {
 				if (facet.name === "deltaStream.target") {
 					return streamingTarget;
 				}
-				if (facet.name === "documentOps.toolRuntime") {
+				if (facet.name === "tools.toolRuntime") {
 					return runtime;
 				}
 				return null;

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { FieldEditorImpl } from "../fieldEditorImpl";

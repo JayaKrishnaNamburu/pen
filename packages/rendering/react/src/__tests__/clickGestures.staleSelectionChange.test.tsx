@@ -8,7 +8,7 @@ import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	createEditor,
 	createKeyEvent,
