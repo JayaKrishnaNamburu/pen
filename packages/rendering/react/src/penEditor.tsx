@@ -1,5 +1,4 @@
 import React from "react";
-import type { Editor } from "@input/pen-types";
 import { EditorRoot, type EditorRootProps } from "./primitives/editor/root";
 import {
 	EditorContent,
@@ -32,6 +31,7 @@ export function PenEditor(props: PenEditorProps) {
 
 	return (
 		<EditorRoot
+			key={editor.internals.viewId}
 			editor={editor}
 			readonly={readonly}
 			importers={importers}
