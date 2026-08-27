@@ -139,6 +139,8 @@ export const PenTableCellContent = defineComponent({
 					// RI1: unicode-bidi does not inherit, so every cell needs its own
 					// isolate — the table host's does not reach them.
 					unicodeBidi: "isolate",
+					// RI5: same reason as the inline content host.
+					whiteSpace: "pre-wrap",
 				},
 			});
 	},

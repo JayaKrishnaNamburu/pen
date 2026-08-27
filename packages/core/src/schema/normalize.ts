@@ -142,6 +142,16 @@ export class SchemaEngineImpl implements SchemaEngine {
 		this.dirtyBlockIds.add(blockId);
 	}
 
+	/**
+	 * Drop the cached pass index because `blockOrder` or a `children` array
+	 * changed outside this engine — an executing op, or a remote/undo update.
+	 * Every structural mutation the engine performs itself already invalidates
+	 * at the mutation site, so those callers do not go through here.
+	 */
+	notifyStructureChanged(): void {
+		this.invalidatePassIndex();
+	}
+
 	deferBlock(blockId: string): void {
 		this.deferredBlockIds.add(blockId);
 	}
@@ -167,7 +177,6 @@ export class SchemaEngineImpl implements SchemaEngine {
 
 			iterations++;
 			this.dirtyBlockIds.clear();
-			this.invalidatePassIndex();
 
 			this.doc.adapter.transact(this.crdtDoc, () => {
 				for (const blockId of snapshot) {
@@ -179,8 +188,6 @@ export class SchemaEngineImpl implements SchemaEngine {
 				}
 			});
 		}
-
-		this.invalidatePassIndex();
 
 		if (iterations >= MAX_ITERATIONS) {
 			// CH5: dirty-loop cap is a diagnostic, not a console site.
@@ -198,6 +205,7 @@ export class SchemaEngineImpl implements SchemaEngine {
 	}
 
 	normalizeAll(): void {
+		this.invalidatePassIndex();
 		for (const blockId of this.doc.blocks.keys()) {
 			this.dirtyBlockIds.add(blockId);
 		}

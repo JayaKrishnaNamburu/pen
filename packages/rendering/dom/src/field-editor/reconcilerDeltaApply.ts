@@ -6,6 +6,10 @@ import {
 	ensureEmptyBlockPlaceholder,
 } from "./emptyBlockPlaceholder";
 import {
+	clearTrailingLineBreak,
+	syncTrailingLineBreak,
+} from "./trailingLineBreak";
+import {
 	createInlineAtomElement,
 	getLogicalNodeLength,
 	isInlineAtomNode,
@@ -21,6 +25,10 @@ export function applyDeltaToDOM(
 	let childIndex = 0;
 	let textOffset = 0;
 	clearEmptyBlockPlaceholder(element);
+	// An insert that lands on the break finds a `<br>` with no text leaf and
+	// bails to full reconcile, which is every keystroke at the end of a field
+	// whose text ends with `\n`. Clearing it first keeps the fast path.
+	clearTrailingLineBreak(element);
 
 	for (const entry of delta) {
 		if (entry.retain != null) {
@@ -134,6 +142,7 @@ export function applyDeltaToDOM(
 		}
 	}
 	ensureEmptyBlockPlaceholder(element);
+	syncTrailingLineBreak(element);
 	return true;
 }
 

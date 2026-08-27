@@ -52,6 +52,12 @@ export interface ApplyPipelineOrchestrationContext extends ApplyPipelineDocument
 	_applyStormEmitted: boolean;
 	_suppressObserver: boolean;
 	_unknownBlockTypesReported: Set<string> | undefined;
+	/**
+	 * Block count at the last unknown-type scan. A document whose block count
+	 * is unchanged cannot hold a type the previous scan did not already see,
+	 * so the scan is skipped (SCALE2).
+	 */
+	_unknownScanBlockCount: number | undefined;
 	_commitDiagnostics: DiagnosticEvent[];
 	readonly _queue: {
 		ops: DocumentOp[];

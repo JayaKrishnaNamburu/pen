@@ -17,6 +17,7 @@ export interface ChangeSummaryHost {
 	_blockIndex: BlockIndex;
 	_unsubSummary: (() => void) | null;
 	_deferredCRDTEvent: CRDTEvent | null;
+	_engine: { notifyStructureChanged(): void };
 	_dispatchCRDTEvent(event: CRDTEvent): void;
 }
 
@@ -34,14 +35,32 @@ export function installChangeSummaries(host: ChangeSummaryHost): void {
 		host._unsubSummary = createSummarySource(
 			host._crdtDoc as never,
 			(delta) => {
-				host._pendingSummary = buildChangeSummary(
+				// Normalization only runs inside a local apply, so a remote or
+				// undo transaction is the one structural change its pass index
+				// never hears about at the mutation site.
+				if (
+					delta.blockOrderDelta.length > 0 ||
+					delta.childArrayDeltas.size > 0
+				) {
+					host._engine.notifyStructureChanged();
+				}
+
+				const summary = buildChangeSummary(
 					delta,
 					host._blockIndex.snapshot(),
 					0,
 				);
-				host._blockIndex.replace(
-					createBlockIndexSnapshotFromDocument(host._doc),
-				);
+				host._pendingSummary = summary;
+				// A text-only commit moves lengths and nothing else, so the
+				// index advances in place. Rebuilding it from the document
+				// would read every block's text on every keystroke (SCALE2).
+				if (summary.structural.length === 0) {
+					host._blockIndex.applyTextLengths(summary.blockText);
+				} else {
+					host._blockIndex.replace(
+						createBlockIndexSnapshotFromDocument(host._doc),
+					);
+				}
 				flushDeferredCRDTEvent(host);
 			},
 		);

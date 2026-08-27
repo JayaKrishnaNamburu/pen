@@ -104,6 +104,10 @@ function recordPhase(
 	pipeline._recordPhase?.(phase);
 }
 
+/**
+ * `registry.resolve` passes unknown types through (DUR3), so the declared set
+ * is the only way to tell a registered type from an unknown one.
+ */
 function isRegisteredBlockType(
 	registry: { allBlocks(): readonly { type: string }[] },
 	type: string,
@@ -143,7 +147,21 @@ function emitSchemaUnknownBlock(
 	});
 }
 
+/**
+ * DUR3 wants one diagnostic per unknown type per session, including for blocks
+ * no op touches, so the sweep has to look at the whole document. Apply refuses
+ * `insert-block` and `set-props` carrying an unregistered type (PEN_APPLY_002),
+ * so no local apply can add a type a previous sweep did not already see; only
+ * a load or a remote insert can, and both move the block count. Re-sweeping on
+ * an unchanged count would make every keystroke O(document) (SCALE2).
+ */
 function reportUnknownBlocksInDocument(pipeline: ApplyPipelineInternal): void {
+	const blockCount = pipeline._doc.blocks.size;
+	if (blockCount === pipeline._unknownScanBlockCount) {
+		return;
+	}
+	pipeline._unknownScanBlockCount = blockCount;
+
 	for (const [, rawBlockMap] of pipeline._doc.blocks.entries()) {
 		if (!isCRDTMap(rawBlockMap)) {
 			continue;
@@ -519,6 +537,15 @@ function emitMalformedOpDiagnostic(
 	});
 }
 
+/** Ops that move `blockOrder` or a `children` array, invalidating the normalizer's pass index. */
+function isStructuralOp(op: DocumentOp): boolean {
+	return (
+		op.type === "insert-block" ||
+		op.type === "delete-block" ||
+		op.type === "move-block"
+	);
+}
+
 function executeOps(
 	pipeline: ApplyPipelineInternal,
 	ops: DocumentOp[],
@@ -609,6 +636,9 @@ function executeOps(
 						affectedBlocks.push(...affected);
 					} catch (err) {
 						emitMalformedOpDiagnostic(pipeline, op, err);
+					}
+					if (isStructuralOp(op)) {
+						pipeline._engine.notifyStructureChanged();
 					}
 				}
 

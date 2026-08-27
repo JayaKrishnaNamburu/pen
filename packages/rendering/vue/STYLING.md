@@ -16,6 +16,7 @@ Vue sets a few inline styles for layout, not theme:
 - Image: `width` when the block has a numeric `width` prop.
 - Placeholder host (`PenInlineContent`): `position: relative` while a placeholder is shown.
 - Table cell text (`PenTableCellContent`): `min-width: 6rem`, `min-height: 1.5rem`, `display: block`, `width: 100%`, and `position: relative` while a placeholder is shown.
+- Text entry surfaces (`PenInlineContent`, `PenTableCellContent`): `white-space: pre-wrap`. This one is correctness, not layout, and is not meant to be overridden — a soft break is stored as `\n` and repeated spaces are stored verbatim, so the initial `normal` would collapse characters the document actually contains (RI5 in `spec/rules/dom.md`).
 
 There are no `.css` files in this package.
 

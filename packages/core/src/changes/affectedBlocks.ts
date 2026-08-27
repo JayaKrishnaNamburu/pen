@@ -12,7 +12,10 @@ export function affectedBlockIdsFromSummary(
 		addStructuralBlockIds(ids, change);
 	}
 	const collected = [...ids];
-	if (!documentOrder || documentOrder.length === 0) {
+	// Ranking exists to order several ids against each other; building a rank
+	// over the whole document to sort one id is O(document) per commit
+	// (SCALE2), and the common commit touches exactly one block.
+	if (collected.length < 2 || !documentOrder || documentOrder.length === 0) {
 		return collected;
 	}
 	const rank = new Map<string, number>();

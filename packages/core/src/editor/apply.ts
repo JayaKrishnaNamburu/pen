@@ -40,6 +40,7 @@ export class ApplyPipeline implements ApplyPipelineInternal {
 	_applyStormEmitted = false;
 	_suppressObserver = false;
 	_unknownBlockTypesReported: Set<string> | undefined;
+	_unknownScanBlockCount: number | undefined;
 	readonly _queue: {
 		ops: DocumentOp[];
 		origin: OpOrigin;
@@ -216,5 +217,6 @@ export class ApplyPipeline implements ApplyPipelineInternal {
 		this._doc = doc;
 		this._crdtDoc = crdtDoc;
 		this._engine = engine;
+		this._unknownScanBlockCount = undefined;
 	}
 }

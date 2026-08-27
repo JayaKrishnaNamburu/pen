@@ -1,4 +1,4 @@
-import type { ChangeSummary, StructuralChange, TextSplice } from "./types";
+import type { BlockTextChange, TextSplice } from "./types";
 
 export interface BlockIndexSnapshot {
 	readonly lengthById: ReadonlyMap<string, number>;
@@ -11,8 +11,18 @@ export interface BlockIndexSnapshot {
 
 export interface BlockIndex {
 	snapshot(): BlockIndexSnapshot;
-	apply(summary: ChangeSummary): void;
+	/**
+	 * Advance block lengths for a commit that changed text only. Structural
+	 * commits re-read the document through `replace` instead, so the index
+	 * still resolves its shape from storage rather than from summary replay.
+	 */
+	applyTextLengths(blockText: readonly BlockTextChange[]): void;
 	replace(snapshot: BlockIndexSnapshot): void;
+}
+
+/** The clone the index holds; `snapshot()` hands it out read-only. */
+interface OwnedBlockIndexSnapshot extends BlockIndexSnapshot {
+	readonly lengthById: Map<string, number>;
 }
 
 export function emptyBlockIndexSnapshot(): BlockIndexSnapshot {
@@ -71,50 +81,18 @@ export function createBlockIndex(initial: BlockIndexSnapshot): BlockIndex {
 		snapshot() {
 			return current;
 		},
-		apply(summary) {
-			current = applySummaryToSnapshot(current, summary);
+		applyTextLengths(blockText) {
+			for (const change of blockText) {
+				const previous = current.lengthById.get(change.blockId) ?? 0;
+				current.lengthById.set(
+					change.blockId,
+					lengthAfterSplices(previous, change.splices),
+				);
+			}
 		},
 		replace(snapshot) {
 			current = cloneSnapshot(snapshot);
 		},
-	};
-}
-
-function applySummaryToSnapshot(
-	snapshot: BlockIndexSnapshot,
-	summary: ChangeSummary,
-): BlockIndexSnapshot {
-	const lengthById = new Map(snapshot.lengthById);
-	const typeById = new Map(snapshot.typeById);
-	const childrenByParentId = cloneChildren(snapshot.childrenByParentId);
-
-	for (const change of summary.structural) {
-		applyStructural(change, lengthById, typeById, childrenByParentId);
-	}
-
-	for (const text of summary.blockText) {
-		const previous = lengthById.get(text.blockId) ?? 0;
-		lengthById.set(
-			text.blockId,
-			lengthAfterSplices(previous, text.splices),
-		);
-	}
-
-	const roots = [...(childrenByParentId.get(null) ?? [])];
-	const parentById = new Map<string, string | null>();
-	for (const [parentId, children] of childrenByParentId) {
-		for (const childId of children) {
-			parentById.set(childId, parentId);
-		}
-	}
-
-	return {
-		lengthById,
-		typeById,
-		parentById,
-		childrenByParentId,
-		order: flattenOrder(roots, childrenByParentId),
-		roots,
 	};
 }
 
@@ -129,7 +107,9 @@ function lengthAfterSplices(
 	return Math.max(0, next);
 }
 
-function cloneSnapshot(snapshot: BlockIndexSnapshot): BlockIndexSnapshot {
+function cloneSnapshot(
+	snapshot: BlockIndexSnapshot,
+): OwnedBlockIndexSnapshot {
 	return {
 		lengthById: new Map(snapshot.lengthById),
 		typeById: new Map(snapshot.typeById),
@@ -138,146 +118,6 @@ function cloneSnapshot(snapshot: BlockIndexSnapshot): BlockIndexSnapshot {
 		order: [...snapshot.order],
 		roots: [...snapshot.roots],
 	};
-}
-
-function applyStructural(
-	change: StructuralChange,
-	lengthById: Map<string, number>,
-	typeById: Map<string, string>,
-	childrenByParentId: Map<string | null, string[]>,
-): void {
-	switch (change.type) {
-		case "block-inserted": {
-			insertChild(
-				childrenByParentId,
-				change.parentId,
-				change.index,
-				change.blockId,
-			);
-			if (!lengthById.has(change.blockId))
-				lengthById.set(change.blockId, 0);
-			break;
-		}
-		case "block-removed": {
-			removeChild(childrenByParentId, change.parentId, change.blockId);
-			lengthById.delete(change.blockId);
-			typeById.delete(change.blockId);
-			childrenByParentId.delete(change.blockId);
-			break;
-		}
-		case "block-moved": {
-			removeChild(
-				childrenByParentId,
-				change.fromParentId,
-				change.blockId,
-			);
-			insertChild(
-				childrenByParentId,
-				change.toParentId,
-				change.toIndex,
-				change.blockId,
-			);
-			break;
-		}
-		case "block-split": {
-			insertAfter(childrenByParentId, change.blockId, change.newBlockId);
-			const original = lengthById.get(change.blockId) ?? 0;
-			lengthById.set(change.blockId, Math.max(0, change.offset));
-			lengthById.set(
-				change.newBlockId,
-				Math.max(0, original - change.offset),
-			);
-			if (!typeById.has(change.newBlockId)) {
-				typeById.set(
-					change.newBlockId,
-					typeById.get(change.blockId) ?? "",
-				);
-			}
-			break;
-		}
-		case "blocks-merged": {
-			const parentId = parentOf(childrenByParentId, change.sourceBlockId);
-			const targetLength = lengthById.get(change.targetBlockId) ?? 0;
-			const sourceLength = lengthById.get(change.sourceBlockId) ?? 0;
-			lengthById.set(change.targetBlockId, targetLength + sourceLength);
-			removeChild(childrenByParentId, parentId, change.sourceBlockId);
-			lengthById.delete(change.sourceBlockId);
-			typeById.delete(change.sourceBlockId);
-			childrenByParentId.delete(change.sourceBlockId);
-			break;
-		}
-		case "block-props-changed":
-		case "table-changed":
-		case "apps-changed":
-		case "metadata-changed":
-			break;
-		default: {
-			const _exhaustive: never = change;
-			return _exhaustive;
-		}
-	}
-}
-
-function insertAfter(
-	childrenByParentId: Map<string | null, string[]>,
-	beforeId: string,
-	newId: string,
-): void {
-	for (const [parentId, children] of childrenByParentId) {
-		const index = children.indexOf(beforeId);
-		if (index < 0) continue;
-		if (!children.includes(newId)) {
-			children.splice(index + 1, 0, newId);
-		}
-		childrenByParentId.set(parentId, children);
-		return;
-	}
-	insertChild(childrenByParentId, null, -1, newId);
-}
-
-function insertChild(
-	childrenByParentId: Map<string | null, string[]>,
-	parentId: string | null,
-	index: number,
-	blockId: string,
-): void {
-	const children = childrenByParentId.get(parentId) ?? [];
-	const next = children.filter((id) => id !== blockId);
-	const at = index < 0 || index > next.length ? next.length : index;
-	next.splice(at, 0, blockId);
-	childrenByParentId.set(parentId, next);
-}
-
-function removeChild(
-	childrenByParentId: Map<string | null, string[]>,
-	parentId: string | null,
-	blockId: string,
-): void {
-	const children = childrenByParentId.get(parentId);
-	if (!children) {
-		for (const [id, list] of childrenByParentId) {
-			const index = list.indexOf(blockId);
-			if (index >= 0) {
-				list.splice(index, 1);
-				childrenByParentId.set(id, list);
-				return;
-			}
-		}
-		return;
-	}
-	const index = children.indexOf(blockId);
-	if (index >= 0) children.splice(index, 1);
-	childrenByParentId.set(parentId, children);
-}
-
-function parentOf(
-	childrenByParentId: Map<string | null, string[]>,
-	blockId: string,
-): string | null {
-	for (const [parentId, children] of childrenByParentId) {
-		if (children.includes(blockId)) return parentId;
-	}
-	return null;
 }
 
 function flattenOrder(

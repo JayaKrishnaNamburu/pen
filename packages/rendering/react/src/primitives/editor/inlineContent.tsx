@@ -279,9 +279,12 @@ export function InlineContent(props: InlineContentProps) {
 		"data-placeholder": showPlaceholder ? placeholder : undefined,
 		// RI1: unicode-bidi does not inherit, so the block host's isolate does not
 		// reach this surface and it needs its own.
+		// RI5: stored newlines and repeated spaces are document characters; under
+		// the initial `normal` they collapse and become unreachable.
 		style: {
 			position: showPlaceholder ? ("relative" as const) : undefined,
 			unicodeBidi: "isolate" as const,
+			whiteSpace: "pre-wrap" as const,
 		},
 	};
 	return (

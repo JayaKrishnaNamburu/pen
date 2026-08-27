@@ -190,7 +190,7 @@ describe("@input/pen-react table rendering: the cell grid", () => {
 		editor.destroy();
 	});
 
-	it("RI1: every table cell content host is unicode-bidi isolate", async () => {
+	it("RI1 RI5: every table cell content host is unicode-bidi isolate and pre-wrap", async () => {
 		const editor = createEditor();
 
 		editor.apply([
@@ -239,6 +239,7 @@ describe("@input/pen-react table rendering: the cell grid", () => {
 		expect(surfaces.length).toBeGreaterThan(1);
 		for (const surface of surfaces) {
 			expect((surface as HTMLElement).style.unicodeBidi).toBe("isolate");
+			expect((surface as HTMLElement).style.whiteSpace).toBe("pre-wrap");
 		}
 
 		await act(async () => {

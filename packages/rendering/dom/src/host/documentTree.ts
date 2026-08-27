@@ -162,6 +162,9 @@ function updateBlockNodes(
 	nodes.element.style.unicodeBidi = "isolate";
 	if (nodes.inline) {
 		nodes.inline.style.unicodeBidi = "isolate";
+		// RI5: stored newlines and repeated spaces are document characters; under
+		// the initial `normal` they collapse and become unreachable.
+		nodes.inline.style.whiteSpace = "pre-wrap";
 	}
 
 	const snapshot = fieldEditor.getSnapshot();

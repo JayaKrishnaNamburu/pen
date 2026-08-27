@@ -31,7 +31,6 @@ async function forceWrap(page: Page): Promise<void> {
 				'16px / 20px ui-monospace, "Courier New", Menlo, monospace';
 			inline.style.wordBreak = "break-all";
 			inline.style.overflowWrap = "anywhere";
-			inline.style.whiteSpace = "pre-wrap";
 		}
 	});
 }
