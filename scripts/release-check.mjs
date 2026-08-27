@@ -14,8 +14,9 @@ const EXPECTED_REPOSITORY_URL = "https://github.com/input-systems/pen.git";
 //   pnpm exec attw --pack <packageDir>
 //   pnpm dlx publint --pack pnpm <packageDir>
 //   pnpm dlx @arethetypeswrong/cli --pack <packageDir>
-// Publish (API7): changeset publish --provenance
-//   uses the workflow id-token: write grant (trusted publishing / OIDC);
+// Publish (API7): changeset publish, with NPM_CONFIG_PROVENANCE in the
+//   workflow. --provenance is an npm flag; @changesets/cli 3 rejects it.
+//   Trusted publishing uses the workflow id-token: write grant (OIDC);
 //   no NPM_TOKEN.
 
 function provenanceWorkflowProblems(workflow, rootReleaseScript) {
@@ -65,10 +66,18 @@ function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 	}
 	if (
 		typeof rootReleaseScript !== "string" ||
-		!rootReleaseScript.includes("--provenance")
+		!/\bchangeset publish\b/.test(rootReleaseScript)
 	) {
 		problems.push(
-			'root package.json "release" script must pass --provenance',
+			'root package.json "release" script must run changeset publish',
+		);
+	}
+	if (
+		typeof rootReleaseScript === "string" &&
+		rootReleaseScript.includes("--provenance")
+	) {
+		problems.push(
+			'root package.json "release" script must not pass --provenance; @changesets/cli 3 rejects it. Use NPM_CONFIG_PROVENANCE',
 		);
 	}
 	return problems;
@@ -135,9 +144,10 @@ function versionSyncGroups(packages) {
 function runSelfTests() {
 	const healthyWorkflow =
 		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nversion-script: pnpm version-packages\npublish-script: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n";
+	const healthyReleaseScript = "changeset publish";
 	const healthy = provenanceWorkflowProblems(
 		healthyWorkflow,
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (healthy.length !== 0) {
 		throw new Error(
@@ -147,7 +157,7 @@ function runSelfTests() {
 
 	const missingToken = provenanceWorkflowProblems(
 		"env:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (!missingToken.some((problem) => problem.includes("id-token: write"))) {
 		throw new Error("self-test: missing id-token: write must fail closed");
@@ -155,7 +165,7 @@ function runSelfTests() {
 
 	const missingEnv = provenanceWorkflowProblems(
 		"permissions:\n  id-token: write\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (
 		!missingEnv.some((problem) => problem.includes("NPM_CONFIG_PROVENANCE"))
@@ -165,19 +175,23 @@ function runSelfTests() {
 		);
 	}
 
-	const missingFlag = provenanceWorkflowProblems(
+	const cliProvenanceFlag = provenanceWorkflowProblems(
 		healthyWorkflow,
-		"changeset publish",
+		"changeset publish --provenance",
 	);
-	if (!missingFlag.some((problem) => problem.includes("--provenance"))) {
+	if (
+		!cliProvenanceFlag.some((problem) =>
+			problem.includes("must not pass --provenance"),
+		)
+	) {
 		throw new Error(
-			"self-test: release script without --provenance must fail closed",
+			"self-test: changeset publish --provenance must fail closed",
 		);
 	}
 
 	const leakedToken = provenanceWorkflowProblems(
 		`${healthyWorkflow}          NPM_TOKEN: \${{ secrets.NPM_TOKEN }}\n`,
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (!leakedToken.some((problem) => problem.includes("must not set NPM_TOKEN"))) {
 		throw new Error("self-test: NPM_TOKEN in the workflow must fail closed");
@@ -185,7 +199,7 @@ function runSelfTests() {
 
 	const missingTags = provenanceWorkflowProblems(
 		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\n",
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (!missingTags.some((problem) => problem.includes("fetch tags"))) {
 		throw new Error("self-test: a checkout without tags must fail closed");
@@ -193,7 +207,7 @@ function runSelfTests() {
 
 	const missingNpmCli = provenanceWorkflowProblems(
 		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.0.0\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (!missingNpmCli.some((problem) => problem.includes("npm CLI"))) {
 		throw new Error("self-test: missing npm 11 install must fail closed");
@@ -201,7 +215,7 @@ function runSelfTests() {
 
 	const actionV1 = provenanceWorkflowProblems(
 		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nuses: changesets/action@deadbeef # v1.9.0\nversion-script: pnpm version-packages\npublish-script: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (!actionV1.some((problem) => problem.includes("changesets/action v2"))) {
 		throw new Error("self-test: changesets/action v1 must fail closed");
@@ -209,7 +223,7 @@ function runSelfTests() {
 
 	const v1Inputs = provenanceWorkflowProblems(
 		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nversion: pnpm version-packages\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
-		"changeset publish --provenance",
+		healthyReleaseScript,
 	);
 	if (!v1Inputs.some((problem) => problem.includes("version-script"))) {
 		throw new Error(
@@ -275,7 +289,7 @@ function runSelfTests() {
 	}
 
 	console.log(
-		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, --provenance, NPM_TOKEN, npm 11, action v1, and a short fixed group fail closed)",
+		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, changeset --provenance, NPM_TOKEN, npm 11, action v1, and a short fixed group fail closed)",
 	);
 }
 
@@ -404,7 +418,7 @@ async function checkProvenancePreconditions(packages) {
 
 	console.log(
 		`Provenance preconditions: ${packages.length} packages share ${EXPECTED_REPOSITORY_URL}; ` +
-			"release.yml has id-token: write, npm 11, no NPM_TOKEN, and unsets NODE_AUTH_TOKEN; root release passes --provenance.",
+			"release.yml has id-token: write, npm 11, no NPM_TOKEN, and unsets NODE_AUTH_TOKEN; provenance is NPM_CONFIG_PROVENANCE.",
 	);
 	console.log(
 		`Provenance UNEXERCISED: ${tagCount} git tag(s), ${changelogPaths.length} packages/**/CHANGELOG.md. ` +

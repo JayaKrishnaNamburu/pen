@@ -10,6 +10,7 @@ import {
 	PRESENCE_REJECTED_CODE,
 	type PresenceRejectionReason,
 } from "./constants";
+import { readGridSize } from "./gridSize";
 import type { MultiplayerAwarenessState } from "../types";
 
 const PRESENCE_REJECTION_MESSAGES: Record<PresenceRejectionReason, string> = {
@@ -18,6 +19,7 @@ const PRESENCE_REJECTION_MESSAGES: Record<PresenceRejectionReason, string> = {
 	"script-bearing": "Presence state contained script-bearing content.",
 	"nonexistent-block": "Presence selection named a block that is not in the document.",
 	"out-of-range-offset": "Presence selection offset is outside the block.",
+	"out-of-range-cell": "Presence selection cell is outside the block's grid.",
 	"rate-limited": "Presence updates from this peer exceeded the per-second limit.",
 	"peer-cap": "Additional peers are counted and not rendered past the tracked-peer cap.",
 };
@@ -187,6 +189,9 @@ function createDocumentView(editor: Editor): AwarenessDocumentView {
 				return null;
 			}
 			return block.textContent({ resolved: true }).length;
+		},
+		gridSize(blockId: string): { rows: number; cols: number } | null {
+			return readGridSize(editor, blockId);
 		},
 	};
 }

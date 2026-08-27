@@ -182,6 +182,7 @@
 ### function
 
 - mapBeforeInput
+- mapEditContextBeforeInput
 
 ### value
 
@@ -869,3 +870,19 @@ _no exports_
 
 - PointerSelectionGesture
 - ResolvedPointerDragSelection
+
+## ./utils/remoteCellSelection
+
+`./dist/utils/remoteCellSelection.d.ts`
+
+### function
+
+- resolveRemoteCellPresence
+
+### type
+
+- RemoteCellCoord
+- RemoteCellPresence
+- RemoteCellPresenceMap
+- RemoteCellSelectionLike
+- RemoteCellUser

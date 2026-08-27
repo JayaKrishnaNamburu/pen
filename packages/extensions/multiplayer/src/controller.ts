@@ -11,11 +11,13 @@ import type {
 	PeerState,
 	RemoteCursorState,
 	RemoteSelectionState,
+	RemoteStreamingState,
 } from "./types";
 import { PRESENCE_REJECTED_CODE } from "./presence/constants";
 import { RemoteCursorManager } from "./presence/cursorManager";
 import { PresenceIngest } from "./presence/presenceIngest";
 import { RemoteSelectionManager } from "./presence/selectionManager";
+import { resolveRemoteStreaming } from "./presence/streamingPresence";
 
 export class MultiplayerControllerImpl implements MultiplayerController {
 	private readonly editor: Editor;
@@ -33,6 +35,7 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 	private peers: readonly PeerState[] = [];
 	private mappedCursors: readonly RemoteCursorState[] = [];
 	private mappedSelections: readonly RemoteSelectionState[] = [];
+	private mappedStreaming: readonly RemoteStreamingState[] = [];
 	private mappedPeers: readonly PeerState[] = [];
 	private resolvedGeneration = -1;
 	private resolveGeneration = 0;
@@ -123,11 +126,17 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 		return this.mappedSelections;
 	}
 
+	getRemoteStreaming(): readonly RemoteStreamingState[] {
+		this.ensureMapped();
+		return this.mappedStreaming;
+	}
+
 	snapshot(): MultiplayerSnapshot {
 		return {
 			state: this.state,
 			remoteCursors: this.getRemoteCursors(),
 			remoteSelections: this.getRemoteSelections(),
+			remoteStreaming: this.getRemoteStreaming(),
 		};
 	}
 
@@ -240,11 +249,20 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 
 		const nextCursors = this.cursorManager.resolve(this.editor);
 		const nextSelections = this.selectionManager.resolve(this.editor);
+		const nextStreaming = this.lastAccepted
+			? resolveRemoteStreaming(
+					this.editor,
+					this.lastAccepted,
+					this.localClientId,
+					(clientId) => this.identityMap.resolve(clientId),
+				)
+			: this.mappedStreaming;
 		this.mappedCursors = reuseIfSame(this.mappedCursors, nextCursors);
 		this.mappedSelections = reuseIfSame(
 			this.mappedSelections,
 			nextSelections,
 		);
+		this.mappedStreaming = reuseIfSame(this.mappedStreaming, nextStreaming);
 
 		const nextPeers = this.lastAccepted
 			? this.buildPeers(this.lastAccepted)
@@ -266,6 +284,12 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 				selection,
 			]),
 		);
+		const streamingMap = new Map(
+			this.mappedStreaming.map((streaming) => [
+				streaming.clientId,
+				streaming,
+			]),
+		);
 		const peers: PeerState[] = [];
 
 		for (const [clientId] of states) {
@@ -280,6 +304,7 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 				user: this.identityMap.resolve(clientId),
 				cursor,
 				selection,
+				streaming: streamingMap.get(clientId) ?? null,
 				lastSeen: Math.max(
 					cursor?.clock ?? 0,
 					selection?.clock ?? 0,

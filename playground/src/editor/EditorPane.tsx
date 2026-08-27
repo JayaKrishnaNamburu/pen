@@ -1,8 +1,16 @@
 import { Pen } from "@input/pen-react";
 import type { Editor } from "@input/pen-types";
+import { playgroundAssets } from "./assets";
 import { FormatToolbar } from "./FormatToolbar";
+import { ImageBlockRenderer } from "./ImageBlock";
 import { ReviewSurface } from "./ReviewSurface";
 import { SlashMenu } from "./SlashMenu";
+
+/**
+ * Pen renders `image` itself; this swaps in a version that also lets you fill
+ * an empty one. Every other block type falls through to the library renderer.
+ */
+const BLOCK_RENDERERS = { image: ImageBlockRenderer };
 
 interface EditorPaneProps {
 	editor: Editor;
@@ -47,6 +55,8 @@ export function EditorPane({
 					<Pen.Editor.Root
 						editor={editor}
 						key={editor.internals.viewId}
+						assets={playgroundAssets}
+						renderers={BLOCK_RENDERERS}
 					>
 						<Pen.Editor.Content emptyPlaceholder="Write something, or ask the agent on the left." />
 						{collaborationLive ? (

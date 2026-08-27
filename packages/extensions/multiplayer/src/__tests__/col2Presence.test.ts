@@ -13,7 +13,6 @@ import {
 	validateAwarenessStates,
 	type AwarenessValidationOptions,
 } from "../presence/awarenessValidator";
-import { assignMultiplayerColor } from "../presence/colorAssignment";
 import { AuthorLedger } from "../presence/authorLedger";
 import {
 	MAX_PRESENCE_AVATAR_URL_LENGTH,
@@ -42,9 +41,19 @@ const GOOD_PEER_ID = 77;
 const BAD_PEER_ID = 88;
 const SCRIPT_NAME = '"><script>window.__xssProbe=1</script>';
 
+const GRID_BLOCK_ID = "t1";
+const GRID_ROWS = 3;
+const GRID_COLS = 4;
+
 const documentView = {
 	blockLength(blockId: string): number | null {
-		return blockId === "b1" ? 5 : null;
+		if (blockId === "b1") return 5;
+		return blockId === GRID_BLOCK_ID ? 0 : null;
+	},
+	gridSize(blockId: string): { rows: number; cols: number } | null {
+		return blockId === GRID_BLOCK_ID
+			? { rows: GRID_ROWS, cols: GRID_COLS }
+			: null;
 	},
 };
 
@@ -272,6 +281,7 @@ describe("COL2 awareness is untrusted input", () => {
 			user: { id: "u-bad", name: "Ada" },
 			cursor: null,
 			selection: validPeer.selection,
+			streaming: null,
 		});
 		expect(cursorResult.rejections).toEqual([
 			{ clientId: BAD_PEER_ID, reason: "oversized" },
@@ -294,6 +304,7 @@ describe("COL2 awareness is untrusted input", () => {
 			user: { id: "u-bad", name: "Ada" },
 			cursor: validPeer.cursor,
 			selection: null,
+			streaming: null,
 		});
 		expect(textSelectionResult.rejections).toEqual([
 			{ clientId: BAD_PEER_ID, reason: "oversized" },
@@ -312,6 +323,7 @@ describe("COL2 awareness is untrusted input", () => {
 			user: { id: "u-bad", name: "Ada" },
 			cursor: null,
 			selection: null,
+			streaming: null,
 		});
 		expect(blockSelectionResult.rejections).toEqual([
 			{ clientId: BAD_PEER_ID, reason: "oversized" },
@@ -380,6 +392,7 @@ describe("COL2 awareness is untrusted input", () => {
 				user: { id: "u-bad", name: "Ada" },
 				cursor: null,
 				selection: null,
+				streaming: null,
 			});
 			expect(result.rejections).toEqual([
 				{ clientId: BAD_PEER_ID, reason: "wrong-typed" },
@@ -418,9 +431,137 @@ describe("COL2 awareness is untrusted input", () => {
 				user: { id: "u-bad", name: "Ada" },
 				cursor: null,
 				selection: null,
+				streaming: null,
 			});
 			expect(result.rejections).toEqual([
 				{ clientId: BAD_PEER_ID, reason: "wrong-typed" },
+			]);
+		}
+	});
+
+	it("COL2: a cell selection inside the grid is accepted", () => {
+		const selection = {
+			kind: "cell" as const,
+			blockId: GRID_BLOCK_ID,
+			anchor: { row: 0, col: 0 },
+			head: { row: GRID_ROWS - 1, col: GRID_COLS - 1 },
+			clock: 12,
+		};
+
+		const result = validate([
+			[GOOD_PEER_ID, { user: validPeer.user, selection }],
+		]);
+
+		expect(result.states.get(GOOD_PEER_ID)?.selection).toEqual(selection);
+		expect(result.rejections).toEqual([]);
+	});
+
+	it("COL2: a cell outside the grid is rejected at ingest, not at render", () => {
+		const cases = [
+			{ anchor: { row: GRID_ROWS, col: 0 }, head: { row: 0, col: 0 } },
+			{ anchor: { row: 0, col: 0 }, head: { row: 0, col: GRID_COLS } },
+			// a block that exists but holds no grid cannot name a cell
+			{
+				blockId: "b1",
+				anchor: { row: 0, col: 0 },
+				head: { row: 0, col: 0 },
+			},
+		];
+
+		for (const { blockId = GRID_BLOCK_ID, anchor, head } of cases) {
+			const result = validate([
+				[
+					BAD_PEER_ID,
+					{
+						user: { id: "u-bad", name: "Ada" },
+						selection: {
+							kind: "cell",
+							blockId,
+							anchor,
+							head,
+							clock: 12,
+						},
+					},
+				],
+			]);
+			expect(result.states.get(BAD_PEER_ID)?.selection).toBeNull();
+			expect(result.rejections).toEqual([
+				{ clientId: BAD_PEER_ID, reason: "out-of-range-cell" },
+			]);
+		}
+	});
+
+	it("COL2: malformed cell coordinates drop the selection only", () => {
+		const cases: Array<{ selection: unknown; reason: string }> = [
+			{
+				selection: {
+					kind: "cell",
+					blockId: "missing",
+					anchor: { row: 0, col: 0 },
+					head: { row: 0, col: 0 },
+				},
+				reason: "nonexistent-block",
+			},
+			{
+				selection: {
+					kind: "cell",
+					anchor: { row: 0, col: 0 },
+					head: { row: 0, col: 0 },
+				},
+				reason: "wrong-typed",
+			},
+			{
+				selection: {
+					kind: "cell",
+					blockId: GRID_BLOCK_ID,
+					anchor: { row: -1, col: 0 },
+					head: { row: 0, col: 0 },
+				},
+				reason: "wrong-typed",
+			},
+			{
+				selection: {
+					kind: "cell",
+					blockId: GRID_BLOCK_ID,
+					anchor: { row: 0.5, col: 0 },
+					head: { row: 0, col: 0 },
+				},
+				reason: "wrong-typed",
+			},
+			{
+				selection: {
+					kind: "cell",
+					blockId: GRID_BLOCK_ID,
+					anchor: [0, 0],
+					head: { row: 0, col: 0 },
+				},
+				reason: "wrong-typed",
+			},
+			{
+				selection: {
+					kind: "cell",
+					blockId: GRID_BLOCK_ID,
+					anchor: { row: 0, col: 0 },
+				},
+				reason: "wrong-typed",
+			},
+		];
+
+		for (const { selection, reason } of cases) {
+			const result = validate([
+				[
+					BAD_PEER_ID,
+					{ user: { id: "u-bad", name: "Ada" }, selection },
+				],
+			]);
+			expect(result.states.get(BAD_PEER_ID)).toEqual({
+				user: { id: "u-bad", name: "Ada" },
+				cursor: null,
+				selection: null,
+				streaming: null,
+			});
+			expect(result.rejections).toEqual([
+				{ clientId: BAD_PEER_ID, reason },
 			]);
 		}
 	});
@@ -440,6 +581,7 @@ describe("COL2 awareness is untrusted input", () => {
 			user: { id: "u-bad", name: "Ada" },
 			cursor: null,
 			selection: null,
+			streaming: null,
 		});
 		expect(result.rejections).toEqual([
 			{ clientId: BAD_PEER_ID, reason: "wrong-typed" },
@@ -471,6 +613,7 @@ describe("COL2 awareness is untrusted input", () => {
 				user: { id: "u-bad", name: "Ada" },
 				cursor: null,
 				selection: null,
+				streaming: null,
 			});
 			expect(result.rejections).toEqual([
 				{ clientId: BAD_PEER_ID, reason },
@@ -503,6 +646,7 @@ describe("COL2 awareness is untrusted input", () => {
 			user: validPeer.user,
 			cursor: validPeer.cursor,
 			selection: validPeer.selection,
+			streaming: null,
 		});
 		expect(result.states.has(BAD_PEER_ID)).toBe(false);
 		expect(result.rejections).toEqual([
@@ -622,9 +766,7 @@ describe("COL2 awareness is untrusted input", () => {
 						name: "Ada",
 						email: "hidden@example.com",
 					},
-					streaming: {
-						prompt: "<script>window.__xssProbe=1</script>",
-					},
+					prompt: "<script>window.__xssProbe=1</script>",
 					ai: { role: "admin" },
 					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 				},
@@ -634,15 +776,73 @@ describe("COL2 awareness is untrusted input", () => {
 			user: { id: "u-extra", name: "Ada" },
 			cursor: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 			selection: null,
+			streaming: null,
 		});
-		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty(
-			"streaming",
-		);
+		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty("prompt");
 		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty("ai");
 		expect(extraKeys.states.get(BAD_PEER_ID)?.user).not.toHaveProperty(
 			"email",
 		);
 		expect(extraKeys.rejections).toEqual([]);
+	});
+
+	it("COL2: a peer's AI streaming presence is accepted only for a live block", () => {
+		const accepted = validate([
+			[
+				GOOD_PEER_ID,
+				{ ...validPeer, streaming: { blockId: "b1" } },
+			],
+		]);
+		expect(accepted.states.get(GOOD_PEER_ID)?.streaming).toEqual({
+			blockId: "b1",
+		});
+		expect(accepted.rejections).toEqual([]);
+
+		const cases: Array<{ streaming: unknown; reason: string }> = [
+			{ streaming: { blockId: "missing" }, reason: "nonexistent-block" },
+			{ streaming: { blockId: 1 }, reason: "wrong-typed" },
+			{ streaming: "b1", reason: "wrong-typed" },
+			{
+				streaming: { blockId: "javascript:alert(1)" },
+				reason: "script-bearing",
+			},
+			{
+				streaming: { blockId: "b".repeat(MAX_PRESENCE_USER_ID_LENGTH + 1) },
+				reason: "oversized",
+			},
+		];
+
+		for (const { streaming, reason } of cases) {
+			const result = validate([
+				[BAD_PEER_ID, { user: { id: "u-bad", name: "Ada" }, streaming }],
+			]);
+			expect(result.states.get(BAD_PEER_ID)?.streaming).toBeNull();
+			expect(result.rejections).toEqual([
+				{ clientId: BAD_PEER_ID, reason },
+			]);
+		}
+	});
+
+	it("COL2: a peer's streaming presence carries no prompt or preview text", () => {
+		const result = validate([
+			[
+				GOOD_PEER_ID,
+				{
+					...validPeer,
+					streaming: {
+						blockId: "b1",
+						prompt: "rewrite this",
+						text: "the model's unaccepted draft",
+					},
+				},
+			],
+		]);
+		// the payload is rebuilt from declared fields, so extra keys a peer
+		// bolts on never reach a decoration.
+		expect(result.states.get(GOOD_PEER_ID)?.streaming).toEqual({
+			blockId: "b1",
+		});
+		expect(result.rejections).toEqual([]);
 	});
 
 	it("COL2: hostile avatar URL ignored — javascript: and data:text/html drop the peer", () => {
@@ -694,6 +894,7 @@ describe("COL2 awareness is untrusted input", () => {
 			user: validPeer.user,
 			cursor: validPeer.cursor,
 			selection: validPeer.selection,
+			streaming: null,
 		});
 		expect(result.rejections).toEqual([
 			{ clientId: BAD_PEER_ID, reason: "oversized" },
@@ -1150,7 +1351,7 @@ describe("COL2 awareness is untrusted input", () => {
 		editor.destroy();
 	});
 
-	it("COL2: CSS-injectable color is stripped at ingest and never reaches decoration style", () => {
+	it("COL2: CSS-injectable color is stripped at ingest and never reaches a decoration", () => {
 		const injected = "red;position:absolute";
 		const result = validate([
 			[
@@ -1185,11 +1386,8 @@ describe("COL2 awareness is untrusted input", () => {
 			.inlineForBlock("b1")
 			.find((item) => item.attributes?.["data-user-id"] === "u-css");
 		expect(decoration).toBeDefined();
-		expect(decoration?.attributes?.style).toBe(
-			`--pen-multiplayer-color: ${assignMultiplayerColor("u-css")}`,
-		);
-		expect(decoration?.attributes?.style).not.toContain("position");
-		expect(decoration?.attributes?.style).not.toContain(injected);
+		expect(decoration?.attributes?.style).toBeUndefined();
+		expect(JSON.stringify(decoration?.attributes)).not.toContain(injected);
 
 		editor.destroy();
 	});

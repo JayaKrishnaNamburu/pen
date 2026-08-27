@@ -68,15 +68,52 @@ export interface RemoteBlockSelectionState {
 	clock: number;
 }
 
+/** Row/column position of one remote cell-selection endpoint. */
+export interface MultiplayerCellCoord {
+	row: number;
+	col: number;
+}
+
+/**
+ * A peer's rectangular cell selection, clamped into the live grid on resolve.
+ *
+ * Carries no offset: a grid cell is the smallest region this presence names,
+ * which is why a peer inside a table publishes no cursor.
+ */
+export interface RemoteCellSelectionState {
+	kind: "cell";
+	clientId: number;
+	user: MultiplayerUser;
+	blockId: string;
+	anchor: MultiplayerCellCoord;
+	head: MultiplayerCellCoord;
+	clock: number;
+}
+
 export type RemoteSelectionState =
 	| RemoteTextSelectionState
-	| RemoteBlockSelectionState;
+	| RemoteBlockSelectionState
+	| RemoteCellSelectionState;
+
+/**
+ * A peer's in-flight AI run, resolved against the live document.
+ *
+ * Presence only: it names the block a generation is writing into and never
+ * what it will say, because preview text stays on the client that asked for
+ * it (RS1). Peers learn that a run is happening, not its contents.
+ */
+export interface RemoteStreamingState {
+	clientId: number;
+	user: MultiplayerUser;
+	blockId: string;
+}
 
 export interface PeerState {
 	clientId: number;
 	user: MultiplayerUser;
 	cursor: RemoteCursorState | null;
 	selection: RemoteSelectionState | null;
+	streaming: RemoteStreamingState | null;
 	lastSeen: number;
 }
 
@@ -91,6 +128,7 @@ export interface MultiplayerSnapshot {
 	state: MultiplayerState;
 	remoteCursors: readonly RemoteCursorState[];
 	remoteSelections: readonly RemoteSelectionState[];
+	remoteStreaming: readonly RemoteStreamingState[];
 }
 
 export interface MultiplayerCursorPayload {
@@ -114,14 +152,38 @@ export interface MultiplayerBlockSelectionPayload {
 	clock: number;
 }
 
+/**
+ * Grid coordinates rather than serialized anchors, matching AS3: cell
+ * selections are driven by the commit summary's structural data and clamp into
+ * the post-commit grid, so there is no in-block text identity to anchor.
+ */
+export interface MultiplayerCellSelectionPayload {
+	kind: "cell";
+	blockId: string;
+	anchor: MultiplayerCellCoord;
+	head: MultiplayerCellCoord;
+	clock: number;
+}
+
 export type MultiplayerSelectionPayload =
 	| MultiplayerTextSelectionPayload
-	| MultiplayerBlockSelectionPayload;
+	| MultiplayerBlockSelectionPayload
+	| MultiplayerCellSelectionPayload;
+
+/**
+ * Published while an AI run writes into a block, cleared when it ends. Carries
+ * the block and nothing else: a prompt or a preview here would put one client's
+ * unaccepted text on every peer's screen.
+ */
+export interface MultiplayerStreamingPayload {
+	blockId: string;
+}
 
 export interface MultiplayerAwarenessState extends Record<string, unknown> {
 	user?: MultiplayerUser;
 	cursor?: MultiplayerCursorPayload | null;
 	selection?: MultiplayerSelectionPayload | null;
+	streaming?: MultiplayerStreamingPayload | null;
 }
 
 export interface ResolvePeerIdentityContext {
@@ -173,6 +235,7 @@ export interface MultiplayerController {
 	getPeers(): readonly PeerState[];
 	getRemoteCursors(): readonly RemoteCursorState[];
 	getRemoteSelections(): readonly RemoteSelectionState[];
+	getRemoteStreaming(): readonly RemoteStreamingState[];
 	snapshot(): MultiplayerSnapshot;
 }
 

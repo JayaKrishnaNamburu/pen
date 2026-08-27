@@ -167,6 +167,7 @@ describe("MultiplayerControllerImpl", () => {
 					head: { blockId: "b1", offset: 3 },
 					clock: 11,
 				},
+				streaming: null,
 				lastSeen: 11,
 			},
 		]);

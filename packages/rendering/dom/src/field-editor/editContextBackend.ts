@@ -44,6 +44,7 @@ import {
 	inlineDecorationsForBlock,
 	inlineDecorationsRequireFullReconcile,
 } from "../utils/inlineDecorations";
+import { handleEditContextBeforeInput } from "./editContextBeforeInput";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
 import { getPasteImporters, handleClipboardPaste } from "./clipboard";
@@ -140,6 +141,7 @@ export class EditContextBackend {
 		).editContext = ec;
 
 		this.attachment.listen(element, "keydown", this.handleKeyDown);
+		this.attachment.listen(element, "beforeinput", this.handleBeforeInput);
 		this.attachment.listen(element, "paste", this.handlePasteEvent);
 		bindBackendTransferEvents(
 			this.attachment,
@@ -1282,6 +1284,23 @@ export class EditContextBackend {
 
 		return null;
 	}
+
+	protected handleBeforeInput = (event: InputEvent): void => {
+		if (!this.editContext || !this.ytext) return;
+		if (this.hasInFlightEditContextComposition()) return;
+
+		const blockId = this.fieldEditor.focusBlockId;
+		if (!blockId || !this.editor.getBlock(blockId)) {
+			this.fieldEditor.deactivate();
+			return;
+		}
+
+		handleEditContextBeforeInput({
+			event,
+			editor: this.editor,
+			fieldEditor: this.fieldEditor,
+		});
+	};
 
 	protected handlePasteEvent = (event: ClipboardEvent): void => {
 		event.preventDefault();

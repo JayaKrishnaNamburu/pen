@@ -14,6 +14,7 @@ import {
 import type { MultiplayerControllerImpl } from "./controller";
 import { buildRemoteCursorDecorations } from "./decorations/remoteCursors";
 import { buildRemoteSelectionDecorations } from "./decorations/remoteSelections";
+import { buildRemoteStreamingDecorations } from "./decorations/remoteStreaming";
 import {
 	assignMultiplayerColor,
 	normalizeMultiplayerColor,
@@ -48,9 +49,13 @@ export function multiplayerExtension(config: MultiplayerConfig): Extension {
 					editor,
 					controller?.getRemoteSelections() ?? [],
 				);
+				const streamingDecorations = buildRemoteStreamingDecorations(
+					controller?.getRemoteStreaming() ?? [],
+				);
 				return createDecorationSet([
 					...cursorDecorations,
 					...selectionDecorations,
+					...streamingDecorations,
 				]);
 			}),
 		],
@@ -126,6 +131,25 @@ function buildLocalAwarenessState(
 			selection: {
 				kind: "block",
 				blockIds: [...selection.blockIds],
+				clock: Date.now(),
+			},
+		};
+	}
+
+	// no cursor: a grid has no caret position to publish, and the occupied
+	// cells are what peers render.
+	if (selection?.type === "cell") {
+		return {
+			user,
+			cursor: null,
+			selection: {
+				kind: "cell",
+				blockId: selection.blockId,
+				anchor: {
+					row: selection.anchor.row,
+					col: selection.anchor.col,
+				},
+				head: { row: selection.head.row, col: selection.head.col },
 				clock: Date.now(),
 			},
 		};

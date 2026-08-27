@@ -32,6 +32,7 @@ export function getRootGeometry(
 		root,
 		observeResize: options?.observeResize ?? true,
 		observeFonts: options?.observeFonts ?? true,
+		observeScroll: options?.observeScroll ?? true,
 		...options,
 	});
 	const scheduler = new DomScheduler(rootIdFor(root), { geometry: reader });

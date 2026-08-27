@@ -95,12 +95,24 @@ describe("@input/pen-ai/stream StreamingTargetImpl", () => {
 		commitListeners[0]!({
 			source: "stream",
 		} as CommitEvent);
-		expect(awarenessState.streaming).toEqual({
-			blockId: "block-1",
-			zoneId: "zone-1",
-		});
+		// the block and nothing else: COL2 validates this payload on receipt,
+		// and a zone id peers cannot use is one more untrusted string to bound.
+		expect(awarenessState.streaming).toEqual({ blockId: "block-1" });
 
 		target.endStreaming("complete");
 		expect(awarenessState.streaming).toBeUndefined();
+	});
+
+	it("COL2: a run publishes its block once, not once per stream commit", () => {
+		const { awareness, commitListeners, target } = createStreamingHarness();
+
+		target.beginStreaming("zone-1", "block-1");
+		for (let commit = 0; commit < 20; commit += 1) {
+			commitListeners[0]!({ source: "stream" } as CommitEvent);
+		}
+
+		// 20 flushes a second against a 30/second cap: resending one unchanged
+		// block id would push the peer's own caret past the limiter.
+		expect(awareness.setLocalState).toHaveBeenCalledTimes(1);
 	});
 });

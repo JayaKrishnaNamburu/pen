@@ -3,6 +3,7 @@ import {
 	BEFOREINPUT_MAP,
 	COMPOSITION_INPUT_TYPES,
 	mapBeforeInput,
+	mapEditContextBeforeInput,
 	type BeforeInputCommandMapping,
 } from "../field-editor/beforeinputMap";
 import { DIRECT_HANDLERS } from "../field-editor/contenteditableDirectHandlers";
@@ -63,6 +64,16 @@ const LISTED_COMMAND_ROWS: Readonly<Record<string, BeforeInputCommandMapping>> =
 			preventDefault: true,
 			param: { granularity: "line" },
 		},
+		deleteSoftLineForward: {
+			commandName: "pen.deleteForward",
+			preventDefault: true,
+			param: { granularity: "line" },
+		},
+		deleteHardLineForward: {
+			commandName: "pen.deleteForward",
+			preventDefault: true,
+			param: { granularity: "line" },
+		},
 		formatBold: {
 			commandName: "pen.toggleMark",
 			preventDefault: true,
@@ -94,8 +105,6 @@ const SPEC_UNLISTED_TYPES = [
 	"insertHorizontalRule",
 	"formatStrikeThrough",
 	"deleteByCut",
-	"deleteSoftLineForward",
-	"deleteHardLineForward",
 	"insertFromPasteAsQuotation",
 ] as const;
 
@@ -116,7 +125,7 @@ describe("mapBeforeInput", () => {
 			...COMPOSITION_INPUT_TYPES,
 		].sort();
 		expect(Object.keys(BEFOREINPUT_MAP).sort()).toEqual(listedTypes);
-		expect(Object.keys(BEFOREINPUT_MAP)).toHaveLength(21);
+		expect(Object.keys(BEFOREINPUT_MAP)).toHaveLength(23);
 	});
 
 	it("B1: every non-composition row ends in preventDefault", () => {
@@ -167,6 +176,47 @@ describe("mapBeforeInput", () => {
 			code: "unhandled-input-type",
 		});
 		expect(mapBeforeInput("")).toEqual({
+			policy: "block",
+			code: "unhandled-input-type",
+		});
+	});
+});
+
+describe("mapEditContextBeforeInput", () => {
+	// Chromium hands these to the attached EditContext as `textupdate`, which
+	// is that backend's sensor (B2). Preventing their default cancels the
+	// `textupdate` with it, so the row has to stay `allow`.
+	const EDIT_CONTEXT_DELIVERED = [
+		"insertText",
+		"insertReplacementText",
+		...COMPOSITION_INPUT_TYPES,
+	];
+
+	it("B2: EditContext-delivered rows allow, whatever the shared table says", () => {
+		for (const inputType of EDIT_CONTEXT_DELIVERED) {
+			expect([inputType, mapEditContextBeforeInput(inputType)]).toEqual([
+				inputType,
+				{ policy: "allow" },
+			]);
+		}
+
+		expect(mapBeforeInput("insertText")).toMatchObject({
+			commandName: "pen.insertText",
+		});
+	});
+
+	it("B1: every other row keeps the shared policy so the DOM is never left to the browser", () => {
+		for (const inputType of Object.keys(BEFOREINPUT_MAP)) {
+			if (EDIT_CONTEXT_DELIVERED.includes(inputType)) {
+				continue;
+			}
+			expect([inputType, mapEditContextBeforeInput(inputType)]).toEqual([
+				inputType,
+				mapBeforeInput(inputType),
+			]);
+		}
+
+		expect(mapEditContextBeforeInput("insertHorizontalRule")).toEqual({
 			policy: "block",
 			code: "unhandled-input-type",
 		});

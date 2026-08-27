@@ -43,6 +43,7 @@ export type GeometryReaderOptions = {
 	measure?: GeometryMeasureAdapter;
 	observeResize?: boolean;
 	observeFonts?: boolean;
+	observeScroll?: boolean;
 };
 
 export type GeometryReaderHost = GeometryReader & {
@@ -53,6 +54,7 @@ export type GeometryReaderHost = GeometryReader & {
 	invalidateAll(): void;
 	bumpResizeGeneration(): void;
 	bumpFontGeneration(): void;
+	bumpScrollGeneration(): void;
 	blockIds(): readonly string[];
 	dispose(): void;
 };
@@ -61,6 +63,7 @@ type BlockCacheKey = {
 	commitId: number;
 	resizeGeneration: number;
 	fontGeneration: number;
+	scrollGeneration: number;
 };
 
 type BlockCacheEntry = {
@@ -87,9 +90,11 @@ class GeometryReaderImpl implements GeometryReaderHost {
 	private readonly cache = new Map<string, BlockCacheEntry>();
 	private readonly blockCommitIds = new Map<string, number>();
 	private readonly resizeObserver: ResizeObserver | null = null;
+	private readonly detachScroll: (() => void) | null = null;
 	private commitId: number;
 	private resizeGeneration = 0;
 	private fontGeneration = 0;
+	private scrollGeneration = 0;
 	private _generation = 0;
 	private disposed = false;
 
@@ -117,6 +122,11 @@ class GeometryReaderImpl implements GeometryReaderHost {
 					this.bumpFontGeneration();
 				}
 			});
+		}
+
+		const observeScroll = options.observeScroll ?? true;
+		if (observeScroll) {
+			this.detachScroll = this.listenForScroll();
 		}
 	}
 
@@ -260,10 +270,55 @@ class GeometryReaderImpl implements GeometryReaderHost {
 		this.clearCache();
 	}
 
+	bumpScrollGeneration(): void {
+		this.scrollGeneration += 1;
+		this.clearCache();
+	}
+
 	dispose(): void {
 		this.disposed = true;
 		this.resizeObserver?.disconnect();
+		this.detachScroll?.();
 		this.cache.clear();
+	}
+
+	/**
+	 * Cached rects are viewport-relative, so any scroll that moves the root
+	 * invalidates them (G2). `scroll` does not bubble; capture on the document
+	 * is the only listener that sees every scroller, including nested ones.
+	 *
+	 * The document outlives the root and nothing calls `dispose()` in
+	 * production (FIELD-EDITOR-TEARDOWN.md), so the listener drops itself once
+	 * the root leaves the tree rather than pinning it here forever. A root that
+	 * came back would be re-measured off the ResizeObserver anyway.
+	 */
+	private listenForScroll(): () => void {
+		const ownerDocument = this.root.ownerDocument;
+		const handleScroll = (event: Event): void => {
+			if (this.disposed || !this.root.isConnected) {
+				ownerDocument.removeEventListener(
+					"scroll",
+					handleScroll,
+					true,
+				);
+				return;
+			}
+			if (!this.movesRoot(event.target)) {
+				return;
+			}
+			this.bumpScrollGeneration();
+		};
+		ownerDocument.addEventListener("scroll", handleScroll, true);
+		return () => {
+			ownerDocument.removeEventListener("scroll", handleScroll, true);
+		};
+	}
+
+	private movesRoot(target: EventTarget | null): boolean {
+		if (!(target instanceof Node)) {
+			return true;
+		}
+		return target.contains(this.root) || this.root.contains(target);
 	}
 
 	private entryFor(blockId: string): BlockCacheEntry {
@@ -300,6 +355,7 @@ class GeometryReaderImpl implements GeometryReaderHost {
 				this.commitId,
 			resizeGeneration: this.resizeGeneration,
 			fontGeneration: this.fontGeneration,
+			scrollGeneration: this.scrollGeneration,
 		};
 	}
 
@@ -313,7 +369,8 @@ function cacheKeysEqual(left: BlockCacheKey, right: BlockCacheKey): boolean {
 	return (
 		left.commitId === right.commitId &&
 		left.resizeGeneration === right.resizeGeneration &&
-		left.fontGeneration === right.fontGeneration
+		left.fontGeneration === right.fontGeneration &&
+		left.scrollGeneration === right.scrollGeneration
 	);
 }
 

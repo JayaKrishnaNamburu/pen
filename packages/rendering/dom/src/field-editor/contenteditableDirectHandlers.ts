@@ -140,6 +140,53 @@ const deleteLineBackward: DirectHandler = (
 	}
 };
 
+const deleteLineForward: DirectHandler = (
+	_event,
+	editor,
+	ytext,
+	fe,
+	_element,
+	backend,
+) => {
+	const blockId = fe.focusBlockId;
+	if (!blockId) return;
+	const range = backend.resolveCurrentInputRange();
+	if (!range) return;
+
+	if (
+		tryDispatchMapped(
+			editor,
+			fe,
+			backend,
+			deleteForward,
+			{
+				granularity: "line",
+			},
+			range,
+		)
+	) {
+		return;
+	}
+
+	if (range.start !== range.end) {
+		backend.applyInlineTextEdit({
+			blockId,
+			range,
+			text: "",
+		});
+		return;
+	}
+
+	const end = ytext.toString().length;
+	if (end > range.end) {
+		backend.applyInlineTextEdit({
+			blockId,
+			range: { start: range.end, end },
+			text: "",
+		});
+	}
+};
+
 // command-policy implementations; preventDefault / allow / block live in BEFOREINPUT_MAP
 export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 	insertText,
@@ -354,6 +401,9 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 
 	deleteSoftLineBackward: deleteLineBackward,
 	deleteHardLineBackward: deleteLineBackward,
+
+	deleteSoftLineForward: deleteLineForward,
+	deleteHardLineForward: deleteLineForward,
 
 	deleteWordForward: (_event, editor, ytext, fe, element, backend) => {
 		const blockId = fe.focusBlockId;

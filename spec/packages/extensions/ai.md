@@ -78,6 +78,8 @@ Durable document edits always go through `edit_document`. Streaming generation l
 - Chat rewrites that target a title, paragraph, or whole document are resolved into synthetic but explicit range targets rather than open-ended document narration.
 - The preferred rewrite path is `rewrite-selection` with a target kind of either `selection` or `scoped-range`.
 - `scoped-range` is used for synthetic scopes such as `heading`, `paragraph`, `block`, or `document` where the runtime still wants selection-like provenance and diff behavior.
+- A single-block streaming rewrite holds its write head as one `assoc: 1` `editor.anchors` mint at the selection end, repaired on content-move commits and resolved before each delta splices (ST2), with an `assoc: -1` mint at the selection start for the range the first delta marks deleted. The delete gets that one delta: once text sits at the head, deleting from the start again would swallow the arriving text too.
+- A remote edit does not cancel a run. Cancellation on an external commit is for the local user taking the block back, and every update arriving through `applyUpdate` normalizes to `origin: "collaborator"` (COL1), so peers are excluded along with `ai`, `system`, and `extension`.
 - Conflict detection uses target provenance such as selection signatures, block revisions, synced generation, and source-text checks before final apply. Alignment compares folded text via core `foldAndNormalize()`, not `toLowerCase()`.
 - Multi-block markdown rewrites stream as staged suggestions by default so users can review, accept, reject, and undo them. Hosts without a review UI can set `mutationPreference: "direct"` on `aiExtension()` to land AI edits immediately; suggest mode and the review lane always stage regardless.
 - Structural prompts (convert to list, tables, restructuring) route through the tool loop with every other durable mutation. Document-scope prompts on small documents build their working set as annotated markdown — each block prefixed with a `<!-- block:<id> <type> -->` comment — so the model can address any block precisely.
@@ -179,6 +181,7 @@ Streaming protocol and processing pipeline. Optional runtime that turns a `PenSt
 - `deltaStreamExtension()`, `processStream()`
 - Install via `defaultPreset()` or `createEditor({ extensions: [deltaStreamExtension()] })`.
 - Core `openTextStream` holds one `assoc: 1` local anchor as the write head; each flush repairs then resolves before splicing.
+- A run publishes `streaming: { blockId }` on awareness off its first `source: "stream"` commit (ST6) and clears it when the run ends. The write is skipped while the block id is unchanged: the payload is fixed for the zone's life, and republishing it per flush would spend the peer's whole `MAX_PRESENCE_UPDATES_PER_SECOND` budget. The zone id stays local — receivers key the presence by client and block, and `@input/pen-multiplayer` is what renders it.
 
 ## Integration Notes
 

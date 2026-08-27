@@ -18,7 +18,7 @@
     "changeset-check": "node scripts/changeset-check.mjs",
     "workflow-integrity": "node scripts/workflow-integrity.mjs",
     "version-packages": "changeset version && node scripts/stamp-first-train.mjs",
-    "release": "changeset publish --provenance",
+    "release": "changeset publish",
     "release-check": "node scripts/release-check.mjs",
     "size-limit": "node scripts/size-limit.mjs",
     "ch-gates": "node scripts/ch-gates.mjs",

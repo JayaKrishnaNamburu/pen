@@ -14,6 +14,20 @@ import type { AIRequestedOperation, GenerationState } from "../types";
 import type { GenerationExecutionContext, GenerationTarget } from "../helpers";
 import { resolveActiveBlockId, resolveBlockInsertionOffset } from "../helpers";
 
+/**
+ * Origins that do not mean the local user took the generation's block back.
+ * `collaborator` belongs here because every remote update normalizes to it
+ * (COL1): a peer typing into the same block must not cancel this client's run
+ * and discard the streaming preview with it.
+ */
+const GENERATION_SURVIVES_ORIGINS = new Set<string>([
+	"ai",
+	AI_SESSION_SUGGESTION_ORIGIN,
+	"collaborator",
+	"system",
+	"extension",
+]);
+
 export const generationRunnerMethods = {
 	cancelActiveGeneration(this: AIControllerImpl): void {
 		this._abortController?.abort();
@@ -85,18 +99,15 @@ export const generationRunnerMethods = {
 		) {
 			return;
 		}
-		const touched = events.some((event) => {
-			const originType = getOpOriginType(event.origin);
-			return (
-				originType !== "ai" &&
-				originType !== AI_SESSION_SUGGESTION_ORIGIN &&
-				originType !== "system" &&
-				originType !== "extension" &&
+		const touched = events.some(
+			(event) =>
+				!GENERATION_SURVIVES_ORIGINS.has(
+					getOpOriginType(event.origin),
+				) &&
 				affectedBlockIdsFromSummary(event.summary).includes(
 					active.blockId,
-				)
-			);
-		});
+				),
+		);
 		if (!touched) return;
 		this.cancelActiveGeneration();
 	},

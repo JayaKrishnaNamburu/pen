@@ -33,7 +33,15 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@input/pen-docs"],
+  "ignore": [
+    "@input/pen-conformance",
+    "@input/pen-docs",
+    "@input/pen-eslint-plugin",
+    "@input/pen-example-react",
+    "@input/pen-example-vanilla",
+    "@input/pen-example-vue",
+    "@input/pen-playground"
+  ],
   "bumpVersionsWithWorkspaceProtocolOnly": false,
   "privatePackages": {
     "version": false,

@@ -10,14 +10,29 @@ export function buildRemoteSelectionDecorations(
 	const blockOrder = editor.documentState.blockOrder;
 
 	for (const selection of selections) {
-		if (selection.kind === "block") {
-			decorations.push(...buildBlockSelectionDecorations(selection));
-			continue;
+		switch (selection.kind) {
+			case "block":
+				decorations.push(...buildBlockSelectionDecorations(selection));
+				break;
+			case "text":
+				decorations.push(
+					...buildSelectionDecorationsForRange(
+						editor,
+						blockOrder,
+						selection,
+					),
+				);
+				break;
+			// a cell selection has no block text to decorate and no cell-scoped
+			// decoration type to carry it. The table renderer paints these from
+			// controller state instead.
+			case "cell":
+				break;
+			default: {
+				const _exhaustive: never = selection;
+				return _exhaustive;
+			}
 		}
-
-		decorations.push(
-			...buildSelectionDecorationsForRange(editor, blockOrder, selection),
-		);
 	}
 
 	return decorations;

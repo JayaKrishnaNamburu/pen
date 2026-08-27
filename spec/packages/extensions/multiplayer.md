@@ -15,7 +15,8 @@ This package adds collaboration awareness around the editor without turning itse
 - Controller lookup: `getMultiplayerController()` reads `editor.facet(multiplayerControllerFacet)`. Activate still `assignSlot`s `MULTIPLAYER_CONTROLLER_SLOT` (defined on `@input/pen-types`), which overrides that facet.
 - `MultiplayerControllerImpl` is the runtime controller; it is reached through `multiplayerExtension()` / `getMultiplayerController()`, not the barrel
 - Presence helpers such as `assignMultiplayerColor()` and `normalizeMultiplayerColor()`
-- Public multiplayer state and snapshot types covering users, peers, cursors, selections, and session context
+- Public multiplayer state and snapshot types covering users, peers, cursors, selections, remote AI streaming, and session context
+- `MultiplayerController.getRemoteStreaming()` and `RemoteStreamingState` for the peers whose AI is generating
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -49,6 +50,9 @@ Important rules:
 - Remote presence is collaboration state, not document truth.
 - Remote cursor and selection visuals are derived from controller state and emitted as decorations.
 - Peers put serialized `editor.anchors` payloads on the awareness wire. Receivers `deserialize` them as `provenance: "wire"` and resolve per flush. A `null` resolve hides the caret until the next awareness frame or catch-up.
+- Cell selections are the exception to both of those. They travel as `{ row, col }` coordinates rather than anchors, matching AS3's structural treatment of the local cell selection, and they carry no cursor because a grid cell is the smallest region the presence names. They emit no decorations either — there is no cell-scoped decoration type and a table block has no block-level text — so renderers paint them from controller state, and the grid is re-read on every commit to clamp held endpoints in.
+- A peer's in-flight AI run arrives as `streaming: { blockId }` and leaves as a `pen-multiplayer-streaming` block decoration. The block id is the whole payload because the generated text never enters the document, so naming the block is all there is to show. `resolveRemoteStreaming` re-checks the block on every commit and drops the peer when it goes, the same treatment held cell selections get.
+- Local presence writes merge into the awareness state rather than replacing it. This runtime owns `user`, `cursor`, and `selection`; a wholesale write would unpublish `streaming` and anything a host carries alongside it.
 - Local presence is coalesced to a 50ms minimum interval (`LOCAL_PRESENCE_MIN_INTERVAL_MS`, internal), not published per selection change. Receivers cap ingest at `MAX_PRESENCE_UPDATES_PER_SECOND` (30, exported). The two numbers are a pair: a sender that outruns the receive cap is rate-limited by its peers, and a rate-limited peer keeps the sender's previous caret — so the caret freezes and then jumps rather than trailing smoothly. Coalescing below the receive budget is what keeps that from happening.
 - Identity resolution and author ledgers should enrich collaboration state without coupling the package to one transport provider.
 

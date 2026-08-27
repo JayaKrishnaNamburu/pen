@@ -379,6 +379,11 @@ export type {
 	PenFocusReason,
 } from "@input/pen-dom";
 export { isCellInSelection } from "./utils/cellSelection";
+export { resolveRemoteCellPresence } from "./utils/remoteCellSelection";
+export type {
+	RemoteCellPresence,
+	RemoteCellPresenceMap,
+} from "./utils/remoteCellSelection";
 
 // ── Re-export key types from @input/pen-types for convenience ─────
 export type {
@@ -401,6 +406,7 @@ export type {
 } from "@input/pen-snapshots";
 export type { MultiplayerState, PeerState } from "@input/pen-multiplayer";
 export type {
+	RemoteCellSelectionState,
 	RemoteCursorState,
 	RemoteSelectionState,
 } from "@input/pen-multiplayer";

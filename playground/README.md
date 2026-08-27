@@ -52,7 +52,7 @@ are changing) so the playground picks it up.
 ```
 src/
   App.tsx              three panes over one editor
-  editor/              the editor: setup, toolbar, slash menu, starter document
+  editor/              the editor: setup, toolbar, slash menu, images, starter document
   chat/                the agent: transcript, composer, and the hook behind them
   inspector/           the document-state sheet
   collaboration/       optional live rooms: name, room, Yjs session
@@ -134,7 +134,34 @@ the route Pen chose. `server/scriptedModel.ts` shows both shapes: it calls
   generator of events. Point it anywhere, or drop the server and call a provider
   from the browser.
 
+## Images
+
+Paste an image, drop one on the document, or pick Image from the slash menu and
+click the placeholder. All three go through the one `AssetProvider` in
+`editor/assets.ts`, which is the whole contract: store bytes, hand back a URL.
+
+That provider is `memoryAssets()` from `@input/pen-assets`, a test double that
+keeps bytes in the tab and returns a `blob:` URL. It needs no server, and it is
+honest about what it is not: images do not survive a reload, and a collaborator
+in a shared room sees a broken image, because a `blob:` URL only means something
+in the tab that made it. Swap in a provider that uploads to real storage and
+both problems go away — nothing else changes.
+
+Three things that upload path teaches, all worth knowing before you write your
+own provider:
+
+- **Pen resolves every URL it renders against a policy.** The default admits
+  `http(s):` and `data:` images, so the store's `blob:` URLs need
+  `blobImageUrlExtension` in `editor/assets.ts` or they are dropped at render
+  time and the block comes out blank.
+- **Failure is a diagnostic, not silence.** `maxSize` is enforced before
+  `upload`, and an oversize file or a provider error emits
+  `asset-upload-failed` and inserts no block.
+- **Deleting an asset is the host's job.** Pen never calls
+  `AssetProvider.delete`, so a deleted image here keeps its bytes until the tab
+  closes.
+
 ## Not in here
 
-Image uploads, comments, and tables beyond the basics. This app stays small on
-purpose; the examples and package tests cover the rest.
+Comments and tables beyond the basics. This app stays small on purpose; the
+examples and package tests cover the rest.

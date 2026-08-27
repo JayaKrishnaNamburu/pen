@@ -15,6 +15,7 @@
   "dependencies": {
     "@input/pen": "workspace:*",
     "@input/pen-ai": "workspace:*",
+    "@input/pen-assets": "workspace:*",
     "@input/pen-autoformat": "workspace:*",
     "@input/pen-core": "workspace:*",
     "@input/pen-dom": "workspace:*",

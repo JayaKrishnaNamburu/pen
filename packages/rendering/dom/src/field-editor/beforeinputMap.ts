@@ -83,6 +83,16 @@ export const BEFOREINPUT_MAP: Readonly<
 		preventDefault: true,
 		param: { granularity: "line" },
 	},
+	deleteSoftLineForward: {
+		commandName: "pen.deleteForward",
+		preventDefault: true,
+		param: { granularity: "line" },
+	},
+	deleteHardLineForward: {
+		commandName: "pen.deleteForward",
+		preventDefault: true,
+		param: { granularity: "line" },
+	},
 	formatBold: {
 		commandName: "pen.toggleMark",
 		preventDefault: true,
@@ -114,4 +124,27 @@ export const BEFOREINPUT_MAP: Readonly<
 
 export function mapBeforeInput(inputType: string): BeforeInputMapping {
 	return BEFOREINPUT_MAP[inputType] ?? UNHANDLED;
+}
+
+/**
+ * Input types an attached EditContext delivers as `textupdate`, which is that
+ * backend's sensor (B2). Calling `preventDefault` on their `beforeinput`
+ * cancels the `textupdate` too and the keystroke is lost, so these rows stay
+ * `allow` no matter what the shared table says.
+ *
+ * Chromium routes the rest straight at the DOM instead, so those keep the
+ * shared policy: a command row is claimed, an unknown row is blocked.
+ */
+const EDIT_CONTEXT_TEXT_INPUT_TYPES: ReadonlySet<string> = new Set([
+	"insertText",
+	"insertReplacementText",
+	...COMPOSITION_INPUT_TYPES,
+]);
+
+export function mapEditContextBeforeInput(
+	inputType: string,
+): BeforeInputMapping {
+	return EDIT_CONTEXT_TEXT_INPUT_TYPES.has(inputType)
+		? ALLOW
+		: mapBeforeInput(inputType);
 }

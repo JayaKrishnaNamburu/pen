@@ -21,6 +21,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["extensions/ai/src/controller/generationRunnerMethods.ts"],
 	},
 	{
+		code: "AI_SUGGESTION_SPLICE_DEGRADED",
+		levels: ["warn"],
+		sources: ["extensions/ai/src/controller/streamingSink.ts"],
+	},
+	{
 		code: "ai-egress-inventory",
 		levels: ["info"],
 		sources: ["core/src/facets/aiEgressFacet.ts"],

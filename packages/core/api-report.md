@@ -89,6 +89,7 @@
 - nextGraphemeBoundary
 - nextWordBoundary
 - normalizePendingBlocksForImport
+- orderSlashMenuItemsByGroup
 - previousGraphemeBoundary
 - previousWordBoundary
 - priorityToPrecedence
@@ -128,6 +129,7 @@
 - shouldForceBlockScopedSelectAll
 - shouldShowBlockInDefaultMenus
 - singleController
+- slashMenuGroupOf
 - snapToNormalPosition
 - sortDeltaAttributes
 - spliceDeleteOp

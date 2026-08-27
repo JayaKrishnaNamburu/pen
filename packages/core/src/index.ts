@@ -24,6 +24,10 @@ import {
 // Schema engine runtime
 export { SchemaRegistryImpl, mergeSchemas } from "./schema/registry";
 export type { SchemaRegistryConfig } from "./schema/registry";
+export {
+	orderSlashMenuItemsByGroup,
+	slashMenuGroupOf,
+} from "./schema/slashMenuOrder";
 export { defineBlock } from "./schema/defineBlock";
 export type { DefinedBlockSchema } from "./schema/defineBlock";
 export { defineExtension } from "./schema/defineExtension";

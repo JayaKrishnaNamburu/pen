@@ -20,7 +20,10 @@ import {
 	handleGenerationExecutionError,
 } from "./generationExecutionFinalize";
 import { runGenerationLoop } from "./generationExecutionLoop";
-import { resolveGenerationStreamingSink } from "./streamingSink";
+import {
+	createSuggestionSpliceHead,
+	resolveGenerationStreamingSink,
+} from "./streamingSink";
 import type {
 	ExecuteGenerationInput,
 	GenerationExecutionState,
@@ -256,7 +259,10 @@ export async function executeGeneration(
 		selectionSourceText,
 		shouldReplaceMarkdownTarget,
 		streamingSink,
-		streamedSuggestionLength: 0,
+		suggestionSpliceHead: createSuggestionSpliceHead(
+			controller._editor,
+			streamingSink,
+		),
 		sessionTurnId,
 		existingSession,
 		executionPrompt,
@@ -274,5 +280,7 @@ export async function executeGeneration(
 		return finalizeGenerationExecution(controller, state, result);
 	} catch (error) {
 		return handleGenerationExecutionError(controller, state, error);
+	} finally {
+		state.suggestionSpliceHead?.release();
 	}
 }
