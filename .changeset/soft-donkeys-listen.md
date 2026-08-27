@@ -1,5 +1,6 @@
 ---
 "@input/pen-react": patch
+"@input/pen-dom": patch
 ---
 
 Fix the slash menu leaving its trigger text in the document.

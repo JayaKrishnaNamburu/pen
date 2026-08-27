@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import {
-	blockLogicalText,
 	foldAndNormalize,
 	isCollapsed,
 	localeFacet,
@@ -151,14 +150,15 @@ export function useSlashMenu(
 				const trigger = getSlashTarget(ed);
 				const triggerRange =
 					trigger && trigger.blockId === blockId ? trigger : null;
-				const currentText = blockLogicalText(ed, blockId);
 				// the trigger is menu state that happens to live in the
 				// document, so it never survives confirm; what is left over
-				// decides whether the block is replaced or kept.
-				const textOutsideTrigger = triggerRange
-					? currentText.slice(0, triggerRange.startOffset) +
-						currentText.slice(triggerRange.endOffset)
-					: currentText;
+				// decides whether the block is replaced or kept. Measured in
+				// the logical domain the splice uses, where an inline atom
+				// inside the query counts as one.
+				const triggerLength = triggerRange
+					? triggerRange.endOffset - triggerRange.startOffset
+					: 0;
+				const lengthOutsideTrigger = block.length() - triggerLength;
 				const isTableInsert = item.type === "table";
 				const tableActivationTarget = isTableInsert
 					? getTableActivationTarget(undefined)
@@ -168,10 +168,7 @@ export function useSlashMenu(
 					: undefined;
 
 				const ops: DocumentOp[] = [];
-				if (
-					triggerRange &&
-					triggerRange.endOffset > triggerRange.startOffset
-				) {
+				if (triggerRange && triggerLength > 0) {
 					ops.push({
 						type: "splice-text",
 						blockId,
@@ -181,7 +178,7 @@ export function useSlashMenu(
 					});
 				}
 
-				if (textOutsideTrigger.length === 0) {
+				if (lengthOutsideTrigger === 0) {
 					if (block.type !== item.type) {
 						ops.push(
 							...getConvertBlockOps(ed, {

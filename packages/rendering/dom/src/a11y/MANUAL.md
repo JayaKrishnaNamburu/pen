@@ -93,7 +93,7 @@ Pass when those phrases (or the host catalog override) are spoken once, politely
 
 Keyboard only. DOM focus must stay in the editing field for caret-anchored popups.
 
-1. **Slash menu** — type `/`, ArrowUp/Down/Home/End through options, Escape closes to plain typing, reopen and Enter/Tab accept an insertion.
+1. **Slash menu** — type `/`, ArrowUp/Down/Home/End through options, Escape closes to plain typing, reopen, type a query such as `/head`, and Enter/Tab accept an insertion.
 2. **Autocomplete** (if the host enables it) — same activedescendant pattern; accept one completion.
 3. **Link editor** — open from the keyboard, edit, Escape restores the editing position.
 4. **Drag-handle menu** — focus the handle, Enter/Space opens the menu, invoke move up/down, Escape restores origin.
@@ -104,6 +104,7 @@ Pass when:
 - the field reports expanded/controls while a caret-anchored popup is open
 - the active option is spoken as the user arrows
 - Enter/Tab accepts and Escape closes
+- accepting a slash-menu insertion leaves no `/query` text behind, so the listbox does not reopen when selection returns to that block
 - no popup except an explicit dialog traps focus
 - Vue hosts match React for every shipped primitive in this list
 
