@@ -22,10 +22,9 @@ function createEditor() {
 	});
 }
 
-function visible(
-	editor: ReturnType<typeof createEditor>,
-	blockId: string,
-): string {
+type EditorHandle = ReturnType<typeof createEditor>;
+
+function visible(editor: EditorHandle, blockId: string): string {
 	return editor.getBlock(blockId)!.textContent();
 }
 
@@ -168,6 +167,70 @@ describe("anchorRepair AN14", () => {
 			blockId: target,
 			offset: 7,
 		});
+		editor.destroy();
+	});
+
+	it("AN14: a peer's split repairs a local anchor into the block the text landed in", () => {
+		const editor = createEditor();
+		const source = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId: source,
+				from: 0,
+				to: 0,
+				insert: "meadow sage",
+			},
+		]);
+		const adapter = editor.internals.adapter;
+		const editorDoc = editor.internals.crdtDoc;
+		const peerDoc = adapter.loadDocument(adapter.encodeState(editorDoc));
+		const peer = createCoreEditor({
+			schema: createDefaultSchema(),
+			document: peerDoc,
+			preset: noDefaultExtensionsPreset,
+		});
+
+		const tail = editor.anchors.create({ blockId: source, offset: 9 }, 1)!;
+
+		applySplitBlock(peer, {
+			blockId: source,
+			offset: 6,
+			newBlockId: "dest",
+		});
+		adapter.applyUpdate(editorDoc, adapter.encodeState(peerDoc));
+
+		expect(visible(editor, source)).toBe("meadow");
+		expect(visible(editor, "dest")).toBe(" sage");
+		// the peer's split arrives without the local recipe: Yjs does not carry
+		// the transaction's structural tag, so the receiver sees a delete and a
+		// new block and has to pair them.
+		expect(editor.lastChangeSummary!.structural).toEqual([
+			{
+				type: "block-inserted",
+				blockId: "dest",
+				parentId: null,
+				index: 1,
+			},
+		]);
+
+		const moves = deriveContentMoves(editor.lastChangeSummary!, undefined);
+		expect(moves).toEqual([
+			{
+				fromBlockId: source,
+				fromRange: { from: 6, to: 11 },
+				toBlockId: "dest",
+				toOffset: 0,
+			},
+		]);
+		expect(
+			editor.anchors.resolve(repairAnchor(editor, tail, moves)),
+		).toEqual({
+			blockId: "dest",
+			offset: 3,
+		});
+
+		peer.destroy();
 		editor.destroy();
 	});
 

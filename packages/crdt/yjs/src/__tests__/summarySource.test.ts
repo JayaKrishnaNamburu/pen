@@ -105,6 +105,46 @@ describe("summarySource", () => {
 		unsubscribe();
 	});
 
+	it("reports the text of a block that arrived carrying content", () => {
+		const doc = adapter.createDocument() as YjsCRDTDocument;
+		seedDocument(doc);
+		const deltas: RawCommitDelta[] = [];
+		createSummarySource(doc, (delta) => {
+			deltas.push(delta);
+		});
+
+		adapter.transact(doc, () => {
+			initBlockMap(doc.penDocument.blocks, "b3", "paragraph", "inline");
+			(doc.penDocument.blocks.get("b3")!.get("content") as Y.Text).insert(
+				0,
+				"meadow",
+			);
+			doc.penDocument.blockOrder.push(["b3"]);
+		});
+
+		expect(deltas).toHaveLength(1);
+		expect(deltas[0]!.textDeltas.get("b3")).toEqual([
+			[{ insert: "meadow" }],
+		]);
+	});
+
+	it("does not report a reordered block's existing text as an insert", () => {
+		const doc = adapter.createDocument() as YjsCRDTDocument;
+		seedDocument(doc);
+		const deltas: RawCommitDelta[] = [];
+		createSummarySource(doc, (delta) => {
+			deltas.push(delta);
+		});
+
+		adapter.transact(doc, () => {
+			doc.penDocument.blockOrder.delete(0, 1);
+			doc.penDocument.blockOrder.push(["b1"]);
+		});
+
+		expect(deltas).toHaveLength(1);
+		expect(deltas[0]!.textDeltas.has("b1")).toBe(false);
+	});
+
 	it("produces identical change sets for local transact and remote applyUpdate", () => {
 		const local = adapter.createDocument() as YjsCRDTDocument;
 		seedDocument(local);

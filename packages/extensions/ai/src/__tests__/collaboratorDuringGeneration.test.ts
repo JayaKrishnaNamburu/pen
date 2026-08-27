@@ -75,6 +75,16 @@ function peerBTypesAtBlockStart(harness: TwoPeerHarness): void {
 	harness.exchange("b-then-a");
 }
 
+/** Split the block under the write head from the other peer. */
+function peerBSplitsTheBlock(harness: TwoPeerHarness): void {
+	applySplitBlock(harness.peerB.editor, {
+		blockId: BLOCK_ID,
+		offset: 3,
+		newBlockId: "b1-tail",
+	});
+	harness.exchange("b-then-a");
+}
+
 function blockText(harness: TwoPeerHarness, peer: "a" | "b"): string {
 	return harness
 		.peer(peer)
@@ -157,6 +167,30 @@ describe("a block split under a streaming rewrite", () => {
 			expect(
 				editorA.getBlock("b1-tail").textContent({ resolved: true }),
 			).toBe("lo AlphaBeta");
+
+			harness.exchange();
+			harness.assertConverged();
+		} finally {
+			harness.destroy();
+		}
+	});
+
+	it("AN14: a peer's split leaves the streamed text whole in the block that kept it", async () => {
+		const { harness, generation, resume } =
+			await startGenerationPausedMidStream();
+		try {
+			peerBSplitsTheBlock(harness);
+			resume();
+			await generation;
+
+			// the peer split a copy of the text it had, which predates
+			// "Alpha", so the tail block never carries it and the head has
+			// nothing to follow. Both deltas stay together in the source.
+			const editorA = harness.peerA.editor;
+			expect(
+				editorA.getBlock(BLOCK_ID).textContent({ resolved: true }),
+			).toBe("HelAlphaBeta");
+			expect(editorA.getBlock("b1-tail").textContent()).toBe("lo world");
 
 			harness.exchange();
 			harness.assertConverged();

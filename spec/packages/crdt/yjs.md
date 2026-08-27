@@ -48,6 +48,8 @@ Extension-root helpers reserve namespaced Yjs maps under the document `apps` roo
 
 Empty text-capable `Y.Text` is `""`. Relative-position mint and resolve walk `penDocument.blocks` (and nested table cells) for the resolved `Y.Text`; a missing or deleted type is `null`. The adapter never throws on hostile or stale encoded positions.
 
+`createSummarySource` reports a block that arrives carrying content as an insert of that content. Yjs leaves a type created inside a transaction out of `txn.changed`, so a block whose text was written at construction — a split's tail block, an import, a paste — emits no text delta of its own, and every observer downstream would otherwise see the block appear and its text arrive from nowhere. The gate is the block's entry changing on the `blocks` map, so a reorder, which only touches order arrays, never restates existing text as an insert. This is what gives AN14's remote delete/insert pairing an insert to pair against when a peer splits a block.
+
 ## Integration Notes
 
 - Path in workspace: `packages/crdt/yjs`

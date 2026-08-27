@@ -172,6 +172,7 @@ function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
 	const textDeltas = new Map<string, YTextDelta[]>();
 	const childArrayDeltas = new Map<string, YArrayDelta>();
 	const blockMapChanges = new Map<string, Set<string>>();
+	const entryChangedBlockIds = new Set<string>();
 	const appChanges = new Set<string>();
 	const metadataChanges = new Set<string>();
 	let blockOrderDelta: YArrayDelta = [];
@@ -189,7 +190,9 @@ function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
 
 		if ((ytype as unknown) === (blocks as unknown)) {
 			for (const key of keys) {
-				if (key != null) addKeys(blockMapChanges, key, []);
+				if (key == null) continue;
+				addKeys(blockMapChanges, key, []);
+				entryChangedBlockIds.add(key);
 			}
 			continue;
 		}
@@ -271,6 +274,8 @@ function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
 		}
 	}
 
+	addArrivedBlockText(blocks, entryChangedBlockIds, textDeltas);
+
 	return {
 		originTag: readOriginTag(txn),
 		textDeltas,
@@ -280,6 +285,30 @@ function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
 		appChanges,
 		metadataChanges,
 	};
+}
+
+/**
+ * Report a block that arrived carrying text as an insert of that text.
+ *
+ * Yjs leaves a type created inside a transaction out of `txn.changed`, so a
+ * block whose content was written at construction produces no text delta of
+ * its own. Every observer downstream would see the block appear and its text
+ * arrive from nowhere — which is what left AN14's remote pairing with a delete
+ * and nothing to pair it against when a peer split a block.
+ */
+function addArrivedBlockText(
+	blocks: Y.Map<Y.Map<unknown>>,
+	entryChangedBlockIds: ReadonlySet<string>,
+	textDeltas: Map<string, YTextDelta[]>,
+): void {
+	for (const blockId of entryChangedBlockIds) {
+		if (textDeltas.has(blockId)) continue;
+		const content = blocks.get(blockId)?.get("content");
+		if (!(content instanceof Y.Text) || content.length === 0) continue;
+		textDeltas.set(blockId, [
+			snapshotTextDelta(content.toDelta() as YTextDeltaOp[]),
+		]);
+	}
 }
 
 export function createSummarySource(
