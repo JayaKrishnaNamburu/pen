@@ -2,7 +2,7 @@
 <img width="100%" height="auto" alt="logo_black@2x" src="https://github.com/user-attachments/assets/6eb68df5-c70f-4a38-ac6f-f69530f0b355" />
 
 <h3 align="center">
-  Rich text editor engine for human/AI<br/> collaboration. Headless. Extendable.
+  Rich text editor engine for human/AI Agent<br/> collaboration. Headless. Extendable.
 </h3>
 
 <p align="center">
