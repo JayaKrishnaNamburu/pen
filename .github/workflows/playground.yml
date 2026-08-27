@@ -30,6 +30,12 @@ jobs:
         with:
           turbo-cache-scope: playground
 
+      - name: Build workspace packages
+        # The playground resolves @input/pen-* through package exports,
+        # which name dist/ only. Typecheck and tests fail the same way a
+        # consumer would if those artifacts are missing.
+        run: pnpm --filter @input/pen-playground^... run build
+
       - name: Type-check the playground
         run: pnpm --filter @input/pen-playground typecheck
 
@@ -37,7 +43,7 @@ jobs:
         run: pnpm --filter @input/pen-playground test
 
       - name: Build the playground
-        run: pnpm --filter @input/pen-playground... run build
+        run: pnpm --filter @input/pen-playground run build
 
   ship:
     name: Ship playground
