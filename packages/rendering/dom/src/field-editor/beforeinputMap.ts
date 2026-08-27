@@ -141,6 +141,7 @@ const EDIT_CONTEXT_TEXT_INPUT_TYPES: ReadonlySet<string> = new Set([
 	...COMPOSITION_INPUT_TYPES,
 ]);
 
+/** Shared beforeinput policy for EditContext, with textupdate rows forced to `allow`. */
 export function mapEditContextBeforeInput(
 	inputType: string,
 ): BeforeInputMapping {

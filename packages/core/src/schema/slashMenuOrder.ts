@@ -2,6 +2,7 @@ import type { BlockDisplay } from "@input/pen-types";
 
 const FALLBACK_GROUP = "other";
 
+/** Display group key used to cluster slash-menu items, or `"other"` when unset. */
 export function slashMenuGroupOf(display: BlockDisplay): string {
 	return display.group ?? FALLBACK_GROUP;
 }

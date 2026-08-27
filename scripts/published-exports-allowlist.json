@@ -203,6 +203,11 @@
     },
     {
       "package": "@input/pen-dom",
+      "key": "./utils/remoteCellSelection",
+      "reason": "P.6 first-class remote cell presence mapping, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
       "key": "./utils/flowCapabilities",
       "reason": "P.6 relocated flowCapabilities, not a src/dist escape hatch."
     },

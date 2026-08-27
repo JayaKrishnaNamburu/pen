@@ -20,7 +20,8 @@ export {
 export type {
 	MultiplayerState,
 	PeerState,
-	RemoteCellSelectionState,
 	RemoteCursorState,
 	RemoteSelectionState,
 } from "@input/pen-multiplayer";
+/** A peer's rectangular cell selection inside a table grid. */
+export type { RemoteCellSelectionState } from "@input/pen-multiplayer";

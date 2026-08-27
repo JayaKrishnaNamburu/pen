@@ -405,8 +405,9 @@ export type {
 	SnapshotsState,
 } from "@input/pen-snapshots";
 export type { MultiplayerState, PeerState } from "@input/pen-multiplayer";
+/** A peer's rectangular cell selection inside a table grid. */
+export type { RemoteCellSelectionState } from "@input/pen-multiplayer";
 export type {
-	RemoteCellSelectionState,
 	RemoteCursorState,
 	RemoteSelectionState,
 } from "@input/pen-multiplayer";

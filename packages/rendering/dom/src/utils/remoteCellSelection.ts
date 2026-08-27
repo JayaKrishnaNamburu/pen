@@ -1,22 +1,24 @@
-/**
- * Peer presence inside a table grid.
- *
- * The shapes here mirror the cell member of `RemoteSelectionState` in
- * `@input/pen-multiplayer` structurally rather than by import: the DOM engine
- * sits below the extension packages, so it cannot depend on that type.
+/*
+ * Peer presence inside a table grid. Shapes mirror the cell member of
+ * `RemoteSelectionState` in `@input/pen-multiplayer` structurally rather than
+ * by import: the DOM engine sits below the extension packages, so it cannot
+ * depend on that type.
  */
 
+/** Row/column of one remote cell-selection endpoint. */
 export interface RemoteCellCoord {
 	readonly row: number;
 	readonly col: number;
 }
 
+/** Peer identity carried on a remote cell selection. */
 export interface RemoteCellUser {
 	readonly id: string;
 	readonly name: string;
 	readonly color?: string;
 }
 
+/** Structural stand-in for a multiplayer cell selection; no package import. */
 export interface RemoteCellSelectionLike {
 	readonly kind: "cell";
 	readonly clientId: number;
@@ -35,6 +37,7 @@ export interface RemoteCellPresence {
 	readonly isHead: boolean;
 }
 
+/** Lookup of which peer occupies each cell of one table. */
 export interface RemoteCellPresenceMap {
 	forCell(row: number, col: number): RemoteCellPresence | null;
 }
