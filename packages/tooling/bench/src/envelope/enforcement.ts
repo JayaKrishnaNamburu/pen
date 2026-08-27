@@ -114,7 +114,7 @@ export const ENFORCEMENT_INVENTORY: readonly EnforcementRow[] = [
 		unitFailsOn: "synthetic gate compare only; no live p50 assertion",
 		isolatedClock: "gated",
 		clockNote:
-			"critical:true; gates are 1–2ms on 0.04–0.06ms medians, set below the pre-SCALE2-fix 0.48/3.76ms so per-document commit work fails",
+			"critical:true; flat 2ms gate on 0.04–0.06ms medians, below the pre-SCALE2-fix 3.76ms so per-document commit work fails",
 	},
 	{
 		id: "createLargeDocument",

@@ -3,14 +3,14 @@
 	"producedOn": "2026-08-27",
 	"gateStatistic": "median",
 	"sampleSize": 50,
-	"note": "measuredP50Ms from an isolated local tsx run of the SCALE3 suite. gateP50Ms is that median plus slack for github-actions-ubuntu-latest. Update both in the same PR and say why. 2026-08-27: the commit path stopped re-reading the whole document per apply (SCALE2), so every median dropped below the 0.5ms attribution floor and the document-size axis went flat. Gates moved to 1ms / 2ms so a return to per-document work fails instead of passing on 25-50ms slack.",
+	"note": "measuredP50Ms from an isolated local tsx run of the SCALE3 suite. gateP50Ms is that median plus slack for github-actions-ubuntu-latest. Update both in the same PR and say why. 2026-08-27: the commit path stopped re-reading the whole document per apply (SCALE2), so every median dropped below the 0.5ms attribution floor and the document-size axis went flat. Gates moved to a flat 2ms so a return to per-document work fails instead of passing on 25-50ms slack. That leaves 33-50x headroom on this class, matching the 10-52x the previous gates carried.",
 	"baselines": [
 		{
 			"id": "scale3.keystroke.realistic-stack.document-size.100",
 			"axis": "document-size",
 			"point": 100,
 			"measuredP50Ms": 0.04,
-			"gateP50Ms": 1
+			"gateP50Ms": 2
 		},
 		{
 			"id": "scale3.keystroke.realistic-stack.document-size.1000",

@@ -14,10 +14,13 @@
  * Recorded 2026-08-27, after the commit path stopped re-reading the whole
  * document on every apply (SCALE2). Every median now sits under the 0.5ms
  * attribution floor (`ENVELOPE_GATE_MIN_SIGNAL_MS`), so the ratio between
- * two of these points is timer noise and is not gated. The gates are
- * absolute instead, set below the pre-fix medians (0.48ms at 100 blocks,
- * 3.58-3.76ms at 1000) so per-document work in the commit path fails here
- * rather than passing on the 25-50ms slack it used to carry.
+ * two of these points is timer noise and is not gated. The gate is a flat
+ * 2ms instead: 4x the attribution floor, and below the 3.58-3.76ms the
+ * 1000-block rungs cost before the fix, so per-document commit work fails
+ * here rather than passing on the 25-50ms slack it used to carry. The
+ * 100-block rung carries the same 2ms rather than a tighter number —
+ * it cost 0.48ms before the fix, so any gate that could catch a
+ * regression there would sit under the floor and gate on timer noise.
  */
 
 export const SCALE3_MACHINE_CLASS =
@@ -146,7 +149,7 @@ export const SCALE3_BASELINES: readonly Scale3Baseline[] = [
 		axis: "document-size",
 		point: 100,
 		measuredP50Ms: 0.04,
-		gateP50Ms: 1,
+		gateP50Ms: 2,
 		machineClass: SCALE3_MACHINE_CLASS,
 	},
 	{
