@@ -712,6 +712,13 @@ export class EditContextBackend {
 			return false;
 		}
 
+		// A caret that disagrees with the authority is stale only when
+		// nothing is driving it. Inside an open gesture window it is the
+		// user moving the caret (R3), and the reader owns that proposal.
+		if (this.fieldEditor.isAdmissibleGestureRead?.()) {
+			return false;
+		}
+
 		const editorSelectionRange =
 			this.resolveEditorSelectionRange(selection.anchor.blockId) ??
 			this.resolveCollapsedEditorSelectionRange(selection.anchor.blockId);

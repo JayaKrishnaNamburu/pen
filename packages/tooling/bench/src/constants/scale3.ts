@@ -10,6 +10,17 @@
  * `measuredP50Ms` is the recorded median. `gateP50Ms` is that number plus
  * slack for the CI class — the CH8 comparison target, not an invented
  * frame budget. Update both in the same PR and say why.
+ *
+ * Recorded 2026-08-27, after the commit path stopped re-reading the whole
+ * document on every apply (SCALE2). Every median now sits under the 0.5ms
+ * attribution floor (`ENVELOPE_GATE_MIN_SIGNAL_MS`), so the ratio between
+ * two of these points is timer noise and is not gated. The gate is a flat
+ * 2ms instead: 4x the attribution floor, and below the 3.58-3.76ms the
+ * 1000-block rungs cost before the fix, so per-document commit work fails
+ * here rather than passing on the 25-50ms slack it used to carry. The
+ * 100-block rung carries the same 2ms rather than a tighter number —
+ * it cost 0.48ms before the fix, so any gate that could catch a
+ * regression there would sit under the floor and gate on timer noise.
  */
 
 export const SCALE3_MACHINE_CLASS =
@@ -137,40 +148,40 @@ export const SCALE3_BASELINES: readonly Scale3Baseline[] = [
 		id: "scale3.keystroke.realistic-stack.document-size.100",
 		axis: "document-size",
 		point: 100,
-		measuredP50Ms: 0.48,
-		gateP50Ms: 25,
+		measuredP50Ms: 0.04,
+		gateP50Ms: 2,
 		machineClass: SCALE3_MACHINE_CLASS,
 	},
 	{
 		id: "scale3.keystroke.realistic-stack.document-size.1000",
 		axis: "document-size",
 		point: 1000,
-		measuredP50Ms: 3.76,
-		gateP50Ms: 40,
+		measuredP50Ms: 0.06,
+		gateP50Ms: 2,
 		machineClass: SCALE3_MACHINE_CLASS,
 	},
 	{
 		id: "scale3.keystroke.realistic-stack.extension-count.plus8",
 		axis: "extension-count",
 		point: 17,
-		measuredP50Ms: 3.64,
-		gateP50Ms: 50,
+		measuredP50Ms: 0.06,
+		gateP50Ms: 2,
 		machineClass: SCALE3_MACHINE_CLASS,
 	},
 	{
 		id: "scale3.keystroke.realistic-stack.decoration-count.256",
 		axis: "decoration-count",
 		point: 256,
-		measuredP50Ms: 3.58,
-		gateP50Ms: 50,
+		measuredP50Ms: 0.05,
+		gateP50Ms: 2,
 		machineClass: SCALE3_MACHINE_CLASS,
 	},
 	{
 		id: "scale3.keystroke.realistic-stack.remote-caret-count.8",
 		axis: "remote-caret-count",
 		point: 8,
-		measuredP50Ms: 3.73,
-		gateP50Ms: 50,
+		measuredP50Ms: 0.06,
+		gateP50Ms: 2,
 		machineClass: SCALE3_MACHINE_CLASS,
 	},
 ];

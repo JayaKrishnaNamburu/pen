@@ -1,5 +1,6 @@
 import type { BlockDirection } from "../bidi";
 import { isEmptyBlockPlaceholder } from "../field-editor/emptyBlockPlaceholder";
+import { isTrailingLineBreak } from "../field-editor/trailingLineBreak";
 import {
 	getLogicalNodeLength,
 	getLogicalTextContent,
@@ -109,7 +110,11 @@ function collectLineFragments(
 	let offset = 0;
 
 	const visit = (node: Node): void => {
-		if (isEmptyBlockPlaceholder(node)) {
+		// Both of these are `<br>` elements that own a line box no text lands in:
+		// the placeholder for an empty block, and RI5's break after a trailing
+		// `\n`. Without a fragment the line is invisible to vertical motion, which
+		// would then step past it to the adjacent block.
+		if (isEmptyBlockPlaceholder(node) || isTrailingLineBreak(node)) {
 			const rect = elementRect(node as HTMLElement);
 			if (isUsefulRect(rect)) {
 				fragments.push({ rect, start: offset, end: offset });

@@ -192,7 +192,7 @@ export function findLogicalDOMPoint(
 	return findLogicalDOMPointInElement(container, Math.max(0, offset));
 }
 
-function getLogicalNodeText(node: Node): string {
+export function getLogicalNodeText(node: Node): string {
 	if (isEmptyBlockPlaceholder(node) || isVirtualInlineDecorationNode(node)) {
 		return "";
 	}

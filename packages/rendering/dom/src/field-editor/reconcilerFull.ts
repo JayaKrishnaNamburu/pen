@@ -13,6 +13,7 @@ import {
 	filterVisibleInlineDecorationDeltas,
 } from "../utils/inlineDecorations";
 import { createEmptyBlockPlaceholder } from "./emptyBlockPlaceholder";
+import { createTrailingLineBreak } from "./trailingLineBreak";
 import { createInlineAtomElement } from "./inlineAtomDom";
 import { wrapWithMarks } from "./reconcilerMarks";
 import { patchDOM } from "./reconcilerPatch";
@@ -94,12 +95,15 @@ export function fullReconcileDeltasToDOM(
 
 	const fragment = document.createDocumentFragment();
 	let hasContent = false;
+	let endsWithNewline = false;
 	for (const delta of orderedDeltas) {
 		if (delta.insert == null) continue;
 		if (typeof delta.insert === "string" && delta.insert.length === 0) {
 			continue;
 		}
 		hasContent = true;
+		endsWithNewline =
+			typeof delta.insert === "string" && delta.insert.endsWith("\n");
 		let node: Node =
 			typeof delta.insert === "string"
 				? document.createTextNode(delta.insert)
@@ -111,6 +115,8 @@ export function fullReconcileDeltasToDOM(
 	}
 	if (!hasContent) {
 		fragment.appendChild(createEmptyBlockPlaceholder());
+	} else if (endsWithNewline) {
+		fragment.appendChild(createTrailingLineBreak());
 	}
 
 	patchDOM(element, fragment);

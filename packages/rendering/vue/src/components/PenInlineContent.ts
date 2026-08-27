@@ -225,9 +225,12 @@ export const PenInlineContent = defineComponent({
 					),
 					// RI1: unicode-bidi does not inherit, so the block host's isolate does
 					// not reach this surface and it needs its own.
+					// RI5: stored newlines and repeated spaces are document characters;
+					// under the initial `normal` they collapse and become unreachable.
 					style: {
 						position: placeholder.value ? "relative" : undefined,
 						unicodeBidi: "isolate",
+						whiteSpace: "pre-wrap",
 					},
 					"data-selected": isBlockSelected(
 						editor,

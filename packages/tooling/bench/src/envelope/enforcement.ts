@@ -103,18 +103,18 @@ export const ENFORCEMENT_INVENTORY: readonly EnforcementRow[] = [
 		subject: "SCALE3 remote-caret-count 8",
 		unit: "enforced",
 		unitFailsOn: "remote-caret decorations !== 8",
-		isolatedClock: "decorative",
+		isolatedClock: "gated",
 		clockNote:
-			"critical:true with ~13× slack (3.73ms → 50ms); axis is caret decorations, not synced Y.Docs. N-peer scaling is unmeasured",
+			"critical:true; 0.06ms median against a 2ms gate. Axis is caret decorations, not synced Y.Docs. N-peer scaling is unmeasured",
 	},
 	{
 		id: "scale3.keystroke.realistic-stack",
 		subject: "SCALE3 realistic-stack keystroke clocks",
 		unit: "record-only",
 		unitFailsOn: "synthetic gate compare only; no live p50 assertion",
-		isolatedClock: "decorative",
+		isolatedClock: "gated",
 		clockNote:
-			"critical:true; gates are 25–50ms on 0.5–3.8ms medians (7–50× slack)",
+			"critical:true; flat 2ms gate on 0.04–0.06ms medians, below the pre-SCALE2-fix 3.76ms so per-document commit work fails",
 	},
 	{
 		id: "createLargeDocument",

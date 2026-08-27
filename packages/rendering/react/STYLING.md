@@ -14,6 +14,7 @@ These exist so the editor remains operable without host CSS. They are listed bec
 | Selection highlight    | Text selection stays native `::selection`. `[data-pen-selection-rect]` is geometry only (position/size, `pointer-events: none`, no fill). Block selection is `data-selected` only. | Host `::selection` and `[data-selected]`. Do not expect a library fill on the rect.       |
 | Focus ring             | Nothing of its own, and no `outline: none`. The UA `:focus-visible` ring is the AX5 signal.                                                                                        | Host `:focus-visible` on `[data-pen-inline-content]` / `[data-pen-field-editor-surface]`. |
 | Suggestion decorations | Underline on `[data-ai-suggestion-id]` via `--pen-ai-suggestion-line`. The injected sheet remaps that token on hover/active. AI review ranges use the review tokens below.         | Suggestion-line and review tokens.                                                        |
+| Whitespace rendering   | `white-space: pre-wrap` inline on `[data-pen-inline-content]` and every table cell content host, plus a marked trailing `<br>` when a field's text ends with `\n` (RI5).           | No override point is offered. Soft breaks and repeated spaces are stored document characters, so collapsing them loses content rather than styling it. A code block wanting `white-space: pre` needs `!important`, which does win over the inline style. |
 
 ## Taste (custom properties)
 
