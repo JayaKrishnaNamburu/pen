@@ -88,6 +88,8 @@ describe("default keymap K2", () => {
 				"End->pen.caretLineEnd",
 				"Meta-ArrowUp->pen.caretDocStart",
 				"Alt-Backspace->pen.deleteBackward",
+				"Meta-Backspace->pen.deleteBackward",
+				"Ctrl-k->pen.deleteForward",
 				"Meta-a->pen.selectAll",
 				"Meta-b->pen.toggleMark",
 				"Shift-Meta-z->history.redo",
@@ -109,8 +111,44 @@ describe("default keymap K2", () => {
 	});
 
 	it("K2: an added or dropped binding changes the resolved table length", () => {
-		expect(resolveDefaultKeymap("macos")).toHaveLength(42);
+		expect(resolveDefaultKeymap("macos")).toHaveLength(44);
 		expect(resolveDefaultKeymap("windows")).toHaveLength(38);
+	});
+
+	it("K2: macos binds line-granularity delete, matching its line motion", () => {
+		const macos = names(serializeDefaultKeymap("macos"));
+		// Cmd-ArrowLeft moves to line start, so Cmd-Backspace has to delete
+		// to it; without the binding the browser runs its own DOM edit and
+		// the document never sees the delete.
+		expect(macos).toContain("Meta-ArrowLeft->pen.caretLineStart");
+		expect(macos).toContain("Meta-Backspace->pen.deleteBackward");
+		expect(macos).toContain("End->pen.caretLineEnd");
+		expect(macos).toContain("Ctrl-k->pen.deleteForward");
+
+		expect(
+			serializeDefaultKeymap("macos").filter((binding) =>
+				["Meta-Backspace", "Ctrl-k"].includes(binding.key),
+			),
+		).toEqual([
+			{
+				key: "Meta-Backspace",
+				command: "pen.deleteBackward",
+				param: { granularity: "line" },
+			},
+			{
+				key: "Ctrl-k",
+				command: "pen.deleteForward",
+				param: { granularity: "line" },
+			},
+		]);
+
+		// Windows and Linux have no line-delete convention; word delete is
+		// the whole story there.
+		expect(
+			names(serializeDefaultKeymap("windows")).some((entry) =>
+				entry.startsWith("Ctrl-k->"),
+			),
+		).toBe(false);
 	});
 
 	it("D5: built-in text handlers sit at default precedence and yield to high", () => {

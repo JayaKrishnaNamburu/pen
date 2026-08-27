@@ -118,6 +118,16 @@ const macosBindings: readonly DefaultKeymapBinding[] = [
 		command: deleteForward,
 		param: { granularity: "word" },
 	},
+	{
+		key: "Meta-Backspace",
+		command: deleteBackward,
+		param: { granularity: "line" },
+	},
+	{
+		key: "Ctrl-k",
+		command: deleteForward,
+		param: { granularity: "line" },
+	},
 ];
 
 const windowsLinuxBindings: readonly DefaultKeymapBinding[] = [

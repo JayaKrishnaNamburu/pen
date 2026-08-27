@@ -202,9 +202,13 @@
 - PenFocusPolicy
 - PenFocusReason
 - PenFocusRequest
+- RemoteCellPresence
+- RemoteCellPresenceMap
+- RemoteCellSelectionState
 - RemoteCursorState
 - RemoteSelectionState
 - renderAsChild
+- resolveRemoteCellPresence
 - RICH_TEXT_SHORTCUTS_EXTENSION_NAME
 - richTextShortcutsExtension
 - RichTextShortcutsOptions
@@ -505,8 +509,12 @@
 
 - MultiplayerState
 - PeerState
+- RemoteCellPresence
+- RemoteCellPresenceMap
+- RemoteCellSelectionState
 - RemoteCursorState
 - RemoteSelectionState
+- resolveRemoteCellPresence
 
 ### type
 

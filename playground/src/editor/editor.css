@@ -565,6 +565,42 @@ th[data-pen-table-cell] {
 	text-align: center;
 }
 
+/*
+ * An image block with no src yet. The file input is the control; the label is
+ * what you see, so the focus ring has to come from :focus-within.
+ */
+[data-block-type="image"][data-image-empty] label {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 120px;
+	border: 1px dashed var(--line-hover);
+	border-radius: var(--radius-md);
+	background: var(--card-background);
+	color: var(--palette-b40);
+	font-size: var(--font-size-md);
+	cursor: pointer;
+}
+
+[data-block-type="image"][data-image-empty] label:hover {
+	color: var(--palette-b80);
+	border-color: var(--line-active);
+}
+
+[data-block-type="image"][data-image-empty] label:focus-within {
+	outline: 1.5px solid var(--line-active);
+	outline-offset: 2px;
+}
+
+[data-block-type="image"][data-image-empty] input[type="file"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+
 [data-pen-blocked-url] {
 	width: 100%;
 	min-height: 120px;
@@ -604,10 +640,9 @@ th[data-pen-table-cell] {
 /* ── Live collaboration ────────────────────────────────────── */
 
 /*
- * What a peer has selected. The multiplayer extension offers their colour as
- * `--pen-multiplayer-color`, but SEC2 drops `style` from decoration attributes,
- * so the fallback is what renders today — the peer's name label on their caret
- * is what tells two collaborators apart.
+ * What a peer has selected. Presence decorations carry no colour — SEC2 drops
+ * `style` from decoration attributes — so every peer shares one highlight and
+ * their coloured caret and name label are what tell two collaborators apart.
  *
  * Peer carets come from `Pen.Multiplayer.CaretOverlay`, which draws its own
  * element, so the zero-width cursor decoration is left unstyled to avoid
@@ -615,21 +650,47 @@ th[data-pen-table-cell] {
  */
 [data-pen-multiplayer-selection] {
 	border-radius: var(--radius-xxs);
-	background: color-mix(
-		in srgb,
-		var(--pen-multiplayer-color, var(--palette-blue)) 26%,
-		transparent
-	);
+	background: color-mix(in srgb, var(--palette-blue) 26%, transparent);
 }
 
 [data-pen-multiplayer-block-selection] {
 	border-radius: var(--radius-sm);
 	box-shadow: 0 0 0 2px
-		color-mix(
-			in srgb,
-			var(--pen-multiplayer-color, var(--palette-blue)) 45%,
-			transparent
-		);
+		color-mix(in srgb, var(--palette-blue) 45%, transparent);
+}
+
+/*
+ * A peer inside a table gets no caret: a grid cell is the smallest region
+ * their presence names, so the cells they occupy carry the ring instead — the
+ * pattern Airtable and Attio use. These come from the table renderer rather
+ * than a decoration, so unlike the two rules above they carry a per-peer
+ * `--pen-peer-color` and each collaborator rings in their own colour.
+ */
+[data-pen-multiplayer-cell-selection] {
+	position: relative;
+	background: color-mix(
+		in srgb,
+		var(--pen-peer-color, var(--palette-blue)) 10%,
+		transparent
+	);
+	box-shadow: inset 0 0 0 2px var(--pen-peer-color, var(--palette-blue));
+}
+
+/* One label per peer, on their head cell, so a multi-cell range is named once. */
+[data-pen-multiplayer-cell-head]::after {
+	content: attr(data-user-name);
+	position: absolute;
+	right: -2px;
+	bottom: 100%;
+	z-index: 1;
+	padding: 1px 5px;
+	border-radius: var(--radius-xxs) var(--radius-xxs) 0 0;
+	background: var(--pen-peer-color, var(--palette-blue));
+	color: var(--pen-peer-label-color, #fff);
+	font-size: var(--font-size-xs);
+	line-height: 1.4;
+	white-space: nowrap;
+	pointer-events: none;
 }
 
 /* ── Slash menu ────────────────────────────────────────────── */

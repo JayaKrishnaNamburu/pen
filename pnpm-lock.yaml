@@ -1019,6 +1019,9 @@ importers:
       '@input/pen-ai':
         specifier: workspace:*
         version: link:../packages/extensions/ai
+      '@input/pen-assets':
+        specifier: workspace:*
+        version: link:../packages/tooling/assets
       '@input/pen-autoformat':
         specifier: workspace:*
         version: link:../packages/extensions/autoformat

@@ -294,7 +294,9 @@ export class ExpandedContentEditableBackend {
 			case "deleteWordBackward":
 			case "deleteWordForward":
 			case "deleteSoftLineBackward":
-			case "deleteHardLineBackward": {
+			case "deleteHardLineBackward":
+			case "deleteSoftLineForward":
+			case "deleteHardLineForward": {
 				if ("commandName" in mapping) {
 					const command =
 						mapping.commandName === "pen.deleteForward"

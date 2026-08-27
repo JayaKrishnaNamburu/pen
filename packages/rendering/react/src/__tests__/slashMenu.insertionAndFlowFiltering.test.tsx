@@ -162,6 +162,93 @@ describe("@input/pen-react slash menu: insertion and flow filtering", () => {
 		editor.destroy();
 	});
 
+	it("AX3: auto list confirms the block type it rendered and names the visible option active", async () => {
+		const editor = createSlashMenuEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "/" },
+		]);
+		editor.selectText(blockId, 1, 1);
+
+		function Harness() {
+			return (
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+					<Pen.SlashMenu.Root editor={editor}>
+						<Pen.SlashMenu.List />
+					</Pen.SlashMenu.Root>
+				</Pen.Editor.Root>
+			);
+		}
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(<Harness />);
+		});
+
+		// a group heading appearing twice means `items` reached the list
+		// ungrouped: the list only breaks runs, so it cannot merge a group
+		// that registration order split.
+		const headings = [
+			...container.querySelectorAll("[data-pen-slash-menu-group]"),
+		].map((group) => group.getAttribute("aria-label"));
+		expect(headings.length).toBeGreaterThan(1);
+		expect(new Set(headings).size).toBe(headings.length);
+
+		// the active option has to be the one the user can see is selected,
+		// which only holds while rendered order and item indices agree.
+		const list = container.querySelector<HTMLElement>(
+			"[data-pen-slash-menu-list]",
+		);
+		const selected = container.querySelector<HTMLElement>(
+			"[data-pen-slash-menu-item][data-selected]",
+		);
+		expect(selected).not.toBeNull();
+		expect(list?.getAttribute("aria-activedescendant")).toBe(selected!.id);
+
+		// walking the whole list is the point: the regression moved the active
+		// option through a different order than the one on screen, so the
+		// highlight only diverged partway down.
+		const renderedItems = [
+			...container.querySelectorAll("[data-pen-slash-menu-item]"),
+		];
+		expect(renderedItems.length).toBeGreaterThan(2);
+
+		for (let step = 1; step < renderedItems.length; step++) {
+			await act(async () => {
+				dispatchKey("ArrowDown", container);
+			});
+
+			const active = container.querySelector<HTMLElement>(
+				"[data-pen-slash-menu-item][data-selected]",
+			);
+			expect(renderedItems.indexOf(active!)).toBe(step);
+			expect(list?.getAttribute("aria-activedescendant")).toBe(
+				active!.id,
+			);
+		}
+
+		const codeBlockItem = container.querySelector<HTMLElement>(
+			"[data-pen-slash-menu-item][data-block-type='codeBlock']",
+		);
+		expect(codeBlockItem).not.toBeNull();
+
+		await act(async () => {
+			codeBlockItem!.click();
+		});
+
+		expect(editor.getBlock(blockId)?.type).toBe("codeBlock");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 	it("hides flow-disallowed blocks from the slash menu in flow documents", async () => {
 		const editor = createSlashMenuEditor({
 			documentProfile: "flow",

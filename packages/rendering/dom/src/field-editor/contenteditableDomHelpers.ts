@@ -16,6 +16,8 @@ export function requiresResolvedInputRange(inputType: string): boolean {
 		inputType === "deleteWordForward" ||
 		inputType === "deleteSoftLineBackward" ||
 		inputType === "deleteHardLineBackward" ||
+		inputType === "deleteSoftLineForward" ||
+		inputType === "deleteHardLineForward" ||
 		inputType === "insertLineBreak"
 	);
 }

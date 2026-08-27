@@ -7,6 +7,7 @@ import { createEditor } from "@input/pen";
 import { autoformatExtension } from "@input/pen-autoformat";
 import type { Editor, Extension } from "@input/pen-types";
 import { createPenModel } from "../ai/penModel";
+import { blobImageUrlExtension } from "./assets";
 
 /**
  * Document tools the agent may call.
@@ -71,6 +72,10 @@ export function createPenEditor(extra: Extension[] = []): Editor {
 			// Markdown-style shortcuts while typing: `# ` for a heading,
 			// `- ` for a list item, and so on.
 			autoformatExtension(),
+			// Pasted, dropped, and picked images live in an in-memory store
+			// that returns `blob:` URLs, which the default URL policy would
+			// drop at render time.
+			blobImageUrlExtension,
 			...extra,
 		],
 	});

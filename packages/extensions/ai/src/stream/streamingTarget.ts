@@ -97,7 +97,7 @@ export class StreamingTargetImpl implements StreamingTarget {
 				if (event.source !== "stream" || !this._zone) {
 					return;
 				}
-				this._publishAwareness(this._zone.blockId, this._zone.id);
+				this._publishAwareness(this._zone.blockId);
 			},
 		);
 	}
@@ -142,15 +142,29 @@ export class StreamingTargetImpl implements StreamingTarget {
 		this._unsubscribeCommit = null;
 	}
 
-	private _publishAwareness(blockId: string, zoneId: string): void {
+	/**
+	 * Tell peers a run is writing into this block. The zone id stays local:
+	 * the receiver keys the presence by client and block, and every field on
+	 * the wire is one more untrusted string it has to bound (COL2).
+	 *
+	 * The payload is fixed for the zone's life, so this only writes when it
+	 * changes. Republishing it on each stream commit would spend a peer's
+	 * whole `MAX_PRESENCE_UPDATES_PER_SECOND` budget re-sending one block id,
+	 * and every caret in the room would freeze behind the rate limiter.
+	 */
+	private _publishAwareness(blockId: string): void {
 		const awareness = this._editor.internals.awareness;
 		if (!awareness) {
 			return;
 		}
 		const local = awareness.getLocalState() ?? {};
+		const published = local.streaming as { blockId?: string } | undefined;
+		if (published?.blockId === blockId) {
+			return;
+		}
 		awareness.setLocalState({
 			...local,
-			streaming: { blockId, zoneId },
+			streaming: { blockId },
 		});
 	}
 

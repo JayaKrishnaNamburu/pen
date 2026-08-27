@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { assignMultiplayerColor } from "../presence/colorAssignment";
 import {
 	createRemotePresenceAttributes,
 	setPresenceAttribute,
 } from "../presence/presenceAttributes";
 
 describe("createRemotePresenceAttributes", () => {
-	it("COL2: interpolates a normalized color into style, never raw CSS", () => {
+	it("SEC2: carries no style attribute, so a peer colour has nothing to ride", () => {
 		const attributes = createRemotePresenceAttributes({
 			className: "pen-multiplayer-cursor",
 			markerName: "data-pen-multiplayer-cursor",
@@ -18,11 +17,8 @@ describe("createRemotePresenceAttributes", () => {
 			},
 		});
 
-		expect(attributes.style).toBe(
-			`--pen-multiplayer-color: ${assignMultiplayerColor("u-css")}`,
-		);
-		expect(attributes.style).not.toContain("position");
-		expect(attributes.style).not.toContain(";");
+		expect(Object.keys(attributes)).not.toContain("style");
+		expect(JSON.stringify(attributes)).not.toContain("position");
 		expect(attributes["data-user-id"]).toBe("u-css");
 		expect(attributes["data-user-name"]).toBe("Ada");
 	});

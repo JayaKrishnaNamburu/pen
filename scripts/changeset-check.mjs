@@ -42,6 +42,7 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 const PACKAGES_ROOT = "packages";
 const CHANGESET_DIR = ".changeset";
+const PRIVATE_WORKSPACE_ROOTS = ["packages", "examples", "playground"];
 
 const IGNORE_DIR_NAMES = new Set([
 	"node_modules",
@@ -131,9 +132,10 @@ export function parseChangeset(markdown) {
 		if (trimmed.length === 0) {
 			continue;
 		}
-		const match = /^["']?(@?[^"':]+)["']?\s*:\s*(major|minor|patch)\s*$/.exec(
-			trimmed,
-		);
+		const match =
+			/^["']?(@?[^"':]+)["']?\s*:\s*(major|minor|patch)\s*$/.exec(
+				trimmed,
+			);
 		if (match == null) {
 			return { packages: [], bumps: [], isEmpty: false, malformed: true };
 		}
@@ -178,7 +180,10 @@ export function evaluateCoverage({
 		if (trainIsZeroX) {
 			for (const bump of changeset.bumps ?? []) {
 				if (bump.bump === "major") {
-					majorBumps.push({ file: changeset.file, package: bump.name });
+					majorBumps.push({
+						file: changeset.file,
+						package: bump.name,
+					});
 				}
 			}
 		}
@@ -229,7 +234,7 @@ export function formatReport({ base, files, result }) {
 			lines.push(`  ${file}`);
 		}
 		lines.push(
-			"  Expected a --- block of `\"@input/pen-x\": patch|minor` lines.",
+			'  Expected a --- block of `"@input/pen-x": patch|minor` lines.',
 		);
 	}
 
@@ -241,7 +246,9 @@ export function formatReport({ base, files, result }) {
 		}
 		lines.push("");
 		lines.push("  Breaking change → minor. Additive change → patch.");
-		lines.push("  `major` is how the train would jump to 1.0.0. Do not pick");
+		lines.push(
+			"  `major` is how the train would jump to 1.0.0. Do not pick",
+		);
 		lines.push("  it until the project means to leave 0.x.");
 	}
 
@@ -252,12 +259,20 @@ export function formatReport({ base, files, result }) {
 			lines.push(`  ${name}`);
 		}
 		lines.push("");
-		lines.push("  Run `pnpm changeset` from the repository root, select the");
+		lines.push(
+			"  Run `pnpm changeset` from the repository root, select the",
+		);
 		lines.push("  packages above, pick minor or patch, and write a");
-		lines.push("  user-facing summary. Commit the new .changeset/*.md file.");
+		lines.push(
+			"  user-facing summary. Commit the new .changeset/*.md file.",
+		);
 		lines.push("");
-		lines.push("  If this branch really ships no behavior change — a comment,");
-		lines.push("  a rename, a test-only refactor — record that decision with");
+		lines.push(
+			"  If this branch really ships no behavior change — a comment,",
+		);
+		lines.push(
+			"  a rename, a test-only refactor — record that decision with",
+		);
 		lines.push("  `pnpm changeset --empty` instead of widening this gate.");
 	}
 
@@ -384,6 +399,38 @@ export function runSelfTests() {
 	);
 	assert(hasFailures(uncovered), "self-test: missing coverage is a failure");
 
+	const alignedIgnore = privateIgnoreProblems(
+		["@input/pen-docs", "@input/pen-playground"],
+		["@input/pen-docs", "@input/pen-playground"],
+	);
+	assert(
+		alignedIgnore.length === 0,
+		"self-test: matching private ignore list must pass",
+	);
+	const missingIgnore = privateIgnoreProblems(
+		["@input/pen-docs", "@input/pen-playground"],
+		["@input/pen-docs"],
+	);
+	assert(
+		missingIgnore.some((problem) =>
+			problem.includes("@input/pen-playground"),
+		),
+		"self-test: a private package missing from ignore must fail closed",
+	);
+	const extraIgnore = privateIgnoreProblems(
+		["@input/pen-docs"],
+		["@input/pen-docs", "@input/pen-core"],
+	);
+	assert(
+		extraIgnore.some((problem) => problem.includes("@input/pen-core")),
+		"self-test: ignore of a published name must fail closed",
+	);
+	const emptyPrivate = privateIgnoreProblems([], []);
+	assert(
+		emptyPrivate.some((problem) => problem.includes("skip of nothing")),
+		"self-test: zero private workspace packages must fail closed",
+	);
+
 	const covered = evaluateCoverage({
 		changed: ["@input/pen-core"],
 		changesets: [
@@ -491,8 +538,10 @@ function git(repoRoot, args) {
 }
 
 function refExists(repoRoot, ref) {
-	return git(repoRoot, ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`])
-		.status === 0;
+	return (
+		git(repoRoot, ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`])
+			.status === 0
+	);
 }
 
 export function resolveBaseRef(repoRoot, explicit) {
@@ -561,14 +610,21 @@ export function loadPublishedPackages(repoRoot) {
 	for (const packageJsonPath of collectPackageJsonPaths(
 		path.join(repoRoot, PACKAGES_ROOT),
 	)) {
-		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-		if (packageJson.private === true || typeof packageJson.name !== "string") {
+		const packageJson = JSON.parse(
+			fs.readFileSync(packageJsonPath, "utf8"),
+		);
+		if (
+			packageJson.private === true ||
+			typeof packageJson.name !== "string"
+		) {
 			continue;
 		}
 		packages.push({
 			name: packageJson.name,
 			version:
-				typeof packageJson.version === "string" ? packageJson.version : "",
+				typeof packageJson.version === "string"
+					? packageJson.version
+					: "",
 			dir: path
 				.relative(repoRoot, path.dirname(packageJsonPath))
 				.split(path.sep)
@@ -577,6 +633,54 @@ export function loadPublishedPackages(repoRoot) {
 	}
 	packages.sort((left, right) => left.name.localeCompare(right.name));
 	return packages;
+}
+
+export function loadPrivateWorkspacePackageNames(repoRoot) {
+	const names = [];
+	for (const relativeRoot of PRIVATE_WORKSPACE_ROOTS) {
+		const root = path.join(repoRoot, relativeRoot);
+		if (!fs.existsSync(root)) {
+			continue;
+		}
+		for (const packageJsonPath of collectPackageJsonPaths(root)) {
+			const packageJson = JSON.parse(
+				fs.readFileSync(packageJsonPath, "utf8"),
+			);
+			if (
+				packageJson.private === true &&
+				typeof packageJson.name === "string"
+			) {
+				names.push(packageJson.name);
+			}
+		}
+	}
+	names.sort((left, right) => left.localeCompare(right));
+	return names;
+}
+
+export function privateIgnoreProblems(privateNames, ignored) {
+	const privateSet = new Set(privateNames);
+	const ignoredSet = new Set(ignored);
+	const missing = privateNames.filter((name) => !ignoredSet.has(name));
+	const extra = ignored.filter((name) => !privateSet.has(name));
+	const problems = [];
+	if (privateNames.length === 0) {
+		problems.push(
+			"changeset-check: private workspace walk matched 0 packages (skip of nothing)",
+		);
+		return problems;
+	}
+	if (missing.length > 0) {
+		problems.push(
+			`changeset ignore is missing private workspace packages: ${missing.join(", ")}`,
+		);
+	}
+	if (extra.length > 0) {
+		problems.push(
+			`changeset ignore lists names that are not private workspace packages: ${extra.join(", ")}`,
+		);
+	}
+	return problems;
 }
 
 export function loadChangesets(repoRoot) {
@@ -632,7 +736,7 @@ function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
 	console.log(
-		"changeset-check self-test ok (an uncovered published package, a malformed frontmatter, a major bump on 0.x, and a lost base ref all fail closed)",
+		"changeset-check self-test ok (an uncovered published package, a malformed frontmatter, a major bump on 0.x, a lost base ref, and a drifted private ignore list all fail closed)",
 	);
 	if (args.selfTestOnly) {
 		return;
@@ -647,12 +751,28 @@ function main() {
 		return;
 	}
 
+	const ignored = loadIgnoredPackages(args.repoRoot);
+	const ignoreProblems = privateIgnoreProblems(
+		loadPrivateWorkspacePackageNames(args.repoRoot),
+		ignored,
+	);
+	if (ignoreProblems.length > 0) {
+		console.error(
+			"changeset-check: private workspace ignore list drifted:",
+		);
+		for (const problem of ignoreProblems) {
+			console.error(`  ${problem}`);
+		}
+		process.exitCode = 1;
+		return;
+	}
+
 	const base = resolveBaseRef(args.repoRoot, args.base);
 	const files = changedFilesSince(args.repoRoot, base);
 	const result = evaluateCoverage({
 		changed: changedPublishedPackages({ files, packages }),
 		changesets: loadChangesets(args.repoRoot),
-		ignored: loadIgnoredPackages(args.repoRoot),
+		ignored,
 		trainIsZeroX: packages.some((pkg) => pkg.version.startsWith("0.")),
 	});
 

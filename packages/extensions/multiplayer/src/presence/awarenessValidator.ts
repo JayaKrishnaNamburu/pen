@@ -13,8 +13,11 @@ import {
 import type {
 	MultiplayerAwarenessState,
 	MultiplayerBlockSelectionPayload,
+	MultiplayerCellCoord,
+	MultiplayerCellSelectionPayload,
 	MultiplayerCursorPayload,
 	MultiplayerSelectionPayload,
+	MultiplayerStreamingPayload,
 	MultiplayerTextSelectionPayload,
 	MultiplayerUser,
 } from "../types";
@@ -26,6 +29,8 @@ export interface PresenceRejection {
 
 export interface AwarenessDocumentView {
 	blockLength(blockId: string): number | null;
+	/** Live grid size, or `null` when the block is absent or holds no grid. */
+	gridSize(blockId: string): { rows: number; cols: number } | null;
 }
 
 export interface AwarenessValidationResult {
@@ -118,15 +123,41 @@ function validatePeerState(
 		fieldRejections.push(selectionResult.reason);
 	}
 
+	const streamingResult = validateStreaming(rawState.streaming, document);
+	if (streamingResult.reason) {
+		fieldRejections.push(streamingResult.reason);
+	}
+
 	return {
 		state: {
 			user,
 			cursor: cursorResult.cursor,
 			selection: selectionResult.selection,
+			streaming: streamingResult.streaming,
 		},
 		rejection: null,
 		fieldRejections,
 	};
+}
+
+function validateStreaming(
+	value: unknown,
+	document: AwarenessDocumentView,
+): {
+	streaming: MultiplayerStreamingPayload | null;
+	reason: PresenceRejectionReason | null;
+} {
+	if (value == null) {
+		return { streaming: null, reason: null };
+	}
+	if (!isRecord(value) || hasForbiddenKeys(value)) {
+		return { streaming: null, reason: "wrong-typed" };
+	}
+	const block = validateSelectionBlockId(value.blockId, document);
+	if (block.reason) {
+		return { streaming: null, reason: block.reason };
+	}
+	return { streaming: { blockId: block.blockId }, reason: null };
 }
 
 function validateUser(
@@ -242,6 +273,9 @@ function validateSelection(
 	if (value.kind === "block") {
 		return validateBlockSelection(value, document);
 	}
+	if (value.kind === "cell") {
+		return validateCellSelection(value, document);
+	}
 	if (value.kind !== undefined && value.kind !== "text") {
 		return { selection: null, reason: "wrong-typed" };
 	}
@@ -290,20 +324,12 @@ function validateBlockSelection(
 	}
 
 	const blockIds: string[] = [];
-	for (const blockId of value.blockIds) {
-		if (typeof blockId !== "string") {
-			return { selection: null, reason: "wrong-typed" };
+	for (const rawBlockId of value.blockIds) {
+		const blockId = validateSelectionBlockId(rawBlockId, document);
+		if (blockId.reason) {
+			return { selection: null, reason: blockId.reason };
 		}
-		if (blockId.length > MAX_PRESENCE_USER_ID_LENGTH) {
-			return { selection: null, reason: "oversized" };
-		}
-		if (isScriptBearing(blockId)) {
-			return { selection: null, reason: "script-bearing" };
-		}
-		if (document.blockLength(blockId) == null) {
-			return { selection: null, reason: "nonexistent-block" };
-		}
-		blockIds.push(blockId);
+		blockIds.push(blockId.blockId);
 	}
 
 	return {
@@ -314,6 +340,85 @@ function validateBlockSelection(
 		},
 		reason: null,
 	};
+}
+
+function validateCellSelection(
+	value: Record<string, unknown>,
+	document: AwarenessDocumentView,
+): {
+	selection: MultiplayerCellSelectionPayload | null;
+	reason: PresenceRejectionReason | null;
+} {
+	const block = validateSelectionBlockId(value.blockId, document);
+	if (block.reason) {
+		return { selection: null, reason: block.reason };
+	}
+
+	// the grid is the bound: a peer naming a cell on a block that holds no grid
+	// is rejected here rather than filtered at render time (COL2).
+	const grid = document.gridSize(block.blockId);
+	if (!grid) {
+		return { selection: null, reason: "out-of-range-cell" };
+	}
+
+	const anchor = validateCellCoord(value.anchor, grid);
+	if (anchor.reason) {
+		return { selection: null, reason: anchor.reason };
+	}
+	const head = validateCellCoord(value.head, grid);
+	if (head.reason) {
+		return { selection: null, reason: head.reason };
+	}
+
+	return {
+		selection: {
+			kind: "cell",
+			blockId: block.blockId,
+			anchor: anchor.coord,
+			head: head.coord,
+			clock: isPresenceInteger(value.clock) ? value.clock : 0,
+		},
+		reason: null,
+	};
+}
+
+function validateCellCoord(
+	value: unknown,
+	grid: { rows: number; cols: number },
+):
+	| { coord: MultiplayerCellCoord; reason?: undefined }
+	| { coord?: undefined; reason: PresenceRejectionReason } {
+	if (!isRecord(value) || hasForbiddenKeys(value)) {
+		return { reason: "wrong-typed" };
+	}
+	if (!isPresenceInteger(value.row) || !isPresenceInteger(value.col)) {
+		return { reason: "wrong-typed" };
+	}
+	if (value.row >= grid.rows || value.col >= grid.cols) {
+		return { reason: "out-of-range-cell" };
+	}
+	return { coord: { row: value.row, col: value.col } };
+}
+
+function validateSelectionBlockId(
+	value: unknown,
+	document: AwarenessDocumentView,
+):
+	| { blockId: string; reason?: undefined }
+	| { blockId?: undefined; reason: PresenceRejectionReason } {
+	if (typeof value !== "string") {
+		return { reason: "wrong-typed" };
+	}
+	if (value.length > MAX_PRESENCE_USER_ID_LENGTH) {
+		return { reason: "oversized" };
+	}
+	if (isScriptBearing(value)) {
+		return { reason: "script-bearing" };
+	}
+	if (document.blockLength(value) == null) {
+		return { reason: "nonexistent-block" };
+	}
+	return { blockId: value };
 }
 
 function validateSerializedAnchor(value: unknown):

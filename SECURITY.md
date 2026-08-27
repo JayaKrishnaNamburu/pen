@@ -88,11 +88,10 @@ two exporters.
 
 Do not open a public GitHub issue for a suspected vulnerability.
 
-The working route today is email: `support@input.so` with
-`Pen security` in the subject line. That mailbox is the same
-contact published in `CLA.md`. GitHub private vulnerability
-reporting is **not enabled** on this repository; the Security tab
-has no private advisory form.
+Prefer GitHub private vulnerability reporting on this repository.
+The fallback is email: `support@input.so` with `Pen security` in
+the subject line. That mailbox is the same contact published in
+`CLA.md`.
 
 Include:
 

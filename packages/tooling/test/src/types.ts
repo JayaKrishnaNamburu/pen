@@ -103,6 +103,13 @@ export interface TwoPeerHarnessOptions extends TestEditorOptions {
 	clientIdB?: number;
 	/** Mutate the seed editor before peers are forked from its encoded state. */
 	prepare?: (editor: TestEditor) => void;
+	/**
+	 * Build each peer's extensions. An extension factory closes over the
+	 * controller it activates, so two peers handed the same instance end up
+	 * sharing one; anything with per-editor state needs this rather than
+	 * `extensions`.
+	 */
+	extensionsFor?: (peer: TwoPeerId) => TestEditorOptions["extensions"];
 }
 
 export interface TwoPeer {

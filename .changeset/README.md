@@ -14,6 +14,6 @@ The first published train is **0.1.0**. Manifests stay at the unpublished placeh
 ## Notes
 
 - Every published package is in one `fixed` group in `config.json`, so one changeset bumps the whole train. `release-check --version-sync` fails if that group drifts from the published set.
-- `@input/pen-docs` is private and excluded from release versioning.
+- Private workspace packages (docs, playground, examples, conformance, eslint plugin) are listed in `config.json` `ignore` and excluded from release versioning.
 - Private package access is configured repo-wide in `.changeset/config.json` and reinforced in each public package manifest.
 - Package metadata can be re-synced with `pnpm sync:package-metadata`.

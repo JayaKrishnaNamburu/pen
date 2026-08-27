@@ -46,6 +46,7 @@ export default defineConfig({
 		"src/utils/parentIdTree.ts",
 		"src/utils/placeholderVisibility.ts",
 		"src/utils/pointerSelection.ts",
+		"src/utils/remoteCellSelection.ts",
 		"src/utils/replaceElementChildren.ts",
 		"src/utils/slashMenuPopupAria.ts",
 		"src/utils/suggestionMenuPopupAria.ts",

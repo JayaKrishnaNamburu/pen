@@ -518,6 +518,16 @@
         "default": "./dist/utils/pointerSelection.cjs"
       }
     },
+    "./utils/remoteCellSelection": {
+      "import": {
+        "types": "./dist/utils/remoteCellSelection.d.ts",
+        "default": "./dist/utils/remoteCellSelection.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/remoteCellSelection.d.cts",
+        "default": "./dist/utils/remoteCellSelection.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",

@@ -13,7 +13,10 @@ import type {
 	GenerationState,
 } from "../types";
 import type { GenerationExecutionContext, GenerationTarget } from "../helpers";
-import type { GenerationStreamingSink } from "./streamingSink";
+import type {
+	GenerationStreamingSink,
+	SuggestionSpliceHead,
+} from "./streamingSink";
 
 export interface ExecuteGenerationInput {
 	prompt: string;
@@ -66,7 +69,7 @@ export interface GenerationExecutionState {
 	selectionSourceText: string;
 	shouldReplaceMarkdownTarget: boolean;
 	streamingSink: GenerationStreamingSink;
-	streamedSuggestionLength: number;
+	suggestionSpliceHead: SuggestionSpliceHead | null;
 	sessionTurnId: string | undefined;
 	existingSession: AISession | null;
 	executionPrompt: string;

@@ -10,6 +10,9 @@ const G5_TAIL_TEXT =
 	LOCAL_FIXTURES["g5-geometry"].find((block) => block.id === G5_TAIL_BLOCK)
 		?.content ?? "";
 
+const SCROLL_DISTANCE = 250;
+const SCROLL_FILLER_BLOCKS = 30;
+
 type CommitStep = {
 	name: string;
 	ops: (blocks: readonly GeometryBlockInfo[]) => DocumentOp[];
@@ -314,5 +317,77 @@ scenario(
 				...failures,
 			].join("\n\n"),
 		).toEqual([]);
+	},
+);
+
+function scrollFillerOps(tailBlockId: string): DocumentOp[] {
+	const ops: DocumentOp[] = [];
+	let previous = tailBlockId;
+	for (let index = 0; index < SCROLL_FILLER_BLOCKS; index++) {
+		const blockId = `g2-scroll-${index}`;
+		ops.push({
+			type: "insert-block",
+			blockId,
+			blockType: "paragraph",
+			props: {},
+			position: { after: previous },
+		});
+		ops.push({
+			type: "splice-text",
+			blockId,
+			from: 0,
+			to: 0,
+			insert: `Scroll filler ${index}`,
+		});
+		previous = blockId;
+	}
+	return ops;
+}
+
+scenario(
+	"G2: after a scroll that moves the root caretRect equals a from-scratch measurement",
+	async (s, page) => {
+		await s.load("g5-geometry");
+
+		// caretRect returns viewport coordinates, so a scroll moves every
+		// cached rect. The fixture is shorter than any viewport, so grow it
+		// until the page has somewhere to scroll to.
+		const blocks = await s.geometry.blocks();
+		const tail = blocks[blocks.length - 1];
+		expect(tail).toBeDefined();
+		await s.apply(scrollFillerOps(tail!.id));
+		await expect
+			.poll(() =>
+				page.evaluate(() => {
+					const scroller = document.scrollingElement;
+					return scroller
+						? scroller.scrollHeight - scroller.clientHeight
+						: 0;
+				}),
+			)
+			.toBeGreaterThan(SCROLL_DISTANCE);
+
+		const points = sampleCaretPoints(await s.geometry.blocks());
+		expect(points.length).toBeGreaterThan(0);
+		await s.geometry.warm(points);
+
+		const scrollTop = await page.evaluate(async (distance) => {
+			const scroller = document.scrollingElement;
+			if (!scroller) {
+				return -1;
+			}
+			scroller.scrollTop = distance;
+			await new Promise((resolve) => {
+				requestAnimationFrame(() => requestAnimationFrame(resolve));
+			});
+			return scroller.scrollTop;
+		}, SCROLL_DISTANCE);
+		expect(scrollTop).toBe(SCROLL_DISTANCE);
+
+		const result = await s.geometry.compare(points);
+		expect(
+			caretCacheHolds(result),
+			formatCacheFailure(result, "scroll"),
+		).toBe(true);
 	},
 );

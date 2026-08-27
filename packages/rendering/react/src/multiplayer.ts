@@ -12,9 +12,15 @@ export {
 export { useMultiplayer } from "./hooks/useMultiplayer";
 export { useRemoteCursors } from "./hooks/useRemoteCursors";
 export { useRemoteSelections } from "./hooks/useRemoteSelections";
+export {
+	resolveRemoteCellPresence,
+	type RemoteCellPresence,
+	type RemoteCellPresenceMap,
+} from "./utils/remoteCellSelection";
 export type {
 	MultiplayerState,
 	PeerState,
+	RemoteCellSelectionState,
 	RemoteCursorState,
 	RemoteSelectionState,
 } from "@input/pen-multiplayer";

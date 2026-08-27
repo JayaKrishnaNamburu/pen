@@ -235,9 +235,15 @@ class MultiplayerScopeRuntime {
 		if (!target) {
 			return;
 		}
-		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(target, this.user, target.selection),
-		);
+		// merge rather than replace: this runtime owns identity, cursor, and
+		// selection, while other extensions and the host own the rest of the
+		// payload (COL2). A wholesale write drops their keys — which is what
+		// silently unpublished an AI run's `streaming` presence on every
+		// selection change.
+		this.awareness.setLocalState({
+			...(this.awareness.getLocalState() ?? {}),
+			...this.buildLocalAwarenessState(target, this.user, target.selection),
+		});
 	}
 
 	private readonly handleAwarenessChange = (): void => {

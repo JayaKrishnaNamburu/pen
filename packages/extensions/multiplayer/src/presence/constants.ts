@@ -45,5 +45,6 @@ export type PresenceRejectionReason =
 	| "script-bearing"
 	| "nonexistent-block"
 	| "out-of-range-offset"
+	| "out-of-range-cell"
 	| "rate-limited"
 	| "peer-cap";

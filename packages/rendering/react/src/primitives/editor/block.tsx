@@ -193,6 +193,18 @@ function mergeBlockDecorationAttributes(
 			continue;
 		}
 		for (const [key, value] of Object.entries(decoration.attributes)) {
+			// SEC2: event handlers, stylesheets, and markup are not data. A
+			// React prop name reaches sinks a DOM attribute name cannot, so
+			// this skip is wider than applyElementAttributes needs. Dropping
+			// `style` also keeps RI1's unicode-bidi isolation, which a CSS
+			// string would replace rather than merge into.
+			if (
+				/^on/i.test(key) ||
+				key.toLowerCase() === "style" ||
+				key === "dangerouslySetInnerHTML"
+			) {
+				continue;
+			}
 			if (key === "class") {
 				classNames.push(String(value));
 				continue;

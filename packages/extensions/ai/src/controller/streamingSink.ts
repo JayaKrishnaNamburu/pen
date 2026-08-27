@@ -1,4 +1,14 @@
-import type { DocumentRange } from "@input/pen-types";
+import {
+	deriveContentMoves,
+	repairAnchor,
+	type ContentMove,
+} from "@input/pen-core";
+import type {
+	Anchor,
+	CommitEvent,
+	DocumentRange,
+	Editor,
+} from "@input/pen-types";
 import type { AIContentFormat, AIMutationMode } from "../runtime/contracts";
 import type { GenerationTarget } from "../helpers";
 import type { AISurface } from "../types";
@@ -26,7 +36,6 @@ export type GenerationStreamingSink =
 			blockId: string;
 			firstFrom: number;
 			firstTo: number;
-			appendOffset: number;
 	  }
 	| {
 			kind: "review-preview";
@@ -79,7 +88,6 @@ export function resolveGenerationStreamingSink(input: {
 			blockId: input.selectionRange.start.blockId,
 			firstFrom: input.selectionRange.start.offset,
 			firstTo: input.selectionRange.end.offset,
-			appendOffset: input.selectionRange.end.offset,
 		};
 	}
 	if (suggestedText && input.target.type === "block") {
@@ -88,7 +96,6 @@ export function resolveGenerationStreamingSink(input: {
 			blockId: input.target.blockId,
 			firstFrom: input.target.offset,
 			firstTo: input.target.offset,
-			appendOffset: input.target.offset,
 		};
 	}
 	if (
@@ -134,7 +141,7 @@ export function applyGenerationStreamingDelta(
 			}
 			return;
 		case "suggestion-splice":
-			applySuggestionSplice(controller, state, sink, nextDelta);
+			applySuggestionSplice(controller, state, nextDelta);
 			return;
 		case "review-preview":
 			applyReviewPreviewDelta(controller, state, sink);
@@ -149,31 +156,157 @@ export function applyGenerationStreamingDelta(
 	}
 }
 
+/**
+ * ST2: the durable position of a streaming suggestion rewrite. The write head
+ * is an anchor rather than an offset plus a running length, so a collaborator
+ * editing the same block while the model streams moves it instead of leaving
+ * every later delta spliced into the wrong place.
+ */
+export interface SuggestionSpliceHead {
+	/**
+	 * Start of the range the first delta marks deleted, cleared once that delta
+	 * has had its chance. Null when the rewrite starts collapsed.
+	 */
+	deleteFrom: Anchor | null;
+	/** Where the next delta inserts. Suggest mode inserts at the range end. */
+	writeHead: Anchor;
+	/** Stop repairing. The generation is over. */
+	release(): void;
+}
+
+export function createSuggestionSpliceHead(
+	editor: Editor,
+	sink: GenerationStreamingSink,
+): SuggestionSpliceHead | null {
+	if (sink.kind !== "suggestion-splice") {
+		return null;
+	}
+	// assoc 1 so each delta we insert leaves the head after it (AN2); the
+	// delete start takes assoc -1 so it stays outside the arriving text.
+	const writeHead = editor.anchors.create(
+		{ blockId: sink.blockId, offset: sink.firstTo },
+		1,
+	);
+	if (!writeHead) {
+		return null;
+	}
+	const deleteFrom =
+		sink.firstTo > sink.firstFrom
+			? editor.anchors.create(
+					{ blockId: sink.blockId, offset: sink.firstFrom },
+					-1,
+				)
+			: null;
+
+	let lastCommitId = Number.NaN;
+	const head: SuggestionSpliceHead = {
+		deleteFrom,
+		writeHead,
+		release: editor.on("commit", (event: CommitEvent) => {
+			if (event.summary.commitId === lastCommitId) {
+				return;
+			}
+			lastCommitId = event.summary.commitId;
+			// AN14: a split or merge under the rewrite moves the head into
+			// another block, and repair is what carries it across. Resolving
+			// alone would leave the next delta wherever the old offset landed.
+			const moves = deriveContentMoves(event.summary, undefined);
+			head.writeHead = repairThroughMoves(editor, head.writeHead, moves);
+			if (head.deleteFrom) {
+				head.deleteFrom = repairThroughMoves(
+					editor,
+					head.deleteFrom,
+					moves,
+				);
+			}
+		}),
+	};
+	return head;
+}
+
+function repairThroughMoves(
+	editor: Editor,
+	anchor: Anchor,
+	moves: readonly ContentMove[],
+): Anchor {
+	const repaired = repairAnchor(editor, anchor, moves);
+	// repair reads the position the anchor last resolved at, and only a
+	// resolve refreshes that. Skip it and the next split is measured against
+	// wherever the head sat several deltas ago.
+	editor.anchors.resolve(repaired);
+	return repaired;
+}
+
 function applySuggestionSplice(
 	controller: AIControllerImpl,
 	state: GenerationExecutionState,
-	sink: Extract<GenerationStreamingSink, { kind: "suggestion-splice" }>,
 	nextDelta: string,
 ): void {
-	const from =
-		state.streamedSuggestionLength === 0
-			? sink.firstFrom
-			: sink.appendOffset + state.streamedSuggestionLength;
-	const to = state.streamedSuggestionLength === 0 ? sink.firstTo : from;
+	const head = state.suggestionSpliceHead;
+	if (!head) {
+		return;
+	}
+	const editor = controller._editor;
+	const to = editor.anchors.resolve(head.writeHead);
+	if (!to) {
+		// AN1: a null resolve is a store miss as readily as a dead block. A
+		// store miss retries on the next delta; a removed block ends the sink,
+		// which is also what keeps this from reporting once per delta.
+		if (!editor.getBlock(head.writeHead.blockId)) {
+			head.release();
+			state.suggestionSpliceHead = null;
+			reportSpliceDegraded(
+				controller,
+				"The block being rewritten was removed; dropped the streamed text.",
+			);
+		}
+		return;
+	}
+	const deleteFrom = head.deleteFrom
+		? editor.anchors.resolve(head.deleteFrom)
+		: null;
+	// the delete gets exactly this one delta: once text is inserted at the
+	// head, a later attempt would span the arriving text too and mark it
+	// deleted along with the original.
+	const hadDelete = head.deleteFrom != null;
+	head.deleteFrom = null;
+	const deletes = deleteFrom != null && deleteFrom.blockId === to.blockId;
+	if (hadDelete && !deletes) {
+		reportSpliceDegraded(
+			controller,
+			"The text being rewritten moved to another block; kept it and appended the rewrite.",
+		);
+	}
+	const from = deletes ? Math.min(deleteFrom.offset, to.offset) : to.offset;
 	controller._applySuggestedAIOps(
 		[
 			{
 				type: "splice-text",
-				blockId: sink.blockId,
+				blockId: to.blockId,
 				from,
-				to,
+				to: to.offset,
 				insert: nextDelta,
 			},
 		],
 		state.context?.sessionId,
 		{ undoGroupId: state.seedGeneration.undoGroupId },
 	);
-	state.streamedSuggestionLength += nextDelta.length;
+}
+
+/**
+ * RS3: a rewrite that lands something other than what it proposed is reported
+ * rather than left for the user to spot.
+ */
+function reportSpliceDegraded(
+	controller: AIControllerImpl,
+	message: string,
+): void {
+	controller._editor.internals.emit("diagnostic", {
+		level: "warn",
+		source: "ai",
+		code: "AI_SUGGESTION_SPLICE_DEGRADED",
+		message,
+	});
 }
 
 function applyReviewPreviewDelta(

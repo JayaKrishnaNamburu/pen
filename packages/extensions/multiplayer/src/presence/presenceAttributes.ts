@@ -1,7 +1,3 @@
-import {
-	assignMultiplayerColor,
-	normalizeMultiplayerColor,
-} from "./colorAssignment";
 import { MAX_PRESENCE_DISPLAY_NAME_LENGTH } from "./constants";
 import type { MultiplayerUser } from "../types";
 
@@ -10,6 +6,11 @@ const EVENT_HANDLER_ATTRIBUTE = /^on/i;
 /**
  * Build remote-presence decoration attributes. Values are assigned as
  * attribute values; nothing is interpolated into markup.
+ *
+ * The peer colour is deliberately absent: SEC2 drops `style` from decoration
+ * attributes, so writing one only produced an attribute renderers discard.
+ * Hosts colour presence from the `data-user-id` hook, and peer carets read
+ * `user.color` straight off `RemoteCursorState`.
  */
 export function createRemotePresenceAttributes(input: {
 	className: string;
@@ -31,11 +32,6 @@ export function createRemotePresenceAttributes(input: {
 		"data-user-name",
 		capPresenceDisplayName(input.user.name),
 	);
-	const color = normalizeMultiplayerColor(
-		input.user.color,
-		assignMultiplayerColor(input.user.id),
-	);
-	setPresenceAttribute(attributes, "style", `--pen-multiplayer-color: ${color}`);
 	return attributes;
 }
 

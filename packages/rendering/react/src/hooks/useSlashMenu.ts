@@ -4,6 +4,7 @@ import {
 	foldAndNormalize,
 	isCollapsed,
 	localeFacet,
+	orderSlashMenuItemsByGroup,
 } from "@input/pen-core";
 import type { BlockDisplay, BlockSchema, Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
@@ -283,16 +284,18 @@ function filterItems(
 	);
 
 	if (!query) {
-		return visibleDisplays.map((d) => ({
-			type: d.type,
-			display: d.display,
-		}));
+		return orderSlashMenuItemsByGroup(
+			visibleDisplays.map((d) => ({
+				type: d.type,
+				display: d.display,
+			})),
+		);
 	}
 
 	const locale = editor.facet(localeFacet);
 	const catalog = displayCatalogForEditor(editor);
 	const foldedQuery = foldAndNormalize(query, locale);
-	return visibleDisplays
+	const matches = visibleDisplays
 		.filter((d) => {
 			const title = foldAndNormalize(
 				resolveSlashMenuTitle(d.type, d.display.title, catalog),
@@ -320,4 +323,8 @@ function filterItems(
 			return aPos - bPos;
 		})
 		.map((d) => ({ type: d.type, display: d.display }));
+
+	// grouping after the relevance sort keeps the closest match at index 0,
+	// because its group is the first group to appear.
+	return orderSlashMenuItemsByGroup(matches);
 }

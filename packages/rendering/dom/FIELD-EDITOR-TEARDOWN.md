@@ -120,10 +120,13 @@ The field editor does not construct the scheduler: `_ensureScheduler()` resolves
 `createGeometryReader` (`src/geometry/geometryReader.ts`) must release, on `dispose()`:
 
 - `ResizeObserver` on the content root (`disconnect`)
+- the capture-phase `scroll` listener on the root's document (G2)
 - per-block measure cache
 - the disposed flag so a late `fonts.ready` callback does not bump generations
 
 `dispose()` exists. It does **not** cancel `document.fonts.ready` (the promise has no abort; the callback is only guarded). `blockCommitIds` is not cleared (harmless once disposed).
+
+Because nothing in production calls `dispose()`, the `scroll` listener also removes itself the first time it fires with a disconnected root. The document outlives the root, so a listener that only waited for `dispose()` would keep an unmounted root and its cache alive.
 
 The reader belongs to the editor root, not to the field editor: `getRootGeometry(root)` creates one reader and one scheduler per root and caches them against the root element. Whoever owns the root disposes them. The field editor's commit feed keeps the reader's caches honest while it is attached (FE4) and stops feeding on `destroy()`.
 

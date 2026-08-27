@@ -111,6 +111,95 @@ describe("GeometryReader G2 cache (injected measure)", () => {
 		reader.caretRect(a, "downstream");
 		reader.caretRect(b, "downstream");
 		expect(caretRect).toHaveBeenCalledTimes(7);
+
+		reader.bumpScrollGeneration();
+		reader.caretRect(a, "downstream");
+		reader.caretRect(b, "downstream");
+		expect(caretRect).toHaveBeenCalledTimes(9);
+	});
+
+	it("G2: a scroll that moves the root drops cached viewport-relative rects", () => {
+		const scroller = document.createElement("div");
+		const root = document.createElement("div");
+		scroller.append(root);
+		document.body.append(scroller);
+
+		let caretTop = 100;
+		const caretRect = vi.fn(() => rect(0, caretTop, 0, 16));
+		const reader = createGeometryReader({
+			root,
+			commitId: 1,
+			observeResize: false,
+			observeFonts: false,
+			measure: { caretRect },
+		});
+		readers.push(reader);
+
+		const point: Point = { blockId: "a", offset: 0 };
+		expect(reader.caretRect(point, "downstream")).toEqual(
+			rect(0, 100, 0, 16),
+		);
+
+		// the scroller moves the root, so the cached viewport top is wrong
+		caretTop = 40;
+		scroller.dispatchEvent(new Event("scroll"));
+
+		expect(reader.caretRect(point, "downstream")).toEqual(
+			rect(0, 40, 0, 16),
+		);
+		expect(caretRect).toHaveBeenCalledTimes(2);
+	});
+
+	it("G2: the scroll listener lets go of a root that left the tree", () => {
+		const scroller = document.createElement("div");
+		const root = document.createElement("div");
+		scroller.append(root);
+		document.body.append(scroller);
+
+		const caretRect = vi.fn(() => rect(0, 100, 0, 16));
+		const reader = createGeometryReader({
+			root,
+			commitId: 1,
+			observeResize: false,
+			observeFonts: false,
+			measure: { caretRect },
+		});
+		readers.push(reader);
+
+		const point: Point = { blockId: "a", offset: 0 };
+		reader.caretRect(point, "downstream");
+
+		root.remove();
+		// first scroll after the unmount detaches the listener, so the document
+		// stops referencing the reader and the root it holds
+		scroller.dispatchEvent(new Event("scroll"));
+		scroller.append(root);
+		scroller.dispatchEvent(new Event("scroll"));
+
+		expect(caretRect).toHaveBeenCalledTimes(1);
+	});
+
+	it("G2: a scroll outside the root keeps the cache warm", () => {
+		const sibling = document.createElement("div");
+		const root = document.createElement("div");
+		document.body.append(sibling, root);
+
+		const caretRect = vi.fn(() => rect(0, 100, 0, 16));
+		const reader = createGeometryReader({
+			root,
+			commitId: 1,
+			observeResize: false,
+			observeFonts: false,
+			measure: { caretRect },
+		});
+		readers.push(reader);
+
+		const point: Point = { blockId: "a", offset: 0 };
+		reader.caretRect(point, "downstream");
+		sibling.dispatchEvent(new Event("scroll"));
+		reader.caretRect(point, "downstream");
+
+		expect(caretRect).toHaveBeenCalledTimes(1);
 	});
 
 	it("G2: scheduler read-phase invalidation drops only the summary's blocks", () => {

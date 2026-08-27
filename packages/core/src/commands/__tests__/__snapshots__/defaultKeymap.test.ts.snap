@@ -507,6 +507,20 @@ exports[`default keymap K2 > K2: macos resolved bindings match the normative pla
       "granularity": "word",
     },
   },
+  {
+    "command": "pen.deleteBackward",
+    "key": "Meta-Backspace",
+    "param": {
+      "granularity": "line",
+    },
+  },
+  {
+    "command": "pen.deleteForward",
+    "key": "Ctrl-k",
+    "param": {
+      "granularity": "line",
+    },
+  },
 ]
 `;
 

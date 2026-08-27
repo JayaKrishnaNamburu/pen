@@ -1,7 +1,10 @@
 import type { Anchor, Editor } from "@input/pen-types";
+import { clampCellCoord, readGridSize } from "./gridSize";
 import type {
 	RemoteBlockSelectionState,
 	MultiplayerAwarenessState,
+	MultiplayerCellCoord,
+	RemoteCellSelectionState,
 	RemoteSelectionState,
 	RemoteTextSelectionState,
 } from "../types";
@@ -36,6 +39,32 @@ function isBlockSelectionPayload(value: unknown): value is {
 	);
 }
 
+function isCellSelectionPayload(value: unknown): value is {
+	kind: "cell";
+	blockId: string;
+	anchor: MultiplayerCellCoord;
+	head: MultiplayerCellCoord;
+	clock?: number;
+} {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		(value as { kind?: unknown }).kind === "cell" &&
+		typeof (value as { blockId?: unknown }).blockId === "string" &&
+		isCellCoord((value as { anchor?: unknown }).anchor) &&
+		isCellCoord((value as { head?: unknown }).head)
+	);
+}
+
+function isCellCoord(value: unknown): value is MultiplayerCellCoord {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		typeof (value as { row?: unknown }).row === "number" &&
+		typeof (value as { col?: unknown }).col === "number"
+	);
+}
+
 interface HeldRemoteTextSelection {
 	kind: "text";
 	user: RemoteSelectionState["user"];
@@ -51,7 +80,19 @@ interface HeldRemoteBlockSelection {
 	blockIds: readonly string[];
 }
 
-type HeldRemoteSelection = HeldRemoteTextSelection | HeldRemoteBlockSelection;
+interface HeldRemoteCellSelection {
+	kind: "cell";
+	user: RemoteSelectionState["user"];
+	clock: number;
+	blockId: string;
+	anchor: MultiplayerCellCoord;
+	head: MultiplayerCellCoord;
+}
+
+type HeldRemoteSelection =
+	| HeldRemoteTextSelection
+	| HeldRemoteBlockSelection
+	| HeldRemoteCellSelection;
 
 export class RemoteSelectionManager {
 	private readonly held = new Map<number, HeldRemoteSelection>();
@@ -77,6 +118,17 @@ export class RemoteSelectionManager {
 				});
 				continue;
 			}
+			if (isCellSelectionPayload(state.selection)) {
+				this.held.set(clientId, {
+					kind: "cell",
+					user: resolveUser(clientId),
+					clock: state.selection.clock ?? Date.now(),
+					blockId: state.selection.blockId,
+					anchor: state.selection.anchor,
+					head: state.selection.head,
+				});
+				continue;
+			}
 			if (!isTextSelectionPayload(state.selection)) {
 				continue;
 			}
@@ -98,30 +150,64 @@ export class RemoteSelectionManager {
 	resolve(editor: Editor): readonly RemoteSelectionState[] {
 		const selections: RemoteSelectionState[] = [];
 		for (const [clientId, held] of this.held) {
-			if (held.kind === "block") {
-				selections.push({
-					kind: "block",
-					clientId,
-					user: held.user,
-					blockIds: held.blockIds,
-					clock: held.clock,
-				} satisfies RemoteBlockSelectionState);
-				continue;
+			const selection = resolveHeldSelection(editor, clientId, held);
+			if (selection) {
+				selections.push(selection);
 			}
+		}
+		return selections;
+	}
+}
+
+function resolveHeldSelection(
+	editor: Editor,
+	clientId: number,
+	held: HeldRemoteSelection,
+): RemoteSelectionState | null {
+	switch (held.kind) {
+		case "block":
+			return {
+				kind: "block",
+				clientId,
+				user: held.user,
+				blockIds: held.blockIds,
+				clock: held.clock,
+			} satisfies RemoteBlockSelectionState;
+		case "cell": {
+			// a commit can shrink the grid under a held selection, so re-read it
+			// here; a table that is gone or emptied drops the peer entirely.
+			const grid = readGridSize(editor, held.blockId);
+			if (!grid) {
+				return null;
+			}
+			return {
+				kind: "cell",
+				clientId,
+				user: held.user,
+				blockId: held.blockId,
+				anchor: clampCellCoord(held.anchor, grid),
+				head: clampCellCoord(held.head, grid),
+				clock: held.clock,
+			} satisfies RemoteCellSelectionState;
+		}
+		case "text": {
 			const anchor = editor.anchors.resolve(held.anchor);
 			const head = editor.anchors.resolve(held.head);
 			if (!anchor || !head) {
-				continue;
+				return null;
 			}
-			selections.push({
+			return {
 				kind: "text",
 				clientId,
 				user: held.user,
 				anchor: { blockId: anchor.blockId, offset: anchor.offset },
 				head: { blockId: head.blockId, offset: head.offset },
 				clock: held.clock,
-			} satisfies RemoteTextSelectionState);
+			} satisfies RemoteTextSelectionState;
 		}
-		return selections;
+		default: {
+			const _exhaustive: never = held;
+			return _exhaustive;
+		}
 	}
 }

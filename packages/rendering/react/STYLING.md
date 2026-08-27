@@ -40,10 +40,10 @@ Every `--pen-*` token the library **reads** is listed with its fallback and purp
 
 ### Multiplayer
 
-| Token                    | Default                                      | Purpose                                                                                                          |
-| ------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `--pen-peer-color`       | The peer's `user.color`, else `currentColor` | Remote caret and label background. Written per caret; override on a parent if every peer should share one color. |
-| `--pen-peer-label-color` | `#fff`                                       | Remote caret label text.                                                                                         |
+| Token                    | Default                                      | Purpose                                                                                                                                                                    |
+| ------------------------ | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--pen-peer-color`       | The peer's `user.color`, else `currentColor` | Remote caret and label background, and the ring on table cells a peer occupies. Written per caret and per cell; override on a parent if every peer should share one color. |
+| `--pen-peer-label-color` | `#fff`                                       | Remote caret label text.                                                                                                                                                   |
 
 ### Suggestion line
 
@@ -86,16 +86,16 @@ bare stylesheet import. `REVIEW_SURFACE_CLASSES`,
 `REVIEW_SURFACE_CUSTOM_PROPERTIES` are exported alongside it, so a host that
 writes its own rules can still reference the names rather than retyping them.
 
-| Token                                  | Default                                              | Purpose                                                 |
-| -------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------- |
-| `--pen-ai-review-insert-color`         | `#6d28d9`                                            | Inserted text color.                                    |
-| `--pen-ai-review-insert-background`    | `color-mix(in srgb, #7c3aed 12%, transparent)`       | Inserted text fill.                                     |
-| `--pen-ai-review-delete-color`         | `#6b7280`                                            | Deleted and replaced-original text, struck through.     |
-| `--pen-ai-review-context-background`   | `color-mix(in srgb, #2563eb 14%, transparent)`       | Selection context and affected-range fill.              |
-| `--pen-ai-review-context-box-shadow`   | `none`                                               | Context edge.                                           |
-| `--pen-ai-review-border-radius`        | `3px`                                                | Insert / context / affected-range corner radius.        |
-| `--pen-ai-review-inline-padding-block` | `0.2em`                                              | Insert / context inline padding.                        |
-| `--pen-ai-review-inline-margin-block`  | `-0.2em`                                             | Insert / context inline margin.                         |
+| Token                                  | Default                                        | Purpose                                             |
+| -------------------------------------- | ---------------------------------------------- | --------------------------------------------------- |
+| `--pen-ai-review-insert-color`         | `#6d28d9`                                      | Inserted text color.                                |
+| `--pen-ai-review-insert-background`    | `color-mix(in srgb, #7c3aed 12%, transparent)` | Inserted text fill.                                 |
+| `--pen-ai-review-delete-color`         | `#6b7280`                                      | Deleted and replaced-original text, struck through. |
+| `--pen-ai-review-context-background`   | `color-mix(in srgb, #2563eb 14%, transparent)` | Selection context and affected-range fill.          |
+| `--pen-ai-review-context-box-shadow`   | `none`                                         | Context edge.                                       |
+| `--pen-ai-review-border-radius`        | `3px`                                          | Insert / context / affected-range corner radius.    |
+| `--pen-ai-review-inline-padding-block` | `0.2em`                                        | Insert / context inline padding.                    |
+| `--pen-ai-review-inline-margin-block`  | `-0.2em`                                       | Insert / context inline margin.                     |
 
 Earlier revisions of this table listed `--pen-ai-affected-range-*` tokens and
 warned that none of these properties did anything, because `@input/pen-ai` set
@@ -202,6 +202,15 @@ State attributes below are written when the state is true — **present** (value
 | `data-pen-column-menu`      | Column menu root.                                                              |
 | `data-pen-column-menu-item` | Column menu item. Also `data-active` on the current column type.               |
 
+A collaborator inside a table gets no caret — a grid cell is the smallest region their presence names — so the cells they occupy are marked instead. These come from the table renderer rather than a presence decoration, which is why they can carry a colour: SEC2 drops `style` from decoration attributes, so `@input/pen-multiplayer` emits none and every other presence surface is coloured from `data-user-id`.
+
+| Attribute                             | Role                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `data-pen-multiplayer-cell-selection` | Cell a peer occupies. Also `data-multiplayer-client-id`, `data-user-id`, `data-user-name`, and `--pen-peer-color`. |
+| `data-pen-multiplayer-cell-head`      | The peer's head cell — one per peer, so a multi-cell range is named once.                                          |
+
+`data-user-id` / `data-user-name` are unverified peer display hints (COL3); the name is an attribute value, never interpolated into markup.
+
 ### Handles, drag, autocomplete preview
 
 | Attribute                                   | Role                                                                         |
@@ -263,6 +272,7 @@ State attributes below are written when the state is true — **present** (value
 | `data-pen-multiplayer-presence-list`     | Presence list.                                                                                             |
 | `data-pen-multiplayer-presence-avatar`   | Presence avatar.                                                                                           |
 | `data-pen-multiplayer-presence-overflow` | Presence overflow count.                                                                                   |
+| `data-pen-multiplayer-streaming`         | Block a peer's AI is generating into. Also `data-multiplayer-client-id`, `data-user-id`, `data-user-name`. |
 
 ### AI primitives
 

@@ -8,12 +8,16 @@ import type {
 import { useEditorContext } from "../context/editorContext";
 import { useFieldEditorContext } from "../context/fieldEditorContext";
 import { useFieldEditorState } from "../hooks/useFieldEditorState";
+import { useRemoteSelections } from "../hooks/useRemoteSelections";
 import { useSelection } from "../hooks/useSelection";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { isCellInSelection } from "../utils/cellSelection";
+import { resolveRemoteCellPresence } from "../utils/remoteCellSelection";
 import { TableCellContent } from "../primitives/editor/tableCellContent";
 
 const TABLE_CONTROL_MIN_SIZE_PX = 24;
+
+type CellStyle = React.CSSProperties & Record<string, string | number>;
 
 function TableRendererInner(props: {
 	block: BlockHandle;
@@ -24,6 +28,7 @@ function TableRendererInner(props: {
 	const fieldEditor = useFieldEditorContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const editorSelection = useSelection(editor);
+	const remoteSelections = useRemoteSelections(editor);
 
 	const table = block.as("table");
 	const rowCount = table?.tableRowCount() ?? 0;
@@ -36,6 +41,10 @@ function TableRendererInner(props: {
 		editorSelection?.type === "cell" && editorSelection.blockId === block.id
 			? editorSelection
 			: null;
+	const remoteCellPresence = resolveRemoteCellPresence(
+		remoteSelections,
+		block.id,
+	);
 
 	const isEditingThisCell = (row: number, col: number) =>
 		fieldEditorState.activeCellCoord?.blockId === block.id &&
@@ -124,15 +133,34 @@ function TableRendererInner(props: {
 		event.stopPropagation();
 	}
 
-	const cellAttrs = (row: number, col: number) => ({
-		[DATA_ATTRS.tableCell]: "",
-		[DATA_ATTRS.tableCellRow]: row,
-		[DATA_ATTRS.tableCellCol]: col,
-		"data-pen-cell-selected":
-			cellSelection && isCellInSelection(cellSelection, row, col)
-				? ""
+	const cellAttrs = (row: number, col: number) => {
+		const peer = remoteCellPresence.forCell(row, col);
+		return {
+			[DATA_ATTRS.tableCell]: "",
+			[DATA_ATTRS.tableCellRow]: row,
+			[DATA_ATTRS.tableCellCol]: col,
+			"data-pen-cell-selected":
+				cellSelection && isCellInSelection(cellSelection, row, col)
+					? ""
+					: undefined,
+			// COL3: a peer's name and id are display hints, never verified.
+			"data-pen-multiplayer-cell-selection": peer ? "" : undefined,
+			"data-pen-multiplayer-cell-head": peer?.isHead ? "" : undefined,
+			"data-multiplayer-client-id": peer
+				? String(peer.clientId)
 				: undefined,
-	});
+			"data-user-id": peer?.user.id,
+			"data-user-name": peer?.user.name,
+			// A decoration cannot carry colour — SEC2 drops `style` — so the
+			// multiplayer package emits none. Setting the caret overlay's
+			// token as a prop is what lets a peer ring in their own colour.
+			style: peer
+				? ({
+						"--pen-peer-color": peer.user.color ?? "currentColor",
+					} as CellStyle)
+				: undefined,
+		};
+	};
 
 	const headerCells = hasHeaderRow
 		? Array.from({ length: colCount }, (_, colIdx) => (

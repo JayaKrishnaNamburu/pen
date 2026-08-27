@@ -28,6 +28,7 @@ export function createTwoPeerHarness(
 		clientIdA = DEFAULT_CLIENT_ID_A,
 		clientIdB = DEFAULT_CLIENT_ID_B,
 		prepare,
+		extensionsFor,
 		...seedOptions
 	} = options;
 
@@ -37,8 +38,20 @@ export function createTwoPeerHarness(
 	try {
 		prepare?.(seed);
 		const seedUpdate = seed.crdtDoc.adapter.encodeState(seed.crdtDoc);
-		peerA = forkPeer("a", clientIdA, seedUpdate, seedOptions);
-		peerB = forkPeer("b", clientIdB, seedUpdate, seedOptions);
+		peerA = forkPeer(
+			"a",
+			clientIdA,
+			seedUpdate,
+			seedOptions,
+			extensionsFor,
+		);
+		peerB = forkPeer(
+			"b",
+			clientIdB,
+			seedUpdate,
+			seedOptions,
+			extensionsFor,
+		);
 	} finally {
 		seed.destroy();
 	}
@@ -169,13 +182,18 @@ function forkPeer(
 	clientId: number,
 	seedUpdate: Uint8Array,
 	editorOptions: TestEditorOptions,
+	extensionsFor?: TwoPeerHarnessOptions["extensionsFor"],
 ): TwoPeer {
 	const ydoc = new Y.Doc({ gc: false });
 	(ydoc as unknown as { clientID: number }).clientID = clientId;
 	Y.applyUpdate(ydoc, seedUpdate);
 
 	const { blocks: _blocks, doc: _doc, ...rest } = editorOptions;
-	const editor: TestEditor = createTestEditor({ ...rest, doc: ydoc });
+	const editor: TestEditor = createTestEditor({
+		...rest,
+		...(extensionsFor ? { extensions: extensionsFor(id) } : {}),
+		doc: ydoc,
+	});
 
 	return {
 		id,

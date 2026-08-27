@@ -36,6 +36,7 @@
 - AuthorLedgerEntry
 - AuthorLedgerLike
 - ClientIdentityMapLike
+- MultiplayerCellCoord
 - MultiplayerConfig
 - MultiplayerController
 - MultiplayerSnapshot
@@ -44,7 +45,9 @@
 - PeerState
 - PresenceDisplayHint
 - PresenceRejectionReason
+- RemoteCellSelectionState
 - RemoteCursorState
 - RemoteSelectionState
+- RemoteStreamingState
 - ResolvePeerIdentity
 - ResolvePeerIdentityContext

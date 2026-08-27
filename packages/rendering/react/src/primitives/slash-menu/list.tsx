@@ -1,5 +1,5 @@
 import React from "react";
-import { resolveEditorMessage } from "@input/pen-core";
+import { resolveEditorMessage, slashMenuGroupOf } from "@input/pen-core";
 import { DEFAULT_MESSAGE_CATALOG } from "@input/pen-types";
 import { getSlashMenuOptionId, useSlashMenuContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
@@ -39,41 +39,46 @@ export function SlashMenuList(props: SlashMenuListProps) {
 		content = children;
 	} else {
 		const catalog = displayCatalogForEditor(editor);
-		const groups = new Map<string, typeof items>();
-		for (const item of items) {
-			const group = item.display.group ?? "other";
-			const existing = groups.get(group) ?? [];
-			existing.push(item);
-			groups.set(group, existing);
-		}
 
-		let globalIndex = 0;
-		const groupElements = Array.from(groups.entries()).map(
-			([group, groupItems]) => {
-				const heading = resolveSlashMenuGroup(group, catalog);
-				const itemElements = groupItems.map((item) => {
-					const idx = globalIndex++;
-					return (
-						<SlashMenuItem
-							key={item.type}
-							blockType={item.type}
-							index={idx}
-						>
-							{resolveSlashMenuTitle(
-								item.type,
-								item.display.title,
-								catalog,
-							)}
-						</SlashMenuItem>
-					);
-				});
-				return (
-					<SlashMenuGroup key={group} heading={heading}>
-						{itemElements}
-					</SlashMenuGroup>
-				);
-			},
-		);
+		// group headings break up consecutive runs rather than regrouping, so
+		// every item keeps its index in `items` — the index `confirm` resolves.
+		const runs: Array<{
+			group: string;
+			entries: Array<{ item: (typeof items)[number]; index: number }>;
+		}> = [];
+		items.forEach((item, index) => {
+			const group = slashMenuGroupOf(item.display);
+			const openRun = runs[runs.length - 1];
+			if (openRun?.group === group) {
+				openRun.entries.push({ item, index });
+				return;
+			}
+			runs.push({ group, entries: [{ item, index }] });
+		});
+
+		const groupElements = runs.map((run) => {
+			const itemElements = run.entries.map(({ item, index }) => (
+				<SlashMenuItem
+					key={item.type}
+					blockType={item.type}
+					index={index}
+				>
+					{resolveSlashMenuTitle(
+						item.type,
+						item.display.title,
+						catalog,
+					)}
+				</SlashMenuItem>
+			));
+			return (
+				<SlashMenuGroup
+					key={run.entries[0]!.item.type}
+					heading={resolveSlashMenuGroup(run.group, catalog)}
+				>
+					{itemElements}
+				</SlashMenuGroup>
+			);
+		});
 
 		content = groupElements;
 	}

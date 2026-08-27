@@ -35,6 +35,7 @@ export type {
 	AuthorLedgerEntry,
 	AuthorLedgerLike,
 	ClientIdentityMapLike,
+	MultiplayerCellCoord,
 	MultiplayerConfig,
 	MultiplayerController,
 	MultiplayerSnapshot,
@@ -44,6 +45,8 @@ export type {
 	PresenceDisplayHint,
 	ResolvePeerIdentity,
 	ResolvePeerIdentityContext,
+	RemoteCellSelectionState,
 	RemoteCursorState,
 	RemoteSelectionState,
+	RemoteStreamingState,
 } from "./types";
