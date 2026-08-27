@@ -12,7 +12,7 @@
 </p>
 <!-- markdownlint-enable MD033 MD041 -->
 
-**Pen is a block-native rich text editor SDK for applications where people and AI write in the same document.** The runtime is headless: it owns the document, selection, and history, and renders nothing you did not ask for. The document is a Yjs CRDT from the first keystroke. Pen is published as public npm packages.
+**Pen is a block-native rich text editor SDK** for applications where people and AI write in the same document. The runtime is headless: it owns the document, selection, and history, and renders nothing you did not ask for. The document is a Yjs CRDT from the first keystroke. Pen is published as public npm packages.
 
 ## Why Pen
 
