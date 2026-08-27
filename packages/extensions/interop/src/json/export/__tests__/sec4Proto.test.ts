@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { jsonImporter, parseJsonDocument } from "../importer";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
   resolve() {

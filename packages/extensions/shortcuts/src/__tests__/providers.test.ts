@@ -5,7 +5,7 @@ import {
 	keymapFacet,
 } from "@input/pen-core";
 import type { Extension, KeyBinding } from "@input/pen-types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { richTextShortcutsExtension } from "../richTextShortcutsExtension";
 import { PEN_KEYMAP_FACET_NAME } from "../providers";
 

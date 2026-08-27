@@ -16,7 +16,7 @@ The letter `R` names two unrelated families. `R1`–`R7` in this document are fa
 
 ## SM — Seam migration
 
-- SM2. The public accessor helpers keep their documented names and become facet reads internally — `getSearchController(editor)`, `getAutocompleteController(editor)`, `getMultiplayerController(editor)`, `getHistoryController(editor)` and their siblings resolve the corresponding single-value controller facet. Host code written against the documented helpers does not break when a seam moves.
+- SM2. The public accessor helpers keep their documented names and become facet reads internally — `getSearchController(editor)`, `getAutocompleteController(editor)`, `getMultiplayerController(editor)`, `getSnapshotsController(editor)` and their siblings resolve the corresponding single-value controller facet. Host code written against the documented helpers does not break when a seam moves.
 
 A single-value controller facet is `defineFacet` with `static: true` and a `combine` that takes the first input and otherwise yields `null`, so the highest-precedence provider wins and extra providers are reported as a diagnostic rather than silently merged.
 

@@ -7,14 +7,14 @@ import {
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "@input/pen-dom/field-editor/keyHandling";
 import { resolveShiftClickInlineAtomSelection } from "@input/pen-dom";
 import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 type BlocksMapLike = {
 	get(key: string): { get(field: string): unknown } | undefined;
@@ -146,7 +146,7 @@ describe("@input/pen-react field editor Tab handling: list nesting and autocompl
 	it("handles Tab for list nesting and preserves selection", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -198,7 +198,7 @@ describe("@input/pen-react field editor Tab handling: list nesting and autocompl
 	it("does not handle Tab when a top-level list item cannot nest deeper", () => {
 		const editor = createPresetEditor({
 			preset: {
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,

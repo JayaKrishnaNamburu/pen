@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`@input/pen-types` provides the shared contracts and lightweight runtime helpers for Pen. It defines editor, schema, extension, decoration, selection, tooling, history, undo, AI, and multiplayer interfaces, plus shared slot keys and low-level helper utilities that other packages rely on.
+`@input/pen-types` provides the shared contracts for Pen, plus a bounded, allowlisted sliver of runtime (API3). It defines editor, schema, extension, decoration, selection, tooling, history, undo, AI, and multiplayer interfaces, plus shared slot keys that other packages rely on.
 
 ## Public Role
 
@@ -12,8 +12,8 @@ This is the contract package for the monorepo. It is the place where packages ag
 
 - Export map: `.`
 - Root export of package-wide contracts via `./types/index`
-- Lightweight runtime helpers such as `generateId()`. Schema creation APIs, block-capability helpers, field-editor helpers, message interpolation, mutation-group helpers, `getOpOriginType()`, and tool-execution helpers live on `@input/pen-core`. `PenDocumentUnreadableError` lives on `@input/pen-crdt-yjs`.
-- Shared `assignSlot` keys such as `FIELD_EDITOR_SLOT_KEY`, `SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`, and AI/undo-related keys. `editor.internals.assignSlot` is the write surface; it overrides the matching core facet.
+- The API3 runtime allowlist: `generateId()` and its private formatter `formatUuidV4` (`scripts/types-runtime-allowlist.json`), kept here because `@input/pen-yjs` sits below core. Schema creation APIs, block-capability helpers, field-editor helpers, message interpolation, mutation-group helpers, `getOpOriginType()`, and tool-execution helpers live on `@input/pen-core`. `PenDocumentUnreadableError` lives on `@input/pen-yjs`.
+- Shared `assignSlot` keys such as `FIELD_EDITOR_SLOT_KEY`, `SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`, `SNAPSHOTS_CONTROLLER_SLOT`, and AI/undo-related keys. `editor.internals.assignSlot` is the write surface; it overrides the matching core facet.
 - Editor events: `PenEventMap` — `commit` (`CommitEvent`, whose `summary.affectedBlockIds` is the touched-block list), `selectionChange`, `historyApplied`, `decorationsChange`, `diagnostic`, `crdt:corruption`, `crdt:recovered`
 - Operation origin contracts such as `OpOriginType`, `StructuredOpOrigin` (including optional `intent`), `MutationGroupMetadata`, and helpers for resolving origin/group metadata
 - The closed `DocumentOp` union and its ten payloads (`splice-text`, `format-text`, `insert-block`, `delete-block`, `move-block`, `set-props`, `set-meta`, `grid`, `app`, `stream-open`)
@@ -94,7 +94,7 @@ A `ChangeSummary` answers what a commit touched: `commitId`, `blockText`, `struc
 
 `block-split` and `blocks-merged` are the local content-move recipes (source, dest, cut/join offsets), stamped by the executor onto the transaction and copied onto the summary. Remote commits without those tags fall back to same-length delete/insert pairing.
 
-`mapOffsetThroughSplices(splices, offset, assoc)` is a clamp helper for shifting a per-block result inside one summary. It ships from `@input/pen-core`, not this package — v4 DL12 moved it there to reach API3's types-only end state. There is no compose, no multi-summary form, and no cross-commit mapping API. A position that must survive more than one commit is an `editor.anchors` mint.
+`mapOffsetThroughSplices(splices, offset, assoc)` is a clamp helper for shifting a per-block result inside one summary. It ships from `@input/pen-core`, not this package — v4 DL12 moved it there under API3, which bounds this package's runtime to the recorded allowlist. There is no compose, no multi-summary form, and no cross-commit mapping API. A position that must survive more than one commit is an `editor.anchors` mint.
 
 Summaries stay content-free: lengths, offsets, IDs, and keys only.
 

@@ -1,12 +1,12 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { historyControllerFacet } from "@input/pen-core";
+import { snapshotsControllerFacet } from "@input/pen-core";
 import type {
 	BlameRange,
 	CharacterAttribution,
-	HistoryController,
-} from "@input/pen-history";
+	SnapshotsController,
+} from "@input/pen-snapshots";
 import type { Editor, Unsubscribe } from "@input/pen-types";
-import { useHistory } from "./useHistory";
+import { useSnapshots } from "./useSnapshots";
 import { useMultiplayer } from "./useMultiplayer";
 
 export interface AttributionState {
@@ -24,9 +24,9 @@ export function useAttribution(
 	blockId: string,
 ): AttributionState {
 	const historyController =
-		(editor.facet(historyControllerFacet) as HistoryController | null) ??
+		(editor.facet(snapshotsControllerFacet) as SnapshotsController | null) ??
 		null;
-	const historyState = useHistory(editor);
+	const historyState = useSnapshots(editor);
 	const multiplayerState = useMultiplayer(editor);
 	const canReadHistoryAttribution =
 		isHistoryAttributionController(historyController);
@@ -56,8 +56,8 @@ export function useAttribution(
 }
 
 function isHistoryAttributionController(
-	controller: HistoryController | null,
-): controller is HistoryController & {
+	controller: SnapshotsController | null,
+): controller is SnapshotsController & {
 	subscribe(listener: () => void): Unsubscribe;
 	getCharacterAttribution(blockId: string): readonly CharacterAttribution[];
 	getBlameRanges(blockId: string): readonly BlameRange[];

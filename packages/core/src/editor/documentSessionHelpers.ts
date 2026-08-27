@@ -12,7 +12,7 @@ import {
 	isYjsCRDTDocument,
 	isYjsDoc,
 	type YjsDoc,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 
 export type ScopeListener = (event: CRDTEvent) => void;
 export type ScopeReplacementListener = (

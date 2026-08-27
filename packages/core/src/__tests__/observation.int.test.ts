@@ -1,4 +1,4 @@
-import { isYjsCRDTDocument } from "@input/pen-crdt-yjs";
+import { isYjsCRDTDocument } from "@input/pen-yjs";
 import type {
 	CommitEvent,
 	CommitEventSource,

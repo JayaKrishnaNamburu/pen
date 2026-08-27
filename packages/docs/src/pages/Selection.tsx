@@ -52,12 +52,9 @@ export function SelectionPage() {
 				<code>editor.selection</code>.
 			</p>
 			<pre>
-				<code>{`import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { createEditor } from "@input/pen";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 const blockId = editor.firstBlock()?.id ?? "";
 
 editor.selectText(blockId, 0, 5);

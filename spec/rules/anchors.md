@@ -1,6 +1,6 @@
 # Anchors And The Selection Authority
 
-A position that must survive commits is an anchor: a CRDT relative position, minted when the position becomes interesting and resolved when it is used. `AN` is the anchor contract; `AS` is how the selection authority holds, repairs, and resolves its record. Contracts live in `@input/pen-types` (`types/anchors.ts` plus the two `CRDTAdapter` methods), the encoding in `@input/pen-crdt-yjs`, and the runtime in `@input/pen-core` (`editor.anchors`, the resolution cache, `anchorRepair.ts`, and `SelectionAuthority`). No library code maps a raw `{ blockId, offset }` across commits and none re-locates content by fingerprint (I13).
+A position that must survive commits is an anchor: a CRDT relative position, minted when the position becomes interesting and resolved when it is used. `AN` is the anchor contract; `AS` is how the selection authority holds, repairs, and resolves its record. Contracts live in `@input/pen-types` (`types/anchors.ts` plus the two `CRDTAdapter` methods), the encoding in `@input/pen-yjs`, and the runtime in `@input/pen-core` (`editor.anchors`, the resolution cache, `anchorRepair.ts`, and `SelectionAuthority`). No library code maps a raw `{ blockId, offset }` across commits and none re-locates content by fingerprint (I13).
 
 ## AN — Anchor Contract
 

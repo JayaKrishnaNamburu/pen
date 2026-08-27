@@ -9,8 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@input/pen-core": "workspace:*",
-    "@input/pen-preset-default": "workspace:*",
+    "@input/pen": "workspace:*",
     "@input/pen-vue": "workspace:*",
     "vue": "^3.5.41"
   },

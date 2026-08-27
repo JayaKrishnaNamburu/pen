@@ -116,11 +116,6 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/commands/registry.ts"],
 	},
 	{
-		code: "content-ops-unexposed-block",
-		levels: ["error"],
-		sources: ["shared/content-ops/src/writeContent.ts"],
-	},
-	{
 		code: "dom-divergence",
 		levels: ["warn"],
 		sources: ["rendering/dom/src/field-editor/contenteditableBackend.ts"],
@@ -148,7 +143,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "HISTORY_SNAPSHOT_FAILED",
 		levels: ["error"],
-		sources: ["extensions/history/src/snapshots/autoSnapshot.ts"],
+		sources: ["extensions/snapshots/src/snapshots/autoSnapshot.ts"],
 	},
 	{
 		code: "import-dropped",
@@ -161,6 +156,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["extensions/interop/src/html/import/ingestBounds.ts", "extensions/interop/src/json/import/ingestBounds.ts", "extensions/interop/src/markdown/import/ingestBounds.ts", "extensions/interop/src/xml/importer.ts", "rendering/dom/src/utils/clipboardIngest.ts"],
 	},
 	{
+		code: "ingest-unexposed-block",
+		levels: ["error"],
+		sources: ["shared/ingest/src/writeContent.ts"],
+	},
+	{
 		code: "invalid-block-type",
 		levels: ["warn"],
 		sources: ["core/src/commands/textConvert.ts"],
@@ -168,7 +168,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "invalid-tool-payload",
 		levels: ["error"],
-		sources: ["extensions/document-ops/src/utils/payloadValidation.ts", "extensions/document-ops/src/utils/toolRejection.ts"],
+		sources: ["extensions/tools/src/utils/payloadValidation.ts", "extensions/tools/src/utils/toolRejection.ts"],
 	},
 	{
 		code: "message-missing",

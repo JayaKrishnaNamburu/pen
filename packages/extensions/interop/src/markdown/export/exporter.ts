@@ -2,12 +2,12 @@ import type { BlockHandle, Editor, Exporter, ExportOptions } from "@input/pen-ty
 import {
   exportMarkdownForBlocks as serializeMarkdownForBlocks,
   exportMarkdownRange as serializeMarkdownRange,
-} from "@input/pen-markdown-serialization";
+} from "@input/pen-markdown";
 import type {
   MarkdownExportConfig,
   MarkdownExportRange,
   MarkdownExportViewMode,
-} from "@input/pen-markdown-serialization";
+} from "@input/pen-markdown";
 import { admitMarkdownUrls } from "./admitMarkdownUrls";
 
 type MarkdownExporterExtraOptions = Record<string, unknown> & {

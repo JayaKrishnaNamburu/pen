@@ -3,8 +3,8 @@ import {
 	runMigrations,
 	type DocumentMigration,
 } from "@input/pen-core";
-import type { YjsCRDTDocument } from "@input/pen-crdt-yjs";
-import { defaultSchema } from "@input/pen-schema-default";
+import type { YjsCRDTDocument } from "@input/pen-yjs";
+import { defaultSchema } from "@input/pen-schema";
 import { createTwoPeerHarness } from "@input/pen-test";
 import type { CommitEvent, Editor, OpOrigin } from "@input/pen-types";
 import { describe, expect, it } from "vitest";

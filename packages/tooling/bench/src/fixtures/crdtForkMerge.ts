@@ -1,5 +1,5 @@
-import { yjsAdapter } from "@input/pen-crdt-yjs";
-import type { YjsCRDTDocument } from "@input/pen-crdt-yjs";
+import { yjsAdapter } from "@input/pen-yjs";
+import type { YjsCRDTDocument } from "@input/pen-yjs";
 import * as Y from "yjs";
 import { createLargeDocument } from "./largeDoc";
 

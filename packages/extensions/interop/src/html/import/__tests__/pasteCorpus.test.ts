@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createEditor, type PendingBlock } from "@input/pen-core";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { parseHtmlToBlocks } from "../importer";
 import { sanitizeHTML } from "../sanitize";
 import { loadPasteCorpus, loadPasteCorpusFixture } from "./pasteCorpus/loadCorpus";

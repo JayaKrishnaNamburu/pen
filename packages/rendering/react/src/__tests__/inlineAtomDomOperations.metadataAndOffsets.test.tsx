@@ -4,8 +4,8 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { defaultPreset } from "@input/pen";
+import { createDefaultSchema } from "@input/pen-schema";
 import {
 	moveInlineAtom,
 	replaceInlineAtomWithText,
@@ -44,7 +44,7 @@ function createPresetEditor() {
 	return createEditor({
 		schema: createDefaultSchema(),
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

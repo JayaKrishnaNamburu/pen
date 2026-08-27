@@ -1,5 +1,5 @@
 import { createEditor, getCommandRegistry } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { handleFieldEditorKeyDown } from "../keyHandling";
 

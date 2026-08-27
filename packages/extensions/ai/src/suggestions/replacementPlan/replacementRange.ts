@@ -1,4 +1,4 @@
-import { splitPlainTextLineBlocks } from "@input/pen-content-ops";
+import { splitPlainTextLineBlocks } from "@input/pen-ingest";
 import { hasLineBreak } from "./sharedTextDiff";
 
 export interface ReplacementRangeBlock {

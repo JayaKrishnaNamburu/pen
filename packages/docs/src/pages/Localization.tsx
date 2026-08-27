@@ -73,11 +73,9 @@ export function LocalizationPage() {
 				on <code>@input/pen-types</code>.
 			</p>
 			<pre>
-				<code>{`import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { createEditor } from "@input/pen";
 
 const editor = createEditor({
-  preset: defaultPreset(),
   locale: "de",
   a11yLabel: "Dokument",
   messages: {

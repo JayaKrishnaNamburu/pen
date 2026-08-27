@@ -3,7 +3,7 @@ import type {
 	StructuralOriginTag,
 	YArrayDelta,
 	YTextDelta,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 
 import { affectedBlockIdsFromSummary } from "./affectedBlocks";
 import type { BlockIndexSnapshot } from "./blockIndex";

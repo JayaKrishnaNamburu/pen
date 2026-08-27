@@ -29,7 +29,7 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 const CATALOG_FILES = [
 	"packages/types/src/types/messages.ts",
-	"packages/schema/default/src/messages.ts",
+	"packages/schema/src/messages.ts",
 ];
 
 const RESERVED_PREFIXES = ["pen.a11y.", "pen.schema.", "pen.display.group."];

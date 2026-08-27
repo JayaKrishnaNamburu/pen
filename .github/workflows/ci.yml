@@ -40,15 +40,15 @@ jobs:
           # playwright.config.ts webServer and testDir) and
           # @input/pen-dom. Closure:
           #   packages/core, packages/crdt/yjs, packages/types,
-          #   packages/schema/default, packages/presets/default,
+          #   packages/schema, packages/pen,
           #   packages/rendering/dom, packages/rendering/react,
-          #   packages/extensions/{ai,document-ops,history,input-rules,
+          #   packages/extensions/{ai,tools,snapshots,autoformat,
           #   interop,multiplayer,search,shortcuts,undo},
-          #   packages/shared/{content-ops,markdown-serialization},
-          #   packages/tooling/assets-memory,
+          #   packages/shared/{ingest,markdown},
+          #   packages/tooling/assets,
           #   host playground.
           # Not in the closure: examples/*, packages/rendering/vue,
-          # packages/transports/*, packages/tooling/{bench,conformance,
+          # packages/transport, packages/tooling/{bench,conformance,
           # eslint-plugin,test}, packages/docs.
           filters: |
             e2e:
@@ -62,13 +62,13 @@ jobs:
               - 'packages/core/**'
               - 'packages/crdt/yjs/**'
               - 'packages/types/**'
-              - 'packages/schema/default/**'
-              - 'packages/presets/default/**'
+              - 'packages/schema/**'
+              - 'packages/pen/**'
               - 'packages/rendering/dom/**'
               - 'packages/rendering/react/**'
               - 'packages/extensions/**'
               - 'packages/shared/**'
-              - 'packages/tooling/assets-memory/**'
+              - 'packages/tooling/assets/**'
 
   validate:
     name: Lint, types and tests

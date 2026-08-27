@@ -1,4 +1,4 @@
-import { initBlockMap, yjsAdapter } from "@input/pen-crdt-yjs";
+import { initBlockMap, yjsAdapter } from "@input/pen-yjs";
 import { createDefaultSchema } from "./fixtures/testSchema";
 import type { CRDTDocument, DiagnosticEvent, Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { aiEgressFacet, createEditor, defineExtension } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import {
 	AI_EGRESS_INVENTORY_CODE,
 	AI_FEATURE_CONTENT,
@@ -15,7 +15,7 @@ import {
 	streamThroughEgress,
 } from "../index";
 import { excerptKindsOf } from "../egress";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { createModelDouble } from "@input/pen-test";
 import type {
 	AIRequestContext,
@@ -195,7 +195,7 @@ describe("AIB1 pen.aiEgress", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ model: double }),
 			],
 		});
@@ -238,7 +238,7 @@ describe("AIB1 pen.aiEgress", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				defineExtension({
 					name: "host-core-ai-egress",
 					facets: [aiEgressFacet.of(redactSecret)],
@@ -277,7 +277,7 @@ describe("AIB1 pen.aiEgress", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				defineExtension({
 					name: "host-core-ai-egress",
 					facets: [aiEgressFacet.of(() => null)],
@@ -357,7 +357,7 @@ describe("AIB1 pen.aiEgress", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiEgressExtension(() => null),
 				aiExtension(),
 			],

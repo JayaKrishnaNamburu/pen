@@ -1,5 +1,5 @@
 import type { DocumentOp } from "@input/pen-types";
-import { buildDocumentWriteOps } from "@input/pen-document-ops";
+import { buildDocumentWriteOps } from "@input/pen-tools";
 import type { AIContentFormat } from "../runtime/contracts";
 import type { RequestRouterDecision } from "../runtime/router";
 import type {

@@ -47,7 +47,7 @@ import {
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	generateId,
 } from "@input/pen-types";
-import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { yjsAdapter } from "@input/pen-yjs";
 import { resolveEditorSchema } from "../schema/emptySchema";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";

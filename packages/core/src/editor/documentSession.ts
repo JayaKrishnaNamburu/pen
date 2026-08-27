@@ -20,7 +20,7 @@ import {
 	wrapYjsDocument,
 	type YjsDoc,
 	type YjsCRDTDocument,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import {
 	cloneScope,
 	collectReplacementTargets,

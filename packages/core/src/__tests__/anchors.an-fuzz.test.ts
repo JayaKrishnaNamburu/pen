@@ -7,7 +7,7 @@ import type {
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { isYjsCRDTDocument } from "@input/pen-crdt-yjs";
+import { isYjsCRDTDocument } from "@input/pen-yjs";
 
 import {
 	applyMergeBlocks,

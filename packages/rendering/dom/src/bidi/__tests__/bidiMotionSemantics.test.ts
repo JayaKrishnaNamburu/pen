@@ -15,7 +15,7 @@ import {
 	resolveFocusBlockDirection,
 	type KeymapPlatform,
 } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { Editor, TextSelection } from "@input/pen-types";
 
 import {

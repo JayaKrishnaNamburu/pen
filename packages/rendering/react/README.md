@@ -2,20 +2,20 @@
 
 React renderer, primitives, and hooks for Pen.
 
-`@input/pen-react` is the batteries-included renderer surface. If you want clearer optional-feature boundaries, you can import the dedicated subpaths: `@input/pen-react/ai`, `@input/pen-react/ai-suggestions`, `@input/pen-react/search`, `@input/pen-react/history`, and `@input/pen-react/multiplayer`.
+`@input/pen-react` is the batteries-included renderer surface. If you want clearer optional-feature boundaries, you can import the dedicated subpaths: `@input/pen-react/ai`, `@input/pen-react/ai-suggestions`, `@input/pen-react/search`, `@input/pen-react/snapshots`, and `@input/pen-react/multiplayer`.
 
 ## Install
 
 ```bash
-pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
+pnpm add @input/pen @input/pen-react react react-dom yjs y-protocols
 ```
 
-`react` and `react-dom` are peers of this package. `yjs` and `y-protocols` are peers of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on. Add `@input/pen-core` explicitly when you import from it directly.
+`react` and `react-dom` are peers of this package. `yjs` and `y-protocols` are peers of `@input/pen-yjs`, which `@input/pen-core` depends on. Add `@input/pen-core` explicitly when you import from it directly.
 
 ## Quick Start
 
 ```tsx
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { PenEditor, useEditor } from "@input/pen-react";
 
 export function App() {
@@ -29,11 +29,11 @@ export function App() {
 
 `useEditor` owns what it creates: one editor per component instance, destroyed on unmount, and rebuilt when StrictMode remounts the component. Passing an existing editor — `useEditor(editor)` — borrows it instead, leaving destruction to whoever created it.
 
-`useEditor()` with no argument calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `document-ops`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack.
+`useEditor()` with no argument calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `tools`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack.
 
 ## Capabilities
 
-The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. React is the reference surface: every capability in the matrix is `supported` here except undo and input rules, which are `bring-your-own-ui` because they need no chrome — install `undoExtension()` or `inputRulesExtension()` and the keyboard works without any binding code.
+The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. React is the reference surface: every capability in the matrix is `supported` here except undo and input rules, which are `bring-your-own-ui` because they need no chrome — install `undoExtension()` or `autoformatExtension()` and the keyboard works without any binding code.
 
 React ships the reference feature set, so it carries components other bindings leave to the host: the AI review and suggestion primitives, the generation zone, overlays and caret painting, multiplayer presence, and the search UI. That is bundled chrome over public state, not exclusive access — a capability marked `bring-your-own-ui` in another binding's column is reachable there too.
 

@@ -14,8 +14,8 @@ import {
 	defaultSchema,
 	italic,
 	link,
-} from "@input/pen-schema-default";
-import { initBlockMap, wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
+} from "@input/pen-schema";
+import { initBlockMap, wrapYjsDocument, yjsAdapter } from "@input/pen-yjs";
 import type { BlockSchema, LayoutSchema } from "@input/pen-types";
 import {
 	createTestDocument,

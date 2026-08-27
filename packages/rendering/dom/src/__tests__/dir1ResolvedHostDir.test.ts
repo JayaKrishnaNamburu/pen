@@ -8,7 +8,7 @@ import {
 	defineExtension,
 	resolveBlockDirection,
 } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { Editor } from "@input/pen-types";
 import { mountEditor } from "../host/mountEditor";
 import { DATA_ATTRS } from "../utils/dataAttributes";

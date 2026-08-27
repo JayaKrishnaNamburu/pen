@@ -64,14 +64,14 @@
     "@input/pen-core": "workspace:^",
     "@input/pen-dom": "workspace:^",
     "@input/pen-interop": "workspace:^",
-    "@input/pen-schema-default": "workspace:^",
+    "@input/pen-schema": "workspace:^",
     "@input/pen-types": "workspace:^"
   },
   "peerDependencies": {
     "vue": "^3.4.0"
   },
   "devDependencies": {
-    "@input/pen-preset-default": "workspace:*",
+    "@input/pen": "workspace:*",
     "@input/pen-test": "workspace:*",
     "@input/pen-undo": "workspace:*",
     "@vue/test-utils": "^2.4.11",

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -16,7 +16,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { testStreamingToolExtension } from "./extension.testUtils";
 
 async function awaitExtensionLifecycle(
@@ -32,7 +32,7 @@ describe("aiExtension: inline streaming edits", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -83,7 +83,7 @@ describe("aiExtension: inline streaming edits", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -129,7 +129,7 @@ describe("aiExtension: inline streaming edits", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -181,7 +181,7 @@ describe("aiExtension: inline streaming edits", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -265,7 +265,7 @@ describe("aiExtension: inline streaming edits", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					allowedMutatingTools: ["test_search"],
 					model: {

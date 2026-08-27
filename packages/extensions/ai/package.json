@@ -100,13 +100,13 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-content-ops": "workspace:^",
+    "@input/pen-ingest": "workspace:^",
     "@input/pen-core": "workspace:^",
-    "@input/pen-document-ops": "workspace:^",
+    "@input/pen-tools": "workspace:^",
     "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
-    "@input/pen-schema-default": "workspace:^",
+    "@input/pen-schema": "workspace:^",
     "@input/pen-test": "workspace:*",
     "@input/pen-undo": "workspace:*",
     "tsup": "^8.4.0",

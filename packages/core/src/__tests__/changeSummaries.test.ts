@@ -5,7 +5,7 @@ import {
 	type RawCommitDelta,
 	type YjsCRDTDocument,
 	type YTextDelta,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 

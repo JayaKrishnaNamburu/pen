@@ -9,8 +9,8 @@ export default defineConfig({
   external: [
     "@input/pen-core",
     "@input/pen-types",
-    "@input/pen-crdt-yjs",
-    "@input/pen-schema-default",
+    "@input/pen-yjs",
+    "@input/pen-schema",
     "@input/pen-test",
     "yjs",
   ],

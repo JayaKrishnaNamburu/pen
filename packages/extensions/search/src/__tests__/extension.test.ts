@@ -8,7 +8,7 @@ import {
 } from "@input/pen-core";
 import type { Extension, KeyBinding } from "@input/pen-types";
 import { getSearchController, searchExtension } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 describe("@input/pen-search extension", () => {
 	it("SM2: getSearchController keeps its documented name and resolves through the facet", () => {

@@ -40,12 +40,12 @@ export const searchControllerFacet =
 export const multiplayerControllerFacet = singleController<unknown>(
 	"multiplayer.controller",
 );
-export const historyControllerFacet =
+export const snapshotsControllerFacet =
 	singleController<unknown>("history.controller");
 export const assetProviderFacet =
 	singleController<unknown>("pen.assetProvider");
-export const documentOpsToolRuntimeFacet = singleController<unknown>(
-	"documentOps.toolRuntime",
+export const toolRuntimeFacet = singleController<unknown>(
+	"tools.toolRuntime",
 );
 export const announcerFacet = singleController<unknown>("pen.announcer");
 export const streamingTargetFacet =

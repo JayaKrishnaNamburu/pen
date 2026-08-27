@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { buildApplySuggestionOps } from "../apply";
 import type { AISuggestion } from "../types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 describe("@input/pen-ai/suggestions apply", () => {
 	it("builds replace-text ops when the source text still matches", () => {

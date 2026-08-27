@@ -6,7 +6,7 @@ import type {
 	StructuralOriginTag,
 	TableColumnSchema,
 } from "@input/pen-types";
-import { STRUCTURAL_ORIGIN_META_KEY } from "@input/pen-crdt-yjs";
+import { STRUCTURAL_ORIGIN_META_KEY } from "@input/pen-yjs";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTTextLike,

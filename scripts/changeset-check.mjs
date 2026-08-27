@@ -298,7 +298,7 @@ function assert(condition, message) {
 export function runSelfTests() {
 	const packages = [
 		{ name: "@input/pen-core", dir: "packages/core" },
-		{ name: "@input/pen-crdt-yjs", dir: "packages/crdt/yjs" },
+		{ name: "@input/pen-yjs", dir: "packages/crdt/yjs" },
 		{ name: "@input/pen-docs", dir: "packages/docs" },
 	];
 
@@ -323,7 +323,7 @@ export function runSelfTests() {
 
 	assert(
 		ownerOf("packages/crdt/yjs/src/doc.ts", packages)?.name ===
-			"@input/pen-crdt-yjs",
+			"@input/pen-yjs",
 		"self-test: nested package wins over a shared prefix",
 	);
 	assert(

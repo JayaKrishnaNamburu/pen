@@ -1,6 +1,6 @@
 # `@input/pen-types`
 
-`@input/pen-types` is not a package to install alone. Install `@input/pen-core` or `@input/pen-preset-default`; those depend on this package and re-export the contracts a host actually uses.
+`@input/pen-types` is not a package to install alone. Install `@input/pen-core` or `@input/pen`; those depend on this package and re-export the contracts a host actually uses.
 
 This package is the shared type, constant, and guard surface for Pen. It does not create an editor, apply ops, or render a surface.
 

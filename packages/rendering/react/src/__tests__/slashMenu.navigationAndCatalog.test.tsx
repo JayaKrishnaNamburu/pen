@@ -4,11 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { Pen } from "../primitives/index";
 import { useSlashMenu } from "../hooks/useSlashMenu";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -29,7 +29,7 @@ function createSlashMenuEditor(
 		schema: defaultSchema,
 		...options,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

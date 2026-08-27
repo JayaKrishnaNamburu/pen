@@ -34,16 +34,10 @@ export function CommandsPage() {
 				returns that installed instance.
 			</p>
 			<pre>
-				<code>{`import {
-  createEditor,
-  getCommandRegistry,
-  insertText,
-} from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { getCommandRegistry, insertText } from "@input/pen-core";
+import { createEditor } from "@input/pen";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 const blockId = editor.firstBlock()?.id ?? "";
 editor.selectText(blockId, 0, 0);
 
@@ -121,14 +115,11 @@ registry?.dispatch(insertText, { text: "Hello" });`}</code>
   builtinCommandHandlers,
   commandHandler,
   createCommandRegistry,
-  createEditor,
   splitBlock,
 } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 
 const registry = createCommandRegistry({
   editor,

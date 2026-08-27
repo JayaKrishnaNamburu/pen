@@ -303,7 +303,7 @@
     },
     {
       "package": "@input/pen-react",
-      "key": "./history",
+      "key": "./snapshots",
       "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
     },
     {
@@ -317,9 +317,19 @@
       "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
     },
     {
-      "package": "@input/pen-schema-default",
+      "package": "@input/pen-schema",
       "key": "./defs",
       "reason": "Schema definition subpath; first-class public surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-transport",
+      "key": "./direct",
+      "reason": "SF7 merged variant subpath; the in-process transport that replaced the @input/pen-transport-direct package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-transport",
+      "key": "./sse",
+      "reason": "SF7 merged variant subpath; the SSE transport that replaced the @input/pen-transport-sse package, not a src/dist escape hatch."
     },
     {
       "package": "@input/pen-vue",

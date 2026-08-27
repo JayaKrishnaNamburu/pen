@@ -29,7 +29,7 @@ export function SecurityPage() {
 				<code>application/x-pen-blocks+json</code> and the HTML{" "}
 				<code>data-pen-blocks</code> embed), plain-text paste, file
 				drag-and-drop, the Markdown / JSON / XML import APIs, AI /
-				stream / document-ops writes, remote collaborator Y updates,
+				stream / tools writes, remote collaborator Y updates,
 				asset upload and resolve, and the host&apos;s own initial
 				document. Schema validation and ingest bounds are not HTML
 				sanitization. A <code>javascript:</code> href written through
@@ -91,7 +91,7 @@ export function SecurityPage() {
 					it. Pen-blocks JSON and plain text / Markdown paste do not.
 				</li>
 				<li>
-					<code>@input/pen-document-ops</code> validates tool payloads
+					<code>@input/pen-tools</code> validates tool payloads
 					before building ops. Invalid payloads emit a diagnostic and
 					throw. The batch is not applied.
 				</li>

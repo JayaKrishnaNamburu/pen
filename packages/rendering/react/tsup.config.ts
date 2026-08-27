@@ -5,7 +5,7 @@ export default defineConfig({
     "src/index.ts",
     "src/ai.ts",
     "src/aiSuggestions.ts",
-    "src/history.ts",
+    "src/snapshots.ts",
     "src/multiplayer.ts",
     "src/search.ts",
   ],
@@ -18,7 +18,7 @@ export default defineConfig({
     "react-dom",
     "@input/pen-core",
     "@input/pen-types",
-    "@input/pen-schema-default",
+    "@input/pen-schema",
     "@input/pen-interop",
   ],
   outExtension({ format }) {

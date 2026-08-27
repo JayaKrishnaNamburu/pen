@@ -4,7 +4,7 @@ import { createHeadlessEditor } from "@input/pen-core";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createInlineAtomElement } from "../../field-editor/inlineAtomDom";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const editors: Array<ReturnType<typeof createHeadlessEditor>> = [];
 

@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { Pen } from "../primitives/index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	PEN_MOVE_BLOCK_DOWN,
 	PEN_MOVE_BLOCK_UP,
@@ -22,7 +22,7 @@ function createHandleEditor() {
 	return createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),
@@ -225,7 +225,7 @@ describe("@input/pen-react block handle AX3", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),

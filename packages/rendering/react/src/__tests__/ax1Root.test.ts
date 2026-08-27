@@ -9,9 +9,9 @@ import {
 	ariaReadOnlyFacet,
 } from "@input/pen-core";
 import { defineExtension } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { EditorRoot } from "../primitives/editor/root";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -21,7 +21,7 @@ function createTestEditor() {
 	return createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),
@@ -88,7 +88,7 @@ describe("AX1 React editor root", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -112,7 +112,7 @@ describe("AX1 React editor root", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),

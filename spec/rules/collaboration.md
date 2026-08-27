@@ -1,6 +1,6 @@
 # Collaboration Contract
 
-Yjs converges, but convergence is not the whole answer once real users share a document. This document owns what Pen guarantees when more than one person is editing: how remote edits are labeled, how presence is validated, where authorship comes from, what happens when structural edits collide, and what Pen explicitly does not do. It governs origins and awareness in `packages/crdt/yjs`, `packages/extensions/multiplayer`, attribution in `packages/extensions/history`, the normalization rules in `packages/core`, and `packages/transports/*`.
+Yjs converges, but convergence is not the whole answer once real users share a document. This document owns what Pen guarantees when more than one person is editing: how remote edits are labeled, how presence is validated, where authorship comes from, what happens when structural edits collide, and what Pen explicitly does not do. It governs origins and awareness in `packages/crdt/yjs`, `packages/extensions/multiplayer`, attribution in `packages/extensions/snapshots`, the normalization rules in `packages/core`, and `packages/transport`.
 
 ## COL — Collaboration contract
 

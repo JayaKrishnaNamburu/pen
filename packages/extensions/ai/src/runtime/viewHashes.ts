@@ -2,7 +2,7 @@ import {
 	formatBlocksAsAnnotatedMarkdown,
 	resolveDocumentBlocks,
 	summarizeBlocks,
-} from "@input/pen-document-ops";
+} from "@input/pen-tools";
 import type { Editor } from "@input/pen-types";
 import type { AIWorkingSetViewMode } from "./contracts";
 

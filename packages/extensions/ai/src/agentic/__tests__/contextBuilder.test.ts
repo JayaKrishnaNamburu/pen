@@ -1,4 +1,4 @@
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { ApplyOptions, DocumentOp, Editor } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import { buildToolContext } from "../contextBuilder";
@@ -29,7 +29,7 @@ function createStructuredEditor(): Editor {
 }
 
 describe("buildToolContext", () => {
-	it("reuses the guarded document-ops mutation policy", () => {
+	it("reuses the guarded tools mutation policy", () => {
 		const editor = createStructuredEditor();
 		const context = buildToolContext(
 			editor,

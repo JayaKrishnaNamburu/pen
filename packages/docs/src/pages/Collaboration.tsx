@@ -16,7 +16,7 @@ export function CollaborationPage() {
 
 			<h2>Setup</h2>
 			<p>
-				<code>@input/pen-crdt-yjs</code> is the Yjs adapter (
+				<code>@input/pen-yjs</code> is the Yjs adapter (
 				<code>yjsAdapter</code>
 				). <code>yjs</code> and <code>y-protocols</code> are peers, not
 				bundled. <code>@input/pen-multiplayer</code> owns local
@@ -43,7 +43,7 @@ function install(session: MultiplayerSession) {
 				document and awareness through <code>getYjsDoc(editor)</code>{" "}
 				and <code>getYjsAwareness(awareness)</code>. The canonical{" "}
 				<code>y-websocket</code> wiring is in the{" "}
-				<code>@input/pen-crdt-yjs</code> README. The playground file is
+				<code>@input/pen-yjs</code> README. The playground file is
 				a demo.
 			</p>
 			<p>

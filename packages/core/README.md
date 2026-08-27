@@ -7,10 +7,10 @@ Headless editor runtime for Pen.
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default
+pnpm add @input/pen-core @input/pen
 ```
 
-`defaultPreset()` is the batteries-included path. A bare `createEditor()` installs no extensions — the fallback list is empty. Four that used to come from core are gone: `document-ops`, `undo`, `rich-text-shortcuts`, and `delta-stream`. Dependents of the first three fail loudly. Undo fails silently: `canUndo()` is false, Mod-Z is dead, and nothing throws.
+Most hosts start with `@input/pen` instead: its `createEditor()` defaults an omitted `preset` to `defaultPreset()`. This package's `createEditor()` is the bare constructor — it installs no extensions, and the fallback list is empty. Four that used to come from core are gone: `tools`, `undo`, `rich-text-shortcuts`, and `delta-stream`. Dependents of the first three fail loudly. Undo fails silently: `canUndo()` is false, Mod-Z is dead, and nothing throws.
 
 ## What It Provides
 
@@ -24,7 +24,7 @@ pnpm add @input/pen-core @input/pen-preset-default
 
 ```ts
 import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -36,7 +36,7 @@ const editor = createEditor({
 ```ts
 import * as Y from "yjs";
 import { createHeadlessEditor } from "@input/pen-core";
-import { yjsAdapter, wrapYjsDocument } from "@input/pen-crdt-yjs";
+import { yjsAdapter, wrapYjsDocument } from "@input/pen-yjs";
 
 const ydoc = new Y.Doc();
 const adapter = yjsAdapter();
@@ -46,7 +46,7 @@ const editor = createHeadlessEditor({
 });
 ```
 
-This snippet also needs `yjs` and `@input/pen-crdt-yjs`. Use this shape for migrations, AI workers, export workers, and tests that should run through Pen's mutation pipeline without mounting a UI.
+This snippet also needs `yjs` and `@input/pen-yjs`. Use this shape for migrations, AI workers, export workers, and tests that should run through Pen's mutation pipeline without mounting a UI.
 
 `editor.destroy()` deactivates extensions and observation. It does not tear down an attached field editor — hosts own that call (React `EditorRoot` and Vue `PenEditor` already do). The method returns the queued teardown promise; callers that ignore it stay correct.
 
@@ -54,7 +54,7 @@ This snippet also needs `yjs` and `@input/pen-crdt-yjs`. Use this shape for migr
 
 Most apps use `@input/pen-core` with:
 
-- `@input/pen-preset-default`
+- `@input/pen`
 - `@input/pen-react` or `@input/pen-vue`
 
 See the repository root README for the broader package map.
@@ -74,7 +74,7 @@ Every `CreateEditorOptions` field is optional.
 | `editorViewMode`  | unset   | View mode                                                             |
 | `documentProfile` | unset   | Authoring profile                                                     |
 
-`createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset. `useDefaultExtensions: true` installs nothing — the fallback list is empty. It does not install `document-ops`, `undo`, `rich-text-shortcuts`, or `delta-stream`. Pass `preset: defaultPreset()` for those.
+`createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset. `useDefaultExtensions: true` installs nothing — the fallback list is empty. It does not install `tools`, `undo`, `rich-text-shortcuts`, or `delta-stream`. Pass `preset: defaultPreset()` for those, or use `@input/pen`'s constructors, which default an omitted `preset` to `defaultPreset()`.
 
 `ariaReadOnlyFacet` (`pen.ariaReadOnly`) only sets `aria-readonly` on a mounted surface. It does not decline typing or stop `editor.apply`. The renderer `readonly` prop is what declines typing.
 

@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as Y from "yjs";
 import { createHeadlessEditor, getCommandRegistry } from "@input/pen-core";
-import { wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
-import { defaultSchema } from "@input/pen-schema-default";
+import { wrapYjsDocument, yjsAdapter } from "@input/pen-yjs";
+import { defaultSchema } from "@input/pen-schema";
 
 import {
 	APPLY_ID_BASE,

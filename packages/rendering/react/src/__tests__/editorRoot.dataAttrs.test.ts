@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { createEditor as createCoreEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultPreset } from "@input/pen";
+import { defaultSchema } from "@input/pen-schema";
 import { describe, expect, it } from "vitest";
 import { EditorRoot } from "../primitives/editor/root";
 import {
@@ -125,7 +125,7 @@ function createEditor() {
 	return createCoreEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

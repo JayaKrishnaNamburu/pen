@@ -3,7 +3,7 @@ import { createEditor } from "@input/pen-core";
 import { escapeMarkupAttribute, escapeMarkupText } from "../escapeMarkup";
 import { xmlExporter } from "../exporter";
 import { xmlImporter } from "../importer";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
   resolve() {

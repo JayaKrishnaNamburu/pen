@@ -1,5 +1,5 @@
 import { createEditor as createCoreEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { CommitEvent, Editor, TextStreamWriter } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";

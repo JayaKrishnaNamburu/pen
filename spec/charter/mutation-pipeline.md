@@ -31,5 +31,5 @@ Split and merge are command recipes, not ops. `pen.splitBlock` emits `insert-blo
 - Extension hooks should stay deterministic and bounded.
 - Importers, tools, AI, and renderers may prepare ops, but `@input/pen-core` remains the authority that applies them.
 - Origin tagging matters so undo, diagnostics, and collaboration surfaces can interpret writes correctly. Dispatch stamps `origin.intent` with the command name. Nothing synthesizes intent on remote, undo, or stream commits.
-- `editor.apply` sends a structured origin object into `adapter.transact`. `Y.UndoManager` matches tracked origins by identity, so `@input/pen-crdt-yjs` wraps the tracked set in a `TrackedOriginSet` that also matches on `origin.type`. Do not copy the origin object at the transact boundary.
+- `editor.apply` sends a structured origin object into `adapter.transact`. `Y.UndoManager` matches tracked origins by identity, so `@input/pen-yjs` wraps the tracked set in a `TrackedOriginSet` that also matches on `origin.type`. Do not copy the origin object at the transact boundary.
 - A position that must survive commits is an anchor. Summaries answer what a commit touched; they do not map raw `{ blockId, offset }` across commits.

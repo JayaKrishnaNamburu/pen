@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { parseHTML } from "../domAdapter";
 import { domToBlocks } from "../domToBlocks";
 import { sanitizeHTML } from "../sanitize";

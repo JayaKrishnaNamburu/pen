@@ -1,6 +1,6 @@
 # Vanilla example
 
-Minimal Vite app that mounts Pen with `@input/pen-preset-default` and `@input/pen-dom`. `@input/pen-core` is the headless assembly point if you skip the preset.
+Minimal Vite app that mounts Pen with `@input/pen` and `@input/pen-dom`. `@input/pen-core` is the headless assembly point if you skip the preset.
 
 This package is a workspace member (`examples/vanilla` in `pnpm-workspace.yaml`).
 
@@ -18,21 +18,18 @@ pnpm dev -- --filter=@input/pen-example-vanilla
 The post-publish consumer command will be:
 
 ```bash
-pnpm add @input/pen-preset-default @input/pen-core @input/pen-dom yjs
+pnpm add @input/pen @input/pen-dom yjs
 ```
 
-`@input/pen-dom` has no extra peer dependencies. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs it.
+`@input/pen-dom` has no extra peer dependencies. `yjs` is a peer of `@input/pen-yjs`, which arrives through `@input/pen`'s dependency on `@input/pen-core`, so every Pen install needs it.
 
 ## Mount
 
 ```ts
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { mountEditor } from "@input/pen-dom";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 
 const root = document.querySelector("#app");
 if (!(root instanceof HTMLElement)) {

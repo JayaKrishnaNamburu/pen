@@ -3,7 +3,7 @@ import {
 	applySplitBlock,
 	createEditor,
 } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { SelectionState } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { AutocompleteContinuationState } from "../continuationState";

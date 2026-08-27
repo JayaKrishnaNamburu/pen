@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { deltaStreamExtension } from "../stream";
 import { aiExtension, getAIController } from "../index";
 
@@ -94,7 +94,7 @@ function createPlanStreamEditor(
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			aiExtension({
 				model: {
 					async *stream() {

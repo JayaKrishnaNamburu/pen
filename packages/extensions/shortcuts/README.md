@@ -6,10 +6,10 @@ This package does not render a surface, handle link UI, or own the keymap facet 
 
 ## Install
 
-`@input/pen-preset-default` already includes it. The extension depends on `@input/pen-core` for `keymapFacet`. A bare `createEditor()` does not register these bindings, and without a schema the marks have nothing to toggle.
+`@input/pen` already includes it. The extension depends on `@input/pen-core` for `keymapFacet`. A bare `createEditor()` does not register these bindings, and without a schema the marks have nothing to toggle.
 
 ```bash
-pnpm add @input/pen-core @input/pen-schema-default @input/pen-shortcuts
+pnpm add @input/pen-core @input/pen-schema @input/pen-shortcuts
 ```
 
 `engines.node` is `>=22`.
@@ -18,7 +18,7 @@ pnpm add @input/pen-core @input/pen-schema-default @input/pen-shortcuts
 
 ```ts
 import { createEditor } from "@input/pen-core";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { richTextShortcutsExtension } from "@input/pen-shortcuts";
 
 const editor = createEditor({

@@ -3,21 +3,24 @@ export function GettingStartedPage() {
 		<>
 			<h1>Getting started</h1>
 			<p>
-				Start with <code>@input/pen-preset-default</code> and a host
-				binding. <code>@input/pen-core</code> is the assembly point if
-				you skip the preset. <code>createEditor()</code> does not
-				install a schema or any extension — no bold/italic shortcuts, no
-				undo, no <code>delta-stream</code>.{" "}
+				Start with <code>@input/pen</code> and a host binding. The
+				starter&apos;s <code>createEditor()</code> applies{" "}
+				<code>defaultPreset()</code> when no <code>preset</code> is
+				passed: the default schema, bold/italic shortcuts, undo,
+				document tools, and <code>delta-stream</code>.{" "}
+				<code>@input/pen-core</code> is the assembly point when you
+				compose everything yourself: core&apos;s{" "}
+				<code>createEditor()</code> installs no schema and no extension,
+				and <code>editor.undoManager</code> is an inert stub (
+				<code>canUndo()</code> is <code>false</code>,{" "}
+				<code>undo()</code> does nothing, no error). Core&apos;s{" "}
 				<code>
 					createHeadlessEditor({"{ useDefaultExtensions: true }"})
 				</code>{" "}
-				is a no-op: the fallback list is empty.{" "}
-				<code>editor.undoManager</code> becomes an inert stub (
-				<code>canUndo()</code> is <code>false</code>,{" "}
-				<code>undo()</code> does nothing, no error). React and Vue{" "}
+				is a no-op: the fallback list is empty. React and Vue{" "}
 				<code>useEditor</code> inject <code>defaultSchema</code> and
-				still install no preset. Pass{" "}
-				<code>preset: defaultPreset()</code>, or compose{" "}
+				still install no preset — pass{" "}
+				<code>preset: defaultPreset()</code> there, or compose{" "}
 				<code>schema: createDefaultSchema()</code> and an{" "}
 				<code>extensions</code> list yourself.
 			</p>
@@ -73,13 +76,10 @@ export function GettingStartedPage() {
 			<pre>
 				<code>{`"use client";
 
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { PenEditor } from "@input/pen-react";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 
 export function App() {
   return <PenEditor editor={editor} />;
@@ -95,13 +95,10 @@ export function App() {
 			</p>
 			<pre>
 				<code>{`<script setup lang="ts">
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { PenEditor } from "@input/pen-vue";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 </script>
 
 <template>
@@ -121,13 +118,10 @@ const editor = createEditor({
 				render document blocks.
 			</p>
 			<pre>
-				<code>{`import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { createEditor } from "@input/pen";
 import { mountEditor } from "@input/pen-dom";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 
 const root = document.querySelector("#app");
 if (!(root instanceof HTMLElement)) {

@@ -1,4 +1,4 @@
-import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { yjsAdapter } from "@input/pen-yjs";
 import { type DocumentSession, type PenStreamPart } from "@input/pen-types";
 import { defineExtension, getOpOriginType } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
@@ -11,7 +11,7 @@ import {
 	applySplitBlock,
 	createEditor as createCoreEditor,
 	createHeadlessEditor,
-	documentOpsToolRuntimeFacet,
+	toolRuntimeFacet,
 	ensureInlineCompletionController,
 	undoManagerFacet,
 } from "../index";
@@ -299,10 +299,10 @@ describe("@input/pen-core createEditor: subdocument scopes and text operations",
 		expect(editor.schema.resolve("paragraph")).toBeTruthy();
 		expect(typeof editor.clientId).toBe("number");
 		expect(editor.internals.engine).toBeTruthy();
-		// bare core is not batteries-included: document-ops and undo both arrive
-		// via @input/pen-preset-default. createEditor's fallback list is empty,
+		// bare core is not batteries-included: tools and undo both arrive
+		// via @input/pen. createEditor's fallback list is empty,
 		// so core depends on no extension package at all (API1/F12).
-		expect(editor.facet(documentOpsToolRuntimeFacet)).toBeNull();
+		expect(editor.facet(toolRuntimeFacet)).toBeNull();
 		expect(editor.facet(undoManagerFacet)).toBeNull();
 
 		editor.destroy();

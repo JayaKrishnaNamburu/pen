@@ -1,6 +1,6 @@
 import { createEditor } from "@input/pen-core";
-import { yjsAdapter, type YjsCRDTDocument } from "@input/pen-crdt-yjs";
-import { defaultSchema } from "@input/pen-schema-default";
+import { yjsAdapter, type YjsCRDTDocument } from "@input/pen-yjs";
+import { defaultSchema } from "@input/pen-schema";
 import type { Editor } from "@input/pen-types";
 import * as Y from "yjs";
 

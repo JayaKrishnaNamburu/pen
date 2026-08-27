@@ -3,13 +3,13 @@ import {
 	createEditor,
 	multiplayerControllerFacet,
 } from "@input/pen-core";
-import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { yjsAdapter } from "@input/pen-yjs";
 import {
 	type ConnectionState,
 	type MultiplayerSession,
 } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 
 describe("multiplayerExtension", () => {

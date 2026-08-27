@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { blocksToOps } from "@input/pen-core";
 import type { SchemaRegistry } from "@input/pen-types";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { parseMarkdownToBlocks } from "../importer";
 
 const stubRegistry: SchemaRegistry = {

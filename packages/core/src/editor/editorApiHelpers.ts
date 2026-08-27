@@ -39,7 +39,7 @@ import {
 	AI_SUGGESTIONS_CONTROLLER_SLOT,
 	ANNOUNCER_SLOT_KEY,
 	FIELD_EDITOR_SLOT_KEY,
-	HISTORY_CONTROLLER_SLOT,
+	SNAPSHOTS_CONTROLLER_SLOT,
 	INLINE_COMPLETION_SLOT,
 	INPUT_RULES_ENGINE_SLOT_KEY,
 	MULTIPLAYER_CONTROLLER_SLOT,
@@ -60,9 +60,9 @@ import {
 	aiSuggestionsControllerFacet,
 	announcerFacet,
 	assetProviderFacet,
-	documentOpsToolRuntimeFacet,
+	toolRuntimeFacet,
 	fieldEditorHostFacet,
-	historyControllerFacet,
+	snapshotsControllerFacet,
 	inputRulesEngineFacet,
 	multiplayerControllerFacet,
 	searchControllerFacet,
@@ -73,7 +73,7 @@ import {
 } from "../facets/controllerFacets";
 import { a11yLabelFacet } from "../facets/a11yFacets";
 import { localeFacet, messagesFacet } from "../facets/i18nFacets";
-import { getDocumentLoadReport } from "@input/pen-crdt-yjs";
+import { getDocumentLoadReport } from "@input/pen-yjs";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
 import { resolveCellSelectionMatrix } from "./cellSelection";
@@ -120,11 +120,11 @@ const FACET_BY_SLOT_KEY: Record<string, Facet<unknown, unknown>> = {
 	[AI_SUGGESTIONS_CONTROLLER_SLOT]: aiSuggestionsControllerFacet,
 	[SEARCH_CONTROLLER_SLOT]: searchControllerFacet,
 	[MULTIPLAYER_CONTROLLER_SLOT]: multiplayerControllerFacet,
-	[HISTORY_CONTROLLER_SLOT]: historyControllerFacet,
+	[SNAPSHOTS_CONTROLLER_SLOT]: snapshotsControllerFacet,
 	"paste:importers": clipboardFacet,
 	"paste:assetProvider": assetProviderFacet,
 	"undo:manager": undoManagerFacet,
-	"document-ops:toolRuntime": documentOpsToolRuntimeFacet,
+	"tools:runtime": toolRuntimeFacet,
 	"pen.locale": localeFacet,
 	"pen.messages": messagesFacet,
 	"pen.a11yLabel": a11yLabelFacet,

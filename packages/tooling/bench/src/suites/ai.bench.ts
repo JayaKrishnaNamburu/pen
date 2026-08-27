@@ -1,5 +1,5 @@
 import { getInlineCompletionController } from "@input/pen-core";
-import { buildDocumentWriteOps } from "@input/pen-document-ops";
+import { buildDocumentWriteOps } from "@input/pen-tools";
 import type { BenchContext, BenchDefinition } from "../bench";
 import {
 	AI_GET_CONTEXT_SUMMARY_200_BLOCKS_BENCH,

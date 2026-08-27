@@ -1,7 +1,7 @@
 import { createHeadlessEditor, defineBlock } from "@input/pen-core";
 import type { BlockSchema, DiagnosticEvent, Editor } from "@input/pen-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createDefaultSchema, defaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema, defaultSchema } from "@input/pen-schema";
 import {
 	DEFAULT_SEARCH_OPTIONS,
 	SEARCH_BUDGET_EXCEEDED_CODE,

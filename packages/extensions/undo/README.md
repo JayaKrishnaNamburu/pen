@@ -38,7 +38,7 @@ By default, undo tracks `user`, `ai`, and `import`. `collaborator`, `unknown`, a
 
 ## Facets and commands
 
-This package contributes no facets and no commands. It requires no other extensions. `defaultPreset()` installs it next to document-ops, delta-stream, and shortcuts.
+This package contributes no facets and no commands. It requires no other extensions. `defaultPreset()` installs it next to tools, delta-stream, and shortcuts.
 
 ## Documentation
 

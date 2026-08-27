@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createEditor } from "@input/pen-core";
 import type { HTMLImportElement, SchemaRegistry } from "@input/pen-types";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { htmlExporter } from "../../export";
 import { htmlImporter, parseHtmlToBlocks } from "../importer";
 import { sanitizeHTML } from "../sanitize";

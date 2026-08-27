@@ -9,23 +9,20 @@ This package does not assemble a schema, install a preset, or ship CSS. It is th
 This package has no peer dependencies. Hosts that want a mounted editor still need `@input/pen-core` and a preset or schema.
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-dom yjs
+pnpm add @input/pen @input/pen-dom yjs
 ```
 
-`yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
+`yjs` is a peer of `@input/pen-yjs`, which `@input/pen-core` depends on.
 
 `engines.node` is `>=22`.
 
 ## Usage
 
 ```ts
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { mountEditor } from "@input/pen-dom";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 
 const root = document.querySelector("#app");
 if (!(root instanceof HTMLElement)) {

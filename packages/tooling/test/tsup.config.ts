@@ -6,7 +6,7 @@ export default defineConfig({
   dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
-  external: ["@input/pen-core", "@input/pen-crdt-yjs", "@input/pen-schema-default", "yjs"],
+  external: ["@input/pen-core", "@input/pen-yjs", "@input/pen-schema", "yjs"],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },

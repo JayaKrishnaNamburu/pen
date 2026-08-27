@@ -127,7 +127,7 @@ export default tseslint.config(
 		// SEC5, "already-serialized", "clamped", or "justified".
 		files: [
 			"packages/extensions/interop/src/**/*.{ts,tsx}",
-			"packages/schema/default/src/**/*.{ts,tsx}",
+			"packages/schema/src/**/*.{ts,tsx}",
 			"packages/rendering/dom/src/utils/clipboardSerialization.ts",
 			"packages/rendering/dom/src/utils/tableCellClipboard.ts",
 		],
@@ -236,13 +236,13 @@ export default tseslint.config(
 		files: [
 			"packages/types/src/**/*.{ts,tsx}",
 			"packages/core/src/**/*.{ts,tsx}",
-			"packages/schema/default/src/**/*.{ts,tsx}",
+			"packages/schema/src/**/*.{ts,tsx}",
 			"packages/rendering/dom/src/**/*.{ts,tsx}",
 			"packages/rendering/react/src/**/*.{ts,tsx}",
 			"packages/rendering/vue/src/**/*.{ts,tsx}",
 			"packages/extensions/search/src/**/*.{ts,tsx}",
 			"packages/extensions/ai/src/**/*.{ts,tsx}",
-			"packages/extensions/document-ops/src/**/*.{ts,tsx}",
+			"packages/extensions/tools/src/**/*.{ts,tsx}",
 		],
 		ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
 		rules: {

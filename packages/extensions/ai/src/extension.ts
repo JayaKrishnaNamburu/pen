@@ -91,7 +91,7 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 
 	return defineExtension({
 		name: AI_EXTENSION_NAME,
-		dependencies: ["document-ops", "delta-stream", "undo"],
+		dependencies: ["tools", "delta-stream", "undo"],
 		facets: [
 			...aiKeymapProviders(AI_SHORTCUT_KEY_BINDINGS),
 			beforeApplyFacet.of((ops, options) => {

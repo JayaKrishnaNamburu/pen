@@ -6,9 +6,9 @@ import {
 } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import { describe, expect, it } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	AI_EXTENSION_NAME,
 	aiExtension,
@@ -28,7 +28,7 @@ describe("aiExtension", () => {
 		const extension = aiExtension({ author: "tester" });
 		expect(extension.name).toBe(AI_EXTENSION_NAME);
 		expect(extension.dependencies).toEqual([
-			"document-ops",
+			"tools",
 			"delta-stream",
 			"undo",
 		]);
@@ -38,7 +38,7 @@ describe("aiExtension", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				extension,
 			],
 		});
@@ -59,7 +59,7 @@ describe("aiExtension", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension(),
 			],
 		});
@@ -79,7 +79,7 @@ describe("aiExtension", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -106,7 +106,7 @@ describe("aiExtension", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});
@@ -131,7 +131,7 @@ describe("aiExtension", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension(),
 			],
 		});
@@ -155,7 +155,7 @@ describe("aiExtension", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({ suggestMode: true, author: "tester" }),
 			],
 		});

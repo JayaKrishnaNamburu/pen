@@ -7,7 +7,7 @@ import { createMarkedNode } from "../../field-editor/reconcilerMarks";
 import { resolveEditorUrl, urlPolicyFromEditor } from "../resolveEditorUrl";
 import { urlPolicy } from "../urlPolicy";
 import { urlPolicyExtension } from "../urlPolicyExtension";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

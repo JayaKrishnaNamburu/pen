@@ -3,9 +3,8 @@ import type {
 	AIEditStreaming,
 	AIMutationPreference,
 } from "@input/pen-ai";
-import { createEditor } from "@input/pen-core";
-import { inputRulesExtension } from "@input/pen-input-rules";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
+import { autoformatExtension } from "@input/pen-autoformat";
 import type { Editor, Extension } from "@input/pen-types";
 import { createPenModel } from "../ai/penModel";
 
@@ -48,19 +47,16 @@ function readEditStreaming(): AIEditStreaming | undefined {
 }
 
 /**
- * The whole editor setup. Two pieces:
- *
- * - `defaultPreset()` is the batteries-included bundle: the default block
- *   schema, undo, keyboard shortcuts, and the document-ops tools the agent
- *   calls.
- * - `extensions` adds what this app wants on top.
+ * The whole editor setup. The starter's `createEditor` already brings the
+ * batteries — the default block schema, undo, keyboard shortcuts, and the
+ * document tools the agent calls — so `extensions` is only what this app
+ * wants on top.
  */
 export function createPenEditor(extra: Extension[] = []): Editor {
 	const mutationPreference = readMutationPreference();
 	const editStreaming = readEditStreaming();
 
 	return createEditor({
-		preset: defaultPreset(),
 		extensions: [
 			aiExtension({
 				model: createPenModel(),
@@ -74,7 +70,7 @@ export function createPenEditor(extra: Extension[] = []): Editor {
 			}),
 			// Markdown-style shortcuts while typing: `# ` for a heading,
 			// `- ` for a list item, and so on.
-			inputRulesExtension(),
+			autoformatExtension(),
 			...extra,
 		],
 	});

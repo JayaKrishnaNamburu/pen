@@ -178,10 +178,8 @@
 - deleteBackward
 - deleteBlock
 - deleteForward
-- documentOpsToolRuntimeFacet
 - duplicateBlock
 - fieldEditorHostFacet
-- historyControllerFacet
 - historyRedo
 - historyUndo
 - HOOK_PRIORITIES
@@ -206,6 +204,7 @@
 - selectAll
 - selectBlock
 - SelectionAuthority
+- snapshotsControllerFacet
 - splitBlock
 - streamingTargetFacet
 - suggestion
@@ -214,6 +213,7 @@
 - tableCellPrev
 - tableEscapeGrid
 - toggleMark
+- toolRuntimeFacet
 - undoManagerFacet
 - undoMetadataControllerFacet
 - undoRestoreControllerFacet

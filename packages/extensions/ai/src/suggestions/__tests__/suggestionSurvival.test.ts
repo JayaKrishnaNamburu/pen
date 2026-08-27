@@ -6,7 +6,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { aiSuggestionsExtension, getAISuggestionsController } from "../index";
 import type { AISuggestion } from "../types";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 async function flushTimers(): Promise<void> {
 	await Promise.resolve();

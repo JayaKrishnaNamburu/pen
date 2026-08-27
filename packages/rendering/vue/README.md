@@ -9,21 +9,18 @@ This package does not ship a stylesheet or a preset. `PenEditor` mounts the shar
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-vue vue yjs
+pnpm add @input/pen @input/pen-vue vue yjs
 ```
 
-`vue` is a peer of this package. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
+`vue` is a peer of this package. `yjs` is a peer of `@input/pen-yjs`, which `@input/pen-core` depends on.
 
 ## Quick Start
 
 ```ts
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { PenEditor } from "@input/pen-vue";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 ```
 
 ```vue
@@ -32,7 +29,7 @@ const editor = createEditor({
 </template>
 ```
 
-`useEditor()` still exists. With no argument it calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `document-ops`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack. `PenVuePlugin` only registers the components.
+`useEditor()` still exists. With no argument it calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `tools`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack. `PenVuePlugin` only registers the components.
 
 ## Public Surface
 
@@ -45,13 +42,10 @@ const editor = createEditor({
 
 ```ts
 import { defineComponent, h } from "vue";
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { PenEditor } from "@input/pen-vue";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 
 export const PenExample = defineComponent({
   name: "PenExample",

@@ -6,7 +6,7 @@ import {
 } from "@input/pen-core";
 import type { DocumentOp } from "@input/pen-types";
 import { markdownExporter } from "../exporter";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
 

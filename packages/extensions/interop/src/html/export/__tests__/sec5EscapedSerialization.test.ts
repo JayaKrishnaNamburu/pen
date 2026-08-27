@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { escapeMarkupAttribute, escapeMarkupText } from "../escapeMarkup";
 import { htmlExporter } from "../exporter";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

@@ -21,8 +21,8 @@ This package is where most adopters start when embedding Pen in a React applicat
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`
-- Peer dependencies: `@input/pen-ai`, `@input/pen-history`, `@input/pen-interop`, `@input/pen-multiplayer`, `@input/pen-search` (all optional), plus `react` and `react-dom`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-schema`, `@input/pen-shortcuts`, `@input/pen-types`
+- Peer dependencies: `@input/pen-ai`, `@input/pen-snapshots`, `@input/pen-interop`, `@input/pen-multiplayer`, `@input/pen-search` (all optional), plus `react` and `react-dom`
 - Boundary: `@input/pen-react` binds the headless runtime to React without taking ownership of document truth.
 
 ## Runtime Model
@@ -51,10 +51,10 @@ Important responsibilities:
 - Mount editor roots and block rendering surfaces
 - Subscribe React state to editor state through hooks and contexts
 - Install the shared field-editor session and captured document-keyboard handlers for the active editor root. Host `importers` / assets, when passed, are written with `internals.assignSlot("paste:importers" | "paste:assetProvider", …)`. This package does not install a default HTML importer; `defaultPreset()`'s `html-clipboard` extension does.
-- Feature hooks (`useAI`, `useAISuggestions`, `useSearch`, `useHistory`, `useMultiplayer`, and siblings) read controllers from core facets (`aiControllerFacet`, `aiSuggestionsControllerFacet`, `searchControllerFacet`, `historyControllerFacet`, `multiplayerControllerFacet`). When the matching optional peer / extension is absent, the hook returns empty state.
+- Feature hooks (`useAI`, `useAISuggestions`, `useSearch`, `useSnapshots`, `useMultiplayer`, and siblings) read controllers from core facets (`aiControllerFacet`, `aiSuggestionsControllerFacet`, `searchControllerFacet`, `snapshotsControllerFacet`, `multiplayerControllerFacet`). When the matching optional peer / extension is absent, the hook returns empty state.
 - Pointer activation walks to the block element (`data-pen-editor-block`), not the inline span. React keeps its own gesture path in `useEditorContentGestures` rather than calling `handleFieldEditorPointerActivate()`; the hit target is still the block. Clicks in the empty space above the first block or below the last block are handled by `handleClickOutsideBlocks` (focus an empty adjacent text block, or insert a paragraph). Vanilla and Vue share a different fallback in `handleFieldEditorPointerActivate` that places the caret at the last text block's end instead of inserting.
 - Idle `InlineContent` and `TableCellContent` pass `{ editor }` into `fullReconcileDeltasToDOM` so `pen.urlPolicy` cannot be skipped by omitting a policy. `ImageRenderer` resolves `src` with `resolveEditorUrl(editor, src, "image")`. Denied URLs omit the attribute and set `data-pen-blocked-url`.
-- `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })`. It injects the default schema and still installs no preset — no undo, no shortcuts, no document-ops, no stream extension. Pass `preset: defaultPreset()` or an explicit `extensions` list when the host wants those.
+- `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })`. It injects the default schema and still installs no preset — no undo, no shortcuts, no tools, no stream extension. Pass `preset: defaultPreset()` or an explicit `extensions` list when the host wants those.
 
 - `useEditor` owns only the editor it created: it destroys that editor on unmount, and returns an editor passed in as `useEditor(editor)` without ever destroying it. Ownership is what makes it the documented host entry point over a module-scope `createEditor`, which shares one instance across every mount and is never torn down. Because StrictMode runs effect setup, cleanup, then setup again for a single mount, the first cleanup destroys an owned editor while the component is still mounted; the hook detects the second setup and rebuilds, so a StrictMode host never renders against a destroyed editor.
 - The `readonly` prop on `EditorRoot` / `PenEditor` is what declines typing and gestures. `pen.ariaReadOnly` is read only for `aria-readonly` and does not set `data-readonly`. The facet does not decline typing, `editor.apply`, or the wire. That split is an open owner decision.

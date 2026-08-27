@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 import { urlPolicyFacet } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { Editor } from "@input/pen-types";
 import { createMarkedNode } from "../../field-editor/reconcilerMarks";
 import { createDocumentTree } from "../../host/documentTree";

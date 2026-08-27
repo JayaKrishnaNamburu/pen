@@ -2,7 +2,7 @@
 
 API10 / DUR6. Every `PenPersistence` member is either called by Pen or marked host-implemented. None are unused.
 
-**Implemented** means Pen has a runtime caller. The host still supplies the storage. **Host-implemented** means Pen never calls the member. Test doubles in `@input/pen-history` and `@input/pen-react` implement the full interface; they are not a Pen persistence implementation.
+**Implemented** means Pen has a runtime caller. The host still supplies the storage. **Host-implemented** means Pen never calls the member. Test doubles in `@input/pen-snapshots` and `@input/pen-react` implement the full interface; they are not a Pen persistence implementation.
 
 Types live in `persistence.ts`. This file does not change them.
 
@@ -12,8 +12,8 @@ Types live in `persistence.ts`. This file does not change them.
 | `saveSnapshot` | host-implemented | Pen never calls it. Host persists a full encoded state on its own schedule. Rejection means that full state is not durable. |
 | `appendUpdate` | host-implemented | Pen never calls it. Host appends one Yjs update to its log. A dropped append leaves a gap. Full-snapshot hosts may no-op. |
 | `getUpdates` | host-implemented | Pen never calls it. Host reads its update log; `since` is a host cursor. Full-snapshot hosts may return `[]`. |
-| `compact` | host-implemented | Pen never calls it. Compaction is host storage: `Y.mergeUpdates` folds an update log, not tombstones. Snapshot retention and `gc: true` are separate tradeoffs — see `@input/pen-crdt-yjs` compaction notes. A rejected compact leaves the log as stored. |
-| `saveVersionSnapshot` | implemented | Called by `@input/pen-history` `SnapshotManager.createSnapshot`. Rejection fails the create. |
+| `compact` | host-implemented | Pen never calls it. Compaction is host storage: `Y.mergeUpdates` folds an update log, not tombstones. Snapshot retention and `gc: true` are separate tradeoffs — see `@input/pen-yjs` compaction notes. A rejected compact leaves the log as stored. |
+| `saveVersionSnapshot` | implemented | Called by `@input/pen-snapshots` `SnapshotManager.createSnapshot`. Rejection fails the create. |
 | `listVersions` | implemented | Called by `SnapshotManager.createSnapshot` (latest entry after write) and `SnapshotManager.listSnapshots`. Empty list after write synthesizes an entry. There is no `getVersionSnapshots`. |
 | `loadVersion` | implemented | Called by `SnapshotManager.restoreSnapshot`. Missing version throws from the manager; rejection fails restore. |
 

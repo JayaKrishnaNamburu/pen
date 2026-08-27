@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor, getInlineCompletionController } from "@input/pen-core";
 import { autocompleteExtension, getAutocompleteController } from "../index";
 import type { AutocompleteControllerImpl } from "../autocompleteControllerCore";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 describe("autocomplete anchor mapping", () => {
 	it("maps a visible completion anchor through a concurrent edit", () => {

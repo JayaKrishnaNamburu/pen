@@ -15,8 +15,8 @@ export default defineConfig({
 	clean: true,
 	external: [
 		"@input/pen-core",
-		"@input/pen-content-ops",
-		"@input/pen-document-ops",
+		"@input/pen-ingest",
+		"@input/pen-tools",
 		"@input/pen-types",
 	],
 	outExtension({ format }) {

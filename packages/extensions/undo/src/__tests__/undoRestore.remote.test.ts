@@ -1,5 +1,5 @@
 import { applySplitBlock, createEditor as createCoreEditor } from "@input/pen-core";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 

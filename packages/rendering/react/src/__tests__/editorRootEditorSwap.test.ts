@@ -4,8 +4,8 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultPreset } from "@input/pen";
+import { defaultSchema } from "@input/pen-schema";
 import type { DiagnosticEvent } from "@input/pen-types";
 import { EditorRoot } from "../primitives/editor/root";
 
@@ -17,7 +17,7 @@ function createTestEditor() {
 	return createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

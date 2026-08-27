@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import type {
 	ModelAdapter,
@@ -47,7 +47,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 		);
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [undoExtension(), documentOpsExtension()],
+			extensions: [undoExtension(), toolsExtension()],
 		});
 		await editor.whenReady();
 		const toolRuntime = getDocumentToolRuntime(editor)!;
@@ -85,7 +85,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 		);
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [undoExtension(), documentOpsExtension()],
+			extensions: [undoExtension(), toolsExtension()],
 		});
 		await editor.whenReady();
 		const toolRuntime = getDocumentToolRuntime(editor)!;
@@ -125,7 +125,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: adapter,
 					contentFormat: { blockGeneration: "markdown" },
@@ -171,7 +171,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 		);
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [undoExtension(), documentOpsExtension()],
+			extensions: [undoExtension(), toolsExtension()],
 		});
 		await editor.whenReady();
 		const toolRuntime = getDocumentToolRuntime(editor)!;
@@ -213,7 +213,7 @@ describe("EC17: an edit-intent pass uses the provider's guarantees where they ex
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: adapter,
 					contentFormat: { blockGeneration: "markdown" },

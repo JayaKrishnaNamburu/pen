@@ -280,7 +280,7 @@ export function ImportExportPage() {
 			<pre>
 				<code>{`import { createHeadlessEditor } from "@input/pen-core";
 import { htmlExporter } from "@input/pen-interop/html";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import type { CRDTDocument } from "@input/pen-types";
 
 function renderHtml(hostDocument: CRDTDocument) {
@@ -345,7 +345,7 @@ function renderHtml(hostDocument: CRDTDocument) {
 				type; <code>createEditor</code> does not read it.
 			</p>
 			<p>
-				<code>@input/pen-assets-memory</code>{" "}
+				<code>@input/pen-assets</code>{" "}
 				<code>memoryAssets()</code> is a test double, not a production
 				store. Pen does not ship a CDN, presigned upload, or
 				image-processing implementation.
@@ -410,11 +410,10 @@ function renderHtml(hostDocument: CRDTDocument) {
 			<pre>
 				<code>{`import {
   assetProviderFacet,
-  createEditor,
   defineExtension,
 } from "@input/pen-core";
 import { htmlImporter } from "@input/pen-interop/html";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import type {
   AssetProvider,
   AssetRef,
@@ -448,7 +447,6 @@ const assets: AssetProvider = {
 };
 
 const editor = createEditor({
-  preset: defaultPreset(),
   extensions: [
     defineExtension({
       name: "host-assets",

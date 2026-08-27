@@ -5,8 +5,8 @@ import {
 	defineExtension,
 } from "@input/pen-core";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import type {
 	Decoration,
 	DocumentState,
@@ -128,7 +128,7 @@ function createAIEditor(extension: Extension): Editor {
 		extensions: [
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			extension,
 		],
 	});
@@ -166,7 +166,7 @@ describe("ai decorations channel", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension(),
 				probe.extension,
 			],
@@ -189,7 +189,7 @@ describe("ai decorations channel", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				markerExtension("probe-before", "probe-before"),
 				ai,
 				markerExtension("probe-after", "probe-after"),
@@ -244,7 +244,7 @@ describe("ai decorations channel", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				ai,
 				facetOnly,
 			],

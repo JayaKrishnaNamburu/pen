@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import { aiExtension, getAIController } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 describe("aiExtension: controller snapshot stability", () => {
 	it("keeps the controller state snapshot stable for no-op updates", () => {
@@ -13,7 +13,7 @@ describe("aiExtension: controller snapshot stability", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension(),
 			],
 		});

@@ -6,7 +6,7 @@ import type {
 	DiagnosticEvent,
 } from "@input/pen-types";
 import { uploadImageFiles } from "../transferImages";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

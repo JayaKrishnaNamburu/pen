@@ -4,10 +4,10 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { Pen } from "../primitives/index";
 import { PenEditor } from "../penEditor";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -18,7 +18,7 @@ describe("@input/pen-react editor caret overlay", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),
@@ -107,7 +107,7 @@ describe("@input/pen-react editor caret overlay", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 			}),

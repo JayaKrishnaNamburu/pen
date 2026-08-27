@@ -70,7 +70,7 @@ function mutatingTool(name: string, opCount = 1): ToolDefinition {
 }
 
 describe("AIB3 tool authority", () => {
-	it("classifies document-ops names and defaults unknown tools to mutating", () => {
+	it("classifies tools names and defaults unknown tools to mutating", () => {
 		expect(isMutatingAITool("read_document")).toBe(false);
 		expect(isMutatingAITool("insert_block")).toBe(true);
 		expect(isDestructiveAITool("delete_block")).toBe(true);

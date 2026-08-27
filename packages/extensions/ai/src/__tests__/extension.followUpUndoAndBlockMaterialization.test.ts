@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import { aiExtension, getAIController } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 describe("aiExtension: follow-up undo and block materialization", () => {
 	it("restores the previous accepted story when undoing a kept follow-up rewrite", async () => {
@@ -14,7 +14,7 @@ describe("aiExtension: follow-up undo and block materialization", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: {
 						blockGeneration: "markdown",
@@ -89,7 +89,7 @@ describe("aiExtension: follow-up undo and block materialization", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: {
 						blockGeneration: "markdown",
@@ -136,7 +136,7 @@ describe("aiExtension: follow-up undo and block materialization", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: {
 						blockGeneration: "markdown",

@@ -1,6 +1,6 @@
 "use client";
 
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { PenEditor, useEditor } from "@input/pen-react";
 
 export function App() {

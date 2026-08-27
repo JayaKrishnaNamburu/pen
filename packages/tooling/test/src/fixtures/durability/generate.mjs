@@ -5,8 +5,8 @@
  * Usage (from this directory or the package root):
  *   node src/fixtures/durability/generate.mjs
  *
- * Requires built workspace packages (`@input/pen-core`, `@input/pen-crdt-yjs`,
- * `@input/pen-schema-default`, `@input/pen-interop/json`). Regeneration belongs
+ * Requires built workspace packages (`@input/pen-core`, `@input/pen-yjs`,
+ * `@input/pen-schema`, `@input/pen-interop/json`). Regeneration belongs
  * in a PR with a written reason; the suite must not rewrite fixtures on failure.
  */
 
@@ -15,9 +15,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as Y from "yjs";
 import { createHeadlessEditor } from "@input/pen-core";
-import { initBlockMap, wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
+import { initBlockMap, wrapYjsDocument, yjsAdapter } from "@input/pen-yjs";
 import { exportEditorToJson } from "@input/pen-interop/json";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { DUR7_CORPUS } from "./catalog.mjs";
 
 const NONE_CONTENT_TYPES = new Set(["image", "divider"]);

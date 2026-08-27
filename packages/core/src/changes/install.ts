@@ -1,5 +1,5 @@
 import type { ChangeSummary, CRDTEvent, PenDocument } from "@input/pen-types";
-import { createSummarySource } from "@input/pen-crdt-yjs";
+import { createSummarySource } from "@input/pen-yjs";
 
 import {
 	createBlockIndex,

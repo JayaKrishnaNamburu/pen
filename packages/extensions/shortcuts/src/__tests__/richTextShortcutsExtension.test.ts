@@ -4,7 +4,7 @@ import {
 	createHeadlessEditor,
 	keymapFacet,
 } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { richTextShortcutsExtension } from "../index";
 
 const RICH_TEXT_MARK_KEYS = ["Mod-b", "Mod-i", "Mod-u"] as const;

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { FOCUS_SINK_ATTR } from "../../a11y/focusSink";
 import { DATA_ATTRS, OVERLAY_LAYER_ATTR } from "../../utils/dataAttributes";

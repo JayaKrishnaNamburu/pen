@@ -40,7 +40,7 @@ export {
 	type PenRangeFocusRequest,
 	type PenTextFocusRequest,
 } from "./useFocusController";
-export { useHistory } from "./useHistory";
+export { useSnapshots } from "./useSnapshots";
 export { useSearch } from "./useSearch";
 export { useMultiplayer } from "./useMultiplayer";
 export { useRemoteCursors } from "./useRemoteCursors";

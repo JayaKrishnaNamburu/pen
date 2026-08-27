@@ -14,8 +14,8 @@ export default defineConfig({
   clean: true,
   external: [
     "@input/pen-core",
-    "@input/pen-content-ops",
-    "@input/pen-markdown-serialization",
+    "@input/pen-ingest",
+    "@input/pen-markdown",
     "@input/pen-types",
     "domhandler",
     "htmlparser2",

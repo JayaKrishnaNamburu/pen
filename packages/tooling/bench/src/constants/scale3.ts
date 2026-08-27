@@ -34,7 +34,7 @@ export const SCALE3_DECORATION_COUNT_POINTS = [0, 256] as const;
 export const SCALE3_REMOTE_CARET_COUNT_POINTS = [0, 8] as const;
 
 export const SCALE3_DEFAULT_PRESET_EXTENSIONS = [
-	"document-ops",
+	"tools",
 	"delta-stream",
 	"undo",
 	"rich-text-shortcuts",

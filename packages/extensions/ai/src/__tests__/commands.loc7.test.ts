@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { aiExtension, defaultAICommands, getAIController } from "../index";
 
 describe("AI command catalog (LOC1)", () => {
@@ -21,7 +21,7 @@ describe("AI command catalog (LOC1)", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension(),
 			],
 		});
@@ -58,7 +58,7 @@ describe("AI command catalog (LOC1)", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension(),
 			],
 			messages: {

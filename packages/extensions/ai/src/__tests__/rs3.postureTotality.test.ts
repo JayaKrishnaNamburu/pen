@@ -3,8 +3,8 @@ import { createEditor } from "@input/pen-core";
 import type { Decoration, Editor } from "@input/pen-types";
 import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { deltaStreamExtension } from "../stream";
 import { aiExtension, getAIController } from "../index";
 import type { AISession } from "../types";
@@ -137,7 +137,7 @@ describe("RS3: every reviewable state renders a defined posture", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -201,7 +201,7 @@ describe("RS3: a turn that applies nothing does not report success", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: { blockGeneration: "markdown" },
 					model: {

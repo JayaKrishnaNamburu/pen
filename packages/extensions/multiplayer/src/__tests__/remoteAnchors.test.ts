@@ -1,5 +1,5 @@
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { createTestDocument, createTwoPeerHarness } from "@input/pen-test";
 import type { DiagnosticEvent } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";

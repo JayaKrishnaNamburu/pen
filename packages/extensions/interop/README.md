@@ -2,14 +2,14 @@
 
 HTML, Markdown, JSON, and XML import and export for a live Pen editor. Per-format importers and exporters live on subpaths; the package root re-exports the unique public symbols.
 
-This package does not mount a renderer. URL admission for display is render-time policy in `@input/pen-core`. Shared markdown serialization stays in `@input/pen-markdown-serialization`.
+This package does not mount a renderer. URL admission for display is render-time policy in `@input/pen-core`. Shared markdown serialization stays in `@input/pen-markdown`.
 
 ## Install
 
 This package has no peer dependencies.
 
 ```bash
-pnpm add @input/pen-interop
+pnpm add @input/pen @input/pen-interop
 ```
 
 `engines.node` is `>=22`.
@@ -17,13 +17,10 @@ pnpm add @input/pen-interop
 ## Usage
 
 ```ts
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { htmlExporter, htmlImporter } from "@input/pen-interop";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 const html = await htmlExporter.export(editor);
 await htmlImporter.import(html, editor, { replace: true });
 ```
@@ -62,7 +59,7 @@ Ingest-bound constants (`INGEST_MAX_*`) live in `src/ingestBounds.ts` and are re
 ## What each format provides
 
 - **HTML** — `htmlExporter.export(editor)` walks every block, including nested and layout children. `htmlImporter` sanitizes incoming HTML and applies it through `editor.apply` with `origin: "import"`. `parseHtmlToBlocks()` / `parseHtmlWithReport()` convert without mutating the editor. `sanitizeHTML()` is the sanitizer used before import. Blocks without a schema `serialize.toHTML` fall back to a `<p>` of the block text.
-- **Markdown** — `markdownExporter.export(editor)` serializes the document and admits link and image URLs through core's URL policy. `exportMarkdownForBlocks(editor, handles)` and `exportMarkdownRange(editor, range)` are the same serializers with URL admission. `markdownImporter` turns markdown into document ops. `parseMarkdownToBlocks()` / `parseMarkdownWithReport()` convert without applying ops. The shared serializer lives in `@input/pen-markdown-serialization`; this package is the host-facing wrapper.
+- **Markdown** — `markdownExporter.export(editor)` serializes the document and admits link and image URLs through core's URL policy. `exportMarkdownForBlocks(editor, handles)` and `exportMarkdownRange(editor, range)` are the same serializers with URL admission. `markdownImporter` turns markdown into document ops. `parseMarkdownToBlocks()` / `parseMarkdownWithReport()` convert without applying ops. The shared serializer lives in `@input/pen-markdown`; this package is the host-facing wrapper.
 - **JSON** — `jsonExporter` / `exportEditorToJson` for machine-readable persistence. `textExporter`, `exportEditorToText`, `exportPlainText`, and `exportPenDocumentToText` for plain text. `jsonImporter` is the ingest-bounds paste/import path. `jsonDocumentImporter` / `parseJsonDocument` is the versioned `PenDocumentJSON` round-trip path.
 - **XML** — `xmlExporter` serializes through the JSON document model. `xmlImporter` parses a `<pen-document version="1">` tree and applies it through `jsonDocumentImporter`. `parseXmlDocument(input)` returns the JSON document without applying it. The root element must be `pen-document` with `version` `1`; anything else throws.
 

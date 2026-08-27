@@ -60,7 +60,8 @@ function collectPackages(root) {
 				const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 				if (
 					typeof manifest.name === "string" &&
-					manifest.name.startsWith("@input/pen-")
+					(manifest.name === "@input/pen" ||
+						manifest.name.startsWith("@input/pen-"))
 				) {
 					packages.push({ name: manifest.name, dir: next, manifest });
 				}

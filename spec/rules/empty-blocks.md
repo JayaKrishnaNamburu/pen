@@ -1,6 +1,6 @@
 # Empty Blocks
 
-An empty block stores the empty string. `\u200B` has no reserved meaning anywhere in Pen: not in storage, not in the logical domain, not in exports, not on the clipboard. The DOM's need for a caret position inside an empty element is a renderer problem with a renderer solution. Implementation spans `@input/pen-core` (load migration, the single permitted namer), `@input/pen-dom` (reconciliation, geometry, offset clamps), and `@input/pen-crdt-yjs` (the document format stamp); see `spec/charter/document-model.md` for the same rules stated as document-model invariants.
+An empty block stores the empty string. `\u200B` has no reserved meaning anywhere in Pen: not in storage, not in the logical domain, not in exports, not on the clipboard. The DOM's need for a caret position inside an empty element is a renderer problem with a renderer solution. Implementation spans `@input/pen-core` (load migration, the single permitted namer), `@input/pen-dom` (reconciliation, geometry, offset clamps), and `@input/pen-yjs` (the document format stamp); see `spec/charter/document-model.md` for the same rules stated as document-model invariants.
 
 ## EM — Empty Blocks
 

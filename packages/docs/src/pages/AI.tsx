@@ -40,8 +40,8 @@ export function AIPage() {
 				context passes through unchanged.
 			</p>
 			<pre>
-				<code>{`import { createEditor, aiEgressFacet, defineExtension } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { aiEgressFacet, defineExtension } from "@input/pen-core";
+import { createEditor } from "@input/pen";
 import { aiExtension } from "@input/pen-ai";
 import type { AIRequestFilter } from "@input/pen-types";
 
@@ -74,7 +74,6 @@ const refuse: AIRequestFilter = (context) =>
   context.feature === "autocomplete" ? null : context;
 
 const editor = createEditor({
-  preset: defaultPreset(),
   extensions: [
     defineExtension({
       name: "host-ai-egress",
@@ -364,14 +363,14 @@ const denied: AIToolCallDenied = {
 				types on <code>@input/pen-types</code>. An adapter exposes{" "}
 				<code>stream()</code>. A transport exposes <code>stream</code>,{" "}
 				<code>connect</code>, <code>disconnect</code>, and connection
-				listeners. <code>@input/pen-transport-direct</code> exports{" "}
+				listeners. <code>@input/pen-transport/direct</code> exports{" "}
 				<code>directTransport</code>.{" "}
-				<code>@input/pen-transport-sse</code> exports{" "}
+				<code>@input/pen-transport/sse</code> exports{" "}
 				<code>sseTransport</code> and <code>createSSEHandler</code>.
 			</p>
 			<p>
 				<code>@input/pen-ai</code> installs the AI extension. It depends
-				on <code>document-ops</code>, <code>delta-stream</code>, and{" "}
+				on <code>tools</code>, <code>delta-stream</code>, and{" "}
 				<code>undo</code>. <code>defaultPreset()</code> registers those.
 				A bare{" "}
 				<code>{`createEditor({ extensions: [aiExtension()] })`}</code>{" "}
@@ -381,12 +380,10 @@ const denied: AIToolCallDenied = {
 				<code>@input/pen-react/ai-suggestions</code> subpaths.
 			</p>
 			<pre>
-				<code>{`import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+				<code>{`import { createEditor } from "@input/pen";
 import { aiExtension, getAIController } from "@input/pen-ai";
 
 const editor = createEditor({
-  preset: defaultPreset(),
   extensions: [
     aiExtension({
       suggestMode: true,
@@ -425,7 +422,7 @@ const ai = getAIController(editor);`}</code>
 					agent workflows
 				</li>
 				<li>
-					<code>@input/pen-document-ops</code> — structured document
+					<code>@input/pen-tools</code> — structured document
 					tools; payloads are validated before ops are built
 				</li>
 			</ul>

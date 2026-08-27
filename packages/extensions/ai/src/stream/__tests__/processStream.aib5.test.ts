@@ -65,7 +65,7 @@ function createStreamEditor(overrides?: {
 			if (facet.name === "deltaStream.target") {
 				return overrides?.hasTarget === false ? null : streamingTarget;
 			}
-			if (facet.name === "documentOps.toolRuntime") {
+			if (facet.name === "tools.toolRuntime") {
 				return overrides?.toolRuntime ?? null;
 			}
 			return null;

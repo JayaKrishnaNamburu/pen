@@ -6,11 +6,11 @@ import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
 import type { BlockHandle, BlockRenderContext, Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { Pen } from "../primitives/index";
 import type { BlockControlsProps } from "../context/editorContext";
 import { useBlockDragHandle } from "../hooks/useBlockDragHandle";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -137,7 +137,7 @@ function createBlockDragEditor(
 		schema: defaultSchema,
 		...options,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

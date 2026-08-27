@@ -6,7 +6,7 @@ import {
 	getVerticalCaretMeasure,
 	setVerticalCaretMeasure,
 } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { Editor } from "@input/pen-types";
 import { getRootGeometry } from "../rootGeometry";
 import { registerVerticalCaretMeasure } from "../verticalCaretMeasure";

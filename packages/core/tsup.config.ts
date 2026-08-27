@@ -7,13 +7,13 @@ export default defineConfig({
 	outDir: "dist",
 	clean: true,
 	external: [
-		"@input/pen-content-ops",
+		"@input/pen-ingest",
 		"@input/pen-types",
-		"@input/pen-crdt-yjs",
+		"@input/pen-yjs",
 		"@input/pen-undo",
-		"@input/pen-document-ops",
+		"@input/pen-tools",
 		"@input/pen-ai",
-		"@input/pen-markdown-serialization",
+		"@input/pen-markdown",
 	],
 	outExtension({ format }) {
 		return { js: format === "esm" ? ".mjs" : ".cjs" };

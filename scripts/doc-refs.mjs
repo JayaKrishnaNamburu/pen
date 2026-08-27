@@ -7,7 +7,18 @@
  * examples, per-package READMEs):
  *   - every `@input/pen-*` name (and optional version / export subpath)
  *     resolves in the workspace
+ *   - every published package has a row in the root README package
+ *     table, companions labelled `Companion:` in their description —
+ *     the reverse direction of that walk (DOC1/SF7: the documented set
+ *     equals the published set, so a package cannot be installable but
+ *     invisible, and a companion cannot pose as a host install)
  *   - every ts/tsx/vue sample type-checks against built `.d.ts`
+ *   - every `spec/packages/**.md` version claim matches the manifest at
+ *     the workspace path that spec states (API7/DOC1). The version-suffix
+ *     walk above only sees `pkg@version` forms, so a prose sentence like
+ *     "at version `0.0.1`" was invisible to it and drifted at the first
+ *     release; this reads the claim through the spec's own stated path
+ *     rather than inferring a package from the file's location.
  *
  * Hits fail the process. A missing `dist/*.d.ts` is also a failure —
  * run `pnpm build` first; this gate reads published artifacts, not source.
@@ -34,6 +45,7 @@ import {
 	collectOutdatedDist,
 	runFreshnessSelfTests,
 } from "./lib/distFreshness.mjs";
+import { isCompanionPackage } from "./readme-sections.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
@@ -358,6 +370,63 @@ export function evaluateRefs({ refs, packages }) {
 	return missing;
 }
 
+export function evaluateReadmeCoverage({ readme, packages }) {
+	// table rows only: a prose or code-fence mention is not a catalog entry
+	const tableRows = new Map();
+	for (const line of readme.split("\n")) {
+		if (!line.trimStart().startsWith("|")) {
+			continue;
+		}
+		const nameMatch = line.match(/`(@input\/pen(?:-[a-z][a-z-]*)?)`/);
+		if (nameMatch) {
+			tableRows.set(nameMatch[1], line);
+		}
+	}
+	const published = packages
+		.filter(
+			(pkg) => pkg.dir.startsWith("packages/") && pkg.manifest.private !== true,
+		)
+		.map((pkg) => pkg.name)
+		.sort();
+	const missing = published.filter((name) => !tableRows.has(name));
+	const unlabeled = published.filter(
+		(name) =>
+			isCompanionPackage(name) &&
+			tableRows.has(name) &&
+			!tableRows.get(name).includes("Companion:"),
+	);
+	return { missing, unlabeled };
+}
+
+export function evaluateSpecVersions({ specs, packages }) {
+	const byDir = new Map(packages.map((pkg) => [pkg.dir, pkg]));
+	const stale = [];
+	const unmapped = [];
+	for (const spec of specs) {
+		const claimed = spec.text.match(/at version `([^`]+)`/);
+		if (!claimed) {
+			continue;
+		}
+		// the spec states its own workspace path; resolve through that rather
+		// than guessing a package from the spec's location
+		const workspacePath = spec.text.match(/Path in workspace: `([^`]+)`/);
+		const pkg = workspacePath ? byDir.get(workspacePath[1]) : undefined;
+		if (!pkg) {
+			unmapped.push({ file: spec.file, claimed: claimed[1] });
+			continue;
+		}
+		if (claimed[1] !== pkg.version) {
+			stale.push({
+				file: spec.file,
+				claimed: claimed[1],
+				actual: pkg.version,
+				name: pkg.name,
+			});
+		}
+	}
+	return { stale, unmapped };
+}
+
 function completeReadmeFixture() {
 	return `# fixture
 
@@ -477,6 +546,79 @@ export function runSelfTests() {
 		"self-test: vue script close tag allows attributes",
 	);
 
+	const coverage = evaluateReadmeCoverage({
+		readme: [
+			"Install `@input/pen-assets`.",
+			"",
+			"| Package | Description |",
+			"| --- | --- |",
+			"| `@input/pen-core` | The runtime |",
+			"| `@input/pen-types` | Companion: shared contracts |",
+			"| `@input/pen-markdown` | Markdown export |",
+		].join("\n"),
+		packages: [
+			{ name: "@input/pen-core", dir: "packages/core", manifest: {} },
+			{
+				name: "@input/pen-assets",
+				dir: "packages/tooling/assets",
+				manifest: {},
+			},
+			{ name: "@input/pen-types", dir: "packages/types", manifest: {} },
+			{
+				name: "@input/pen-markdown",
+				dir: "packages/shared/markdown",
+				manifest: {},
+			},
+			{ name: "@input/pen-docs", dir: "packages/docs", manifest: { private: true } },
+			{ name: "@input/pen-example-react", dir: "examples/react", manifest: {} },
+		],
+	});
+	assert(
+		coverage.missing.join(",") === "@input/pen-assets",
+		"self-test: a published package with a prose mention but no table row fails closed, while private and example packages do not",
+	);
+	assert(
+		coverage.unlabeled.join(",") === "@input/pen-markdown",
+		"self-test: a companion table row without the Companion: label fails closed",
+	);
+
+	const specVersions = evaluateSpecVersions({
+		specs: [
+			{
+				file: "spec/packages/core.md",
+				text: "Path in workspace: `packages/core`\n\nWorkspace package at version `0.1.0`;",
+			},
+			{
+				file: "spec/packages/types.md",
+				text: "Path in workspace: `packages/types`\n\nWorkspace package at version `0.0.1`;",
+			},
+			{
+				file: "spec/packages/playground.md",
+				text: "Path in workspace: `playground`\n\nNo version claim here.",
+			},
+			{
+				file: "spec/packages/ghost.md",
+				text: "Workspace package at version `0.1.0`; but states no workspace path",
+			},
+		],
+		packages: [
+			{ name: "@input/pen-core", dir: "packages/core", version: "0.1.0", manifest: {} },
+			{ name: "@input/pen-types", dir: "packages/types", version: "0.1.0", manifest: {} },
+		],
+	});
+	assert(
+		specVersions.stale.length === 1 &&
+			specVersions.stale[0].file === "spec/packages/types.md" &&
+			specVersions.stale[0].claimed === "0.0.1" &&
+			specVersions.stale[0].actual === "0.1.0",
+		"self-test: a spec version claim that the manifest contradicts fails closed, and a matching one passes",
+	);
+	assert(
+		specVersions.unmapped.length === 1 &&
+			specVersions.unmapped[0].file === "spec/packages/ghost.md",
+		"self-test: a version claim with no resolvable workspace path fails closed; a spec with no claim is not flagged",
+	);
+
 	const cleanTypecheck = { errors: [], skipped: [], checked: 1 };
 	const outdatedOnly = {
 		missingRefs: [],
@@ -575,6 +717,22 @@ export async function loadDocFiles(repoRoot) {
 		});
 	}
 	return docs;
+}
+
+export async function loadSpecFiles(repoRoot) {
+	const files = await collectFiles(
+		path.join(repoRoot, "spec", "packages"),
+		(_p, name) => name.endsWith(".md"),
+	);
+	const specs = [];
+	for (const filePath of files) {
+		specs.push({
+			file: path.relative(repoRoot, filePath).split(path.sep).join("/"),
+			text: await fs.readFile(filePath, "utf8"),
+		});
+	}
+	specs.sort((left, right) => left.file.localeCompare(right.file));
+	return specs;
 }
 
 const EXAMPLE_SNIPPET_SOURCES = [
@@ -797,6 +955,8 @@ export function formatReport({
 	missingRefs,
 	typecheck,
 	artifacts,
+	coverage = { missing: [], unlabeled: [] },
+	specVersions = { stale: [], unmapped: [] },
 	outdatedDist = [],
 }) {
 	const lines = ["DOC1/DOC2 documentation truth"];
@@ -824,6 +984,50 @@ export function formatReport({
 	}
 
 	lines.push("");
+	if (coverage.missing.length > 0) {
+		lines.push(
+			"FAIL published packages missing from the root README package table (DOC1/SF7):",
+		);
+		for (const name of coverage.missing) {
+			lines.push(`  ${name}`);
+		}
+	}
+	if (coverage.unlabeled.length > 0) {
+		lines.push(
+			"FAIL companion packages missing the `Companion:` label in their table row (DOC1/SF7):",
+		);
+		for (const name of coverage.unlabeled) {
+			lines.push(`  ${name}`);
+		}
+	}
+	if (coverage.missing.length === 0 && coverage.unlabeled.length === 0) {
+		lines.push(
+			"OK: every published package has a root README table row, companions labelled.",
+		);
+	}
+
+	lines.push("");
+	if (specVersions.stale.length > 0) {
+		lines.push(
+			"FAIL package specs claim a version the manifest contradicts (API7/DOC1):",
+		);
+		for (const hit of specVersions.stale) {
+			lines.push(`  ${hit.file}  claims ${hit.claimed}, ${hit.name} is ${hit.actual}`);
+		}
+	}
+	if (specVersions.unmapped.length > 0) {
+		lines.push(
+			"FAIL package specs state a version with no resolvable workspace path (API7/DOC1):",
+		);
+		for (const hit of specVersions.unmapped) {
+			lines.push(`  ${hit.file}  claims ${hit.claimed}`);
+		}
+	}
+	if (specVersions.stale.length === 0 && specVersions.unmapped.length === 0) {
+		lines.push("OK: every package spec's stated version matches its manifest.");
+	}
+
+	lines.push("");
 	lines.push(
 		`samples checked ${typecheck.checked}  skipped ${typecheck.skipped.length}  errors ${typecheck.errors.length}`,
 	);
@@ -842,7 +1046,14 @@ export function formatReport({
 	}
 
 	appendOutdatedDistLines(lines, outdatedDist);
-	const result = { missingRefs, typecheck, artifacts, outdatedDist };
+	const result = {
+		missingRefs,
+		typecheck,
+		artifacts,
+		coverage,
+		specVersions,
+		outdatedDist,
+	};
 	if (!hasFailures(result) && hasInconclusive(result)) {
 		lines.push("");
 		lines.push(
@@ -858,8 +1069,22 @@ export function formatReport({
 	return lines.join("\n");
 }
 
-export function hasFailures({ missingRefs, typecheck, artifacts }) {
-	return artifacts.length > 0 || missingRefs.length > 0 || typecheck.errors.length > 0;
+export function hasFailures({
+	missingRefs,
+	typecheck,
+	artifacts,
+	coverage = { missing: [], unlabeled: [] },
+	specVersions = { stale: [], unmapped: [] },
+}) {
+	return (
+		artifacts.length > 0 ||
+		missingRefs.length > 0 ||
+		coverage.missing.length > 0 ||
+		coverage.unlabeled.length > 0 ||
+		specVersions.stale.length > 0 ||
+		specVersions.unmapped.length > 0 ||
+		typecheck.errors.length > 0
+	);
 }
 
 export function hasInconclusive({ outdatedDist = [] }) {
@@ -895,7 +1120,7 @@ async function main() {
 	runSelfTests();
 	await runFreshnessSelfTests();
 	console.log(
-		"DOC refs self-test ok (missing package, wrong version, and missing subpath fail closed)",
+		"DOC refs self-test ok (missing package, wrong version, missing subpath, undocumented published package, and stale spec version claim fail closed)",
 	);
 	if (args.selfTestOnly) {
 		return;
@@ -911,6 +1136,14 @@ async function main() {
 	}
 
 	const missingRefs = evaluateRefs({ refs, packages });
+	const coverage = evaluateReadmeCoverage({
+		readme: docs.find((doc) => doc.file === "README.md")?.text ?? "",
+		packages,
+	});
+	const specVersions = evaluateSpecVersions({
+		specs: await loadSpecFiles(args.repoRoot),
+		packages,
+	});
 	const artifacts = await missingTypeArtifacts(packages, args.repoRoot);
 	const outdatedDist = await collectOutdatedDist(
 		packages
@@ -938,7 +1171,14 @@ async function main() {
 				repoRoot: args.repoRoot,
 			});
 
-	const result = { missingRefs, typecheck, artifacts, outdatedDist };
+	const result = {
+		missingRefs,
+		typecheck,
+		artifacts,
+		coverage,
+		specVersions,
+		outdatedDist,
+	};
 	console.log("");
 	console.log(formatReport(result));
 	if (hasFailures(result) || hasInconclusive(result)) {

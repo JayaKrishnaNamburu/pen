@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
+import { toolsExtension } from "@input/pen-tools";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -16,7 +16,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -30,7 +30,7 @@ describe("aiExtension: document rewrite plans", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: {
 						blockGeneration: "markdown",
@@ -124,7 +124,7 @@ describe("aiExtension: document rewrite plans", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: {
 						blockGeneration: "markdown",
@@ -220,7 +220,7 @@ describe("aiExtension: document rewrite plans", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: {
 						blockGeneration: "markdown",
@@ -304,7 +304,7 @@ describe("aiExtension: document rewrite plans", () => {
 			extensions: [
 				undoExtension(),
 				deltaStreamExtension(),
-				documentOpsExtension(),
+				toolsExtension(),
 				aiExtension({
 					contentFormat: {
 						blockGeneration: "markdown",

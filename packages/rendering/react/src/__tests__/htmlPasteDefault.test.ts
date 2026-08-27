@@ -8,9 +8,9 @@ import {
 	createEditor as createCoreEditor,
 } from "@input/pen-core";
 import { htmlImporter } from "@input/pen-interop/html";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { EditorRoot } from "../primitives/editor/root";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -20,7 +20,7 @@ describe("HTML paste default lives on the preset, not react", () => {
 	it("defaultPreset() + EditorRoot without importers keeps the HTML importer", async () => {
 		const editor = createCoreEditor({
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,
@@ -48,7 +48,7 @@ describe("HTML paste default lives on the preset, not react", () => {
 	it("a host markdown-only importers prop keeps the preset HTML importer", async () => {
 		const editor = createCoreEditor({
 			preset: defaultPreset({
-				documentOps: false,
+				tools: false,
 				deltaStream: false,
 				undo: false,
 				shortcuts: false,

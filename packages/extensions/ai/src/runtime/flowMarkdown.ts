@@ -1,4 +1,4 @@
-import { stripBlockAnnotations } from "@input/pen-document-ops";
+import { stripBlockAnnotations } from "@input/pen-tools";
 import type { AIWorkingSetEnvelope, AIWorkingSetRetrievedSpan } from "../types";
 
 const FLOW_MARKDOWN_ALLOWED_FEATURES = [

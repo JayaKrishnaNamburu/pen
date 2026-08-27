@@ -129,8 +129,8 @@ function createScenario(page: Page): ScenarioApi {
 		},
 		async apply(ops: readonly DocumentOp[]) {
 			await step(async () => {
-				await page.evaluate((documentOps) => {
-					window.__penConformance.apply(documentOps);
+				await page.evaluate((tools) => {
+					window.__penConformance.apply(tools);
 				}, ops);
 			});
 		},
@@ -208,8 +208,8 @@ function createScenario(page: Page): ScenarioApi {
 			},
 			async apply(ops: readonly DocumentOp[]) {
 				await step(async () => {
-					await page.evaluate((documentOps) => {
-						window.__penConformance.remoteApply(documentOps);
+					await page.evaluate((tools) => {
+						window.__penConformance.remoteApply(tools);
 					}, ops);
 				});
 			},

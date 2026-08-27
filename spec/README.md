@@ -53,15 +53,15 @@ Runtime authority: `packages/core.md`, `packages/types.md`, `packages/crdt/yjs.m
 
 Rendering: `packages/rendering/dom.md`, `packages/rendering/react.md`, `packages/rendering/vue.md`
 
-Schema and preset: `packages/schema/default.md`, `packages/presets/default.md`
+Schema and preset: `packages/schema.md`, `packages/pen.md`
 
-Extensions: `packages/extensions/ai.md`, `packages/extensions/document-ops.md`, `packages/extensions/history.md`, `packages/extensions/input-rules.md`, `packages/extensions/interop.md`, `packages/extensions/multiplayer.md`, `packages/extensions/search.md`, `packages/extensions/shortcuts.md`, `packages/extensions/undo.md`
+Extensions: `packages/extensions/ai.md`, `packages/extensions/tools.md`, `packages/extensions/snapshots.md`, `packages/extensions/autoformat.md`, `packages/extensions/interop.md`, `packages/extensions/multiplayer.md`, `packages/extensions/search.md`, `packages/extensions/shortcuts.md`, `packages/extensions/undo.md`
 
-Shared: `packages/shared/content-ops.md`, `packages/shared/markdown-serialization.md`
+Shared: `packages/shared/ingest.md`, `packages/shared/markdown.md`
 
-Transports: `packages/transports/direct.md`, `packages/transports/sse.md`
+Transport: `packages/transport.md` (`./direct` and `./sse` subpaths)
 
-Tooling: `packages/tooling/test.md`, `packages/tooling/bench.md`, `packages/tooling/assets-memory.md`
+Tooling: `packages/tooling/test.md`, `packages/tooling/bench.md`, `packages/tooling/assets.md`
 
 Workspace apps: `packages/docs.md`, `packages/playground.md`
 

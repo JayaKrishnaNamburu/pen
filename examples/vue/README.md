@@ -1,6 +1,6 @@
 # Vue example
 
-Minimal Vite + Vue app that mounts Pen with `@input/pen-preset-default`. `@input/pen-core` is the headless assembly point if you skip the preset.
+Minimal Vite + Vue app that mounts Pen with `@input/pen`. `@input/pen-core` is the headless assembly point if you skip the preset.
 
 This package is a workspace member (`examples/vue` in `pnpm-workspace.yaml`).
 
@@ -18,22 +18,19 @@ pnpm dev -- --filter=@input/pen-example-vue
 The post-publish consumer command, including peers, will be:
 
 ```bash
-pnpm add @input/pen-preset-default @input/pen-core @input/pen-vue vue yjs
+pnpm add @input/pen @input/pen-vue vue yjs
 ```
 
-`vue` is a peer of `@input/pen-vue`. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs it.
+`vue` is a peer of `@input/pen-vue`. `yjs` is a peer of `@input/pen-yjs`, which arrives through `@input/pen`'s dependency on `@input/pen-core`, so every Pen install needs it.
 
 ## Mount
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createEditor } from "@input/pen";
 import { PenEditor } from "@input/pen-vue";
 
-const editor = createEditor({
-  preset: defaultPreset(),
-});
+const editor = createEditor();
 </script>
 
 <template>

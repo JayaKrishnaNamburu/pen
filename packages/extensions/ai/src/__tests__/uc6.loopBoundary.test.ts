@@ -4,10 +4,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { undoExtension } from "@input/pen-undo";
 import type { ModelAdapter, ModelStreamEvent } from "@input/pen-types";
 import { runAgenticLoop } from "../index";
@@ -18,7 +18,7 @@ import { advertiseAIToolsForRoute, listAITools } from "../tools/descriptors";
  * UC6: the loop knows the mutating tool's name and the forcing rule.
  * Payload shape, refusal payloads, and retry shaping live with the
  * executor (`runtime/editDocumentPreview.ts`, `runtime/viewHashes.ts`,
- * `@input/pen-document-ops`).
+ * `@input/pen-tools`).
  */
 
 const LOOP_SOURCE = readFileSync(
@@ -57,7 +57,7 @@ describe("UC6: the loop's forcing decision carries only the tool name", () => {
 		};
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [undoExtension(), documentOpsExtension()],
+			extensions: [undoExtension(), toolsExtension()],
 		});
 		await editor.whenReady();
 		try {
@@ -90,7 +90,7 @@ describe("UC6: the loop's forcing decision carries only the tool name", () => {
 	it("UC6: host-facing mutators stay off an in-editor edit-channel advertise", () => {
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [undoExtension(), documentOpsExtension()],
+			extensions: [undoExtension(), toolsExtension()],
 		});
 		const runtime = getDocumentToolRuntime(editor)!;
 		const granted = listAITools(runtime, {

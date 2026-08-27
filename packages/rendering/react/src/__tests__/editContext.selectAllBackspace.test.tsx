@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	createEditor,
 	createKeyEvent,

@@ -3,9 +3,9 @@
  * API1 dependency DAG check (spec/rules/api.md).
  *
  * Target install DAG (arrow means "depends on"):
- *   types ← crdt-yjs ← core ← {extensions, shared, schema, transports}
+ *   types ← yjs ← core ← {extensions, shared, schema, transport}
  *   core ← dom ← {react, vue}
- *   presets ← everything they assemble
+ *   the starter package ← everything it assembles
  *
  * Inverted edges fail unless listed in scripts/dag-allowlist.json with a reason.
  * Known inversions are printed. Inversions themselves are deferred; this script
@@ -73,6 +73,12 @@ export function layerForPackageDir(relPosix) {
 		if (slot === "docs") {
 			return "ignore";
 		}
+		if (slot === "pen") {
+			return "preset";
+		}
+		if (slot === "schema" || slot === "transport") {
+			return "feature";
+		}
 		return null;
 	}
 
@@ -84,16 +90,8 @@ export function layerForPackageDir(relPosix) {
 	if (slot === "crdt") {
 		return "crdt";
 	}
-	if (
-		slot === "extensions" ||
-		slot === "shared" ||
-		slot === "schema" ||
-		slot === "transports"
-	) {
+	if (slot === "extensions" || slot === "shared") {
 		return "feature";
-	}
-	if (slot === "presets") {
-		return "preset";
 	}
 	if (slot === "tooling") {
 		return "ignore";
@@ -342,12 +340,12 @@ export function formatReport(result) {
 
 export function runSelfTests() {
 	const types = fixturePkg("packages/types", "@input/pen-types", []);
-	const crdt = fixturePkg("packages/crdt/yjs", "@input/pen-crdt-yjs", [
+	const crdt = fixturePkg("packages/crdt/yjs", "@input/pen-yjs", [
 		"@input/pen-types",
 	]);
 	const core = fixturePkg("packages/core", "@input/pen-core", [
 		"@input/pen-types",
-		"@input/pen-crdt-yjs",
+		"@input/pen-yjs",
 		"@input/pen-delta-stream",
 	]);
 	const deltaStream = fixturePkg(
@@ -440,7 +438,7 @@ export function runSelfTests() {
 			crdt,
 			{
 				...core,
-				dependencies: ["@input/pen-types", "@input/pen-crdt-yjs"],
+				dependencies: ["@input/pen-types", "@input/pen-yjs"],
 			},
 			deltaStream,
 		],
@@ -457,7 +455,7 @@ export function runSelfTests() {
 			crdt,
 			{
 				...core,
-				dependencies: ["@input/pen-types", "@input/pen-crdt-yjs"],
+				dependencies: ["@input/pen-types", "@input/pen-yjs"],
 			},
 			dom,
 			react,
@@ -531,6 +529,15 @@ export function runSelfTests() {
 	assert(
 		layerForPackageDir("packages/tooling/bench") === "ignore",
 		"self-test: tooling ignored",
+	);
+	assert(
+		layerForPackageDir("packages/pen") === "preset",
+		"self-test: starter package layer",
+	);
+	assert(
+		layerForPackageDir("packages/schema") === "feature" &&
+			layerForPackageDir("packages/transport") === "feature",
+		"self-test: two-segment schema and transport layers",
 	);
 	assert(
 		workspaceDependencyNames({

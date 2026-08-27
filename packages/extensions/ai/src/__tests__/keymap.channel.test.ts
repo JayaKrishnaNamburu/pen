@@ -6,8 +6,8 @@ import {
 	keymapFacet,
 } from "@input/pen-core";
 import { deltaStreamExtension } from "../stream";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+import { toolsExtension } from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import type { Editor, KeyBinding } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
@@ -43,7 +43,7 @@ function createAIEditor(extra: ReturnType<typeof defineExtension>[] = []) {
 			...extra,
 			undoExtension(),
 			deltaStreamExtension(),
-			documentOpsExtension(),
+			toolsExtension(),
 			extension,
 		],
 	});

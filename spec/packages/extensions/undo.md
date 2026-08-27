@@ -54,7 +54,7 @@ Important rules:
 - Spec path mirrors workspace path: `packages/extensions/undo.md`
 - Install `undoExtension()` when a host wants live reversible editing semantics with Pen's origin-aware grouping
 - Treat `trackedOrigins` and group boundaries as part of the editing architecture, not just UX polish
-- This package complements `@input/pen-history`: undo is short-horizon reversible editing, while history is durable snapshot/version management
+- This package complements `@input/pen-snapshots`: undo is short-horizon reversible editing, while history is durable snapshot/version management
 
 ## Current Maturity / Intended Usage
 

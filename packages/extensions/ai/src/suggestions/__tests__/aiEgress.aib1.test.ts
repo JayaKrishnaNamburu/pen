@@ -5,7 +5,7 @@ import {
 	defineExtension,
 	streamThroughEgress,
 } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { createModelDouble } from "@input/pen-test";
 import type {
 	AIRequestContext,

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
-	documentOpsExtension,
+	toolsExtension,
 	getDocumentToolRuntime,
-} from "@input/pen-document-ops";
-import { defaultSchema } from "@input/pen-schema-default";
+} from "@input/pen-tools";
+import { defaultSchema } from "@input/pen-schema";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
 import { AI_TOOL_MAX_CALLS_PER_TURN, isAIToolCallDenied } from "../tools";
@@ -26,7 +26,7 @@ describe("AIB3 hostile agentic turn", () => {
 	it("AIB3 AIB4: a double requesting 100 mutating calls is default-denied, budgeted, and one undo", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [undoExtension(), documentOpsExtension()],
+			extensions: [undoExtension(), toolsExtension()],
 		});
 		await awaitExtensionLifecycle(editor);
 		const toolRuntime = getDocumentToolRuntime(editor);

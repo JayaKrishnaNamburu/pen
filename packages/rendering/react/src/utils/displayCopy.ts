@@ -4,7 +4,7 @@ import {
 	resolveDisplayCopy,
 	resolveDisplayGroup,
 	schemaDisplayKey,
-} from "@input/pen-schema-default";
+} from "@input/pen-schema";
 import type { Editor } from "@input/pen-types";
 
 export function displayCatalogForEditor(

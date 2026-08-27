@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import {
 	INGEST_MAX_IMAGE_COUNT,
 	INGEST_MAX_NESTING_DEPTH,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, type PendingBlock } from "@input/pen-core";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import {
 	INGEST_MAX_NESTING_DEPTH,
 	INGEST_MAX_NODE_COUNT,

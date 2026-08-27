@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, type PendingBlock } from "@input/pen-core";
 import type { DiagnosticEvent } from "@input/pen-types";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "@input/pen-schema";
 import {
   htmlImporter,
   parseHtmlToBlocks,

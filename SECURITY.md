@@ -42,7 +42,7 @@ These ingresses do **not** pass the sanitizer. That is by design:
 - the JSON import API
 - the XML import API
 - file drag-and-drop and image transfer
-- AI, stream, and document-ops writes
+- AI, stream, and tools writes
 - remote collaborator Yjs updates
 - asset upload and resolve
 - the host's own initial document
@@ -77,7 +77,7 @@ two exporters.
   `textContent` / attribute setters. Parsing untrusted HTML uses
   `DOMParser` in `@input/pen-interop/html`; that tree enters the
   document as data.
-- `@input/pen-document-ops` validates tool payloads before building
+- `@input/pen-tools` validates tool payloads before building
   ops. Invalid payloads emit a diagnostic and are not applied. Tool
   authority is a live boundary, not a claim that every write path
   is closed.

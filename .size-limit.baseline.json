@@ -10,11 +10,11 @@
       "note": "First baseline. Public-surface shrink in flight (live 15762 B); not re-recorded."
     },
     {
-      "name": "@input/pen-transport-direct",
-      "path": "packages/transports/direct/dist/index.mjs",
-      "baselineBytes": 6034,
-      "limitBytes": 6034,
-      "note": "Re-recorded baseline 2026-08-21. AIB3: allowedMutatingTools / createAIToolTurn on the in-process transport. 3880 \u2192 6034. Source quiet (test-only dirty)."
+      "name": "@input/pen-transport",
+      "path": "packages/transport/dist/*.mjs",
+      "baselineBytes": 28296,
+      "limitBytes": 28296,
+      "note": "First baseline 2026-08-27 (SF7 merge). Budgeted as the whole shipped ESM closure, not dist/index.mjs: the ./direct and ./sse subpaths code-split into content-hashed chunks, so the root entry is 199 B of re-exports. Replaces two budgets totalling 28110 B (6034 pen-transport-direct + 22076 pen-transport-sse). 28110 \u2192 28296, +0.7% for entry wiring. Byte total reproduced across three rebuilds."
     },
     {
       "name": "@input/pen-shortcuts",
@@ -38,8 +38,8 @@
       "note": "Re-recorded baseline 2026-08-24 (SF1). The five AI satellites became subpaths of this package, so the budget is now the whole shipped ESM closure rather than dist/index.mjs: tsup code-splits the subpaths into content-hashed chunks, and a hashed name cannot be written into a baseline. Replaces six budgets totalling 604703 B (435771 root + 75536 autocomplete + 47823 suggestions + 25211 delta-stream + 15831 tools + 4531 skills). 604703 \u2192 607722, +0.5% for duplicated barrel wiring; no satellite budget was dropped without a successor. Byte total reproduced across three rebuilds."
     },
     {
-      "name": "@input/pen-assets-memory",
-      "path": "packages/tooling/assets-memory/dist/index.mjs",
+      "name": "@input/pen-assets",
+      "path": "packages/tooling/assets/dist/index.mjs",
       "baselineBytes": 1403,
       "limitBytes": 1403,
       "note": "Re-recorded baseline 2026-08-21. IOP4: maxSize, onProgress, delete, rejectUpload. 1291 \u2192 1403. Source quiet."
@@ -52,8 +52,8 @@
       "note": "SCALE1 envelope table, reporters, drift check and CLI, plus the harness-floor feature (a Pen-removed null implementation timed alongside each bench, so a wall-clock cannot be attributed to Pen without one). Re-recorded twice on 2026-08-21: 1421 \u2192 25779 once the envelope/compare.ts work landed, then \u2192 27000 when the floor landed. The first jump is 18x and is stated rather than smoothed over \u2014 the earlier figure was taken when the package was a stub, so it was the first measurement of a bench harness that actually exists, not a regression in one."
     },
     {
-      "name": "@input/pen-content-ops",
-      "path": "packages/shared/content-ops/dist/index.mjs",
+      "name": "@input/pen-ingest",
+      "path": "packages/shared/ingest/dist/index.mjs",
       "baselineBytes": 29428,
       "limitBytes": 29428,
       "note": "First baseline. API3 blockCapabilities live here. Live 17572 B shrink deferred (writeContent.ts mid-edit)."
@@ -66,18 +66,18 @@
       "note": "The apply pipeline and commit path, the extension-free core, and the command registry. Re-recorded baseline 2026-08-21 after the core-commands work landed and the package went quiet. 275169 \u2192 405550 B."
     },
     {
-      "name": "@input/pen-crdt-yjs",
+      "name": "@input/pen-yjs",
       "path": "packages/crdt/yjs/dist/index.mjs",
       "baselineBytes": 59734,
       "limitBytes": 59734,
       "note": "First baseline kept through the API2 yjs peer + singleton guard (live 55563 B). Re-recorded 2026-08-23: the createRelativePosition/resolveRelativePosition anchor primitives moved into this package and summarySource was rewritten to carry a per-block list of cell text deltas. 55563 -> 59734 B."
     },
     {
-      "name": "@input/pen-document-ops",
-      "path": "packages/extensions/document-ops/dist/index.mjs",
+      "name": "@input/pen-tools",
+      "path": "packages/extensions/tools/dist/index.mjs",
       "baselineBytes": 81629,
       "limitBytes": 81629,
-      "note": "Re-recorded baseline 2026-08-26. 71065 \u2192 81629, inherited drift rather than a change to this package: its own source moved by 4 lines since the previous record (b6432f4), and tsup marks content-ops, markdown-serialization and types external but NOT @input/pen-core, so this bundle carries a slice of core. Core itself drifted 405550 \u2192 429672 over the same span while staying under its +10% ceiling, which is why the overflow surfaced here first. Byte total reproduced across two clean rebuilds. Pending work on this package's mount lists (UC7) may bring the number down; if it does not, the external list is the thing to revisit, not this budget. Previously: re-recorded 2026-08-25 (DL13), 58134 \u2192 71065, when the content-ops shims were deleted and the block-capability, block-type-policy and payload-validation sources became this package's own."
+      "note": "Re-recorded baseline 2026-08-26. 71065 \u2192 81629, inherited drift rather than a change to this package: its own source moved by 4 lines since the previous record (b6432f4), and tsup marks ingest, markdown and types external but NOT @input/pen-core, so this bundle carries a slice of core. Core itself drifted 405550 \u2192 429672 over the same span while staying under its +10% ceiling, which is why the overflow surfaced here first. Byte total reproduced across two clean rebuilds. Pending work on this package's mount lists (UC7) may bring the number down; if it does not, the external list is the thing to revisit, not this budget. Previously: re-recorded 2026-08-25 (DL13), 58134 \u2192 71065, when the ingest (then content-ops) shims were deleted and the block-capability, block-type-policy and payload-validation sources became this package's own."
     },
     {
       "name": "@input/pen-dom",
@@ -94,22 +94,22 @@
       "note": "First baseline 2026-08-24 (SF2). Budgeted as the whole shipped ESM closure, not dist/index.mjs: the four format subpaths code-split into content-hashed chunks, so the root entry is 1722 B of re-exports while the chunks carry 100335 B \u2014 an index.mjs budget would guard 1.6% of the package. Replaces seven budgets totalling 100361 B (30302 import-html + 16369 export-xml + 15551 export-json + 14228 import-json + 10107 export-html + 9197 import-markdown + 4607 export-markdown). 100361 \u2192 104761, +4.4% for per-format barrel wiring. Byte total reproduced across three rebuilds."
     },
     {
-      "name": "@input/pen-history",
-      "path": "packages/extensions/history/dist/index.mjs",
+      "name": "@input/pen-snapshots",
+      "path": "packages/extensions/snapshots/dist/index.mjs",
       "baselineBytes": 38744,
       "limitBytes": 38744,
       "note": "Re-recorded baseline 2026-08-21. Path .js \u2192 .mjs. Bytes: identity resolution + snapshot restore. 11886 \u2192 38744."
     },
     {
-      "name": "@input/pen-input-rules",
-      "path": "packages/extensions/input-rules/dist/index.mjs",
+      "name": "@input/pen-autoformat",
+      "path": "packages/extensions/autoformat/dist/index.mjs",
       "baselineBytes": 9553,
       "limitBytes": 9553,
       "note": "First baseline kept. Input-rule commands; live 9837 B is within +10%."
     },
     {
-      "name": "@input/pen-markdown-serialization",
-      "path": "packages/shared/markdown-serialization/dist/index.mjs",
+      "name": "@input/pen-markdown",
+      "path": "packages/shared/markdown/dist/index.mjs",
       "baselineBytes": 7446,
       "limitBytes": 7446,
       "note": "Re-recorded baseline 2026-08-21. Under previous budget after API3 (logicalTextFromStored stays in types; 10359 \u2192 7446). Source quiet (test-only dirty)."
@@ -122,11 +122,11 @@
       "note": "Re-recorded baseline 2026-08-21. Path .js \u2192 .mjs. Bytes: awareness validation / presence bounds. 20968 \u2192 43166."
     },
     {
-      "name": "@input/pen-preset-default",
-      "path": "packages/presets/default/dist/index.mjs",
-      "baselineBytes": 2299,
-      "limitBytes": 2299,
-      "note": "Re-recorded baseline 2026-08-25 (CS8). The preset gained the html-clipboard extension when react stopped value-importing @input/pen-interop, so the HTML paste default now assembles here. 1442 \u2192 2299."
+      "name": "@input/pen",
+      "path": "packages/pen/dist/index.mjs",
+      "baselineBytes": 2716,
+      "limitBytes": 2716,
+      "note": "Re-recorded baseline 2026-08-27 (API1 starter defaulting). createEditor and createHeadlessEditor became wrappers that default an omitted preset to defaultPreset(), so the entry now bundles the core constructor imports instead of re-export statements. 2299 \u2192 2716."
     },
     {
       "name": "@input/pen-react",
@@ -136,8 +136,8 @@
       "note": "Re-recorded baseline 2026-08-25 (CS8). Gestures and inline-atom interaction moved to @input/pen-dom, so react keeps the hook shells only. 264324 \u2192 220087. See pen-dom's paired entry."
     },
     {
-      "name": "@input/pen-schema-default",
-      "path": "packages/schema/default/dist/index.mjs",
+      "name": "@input/pen-schema",
+      "path": "packages/schema/dist/index.mjs",
       "baselineBytes": 4899,
       "limitBytes": 4899,
       "note": "Re-recorded baseline 2026-08-21. LOC2 display catalog (primary); SEC5 escapeHtml; a11y specs. 1068 \u2192 4899."
@@ -155,13 +155,6 @@
       "baselineBytes": 40505,
       "limitBytes": 40505,
       "note": "Re-recorded baseline 2026-08-21. COL4 two-peer harness + envelope fixtures + durability corpus. 18429 \u2192 40505. Source quiet (test-only dirty)."
-    },
-    {
-      "name": "@input/pen-transport-sse",
-      "path": "packages/transports/sse/dist/index.mjs",
-      "baselineBytes": 22076,
-      "limitBytes": 22076,
-      "note": "Re-recorded baseline 2026-08-21. COL6 reconnect surface + AIB2 (no editor on PenStreamRequest) / AIB3 authority. 11867 \u2192 22076. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-vue",

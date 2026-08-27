@@ -10,7 +10,7 @@ import { asYjsDoc, METADATA } from "./document";
 import type { YjsCRDTDocument } from "./document";
 
 /**
- * Semver of `@input/pen-crdt-yjs`, the library that writes the stamp (DUR1).
+ * Semver of `@input/pen-yjs`, the library that writes the stamp (DUR1).
  * Keep in lockstep with this package's `package.json` version.
  */
 const WRITER_VERSION = "0.0.1";

@@ -7,14 +7,14 @@ import {
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "@input/pen-dom/field-editor/keyHandling";
 import { resolveShiftClickInlineAtomSelection } from "@input/pen-dom";
 import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 type BlocksMapLike = {
 	get(key: string): { get(field: string): unknown } | undefined;

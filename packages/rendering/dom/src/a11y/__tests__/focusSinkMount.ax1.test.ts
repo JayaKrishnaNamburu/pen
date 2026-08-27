@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { FOCUS_SINK_ATTR } from "../focusSink";
 import { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 const fixtures: Array<{
 	editor: ReturnType<typeof createHeadlessEditor>;

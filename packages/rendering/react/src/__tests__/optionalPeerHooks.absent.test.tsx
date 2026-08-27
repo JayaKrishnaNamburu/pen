@@ -4,8 +4,8 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
-import { useAI, useHistory, useSearch } from "../index";
+import { defaultSchema } from "@input/pen-schema";
+import { useAI, useSnapshots, useSearch } from "../index";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -21,7 +21,7 @@ describe("@input/pen-react optional-peer hooks without extensions", () => {
 		function Probe() {
 			const ai = useAI(editor);
 			const search = useSearch(editor);
-			const history = useHistory(editor);
+			const history = useSnapshots(editor);
 
 			return (
 				<div

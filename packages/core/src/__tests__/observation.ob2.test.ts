@@ -2,7 +2,7 @@ import {
 	createSummarySource,
 	isYjsCRDTDocument,
 	type RawCommitDelta,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 import type { CommitEvent, CommitEventSource } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 

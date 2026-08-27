@@ -1,6 +1,6 @@
 # React example
 
-Minimal Vite + React app that mounts Pen with `@input/pen-preset-default`. `@input/pen-core` is the headless assembly point if you skip the preset.
+Minimal Vite + React app that mounts Pen with `@input/pen`. `@input/pen-core` is the headless assembly point if you skip the preset.
 
 This package is a workspace member (`examples/react` in `pnpm-workspace.yaml`).
 
@@ -18,17 +18,17 @@ pnpm dev -- --filter=@input/pen-example-react
 The post-publish consumer command, including peers, will be:
 
 ```bash
-pnpm add @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
+pnpm add @input/pen @input/pen-react react react-dom yjs y-protocols
 ```
 
-`react` and `react-dom` are peers of `@input/pen-react`. `yjs` and `y-protocols` are peers of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs both.
+`react` and `react-dom` are peers of `@input/pen-react`. `yjs` and `y-protocols` are peers of `@input/pen-yjs`, which `@input/pen-core` depends on, so every Pen install needs both.
 
 ## Mount
 
 ```tsx
 "use client";
 
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { PenEditor, useEditor } from "@input/pen-react";
 
 export function App() {

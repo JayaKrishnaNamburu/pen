@@ -3,7 +3,7 @@ import type {
 	RawCommitDelta,
 	YArrayDelta,
 	YTextDelta,
-} from "@input/pen-crdt-yjs";
+} from "@input/pen-yjs";
 
 export const MEADOW_SAGE = "meadow sage";
 export const MEADOW_SAGE_LENGTH = 11;

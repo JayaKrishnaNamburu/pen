@@ -5,7 +5,7 @@
  * not host-app API — a host using `createEditor` never names them — but
  * they are the extension author write surface, and several packages
  * re-export the key they own (`SEARCH_CONTROLLER_SLOT`,
- * `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`,
+ * `MULTIPLAYER_CONTROLLER_SLOT`, `SNAPSHOTS_CONTROLLER_SLOT`,
  * `AUTOCOMPLETE_CONTROLLER_SLOT`).
  *
  * Marking them with the internal JSDoc tag would remove them from the
@@ -32,7 +32,7 @@ export const AI_AUTOCOMPLETE_CONTROLLER_SLOT = "ai-autocomplete:controller";
 export const AI_SUGGESTIONS_CONTROLLER_SLOT = "ai-suggestions:controller";
 export const SEARCH_CONTROLLER_SLOT = "search:controller";
 export const MULTIPLAYER_CONTROLLER_SLOT = "multiplayer:controller";
-export const HISTORY_CONTROLLER_SLOT = "history:controller";
+export const SNAPSHOTS_CONTROLLER_SLOT = "snapshots:controller";
 export const ANNOUNCER_SLOT_KEY = "pen.announcer";
 
 /**

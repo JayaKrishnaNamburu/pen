@@ -2,7 +2,7 @@
 
 import { createHeadlessEditor } from "@input/pen-core";
 import { afterEach, describe, expect, it } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 import { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
 import { handleFieldEditorPointerActivate } from "../../host/pointerActivation";

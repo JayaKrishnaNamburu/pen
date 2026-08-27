@@ -14,11 +14,11 @@ import type {
 	BlockHandle,
 	BlockRenderContext,
 } from "@input/pen-types";
-import { defaultPreset } from "@input/pen-preset-default";
+import { defaultPreset } from "@input/pen";
 import { Pen } from "../primitives/index";
 import { useEditorContext } from "../context/editorContext";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -145,7 +145,7 @@ function createImageEditor() {
 	const editor = createEditor({
 		schema: defaultSchema,
 		preset: defaultPreset({
-			documentOps: false,
+			tools: false,
 			deltaStream: false,
 			undo: false,
 		}),

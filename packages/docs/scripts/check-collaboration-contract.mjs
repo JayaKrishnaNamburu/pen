@@ -9,12 +9,13 @@
  * load-bearing half (especially the ariaReadOnly security-boundary warning)
  * goes red.
  *
- * COL6: every non-private package under packages/transports/ must
- * declare exactly one of reference | production | development-only in
- * the README's first section. The directory is enumerated so a third
- * transport is covered without editing this file.
+ * COL6: every transport variant of @input/pen-transport (the exports-map
+ * subpaths besides `.` and `./package.json`) must declare exactly one of
+ * reference | production | development-only in its README section
+ * (`## \`./<variant>\``). The exports map is enumerated so a third
+ * transport subpath is covered without editing this file.
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -100,16 +101,16 @@ const COL5_CLAIMS = [
 function parseArgs(argv) {
 	const args = {
 		page: join(packageRoot, "src", "pages", "Collaboration.tsx"),
-		transportsRoot: join(repoRoot, "packages", "transports"),
+		transportRoot: join(repoRoot, "packages", "transport"),
 	};
 	for (let i = 0; i < argv.length; i += 1) {
 		const arg = argv[i];
 		if (arg === "--page") {
 			i += 1;
 			args.page = argv[i];
-		} else if (arg === "--transports-root") {
+		} else if (arg === "--transport-root") {
 			i += 1;
-			args.transportsRoot = argv[i];
+			args.transportRoot = argv[i];
 		} else {
 			throw new Error(`Unknown argument: ${arg}`);
 		}
@@ -214,59 +215,62 @@ function checkCol5(pageSource, pageLabel) {
 	return failures;
 }
 
-function firstSection(readme) {
-	const match = readme.match(/^##\s+/m);
-	if (!match) {
-		return readme;
-	}
-	return readme.slice(0, match.index);
-}
-
-function publishedTransports(transportsRoot) {
-	if (!existsSync(transportsRoot)) {
+function transportVariants(transportRoot) {
+	const manifestPath = join(transportRoot, "package.json");
+	if (!existsSync(manifestPath)) {
 		return [];
 	}
-	const packages = [];
-	for (const entry of readdirSync(transportsRoot, { withFileTypes: true })) {
-		if (!entry.isDirectory()) {
-			continue;
-		}
-		const dir = join(transportsRoot, entry.name);
-		const manifestPath = join(dir, "package.json");
-		if (!existsSync(manifestPath)) {
-			continue;
-		}
-		const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-		if (manifest.private === true) {
-			continue;
-		}
-		if (typeof manifest.name !== "string") {
-			continue;
-		}
-		packages.push({ name: manifest.name, dir, slug: entry.name });
+	const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+	if (manifest.private === true || typeof manifest.exports !== "object") {
+		return [];
 	}
-	return packages.sort((a, b) => a.slug.localeCompare(b.slug));
+	return Object.keys(manifest.exports)
+		.filter((key) => key !== "." && key !== "./package.json")
+		.sort();
 }
 
-function checkCol6(transportsRoot) {
+function variantSection(readme, variant) {
+	const headingRe = new RegExp(
+		`^##\\s+\`${variant.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\`\\s*$`,
+		"m",
+	);
+	const heading = headingRe.exec(readme);
+	if (!heading) {
+		return null;
+	}
+	const from = heading.index + heading[0].length;
+	const next = readme.slice(from).match(/^##\s+/m);
+	return next == null
+		? readme.slice(from)
+		: readme.slice(from, from + next.index);
+}
+
+function checkCol6(transportRoot) {
 	const failures = [];
-	const packages = publishedTransports(transportsRoot);
-	if (packages.length === 0) {
+	const variants = transportVariants(transportRoot);
+	if (variants.length === 0) {
 		failures.push(
-			`COL6: no published packages found under ${relative(repoRoot, transportsRoot) || "packages/transports"} (gate fails closed)`,
+			`COL6: no transport variant subpaths found in ${relative(repoRoot, join(transportRoot, "package.json")) || "packages/transport/package.json"} (gate fails closed)`,
 		);
 		return failures;
 	}
-	for (const pkg of packages) {
-		const readmePath = join(pkg.dir, "README.md");
-		const label = relative(repoRoot, readmePath);
-		if (!existsSync(readmePath)) {
+	const readmePath = join(transportRoot, "README.md");
+	const label = relative(repoRoot, readmePath);
+	if (!existsSync(readmePath)) {
+		failures.push(
+			`COL6: ${label} is missing (each transport variant must declare a grade)`,
+		);
+		return failures;
+	}
+	const readme = readFileSync(readmePath, "utf8");
+	for (const variant of variants) {
+		const section = variantSection(readme, variant);
+		if (section == null) {
 			failures.push(
-				`COL6: ${label} is missing (${pkg.name} must declare a grade)`,
+				`COL6: ${label} has no \`## \`${variant}\`\` section (each exports-map variant documents its grade there)`,
 			);
 			continue;
 		}
-		const section = firstSection(readFileSync(readmePath, "utf8"));
 		const found = [];
 		GRADE_LINE_RE.lastIndex = 0;
 		let match = GRADE_LINE_RE.exec(section);
@@ -276,13 +280,13 @@ function checkCol6(transportsRoot) {
 		}
 		if (found.length === 0) {
 			failures.push(
-				`COL6: ${label} first section has no grade line (expected exactly one of: ${GRADES.join(", ")})`,
+				`COL6: ${label} section ${variant} has no grade line (expected exactly one of: ${GRADES.join(", ")})`,
 			);
 			continue;
 		}
 		if (found.length !== 1) {
 			failures.push(
-				`COL6: ${label} first section declares ${found.length} grades (${found.join(", ")}); expected exactly one`,
+				`COL6: ${label} section ${variant} declares ${found.length} grades (${found.join(", ")}); expected exactly one`,
 			);
 		}
 	}
@@ -358,7 +362,7 @@ if (!existsSync(args.page)) {
 	}
 }
 
-failures.push(...checkCol6(args.transportsRoot));
+failures.push(...checkCol6(args.transportRoot));
 
 if (failures.length > 0) {
 	for (const failure of failures) {
@@ -367,7 +371,7 @@ if (failures.length > 0) {
 	process.exit(1);
 }
 
-const transportCount = publishedTransports(args.transportsRoot).length;
+const variantCount = transportVariants(args.transportRoot).length;
 console.log(
-	`COL5/COL6 docs gate: ${COL5_CLAIMS.length} collaboration claims present, ${transportCount} transport README(s) graded`,
+	`COL5/COL6 docs gate: ${COL5_CLAIMS.length} collaboration claims present, ${variantCount} transport variant(s) graded`,
 );

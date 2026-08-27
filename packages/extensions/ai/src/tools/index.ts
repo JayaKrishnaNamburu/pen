@@ -1,5 +1,5 @@
 // getAIToolRuntime is the host accessor. The slot key is
-// DOCUMENT_OPS_TOOL_RUNTIME_SLOT on @input/pen-document-ops.
+// TOOL_RUNTIME_SLOT on @input/pen-tools.
 export { getAIToolRuntime } from "./toolServer";
 export { AIToolContextImpl, AIToolRuntimeImpl } from "./toolServer";
 export { listAITools } from "./descriptors";
@@ -19,7 +19,7 @@ export {
 // `AIToolBudgetError` and `isAIToolResultAskingRetry` are deliberately not
 // re-exported: each has one in-package caller and never reaches a host, so
 // publishing them is the accidental-surface defect (same call as the
-// `check*` payload predicates in `@input/pen-document-ops`).
+// `check*` payload predicates in `@input/pen-tools`).
 export {
 	authorizeAIToolCall,
 	createAIToolTurn,

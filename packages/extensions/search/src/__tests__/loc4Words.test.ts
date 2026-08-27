@@ -5,7 +5,7 @@ import {
 } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import {
 	DEFAULT_SEARCH_OPTIONS,
 	buildSearchRegex,

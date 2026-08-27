@@ -1,5 +1,5 @@
 {
-  "name": "@input/pen-crdt-yjs",
+  "name": "@input/pen-yjs",
   "version": "0.0.1",
   "description": "Yjs CRDT adapter for Pen",
   "license": "MIT",

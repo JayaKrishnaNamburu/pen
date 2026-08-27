@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createHeadlessEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import type { SelectionRecord } from "@input/pen-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionReconciler } from "../field-editor/sessionReconciler";

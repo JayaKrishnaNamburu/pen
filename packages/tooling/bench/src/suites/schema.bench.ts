@@ -1,5 +1,5 @@
 import type { BenchContext, BenchDefinition } from "../bench";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "@input/pen-schema";
 import { SchemaEngineImpl } from "@input/pen-core";
 import { createLargeDocument } from "../fixtures/largeDoc";
 import {
