@@ -8,5 +8,7 @@ coverage/
 playwright-report/
 test-results*/
 .env.local
+.wrangler
+.dev.vars
 .npmrc
 .claude/

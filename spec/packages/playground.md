@@ -13,13 +13,14 @@ It stays narrow on purpose. A surface is added here only when a first-time embed
 ## Key Exports / Entrypoints
 
 - Export map: Package root only.
-- Workspace scripts: `build`, `dev`, `dev:e2e`, `typecheck`, `lint`
+- Workspace scripts: `build`, `dev`, `dev:e2e`, `deploy`, `test`, `typecheck`, `lint`
 - Client entry: `src/main.tsx` mounts `src/App.tsx`, a three-pane shell over one `Editor`.
 - Server entry: `server/aiPlugin.ts` and `server/collaborationPlugin.ts`, Vite middleware that serves `POST /api/chat` and the Yjs websocket at `/collaboration`. There is no second process to start.
+- Hosted entry: `worker/index.ts` is the Cloudflare Worker. It serves the Vite `dist/` as a single-page app, the same `POST /api/chat`, and the same `/collaboration/<room>` y-websocket protocol on a Durable Object per room (`worker/yjsRoom.ts`). Live at `https://pen-playground.input-systems.workers.dev`. `pnpm --dir playground run deploy` (and the Playground ship job on `main`) publishes it.
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-yjs`, `@input/pen-autoformat`, `@input/pen-multiplayer`, `@input/pen`, `@input/pen-react`, `@input/pen-types`, `@y/websocket-server`, `react`, `react-dom`, `ws`, `yjs`, `y-websocket`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-yjs`, `@input/pen-autoformat`, `@input/pen-multiplayer`, `@input/pen`, `@input/pen-react`, `@input/pen-types`, `@y/websocket-server`, `lib0`, `react`, `react-dom`, `ws`, `y-protocols`, `yjs`, `y-websocket`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This is a private app for development, experimentation, and demos.
 - It resolves Pen from built packages rather than source aliases, so it fails the way a real consumer would when an export map or `dist` build is wrong.
@@ -53,6 +54,7 @@ Important rules:
 - This package is private to the workspace and exists to support docs, demos, or local development flows.
 - `pnpm test:e2e` drives `playground/e2e` against `dev:e2e` on port 4173.
 - `playground/README.md` is the contributor-facing tour and should stay true to the file layout.
+- Hosted rooms share a document for as long as the Durable Object keeps it. There is no auth on the public Worker; a peer who knows the room name can write.
 
 ## Current Maturity / Intended Usage
 

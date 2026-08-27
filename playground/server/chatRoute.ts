@@ -1,6 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { streamAnthropic } from "./anthropicModel";
-import { streamScripted } from "./scriptedModel";
+import { streamChatEvents } from "./chatEvents";
 import type { ChatEvent, ChatRequest } from "./protocol";
 
 /**
@@ -38,12 +37,13 @@ export async function handleChatRequest(
 	incoming.on("close", () => controller.abort());
 
 	const resolvedKey = resolveApiKey(incoming, apiKey);
-	const events = resolvedKey
-		? streamAnthropic(request, resolvedKey, controller.signal)
-		: streamScripted(request);
 
 	try {
-		for await (const event of events) {
+		for await (const event of streamChatEvents(
+			request,
+			resolvedKey,
+			controller.signal,
+		)) {
 			if (controller.signal.aborted) {
 				break;
 			}

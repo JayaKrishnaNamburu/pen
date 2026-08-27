@@ -4,7 +4,15 @@ import type { ChatEvent, ChatRequest } from "./protocol";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const DEFAULT_MODEL = "claude-sonnet-5";
 
-const PROMPT_PREAMBLE = "You are a writing assistant embedded in a rich text document.";
+function readEnv(name: string): string | undefined {
+	if (typeof process === "undefined") {
+		return undefined;
+	}
+	return process.env[name];
+}
+
+const PROMPT_PREAMBLE =
+	"You are a writing assistant embedded in a rich text document.";
 
 /**
  * Any text the model writes is inserted into the document, so a chatty preamble
@@ -41,7 +49,7 @@ const EDIT_DOCUMENT_PROMPT = [
 	"When the request offers tools: the block ids edit_document expects come",
 	"from `<!-- block:<id> <type> -->` annotations. If the request already",
 	"carries them, call edit_document directly — reading first adds a round",
-	"trip for ids you have. Only call read_document (format \"markdown\",",
+	'trip for ids you have. Only call read_document (format "markdown",',
 	"annotateBlocks true) when no annotations are present. Send every operation",
 	"the request needs in one operations array, in document order. If the",
 	"result reports rejected operations, read the reason and the outline it",
@@ -84,7 +92,7 @@ export async function* streamAnthropic(
 			"anthropic-version": "2023-06-01",
 		},
 		body: JSON.stringify({
-			model: process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
+			model: readEnv("ANTHROPIC_MODEL") ?? DEFAULT_MODEL,
 			max_tokens: 8192,
 			stream: true,
 			system: buildSystemPrompt(request),
@@ -266,7 +274,9 @@ async function* readAnthropicStream(
 
 function anthropicToolChoice(
 	request: ChatRequest,
-): { tool_choice: { type: "auto" | "any" | "tool"; name?: string } } | Record<string, never> {
+):
+	| { tool_choice: { type: "auto" | "any" | "tool"; name?: string } }
+	| Record<string, never> {
 	const choice = request.toolChoice;
 	if (!choice) {
 		return {};

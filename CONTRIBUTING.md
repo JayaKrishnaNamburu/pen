@@ -50,7 +50,7 @@ pnpm --filter @input/pen-conformance run test:chromium # browser conformance
 
 ## What CI Runs
 
-A pull request lands on nine workflows. The pull-request page labels
+A pull request lands on ten workflows. The pull-request page labels
 every check `Workflow / Job`, and each workflow that fans out ends in
 one aggregate job depending on all the others. Those aggregates are what
 branch protection requires, so a new matrix leg or a new gate blocks
@@ -68,6 +68,7 @@ share a name, and why `workflow-integrity` fails if two ever do.
 | `Examples / All examples`            | The React, Vue, and vanilla examples still build and mount against workspace sources |
 | `Node / All Node jobs`               | The tree builds and tests on Node 22, Node 26, and macOS                             |
 | `Docs / All docs jobs`               | The docs site compiles and its samples typecheck                                     |
+| `Playground / All playground jobs`   | The playground compiles; Cloudflare deploy is push-only                              |
 | `Supply chain / All audits`          | No advisories reaching a published package, no install scripts, SEC8 lint intact     |
 | `Performance / Budgets`              | CH8 performance budgets and the SCALE1 envelope                                      |
 | `CodeQL / JavaScript and TypeScript` | Static security analysis                                                             |

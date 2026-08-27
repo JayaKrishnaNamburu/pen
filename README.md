@@ -342,7 +342,7 @@ Expanded field-editor mode and table-cell editing always use contenteditable, ev
 
 - **[Documentation](https://input-systems.github.io/pen/)**: getting started per host, core concepts, selection, extensions, commands, collaboration, AI, import and export, security, and accessibility.
 - **Examples**: minimal Vite apps at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each is a workspace member consuming the built packages, so `pnpm build` once and then `pnpm --filter @input/pen-example-react dev`. CI mounts each one and types into it. A drifted quickstart fails the build.
-- **Playground**: the reference app (editor, AI agent, document inspector, and optional live collaboration). Run `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
+- **[Playground](https://pen-playground.input-systems.workers.dev)**: the reference app (editor, AI agent, document inspector, and live collaboration). Hosted on Cloudflare. Locally, `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
 
 ## Development
 

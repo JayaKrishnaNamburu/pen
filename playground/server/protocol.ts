@@ -11,9 +11,7 @@ export interface ChatRequest {
 	tools: ToolSchema[];
 	/** EC17: adapter-owned mapping onto Anthropic `tool_choice`. */
 	toolChoice?:
-		| { type: "auto" }
-		| { type: "any" }
-		| { type: "tool"; name: string };
+		{ type: "auto" } | { type: "any" } | { type: "tool"; name: string };
 }
 
 /**
