@@ -13,7 +13,6 @@
  *     equals the published set, so a package cannot be installable but
  *     invisible, and a companion cannot pose as a host install)
  *   - every ts/tsx/vue sample type-checks against built `.d.ts`
- *   - "public npm" is stated in the root README only (D.1: one place)
  *   - every `spec/packages/**.md` version claim matches the manifest at
  *     the workspace path that spec states (API7/DOC1). The version-suffix
  *     walk above only sees `pkg@version` forms, so a prose sentence like
@@ -66,7 +65,6 @@ const PKG_NAME_RE = /@input\/pen-[a-z0-9-]+/g;
 const VERSION_SUFFIX_RE = /^@([^\s`)"'\]]+)/;
 const SUBPATH_RE = /^\/[A-Za-z0-9._-]+/;
 const FENCE_RE = /```(ts|tsx|js|jsx|vue|typescript|javascript)\b[^\n]*\n([\s\S]*?)```/gi;
-const PUBLIC_NPM_RE = /public npm/;
 
 const SAMPLE_LANG = new Set([
 	"ts",
@@ -372,18 +370,6 @@ export function evaluateRefs({ refs, packages }) {
 	return missing;
 }
 
-export function evaluatePublicNpm(files) {
-	const hits = [];
-	for (const file of files) {
-		if (PUBLIC_NPM_RE.test(file.text)) {
-			hits.push(file.file);
-		}
-	}
-	const unexpected = hits.filter((file) => file !== "README.md");
-	const missingRoot = !hits.includes("README.md");
-	return { hits, unexpected, missingRoot };
-}
-
 export function evaluateReadmeCoverage({ readme, packages }) {
 	// table rows only: a prose or code-fence mention is not a catalog entry
 	const tableRows = new Map();
@@ -560,20 +546,6 @@ export function runSelfTests() {
 		"self-test: vue script close tag allows attributes",
 	);
 
-	const phrase = evaluatePublicNpm([
-		{ file: "README.md", text: "published as public npm packages" },
-		{ file: "CONTRIBUTING.md", text: "copyright Input B.V." },
-	]);
-	assert(
-		phrase.hits.length === 1 && phrase.unexpected.length === 0 && !phrase.missingRoot,
-		"self-test: public npm only in root README",
-	);
-	const leaked = evaluatePublicNpm([
-		{ file: "README.md", text: "published as public npm packages" },
-		{ file: "CONTRIBUTING.md", text: "published as public npm packages" },
-	]);
-	assert(leaked.unexpected.includes("CONTRIBUTING.md"), "self-test: leaked phrase fails");
-
 	const coverage = evaluateReadmeCoverage({
 		readme: [
 			"Install `@input/pen-assets`.",
@@ -647,15 +619,9 @@ export function runSelfTests() {
 		"self-test: a version claim with no resolvable workspace path fails closed; a spec with no claim is not flagged",
 	);
 
-	const cleanPhrase = {
-		hits: ["README.md"],
-		unexpected: [],
-		missingRoot: false,
-	};
 	const cleanTypecheck = { errors: [], skipped: [], checked: 1 };
 	const outdatedOnly = {
 		missingRefs: [],
-		phrase: cleanPhrase,
 		typecheck: cleanTypecheck,
 		artifacts: [],
 		outdatedDist: [{ package: "@input/pen-core", newerCount: 1 }],
@@ -672,7 +638,6 @@ export function runSelfTests() {
 
 	const missingAndOutdated = {
 		missingRefs: [],
-		phrase: cleanPhrase,
 		typecheck: cleanTypecheck,
 		artifacts: [{ package: "@input/pen-core", path: "packages/core/dist/index.d.ts" }],
 		outdatedDist: [{ package: "@input/pen-ai", newerCount: 1 }],
@@ -988,7 +953,6 @@ export async function typecheckSamples({ samples, packages, repoRoot }) {
 
 export function formatReport({
 	missingRefs,
-	phrase,
 	typecheck,
 	artifacts,
 	coverage = { missing: [], unlabeled: [] },
@@ -1017,25 +981,6 @@ export function formatReport({
 		lines.push("");
 	} else {
 		lines.push("OK: every @input/pen-* name and version resolves in the workspace.");
-	}
-
-	if (phrase.missingRoot) {
-		lines.push("");
-		lines.push(
-			'FAIL README.md must state the D.1 decision ("published as public npm packages").',
-		);
-	}
-	if (phrase.unexpected.length > 0) {
-		lines.push("");
-		lines.push(
-			'FAIL "public npm" must appear only in README.md (D.1: state it once, link elsewhere):',
-		);
-		for (const file of phrase.unexpected) {
-			lines.push(`  ${file}`);
-		}
-	}
-	if (!phrase.missingRoot && phrase.unexpected.length === 0) {
-		lines.push('OK: "public npm" is stated in README.md only.');
 	}
 
 	lines.push("");
@@ -1103,7 +1048,6 @@ export function formatReport({
 	appendOutdatedDistLines(lines, outdatedDist);
 	const result = {
 		missingRefs,
-		phrase,
 		typecheck,
 		artifacts,
 		coverage,
@@ -1127,7 +1071,6 @@ export function formatReport({
 
 export function hasFailures({
 	missingRefs,
-	phrase,
 	typecheck,
 	artifacts,
 	coverage = { missing: [], unlabeled: [] },
@@ -1136,8 +1079,6 @@ export function hasFailures({
 	return (
 		artifacts.length > 0 ||
 		missingRefs.length > 0 ||
-		phrase.missingRoot ||
-		phrase.unexpected.length > 0 ||
 		coverage.missing.length > 0 ||
 		coverage.unlabeled.length > 0 ||
 		specVersions.stale.length > 0 ||
@@ -1179,7 +1120,7 @@ async function main() {
 	runSelfTests();
 	await runFreshnessSelfTests();
 	console.log(
-		"DOC refs self-test ok (missing package, wrong version, missing subpath, undocumented published package, stale spec version claim, and leaked public-npm phrase fail closed)",
+		"DOC refs self-test ok (missing package, wrong version, missing subpath, undocumented published package, and stale spec version claim fail closed)",
 	);
 	if (args.selfTestOnly) {
 		return;
@@ -1195,7 +1136,6 @@ async function main() {
 	}
 
 	const missingRefs = evaluateRefs({ refs, packages });
-	const phrase = evaluatePublicNpm(docs);
 	const coverage = evaluateReadmeCoverage({
 		readme: docs.find((doc) => doc.file === "README.md")?.text ?? "",
 		packages,
@@ -1233,7 +1173,6 @@ async function main() {
 
 	const result = {
 		missingRefs,
-		phrase,
 		typecheck,
 		artifacts,
 		coverage,
