@@ -12,9 +12,15 @@
  * 1.0.0. This script rewrites that mechanical 1.0.0 to 0.1.0 once, and
  * only when no train tag exists yet.
  *
- * After `v0.1.0` lands the script is a no-op: later trains are whatever
- * changesets computes. A first `changeset version` that is not 0.1.0 or
- * 1.0.0 fails closed rather than publishing a surprise number.
+ * After `v0.1.0` lands the first-train rewrite is a no-op: later trains
+ * are whatever changesets computes. A first `changeset version` that is
+ * not 0.1.0 or 1.0.0 fails closed rather than publishing a surprise number.
+ *
+ * Spec package docs (`spec/packages/**.md`) claim the workspace version in
+ * prose (`at version \`0.1.0\``). `doc-refs` requires that claim to match
+ * the manifest (DOC1). After every `changeset version` this script rewrites
+ * those claims to the new train, including when the first-train stamp itself
+ * no-ops.
  *
  * Wired from `pnpm version-packages`. Do not run it by hand against a
  * tree that still has unconsumed changesets — `changeset version` has to
@@ -83,6 +89,43 @@ export function decideStamp({ tags, versions }) {
 export function rewriteChangelogHeading(markdown, from, to) {
 	const heading = new RegExp(`^## ${escapeRegExp(from)}$`, "gm");
 	return markdown.replace(heading, `## ${to}`);
+}
+
+const SPEC_VERSION_CLAIM_RE = /at version `([^`]+)`/;
+const SPEC_WORKSPACE_PATH_RE = /Path in workspace: `([^`]+)`/;
+
+/**
+ * DOC1 version claims in `spec/packages/**.md`. Same match as
+ * `evaluateSpecVersions` in doc-refs: a claim without a resolvable
+ * workspace path is left alone so that gate still fails closed.
+ */
+export function planSpecVersionStamps({ specs, packages }) {
+	const byDir = new Map(packages.map((pkg) => [pkg.dir, pkg]));
+	const planned = [];
+	for (const spec of specs) {
+		const claimed = spec.text.match(SPEC_VERSION_CLAIM_RE);
+		if (claimed == null) {
+			continue;
+		}
+		const workspacePath = spec.text.match(SPEC_WORKSPACE_PATH_RE);
+		const pkg = workspacePath ? byDir.get(workspacePath[1]) : undefined;
+		if (pkg == null) {
+			continue;
+		}
+		if (claimed[1] !== pkg.version) {
+			planned.push({
+				file: spec.file,
+				from: claimed[1],
+				to: pkg.version,
+			});
+		}
+	}
+	return planned;
+}
+
+export function rewriteSpecVersionClaim(markdown, from, to) {
+	const claim = new RegExp(`at version \`${escapeRegExp(from)}\``, "g");
+	return markdown.replace(claim, `at version \`${to}\``);
 }
 
 function escapeRegExp(value) {
