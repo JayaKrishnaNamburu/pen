@@ -365,7 +365,7 @@ Prefer scoped runs while iterating: `pnpm --filter @input/pen-core test`. Browse
 
 ## Authors
 
-Pen is created and maintained by [Krijn Rijshouwer](https://www.x.com/krijnrijshouwer) and [Input B.V.](https://www.input.so/).
+Pen is created and maintained by [Krijn Rijshouwer](https://www.x.com/krijnrijshouwer) and [Input](https://www.input.so/).
 
 ## License
 
