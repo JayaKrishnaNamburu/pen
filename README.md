@@ -2,7 +2,7 @@
 <img width="100%" height="auto" alt="logo_black@2x" src="https://github.com/user-attachments/assets/6eb68df5-c70f-4a38-ac6f-f69530f0b355" />
 
 <h3 align="center">
-  Rich text editor engine for human/AI Agent<br/> collaboration. Headless. Extendable.
+  Rich text editor for human/AI Agent<br/> collaboration. Headless. Extendable.
 </h3>
 
 <p align="center">
@@ -12,9 +12,7 @@
 </p>
 <!-- markdownlint-enable MD033 MD041 -->
 
-# Pen
-
-Pen is a block-native rich text editor SDK for applications where people and AI write in the same document. The runtime is headless: it owns the document, selection, and history, and renders nothing you did not ask for. The document is a Yjs CRDT from the first keystroke. Pen is published as public npm packages.
+**Pen is a block-native rich text editor SDK for applications where people and AI write in the same document.** The runtime is headless: it owns the document, selection, and history, and renders nothing you did not ask for. The document is a Yjs CRDT from the first keystroke. Pen is published as public npm packages.
 
 ## Why Pen
 
@@ -344,7 +342,7 @@ Expanded field-editor mode and table-cell editing always use contenteditable, ev
 
 - **[Documentation](https://input-systems.github.io/pen/)**: getting started per host, core concepts, selection, extensions, commands, collaboration, AI, import and export, security, and accessibility.
 - **Examples**: minimal Vite apps at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each is a workspace member consuming the built packages, so `pnpm build` once and then `pnpm --filter @input/pen-example-react dev`. CI mounts each one and types into it. A drifted quickstart fails the build.
-- **Playground**: the reference app (editor, AI agent, document inspector, and optional live collaboration). Run `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
+- **[Playground](https://pen-playground.input-systems.workers.dev)**: the reference app (editor, AI agent, document inspector, and live collaboration). Hosted on Cloudflare. Locally, `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
 
 ## Development
 

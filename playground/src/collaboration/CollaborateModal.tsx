@@ -56,8 +56,8 @@ export function CollaborateModal({
 		<Modal open={open} title="Live collaboration" onClose={onClose}>
 			<form className="collaborate-form" onSubmit={handleSubmit}>
 				<p className="collaborate-copy">
-					Share the room name with someone on the same playground.
-					Your display name is what they see on your caret.
+					Share this page — the room is in the URL. Your display
+					name is what they see on your caret.
 				</p>
 				<label className="collaborate-field">
 					<span>Your name</span>

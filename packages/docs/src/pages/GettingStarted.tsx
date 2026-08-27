@@ -61,7 +61,11 @@ export function GettingStartedPage() {
 			</p>
 			<p>
 				License and distribution are stated in the repository root
-				README.
+				README. The{" "}
+				<a href="https://pen-playground.input-systems.workers.dev">
+					playground
+				</a>{" "}
+				is the try-it host: editor, scripted agent, and live rooms.
 			</p>
 
 			<h2>React</h2>

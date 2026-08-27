@@ -7,33 +7,40 @@
     "dev": "vite",
     "dev:e2e": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "vite build",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json && tsc --noEmit -p tsconfig.worker.json",
     "lint": "eslint ."
   },
   "dependencies": {
-    "@input/pen-ai": "workspace:*",
-    "@input/pen-core": "workspace:*",
-    "@input/pen-yjs": "workspace:*",
-    "@input/pen-dom": "workspace:*",
-    "@input/pen-autoformat": "workspace:*",
-    "@input/pen-multiplayer": "workspace:*",
     "@input/pen": "workspace:*",
+    "@input/pen-ai": "workspace:*",
+    "@input/pen-autoformat": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-dom": "workspace:*",
+    "@input/pen-multiplayer": "workspace:*",
     "@input/pen-react": "workspace:*",
     "@input/pen-types": "workspace:*",
+    "@input/pen-yjs": "workspace:*",
     "@y/websocket-server": "^0.1.5",
+    "lib0": "^0.2.117",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "ws": "^8.21.3",
+    "y-protocols": "^1.0.7",
     "y-websocket": "^3.1.0",
     "yjs": "13.6.32"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260827.1",
     "@types/node": "^25.4.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.3",
-    "vite": "^6.4.3"
+    "vite": "^6.4.3",
+    "vitest": "^3.2.7",
+    "wrangler": "^4.127.0"
   }
 }

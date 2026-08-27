@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": [
+    "worker",
+    "server/chatEvents.ts",
+    "server/collaborationRoute.ts",
+    "server/scriptedModel.ts",
+    "server/anthropicModel.ts",
+    "server/protocol.ts"
+  ],
+  "exclude": ["**/*.test.ts"]
+}

@@ -1,0 +1,26 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "pen-playground",
+	"account_id": "5f207dd352a17e3287ef3af5ac7b4c29",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-08-27",
+	"assets": {
+		"directory": "./dist",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*", "/collaboration", "/collaboration/*"],
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "YJS_ROOMS",
+				"class_name": "YjsRoom",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["YjsRoom"],
+		},
+	],
+}

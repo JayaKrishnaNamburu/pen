@@ -3,9 +3,7 @@ import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import type { Plugin } from "vite";
 import { WebSocketServer, type WebSocket } from "ws";
-
-const ROUTE_PREFIX = "/collaboration";
-const DEFAULT_ROOM = "pen-playground";
+import { COLLABORATION_ROUTE, roomFromPath } from "./collaborationRoute";
 
 /**
  * Serves the Yjs websocket on the Vite dev server at `/collaboration`.
@@ -30,10 +28,10 @@ export function collaborationPlugin(): Plugin {
 
 			vite.httpServer?.on("upgrade", (request, socket, head) => {
 				const path = new URL(
-					request.url ?? ROUTE_PREFIX,
+					request.url ?? COLLABORATION_ROUTE,
 					"http://localhost",
 				).pathname;
-				if (!path.startsWith(ROUTE_PREFIX)) {
+				if (!path.startsWith(COLLABORATION_ROUTE)) {
 					return;
 				}
 
@@ -51,9 +49,7 @@ export function collaborationPlugin(): Plugin {
 }
 
 function roomFromRequest(request: IncomingMessage): string {
-	const path = new URL(request.url ?? ROUTE_PREFIX, "http://localhost")
+	const path = new URL(request.url ?? COLLABORATION_ROUTE, "http://localhost")
 		.pathname;
-	const room = path.slice(ROUTE_PREFIX.length).replace(/^\/+/, "");
-	return room || DEFAULT_ROOM;
+	return roomFromPath(path);
 }
-

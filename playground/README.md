@@ -19,8 +19,26 @@ Open http://localhost:5173. The agent works immediately: with no API key a
 scripted model answers, so you can see the whole path without signing up for
 anything.
 
-For real answers, click the Anthropic mark in the agent bar and paste an API key.
-It stays in this browser. Or write it to `playground/.env.local` and restart:
+## Host it
+
+The same app ships as a Cloudflare Worker: static UI, `POST /api/chat`, and
+one Durable Object per Yjs room at `/collaboration/<room>`. Live at
+[pen-playground.input-systems.workers.dev](https://pen-playground.input-systems.workers.dev).
+Build the workspace packages first, then:
+
+```bash
+pnpm --filter @input/pen-playground... run build
+pnpm --dir playground run deploy
+```
+
+CI does that on push to `main` once `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` are set as repository secrets. Do not put a shared
+Anthropic key on the Worker; the scripted model is enough, and a visitor can
+still paste their own key in the agent bar.
+
+For real answers locally, click the Anthropic mark in the agent bar and paste
+an API key. It stays in this browser. Or write it to `playground/.env.local`
+and restart:
 
 ```bash
 echo 'ANTHROPIC_API_KEY=sk-ant-...' > playground/.env.local
@@ -44,10 +62,16 @@ src/
 server/
   aiPlugin.ts          serves /api/chat from the Vite dev server
   collaborationPlugin.ts  Yjs websocket at /collaboration
-  chatRoute.ts         the endpoint: pick a model, stream the reply
+  collaborationRoute.ts   room name in the /collaboration path
+  chatRoute.ts         Node /api/chat
+  chatEvents.ts        pick scripted or Anthropic
   anthropicModel.ts    real model
   scriptedModel.ts     offline model, used when there is no API key
   protocol.ts          the four events that cross the wire
+worker/
+  index.ts             Cloudflare fetch: assets, /api/chat, rooms
+  yjsRoom.ts           one Durable Object per y-websocket room
+  chat.ts              Fetch /api/chat
 ```
 
 ## The UI layer
