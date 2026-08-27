@@ -117,9 +117,9 @@
     {
       "name": "@input/pen-multiplayer",
       "path": "packages/extensions/multiplayer/dist/index.mjs",
-      "baselineBytes": 43166,
-      "limitBytes": 43166,
-      "note": "Re-recorded baseline 2026-08-21. Path .js \u2192 .mjs. Bytes: awareness validation / presence bounds. 20968 \u2192 43166."
+      "baselineBytes": 51574,
+      "limitBytes": 51574,
+      "note": "Re-recorded baseline 2026-08-27. Cell-selection presence (a `{ kind: \"cell\" }` awareness member, COL2 grid validation, and resolve) plus a declared `streaming` awareness key so a peer's AI run is visible. 43166 \u2192 51574. Byte total reproduced across two clean rebuilds."
     },
     {
       "name": "@input/pen",
