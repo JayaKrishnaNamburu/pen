@@ -1,6 +1,6 @@
 ---
-"@input/pen-multiplayer": minor
-"@input/pen-react": minor
+"@input/pen-multiplayer": patch
+"@input/pen-react": patch
 "@input/pen-dom": patch
 ---
 
