@@ -1,5 +1,28 @@
 # @input/pen-react
 
+## 0.1.3
+
+### Patch Changes
+
+- 15ffd4e: Yield the document Escape selection ladder to capture-phase overlays (HOST7). The ladder is now a bubbling default, so a later-mounted menu or host chrome can preventDefault first instead of leaving trigger text behind as a block selection.
+- 7ee119d: Forward host `extraAttributes` and `data-*` through numbered list items onto `ListItemLayout` so composed renderers can paint alignment and other attributes without dropping the ordered-list marker or `start` (HB8). Export `ListItemHostAttributes` as the host-facing shape for cloning a default list-item renderer.
+
+  `ListItemLayout` now writes host attributes before its own, so a host can no longer overwrite `data-block-type`, `data-indent`, `data-selected`, `data-pen-list-item-layout`, `data-counter`, or `data-checked`. This also fixes check list items, where a host `extraAttributes` replaced the renderer's prop wholesale and silently dropped `data-checked`.
+
+- Updated dependencies [7ee119d]
+- Updated dependencies [15ffd4e]
+- Updated dependencies [15ffd4e]
+  - @input/pen-dom@0.1.3
+  - @input/pen-core@0.1.3
+  - @input/pen-ai@0.1.3
+  - @input/pen-interop@0.1.3
+  - @input/pen-multiplayer@0.1.3
+  - @input/pen-search@0.1.3
+  - @input/pen-shortcuts@0.1.3
+  - @input/pen-snapshots@0.1.3
+  - @input/pen-schema@0.1.3
+  - @input/pen-types@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @input/pen-dom
 
+## 0.1.3
+
+### Patch Changes
+
+- 7ee119d: Render all three colour marks (`textColor`, `backgroundColor`, `highlight`) through a `var()` fallback and `data-color`, so on-screen colour paints by default and hosts can remap opaque tokens without `!important` (RI7). `textColor` and `backgroundColor` previously fell through to the unknown-mark span and dropped the stored colour entirely.
+
+  The paint is an inline style: a host rule that set `color` or `background-color` on the mark itself used to apply and no longer does. Set `--pen-text-color`, `--pen-background-color`, or `--pen-highlight-color` on the mark instead — see `STYLING.md`. Export and clipboard HTML are unaffected; both come from `schema.serialize.toHTML` and still carry the stored value. Kept as `patch` so the 0.1.x train stays on `0.1.3`.
+
+- 15ffd4e: On A5 mapped `selectionChange` after `editor.apply`, drop leftover `edit-context-textupdate` authority and project the remapped caret into EditContext (FE9), so the next keystroke inserts at the remapped offset instead of clamping or landing in the wrong place.
+- 15ffd4e: Yield the document Escape selection ladder to capture-phase overlays (HOST7). The ladder is now a bubbling default, so a later-mounted menu or host chrome can preventDefault first instead of leaving trigger text behind as a block selection.
+- @input/pen-core@0.1.3
+  - @input/pen-shortcuts@0.1.3
+  - @input/pen-types@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes
