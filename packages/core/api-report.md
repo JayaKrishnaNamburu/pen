@@ -79,6 +79,7 @@
 - interpolateMessage
 - isBlockSelected
 - isCollapsed
+- isContainerBlock
 - isContainerBlockType
 - isContinuousTextFlowCapability
 - isMultiBlock
