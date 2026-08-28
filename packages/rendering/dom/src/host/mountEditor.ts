@@ -8,12 +8,10 @@ import {
 import { resolveSelectAllBehavior } from "../constants/selectAll";
 import type { PenFocusPolicy } from "../field-editor/controller";
 import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { registerVerticalCaretMeasure } from "../geometry/verticalCaretMeasure";
-import { handleEditorDocumentKeyDown } from "../utils/documentShortcuts";
+import { bindEditorDocumentKeyDown } from "../utils/documentShortcuts";
 import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
 import { computeDocumentEmpty } from "../utils/editorEmptyState";
-import { shouldHandleEditorKeyboardEvent } from "../utils/textEntryTarget";
 import { createDocumentTree } from "./documentTree";
 import { handleFieldEditorPointerActivate } from "./pointerActivation";
 
@@ -72,30 +70,6 @@ export function mountEditor(
 		});
 	};
 
-	const handleDocumentKeyDown = (event: KeyboardEvent): void => {
-		const shouldHandle = shouldHandleEditorKeyboardEvent({
-			root,
-			event,
-			selection: editor.selection,
-			hasMappedDomSelection: () => domSelectionToEditor(root) !== null,
-		});
-		if (!shouldHandle) {
-			return;
-		}
-		if (
-			handleEditorDocumentKeyDown({
-				event,
-				editor,
-				fieldEditor,
-				interactionModel,
-				root,
-			})
-		) {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-		}
-	};
-
 	const handlePointerActivate = (event: MouseEvent): void => {
 		handleFieldEditorPointerActivate({
 			event,
@@ -110,14 +84,17 @@ export function mountEditor(
 	root.addEventListener("focusin", handleFocusIn);
 	root.addEventListener("focusout", handleFocusOut);
 	root.addEventListener("mousedown", handlePointerActivate);
-	root.ownerDocument?.addEventListener(
-		"keydown",
-		handleDocumentKeyDown,
-		true,
-	);
 
 	unsubscribers.push(editor.on("commit", () => tree.sync()));
 	unsubscribers.push(fieldEditor.subscribe(() => tree.sync()));
+	unsubscribers.push(
+		bindEditorDocumentKeyDown({
+			editor,
+			fieldEditor,
+			root,
+			getInteractionModel: () => interactionModel,
+		}),
+	);
 
 	const destroy = (): void => {
 		for (const unsubscribe of unsubscribers) {
@@ -126,11 +103,6 @@ export function mountEditor(
 		root.removeEventListener("focusin", handleFocusIn);
 		root.removeEventListener("focusout", handleFocusOut);
 		root.removeEventListener("mousedown", handlePointerActivate);
-		root.ownerDocument?.removeEventListener(
-			"keydown",
-			handleDocumentKeyDown,
-			true,
-		);
 		unregisterVerticalCaret();
 		editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
 		fieldEditor.setRootElement(null);

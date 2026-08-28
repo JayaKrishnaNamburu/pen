@@ -12,6 +12,7 @@
 
 - attachContentGestures
 - attachInlineAtomWrapperInteractions
+- bindEditorDocumentKeyDown
 - canDestructure
 - collapsedRect
 - createGeometryReader
@@ -86,6 +87,7 @@
 - AttachContentGesturesOptions
 - BidiRun
 - BidiRunGeometry
+- BindEditorDocumentKeyDownOptions
 - ContentGestureRegionGesture
 - ContentGestureState
 - FieldEditorPointerActivateOptions

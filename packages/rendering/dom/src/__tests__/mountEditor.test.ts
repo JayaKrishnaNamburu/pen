@@ -143,6 +143,64 @@ describe("mountEditor", () => {
 		expect(inline?.textContent).toContain("Hello");
 	});
 
+	it("HOST7: a later capture overlay keeps Escape from the selection ladder", () => {
+		const editor = createBareEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
+				to: 0,
+				insert: "hi /",
+			},
+		]);
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		mounted.fieldEditor.activateTextSelection(blockId, 4, 4);
+		const inline = root.querySelector(
+			`[${DATA_ATTRS.inlineContent}]`,
+		) as HTMLElement | null;
+		expect(inline).toBeInstanceOf(HTMLElement);
+		inline!.tabIndex = 0;
+		inline!.focus();
+
+		let overlayHandled = false;
+		const onOverlayEscape = (event: KeyboardEvent): void => {
+			if (event.key !== "Escape") {
+				return;
+			}
+			overlayHandled = true;
+			event.preventDefault();
+			event.stopPropagation();
+		};
+		document.addEventListener("keydown", onOverlayEscape, true);
+		cleanups.push(() => {
+			document.removeEventListener("keydown", onOverlayEscape, true);
+		});
+
+		document.dispatchEvent(
+			new KeyboardEvent("keydown", {
+				key: "Escape",
+				bubbles: true,
+				cancelable: true,
+			}),
+		);
+
+		expect(overlayHandled).toBe(true);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			focus: { blockId, offset: 4 },
+		});
+		expect(editor.getBlock(blockId)?.textContent()).toBe("hi /");
+	});
+
 	it("HOST6: boolean data attributes are valueless", () => {
 		const editor = createBareEditor();
 		const root = document.createElement("div");

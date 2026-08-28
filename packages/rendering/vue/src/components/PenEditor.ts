@@ -5,14 +5,12 @@ import {
 } from "@input/pen-core";
 import { htmlImporter } from "@input/pen-interop/html";
 import {
+	bindEditorDocumentKeyDown,
 	FieldEditorImpl,
-	handleEditorDocumentKeyDown,
 	handleFieldEditorPointerActivate,
 	registerVerticalCaretMeasure,
 	resolveSelectAllBehavior,
-	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
 } from "@input/pen-dom";
-import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
 import {
 	buildDataAttributes,
 	DATA_ATTRS,
@@ -141,7 +139,6 @@ export const PenEditor = defineComponent({
 					nextElement,
 				);
 
-				const ownerDocument = nextElement.ownerDocument;
 				const handleFocusIn = () => {
 					focused.value = true;
 					fieldEditor.setFocused(true);
@@ -157,34 +154,13 @@ export const PenEditor = defineComponent({
 					fieldEditor.setFocused(nextFocused);
 				};
 
-				const handleKeyDown = (event: KeyboardEvent) => {
-					if (
-						!shouldHandlePenEditorKeyboardEvent({
-							root: nextElement,
-							event,
-							selection: props.editor.selection,
-							hasMappedDomSelection: () =>
-								domSelectionToEditor(nextElement) !== null,
-						})
-					) {
-						return;
-					}
-
-					if (
-						handleEditorDocumentKeyDown({
-							event,
-							editor: props.editor,
-							fieldEditor,
-							interactionModel:
-								props.interactionModel ?? "content-first",
-							root: nextElement,
-						})
-					) {
-						event.preventDefault();
-						event.stopImmediatePropagation();
-						return;
-					}
-				};
+				const unbindDocumentKeys = bindEditorDocumentKeyDown({
+					editor: props.editor,
+					fieldEditor,
+					root: nextElement,
+					getInteractionModel: () =>
+						props.interactionModel ?? "content-first",
+				});
 
 				const handlePointerActivate = (event: MouseEvent) => {
 					const blocksHost = nextElement.querySelector(
@@ -206,7 +182,6 @@ export const PenEditor = defineComponent({
 				nextElement.addEventListener("focusin", handleFocusIn);
 				nextElement.addEventListener("focusout", handleFocusOut);
 				nextElement.addEventListener("mousedown", handlePointerActivate);
-				ownerDocument?.addEventListener("keydown", handleKeyDown, true);
 				onCleanup(() => {
 					nextElement.removeEventListener("focusin", handleFocusIn);
 					nextElement.removeEventListener("focusout", handleFocusOut);
@@ -214,11 +189,7 @@ export const PenEditor = defineComponent({
 						"mousedown",
 						handlePointerActivate,
 					);
-					ownerDocument?.removeEventListener(
-						"keydown",
-						handleKeyDown,
-						true,
-					);
+					unbindDocumentKeys();
 					unregisterVerticalCaret();
 				});
 			},

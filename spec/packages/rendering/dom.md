@@ -53,7 +53,7 @@ flowchart TD
 Important rules:
 
 - DOM selection is a view-layer representation and must stay synchronized with editor selection.
-- Renderer roots should route captured document keydown events through `shouldHandleEditorKeyboardEvent()` before calling `handleEditorDocumentKeyDown()` so native inputs and other editor roots keep their own keyboard ownership.
+- Renderer roots should install `bindEditorDocumentKeyDown()` (or the same phase split) so `shouldHandleEditorKeyboardEvent()` gates `handleEditorDocumentKeyDown()`. Non-Escape shortcuts stay in capture. Escape is a bubbling default (HOST7) so a later-mounted overlay can `preventDefault` first. Native inputs and other editor roots keep their own keyboard ownership.
 - Clipboard and typing flows resolve back into editor mutations instead of mutating the document model directly.
 - Shared Escape, select-all, block-selection, history shortcut, deletion, and table-cell navigation behavior belongs here when it is DOM-engine behavior, not framework-specific UI behavior.
 - Table cell copy, cut, paste, printable-key entry, and navigation must preserve structured cell selection metadata and apply document changes through `editor.apply(...)`.

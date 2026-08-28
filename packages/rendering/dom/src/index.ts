@@ -58,7 +58,11 @@ export type {
 	RegionSelectorConfig,
 	RegionSelectorSelectionMode,
 } from "./utils/regionSelection";
-export { handleEditorDocumentKeyDown } from "./utils/documentShortcuts";
+export {
+	bindEditorDocumentKeyDown,
+	handleEditorDocumentKeyDown,
+} from "./utils/documentShortcuts";
+export type { BindEditorDocumentKeyDownOptions } from "./utils/documentShortcuts";
 export { handleEscapeSelectionTransition } from "./utils/escapeSelection";
 export { handleTableCellSelectionKeyDown } from "./utils/tableCellNavigation";
 export {

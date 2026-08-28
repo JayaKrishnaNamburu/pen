@@ -3,8 +3,9 @@
 import React, { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@input/pen-core";
+import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
 import { defaultPreset } from "@input/pen";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema";
 
@@ -216,6 +217,84 @@ describe("@input/pen-react slash menu AX3", () => {
 		expect(controller.confirm).toHaveBeenCalledWith(1);
 		expect(controller.confirm).toHaveBeenCalledTimes(2);
 		expect(controller.dismiss).toHaveBeenCalled();
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("HOST7 Escape dismisses an open slash menu without collapsing to a block selection", async () => {
+		const editor = createSlashMenuEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
+				to: 0,
+				insert: "/",
+			},
+		]);
+		const controller = createOpenController();
+
+		function Harness() {
+			const [open, setOpen] = React.useState(true);
+			return (
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+					<Pen.SlashMenu.Root
+						controller={{ ...controller, open }}
+						editor={editor}
+						open={open}
+						onOpenChange={setOpen}
+					>
+						<Pen.SlashMenu.List>
+							<Pen.SlashMenu.Item index={0}>
+								Paragraph
+							</Pen.SlashMenu.Item>
+						</Pen.SlashMenu.List>
+					</Pen.SlashMenu.Root>
+				</Pen.Editor.Root>
+			);
+		}
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(<Harness />);
+		});
+
+		const fieldEditor = editor.facet(
+			fieldEditorHostFacet,
+		) as FieldEditorImpl | null;
+		expect(fieldEditor).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor!.activateTextSelection(blockId, 1, 1);
+		});
+
+		const inline = container.querySelector<HTMLElement>(
+			"[data-pen-inline-content]",
+		);
+		expect(inline).not.toBeNull();
+		await act(async () => {
+			inline!.focus();
+		});
+
+		await act(async () => {
+			dispatchKey("Escape", inline!);
+		});
+
+		expect(controller.dismiss).toHaveBeenCalled();
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			focus: { blockId, offset: 1 },
+		});
+		expect(editor.getBlock(blockId)?.textContent()).toBe("/");
 
 		await act(async () => {
 			root.unmount();

@@ -18,9 +18,80 @@ import {
 	handleSelectAllShortcut,
 } from "../field-editor/keyHandling";
 import { dispatchKeymapEvent } from "../field-editor/keymap";
+import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { DATA_ATTRS } from "./dataAttributes";
 import { handleEscapeSelectionTransition } from "./escapeSelection";
 import { handleTableCellSelectionKeyDown } from "./tableCellNavigation";
+import { shouldHandleEditorKeyboardEvent } from "./textEntryTarget";
+
+export type BindEditorDocumentKeyDownOptions = {
+	editor: Editor;
+	fieldEditor: FieldEditorSession;
+	root: HTMLElement;
+	getInteractionModel?: () => InteractionModel | undefined;
+};
+
+/**
+ * Document key routing for an editor root. Non-Escape shortcuts stay in
+ * capture. Escape is a bubbling default so capture-phase overlays (menus,
+ * host chrome) can preventDefault first (HOST7).
+ */
+export function bindEditorDocumentKeyDown(
+	options: BindEditorDocumentKeyDownOptions,
+): () => void {
+	const { editor, fieldEditor, root, getInteractionModel } = options;
+	const doc = root.ownerDocument;
+	if (!doc) {
+		return () => {};
+	}
+
+	const route = (event: KeyboardEvent): void => {
+		if (
+			!shouldHandleEditorKeyboardEvent({
+				root,
+				event,
+				selection: editor.selection,
+				hasMappedDomSelection: () =>
+					domSelectionToEditor(root) !== null,
+			})
+		) {
+			return;
+		}
+		if (
+			handleEditorDocumentKeyDown({
+				event,
+				editor,
+				fieldEditor,
+				interactionModel: getInteractionModel?.(),
+				root,
+			})
+		) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+		}
+	};
+
+	const onCapture = (event: KeyboardEvent): void => {
+		if (event.key === "Escape") {
+			return;
+		}
+		route(event);
+	};
+
+	const onBubble = (event: KeyboardEvent): void => {
+		if (event.key !== "Escape") {
+			return;
+		}
+		route(event);
+	};
+
+	doc.addEventListener("keydown", onCapture, true);
+	doc.addEventListener("keydown", onBubble, false);
+	return () => {
+		doc.removeEventListener("keydown", onCapture, true);
+		doc.removeEventListener("keydown", onBubble, false);
+	};
+}
 
 export function handleEditorDocumentKeyDown(options: {
 	event: KeyboardEvent;

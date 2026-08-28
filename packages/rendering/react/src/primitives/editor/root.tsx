@@ -27,17 +27,15 @@ import {
 } from "../../context/editorContext";
 import { FieldEditorContext } from "../../context/fieldEditorContext";
 import {
+	bindEditorDocumentKeyDown,
 	FieldEditorImpl,
-	handleEditorDocumentKeyDown,
+	RegionSelectionStore,
 	registerVerticalCaretMeasure,
-	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
 	type FieldEditorSession,
 	type PenFocusLifecycleListener,
 	type PenFocusPolicy,
 } from "@input/pen-dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
-import { domSelectionToEditor } from "@input/pen-dom/field-editor";
-import { RegionSelectionStore } from "@input/pen-dom";
 import { EditorRegionSelectionContext } from "./regionSelectionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
@@ -270,46 +268,12 @@ export function EditorRoot(props: EditorRootProps) {
 			return;
 		}
 
-		const handleDocumentKeyDown = (event: KeyboardEvent) => {
-			const shouldHandle = shouldHandlePenEditorKeyboardEvent({
-				root,
-				event,
-				selection: editor.selection,
-				hasMappedDomSelection: () =>
-					domSelectionToEditor(root) !== null,
-			});
-
-			if (!shouldHandle) {
-				return;
-			}
-
-			if (
-				handleEditorDocumentKeyDown({
-					event,
-					editor,
-					fieldEditor,
-					interactionModel: resolvedInteractionModel.model,
-					root,
-				})
-			) {
-				event.preventDefault();
-				event.stopImmediatePropagation();
-				return;
-			}
-		};
-
-		root.ownerDocument?.addEventListener(
-			"keydown",
-			handleDocumentKeyDown,
-			true,
-		);
-		return () => {
-			root.ownerDocument?.removeEventListener(
-				"keydown",
-				handleDocumentKeyDown,
-				true,
-			);
-		};
+		return bindEditorDocumentKeyDown({
+			editor,
+			fieldEditor,
+			root,
+			getInteractionModel: () => resolvedInteractionModel.model,
+		});
 	}, [editor, resolvedInteractionModel.model, rootElement]);
 
 	const primitiveProps: Record<string, unknown> = {

@@ -29,6 +29,30 @@ describe("resolveEditContextTextUpdateRange", () => {
 			focusOffset: 4,
 		});
 	});
+
+	it("FE9: leftover textupdate authority wins over a remapped editor caret", () => {
+		const result = resolveEditContextTextUpdateRange({
+			blockId: "p1",
+			updateRangeStart: 6,
+			updateRangeEnd: 6,
+			text: "x",
+			isLogicallyEmpty: false,
+			editorSelectionRange: null,
+			editContextSelection: {
+				blockId: "p1",
+				anchorOffset: 3,
+				focusOffset: 3,
+			},
+			authoritativeTextInputSelection: {
+				blockId: "p1",
+				anchorOffset: 6,
+				focusOffset: 6,
+			},
+			editorCaret: 3,
+		});
+
+		expect(result.range).toEqual({ start: 6, end: 6 });
+	});
 });
 
 describe("resolveEditContextKeyDownRange", () => {
