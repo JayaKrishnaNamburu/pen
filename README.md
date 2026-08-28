@@ -30,7 +30,7 @@
 
 https://pen-playground.input.so/
 
-<img width="1543" alt="Web preview of the Pen playground" src="https://input-pr-z1wpxj.s3.us-west-2.amazonaws.com/pen/pen-playground-preview.png" />
+<img width="1543" alt="Web preview of the Pen playground" src="https://input-pr-z1wpxj.s3.us-west-2.amazonaws.com/pen/playground-preview.png" />
 
 ## Quick Start
 
