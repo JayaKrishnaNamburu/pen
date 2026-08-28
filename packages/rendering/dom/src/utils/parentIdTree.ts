@@ -17,6 +17,12 @@ export function getChildBlockIds(
 	return editor.documentState.childrenOf(parentBlockId);
 }
 
+/**
+ * @deprecated Renamed to {@link getChildBlockIds}, which covers both nesting
+ * routes rather than only `parentId`. Kept for 0.1.x consumers of this subpath.
+ */
+export const getParentIdChildBlockIds = getChildBlockIds;
+
 export function getVisibleBlockIds(editor: Editor): readonly string[] {
 	const visibleBlockIds: string[] = [];
 

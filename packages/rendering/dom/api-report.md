@@ -706,6 +706,10 @@ _no exports_
 - getVisibleBlockIds
 - isInsideParentIdContainer
 
+### value
+
+- getParentIdChildBlockIds
+
 ## ./utils/fieldEditorTextEntryAttrs
 
 `./dist/utils/fieldEditorTextEntryAttrs.d.ts`
