@@ -260,6 +260,7 @@ export {
 	isContainerBlockType,
 	shouldRenderContainerChildren,
 } from "./commands/commandBlockContext";
+export { isContainerBlock } from "./schema/contentType";
 export type {
 	ConvertBlockParam,
 	DeleteGranularity,

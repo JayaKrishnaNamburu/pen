@@ -1,10 +1,9 @@
-import {
-	type BlockHandle,
-	type DiagnosticEvent,
-	type DocumentOp,
-	type Editor,
-	type FlowBlockCapability,
-	isContainerBlock,
+import type {
+	BlockHandle,
+	DiagnosticEvent,
+	DocumentOp,
+	Editor,
+	FlowBlockCapability,
 } from "@input/pen-types";
 
 import {
@@ -13,6 +12,7 @@ import {
 	isContinuousTextFlowCapability,
 } from "../editor/profilePolicy";
 import { localeFacet } from "../facets/i18nFacets";
+import { isContainerBlock } from "../schema/contentType";
 import {
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,

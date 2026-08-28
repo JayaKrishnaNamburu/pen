@@ -36,18 +36,6 @@ export function isNestedContent(content: ContentType): content is BlockSchema[] 
   return Array.isArray(content);
 }
 
-/**
- * Whether a block type holds child blocks, by either route: a nested-content
- * schema, or the `parentId` convention that `isContainer` marks.
- *
- * This is the single authority for the question. Callers must not test block
- * type names — a hardcoded set silently excludes every host-defined container.
- */
-export function isContainerBlock(schema: BlockSchema | null | undefined): boolean {
-  if (!schema) return false;
-  return isNestedContent(schema.content) || schema.isContainer === true;
-}
-
 // ── Block Display ───────────────────────────────────────────
 
 export interface BlockDisplay {

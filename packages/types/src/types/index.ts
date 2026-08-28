@@ -132,7 +132,6 @@ export {
 	type SchemaRegistry,
 	type ComposableSchema,
 	type FieldEditorType,
-	isContainerBlock,
 	isNestedContent,
 } from "./schema";
 
