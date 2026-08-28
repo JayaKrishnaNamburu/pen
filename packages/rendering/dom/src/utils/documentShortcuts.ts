@@ -24,6 +24,7 @@ import { handleEscapeSelectionTransition } from "./escapeSelection";
 import { handleTableCellSelectionKeyDown } from "./tableCellNavigation";
 import { shouldHandleEditorKeyboardEvent } from "./textEntryTarget";
 
+/** Arguments for {@link bindEditorDocumentKeyDown}. */
 export type BindEditorDocumentKeyDownOptions = {
 	editor: Editor;
 	fieldEditor: FieldEditorSession;

@@ -8,6 +8,12 @@ const LIST_ITEM_INDENT_PX = 24;
 const LIST_ITEM_COLUMN_GAP_PX = 8;
 const LIST_ITEM_CONTENT_MIN_HEIGHT_EM = 1.5;
 
+/**
+ * Host-facing attributes for cloning a default list-item renderer (HB8).
+ * Spread onto {@link ListItemLayout} before library attributes so `data-block-type`,
+ * `data-indent`, `data-selected`, `data-pen-list-item-layout`, `data-counter`,
+ * and `data-checked` cannot be overwritten.
+ */
 export type ListItemHostAttributes = {
 	extraAttributes?: Record<string, unknown>;
 } & Record<`data-${string}`, unknown>;
