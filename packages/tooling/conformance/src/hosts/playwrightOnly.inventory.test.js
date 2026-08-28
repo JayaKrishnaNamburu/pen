@@ -150,7 +150,8 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 	// 66 -> 67 the same day is RI5's other half, ri5-trailing-space-caret: a
 	// trailing space has no advance width under `normal`, so the caret was
 	// painted at the same x before and after one was typed.
-	const expectedPlaywrightSpecs = 67;
+	// 67 -> 68 is FE9: suites/input/fe9-editcontext-mapped-caret.spec.ts.
+	const expectedPlaywrightSpecs = 68;
 	assert.equal(
 		playwrightSpecs.length,
 		expectedPlaywrightSpecs,
