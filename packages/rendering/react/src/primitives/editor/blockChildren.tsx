@@ -3,6 +3,7 @@ import { useEditorContext } from "../../context/editorContext";
 import { useChildBlockIds } from "../../hooks/useChildBlockIds";
 import { EditorBlock } from "./block";
 
+/** Props for {@link BlockChildren}, the React outlet for a container's child blocks. */
 export interface BlockChildrenProps {
 	parentBlockId: string;
 	containerProps?: React.HTMLAttributes<HTMLDivElement> &

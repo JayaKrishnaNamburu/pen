@@ -10,6 +10,7 @@ export function getRootBlockIds(editor: Editor): readonly string[] {
 	);
 }
 
+/** Child ids of a container, covering both the children array and `parentId` routes. */
 export function getChildBlockIds(
 	editor: Editor,
 	parentBlockId: string,
