@@ -68,7 +68,7 @@
   {
     "id": "provenance-preconditions",
     "command": "node scripts/release-check.mjs --provenance-preconditions",
-    "description": "npm trusted-publishing and provenance preconditions. Zero tags prints UNEXERCISED rather than failing."
+    "description": "Release workflow is prep-only (version PR, no npm publish) and root `pnpm release` still runs changeset publish."
   },
   {
     "id": "doc-refs",

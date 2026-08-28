@@ -13,13 +13,12 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
-    name: Publish
+    name: Prep
     timeout-minutes: 90
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-      id-token: write # npm trusted publishing + provenance (OIDC, no NPM_TOKEN)
 
     steps:
       - name: Check out repository
@@ -32,17 +31,11 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      # No turbo-cache-scope on purpose. This job publishes; it builds from
-      # nothing so the artifact that reaches npm is the one this commit
-      # produces, not one a cache handed back.
+      # No turbo-cache-scope on purpose. This job versions the train; it
+      # builds from nothing so the artifact that is gated is the one this
+      # commit produces, not one a cache handed back.
       - name: Set up Pen toolchain
         uses: ./.github/actions/setup
-
-      - name: Install npm CLI for trusted publishing
-        # Node 22 ships npm 10. Trusted publishing (OIDC, no long-lived
-        # token) needs npm >= 11.5.1. Install on this job only — other
-        # workflows never publish.
-        run: npm install -g npm@11.5.1
 
       - name: Lint repository surfaces
         run: pnpm lint
@@ -77,33 +70,19 @@ jobs:
       - name: Check published package types
         run: node scripts/release-check.mjs --attw
 
-      - name: Check npm provenance preconditions
+      - name: Check release prep preconditions
         run: node scripts/release-check.mjs --provenance-preconditions
 
       - name: Check bundle size against baseline
         run: node scripts/size-limit.mjs
 
-      - name: Create release pull request or publish
-        id: changesets
-        # SHA-pinned, not `@v2`: that tag is a mutable branch, and this step
-        # holds the provenance id-token. Action v2 needs @changesets/cli 3.
-        # No NPM_TOKEN: trusted publishing uses OIDC. Unset NODE_AUTH_TOKEN
-        # in case the action exports an empty one that would shadow OIDC.
+      - name: Create release pull request
+        # SHA-pinned, not `@v2`: that tag is a mutable branch. Action v2
+        # needs @changesets/cli 3. Omit the publish command: npm publish is
+        # local (`pnpm release`) because this job cannot authenticate.
         uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
           version-script: pnpm version-packages
-          publish-script: env -u NODE_AUTH_TOKEN pnpm release
+          create-github-releases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
-
-      - name: Tag the release train
-        if: steps.changesets.outputs.published == 'true'
-        run: |
-          version="$(node -p "require('./packages/core/package.json').version")"
-          if git rev-parse "v${version}" >/dev/null 2>&1; then
-            echo "Train tag v${version} already exists"
-            exit 0
-          fi
-          git tag "v${version}"
-          git push origin "v${version}"

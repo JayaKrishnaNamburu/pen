@@ -297,7 +297,7 @@ This is the path for server-side generation, agent workflows, migrations, and te
 
 ## Packages
 
-Install `@input/pen` and a renderer (`createEditor()` from the starter applies the batteries preset, and `@input/pen-core` plus the default schema arrive with it), then add the rest when you need them. Everything below ships as public npm packages released from this repository with provenance, so none of it needs a credential to install, and every published package commits an `api-report.md` next to its source as the signatures of record.
+Install `@input/pen` and a renderer (`createEditor()` from the starter applies the batteries preset, and `@input/pen-core` plus the default schema arrive with it), then add the rest when you need them. Everything below ships as public npm packages released from this repository, so none of it needs a credential to install, and every published package commits an `api-report.md` next to its source as the signatures of record.
 
 This table is the whole published set. The last three rows are companions: they arrive as dependencies of the packages above them, and installed on their own they give you helpers with no editor. Name a companion in your manifest when you import from it directly, alongside the preset or core rather than instead of it; each companion's README says the same in its first sentence.
 

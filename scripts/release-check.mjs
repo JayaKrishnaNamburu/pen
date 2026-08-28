@@ -14,21 +14,20 @@ const EXPECTED_REPOSITORY_URL = "https://github.com/input-systems/pen.git";
 //   pnpm exec attw --pack <packageDir>
 //   pnpm dlx publint --pack pnpm <packageDir>
 //   pnpm dlx @arethetypeswrong/cli --pack <packageDir>
-// Publish (API7): changeset publish, with NPM_CONFIG_PROVENANCE in the
-//   workflow. --provenance is an npm flag; @changesets/cli 3 rejects it.
-//   Trusted publishing uses the workflow id-token: write grant (OIDC);
-//   no NPM_TOKEN.
+// Prep (API7): the GitHub release workflow versions the train and does
+//   not publish. `pnpm release` (`changeset publish`) is local.
+//   --provenance is an npm flag; @changesets/cli 3 rejects it.
 
 function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 	const problems = [];
-	if (!/id-token:\s*write/.test(workflow)) {
+	if (/id-token:\s*write/.test(workflow)) {
 		problems.push(
-			".github/workflows/release.yml is missing permissions.id-token: write",
+			".github/workflows/release.yml must not grant id-token: write; publishing is local, not OIDC",
 		);
 	}
-	if (!/NPM_CONFIG_PROVENANCE:\s*true/.test(workflow)) {
+	if (/NPM_CONFIG_PROVENANCE/.test(workflow)) {
 		problems.push(
-			".github/workflows/release.yml is missing NPM_CONFIG_PROVENANCE: true",
+			".github/workflows/release.yml must not set NPM_CONFIG_PROVENANCE; the workflow does not publish",
 		);
 	}
 	if (
@@ -36,22 +35,25 @@ function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 		/^\s*NPM_TOKEN:/m.test(workflow)
 	) {
 		problems.push(
-			".github/workflows/release.yml must not set NPM_TOKEN; trusted publishing uses OIDC",
+			".github/workflows/release.yml must not set NPM_TOKEN; publishing is local",
 		);
 	}
-	if (!/npm install -g npm@11\.5/.test(workflow)) {
+	if (/npm install -g npm@/.test(workflow)) {
 		problems.push(
-			".github/workflows/release.yml must install npm CLI >= 11.5.1 for trusted publishing",
+			".github/workflows/release.yml must not install a publish-only npm CLI; the workflow does not publish",
 		);
 	}
-	if (!/-u NODE_AUTH_TOKEN/.test(workflow)) {
+	if (
+		/^[ \t]*publish-script:/m.test(workflow) ||
+		/^[ \t]*publish:/m.test(workflow)
+	) {
 		problems.push(
-			".github/workflows/release.yml must unset NODE_AUTH_TOKEN around changeset publish so OIDC is not shadowed",
+			".github/workflows/release.yml must not pass a publish-script; prep versions only, publish locally with pnpm release",
 		);
 	}
-	if (!/version-script:/.test(workflow) || !/publish-script:/.test(workflow)) {
+	if (!/^[ \t]*version-script:/m.test(workflow)) {
 		problems.push(
-			".github/workflows/release.yml must pass changesets/action v2 version-script and publish-script",
+			".github/workflows/release.yml must pass changesets/action v2 version-script",
 		);
 	}
 	if (/changesets\/action@\S+ # v1/.test(workflow)) {
@@ -59,7 +61,10 @@ function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 			".github/workflows/release.yml must use changesets/action v2 with @changesets/cli 3",
 		);
 	}
-	if (!/fetch-tags:\s*true/.test(workflow) || !/fetch-depth:\s*0/.test(workflow)) {
+	if (
+		!/fetch-tags:\s*true/.test(workflow) ||
+		!/fetch-depth:\s*0/.test(workflow)
+	) {
 		problems.push(
 			".github/workflows/release.yml must fetch tags (fetch-depth: 0 and fetch-tags: true) so stamp-first-train can see a v* train tag",
 		);
@@ -77,7 +82,7 @@ function provenanceWorkflowProblems(workflow, rootReleaseScript) {
 		rootReleaseScript.includes("--provenance")
 	) {
 		problems.push(
-			'root package.json "release" script must not pass --provenance; @changesets/cli 3 rejects it. Use NPM_CONFIG_PROVENANCE',
+			'root package.json "release" script must not pass --provenance; @changesets/cli 3 rejects it',
 		);
 	}
 	return problems;
@@ -143,7 +148,7 @@ function versionSyncGroups(packages) {
 
 function runSelfTests() {
 	const healthyWorkflow =
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nversion-script: pnpm version-packages\npublish-script: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n";
+		"permissions:\n  contents: write\n  pull-requests: write\nversion-script: pnpm version-packages\nfetch-depth: 0\nfetch-tags: true\n";
 	const healthyReleaseScript = "changeset publish";
 	const healthy = provenanceWorkflowProblems(
 		healthyWorkflow,
@@ -151,27 +156,20 @@ function runSelfTests() {
 	);
 	if (healthy.length !== 0) {
 		throw new Error(
-			`self-test: healthy provenance workflow must pass, got: ${healthy.join("; ")}`,
+			`self-test: healthy prep-only workflow must pass, got: ${healthy.join("; ")}`,
 		);
 	}
 
-	const missingToken = provenanceWorkflowProblems(
-		"env:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
-		healthyReleaseScript,
-	);
-	if (!missingToken.some((problem) => problem.includes("id-token: write"))) {
-		throw new Error("self-test: missing id-token: write must fail closed");
-	}
-
-	const missingEnv = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
+	const oidcPublish = provenanceWorkflowProblems(
+		`${healthyWorkflow}      id-token: write\npublish-script: pnpm release\n`,
 		healthyReleaseScript,
 	);
 	if (
-		!missingEnv.some((problem) => problem.includes("NPM_CONFIG_PROVENANCE"))
+		!oidcPublish.some((problem) => problem.includes("id-token: write")) ||
+		!oidcPublish.some((problem) => problem.includes("publish-script"))
 	) {
 		throw new Error(
-			"self-test: missing NPM_CONFIG_PROVENANCE must fail closed",
+			"self-test: a workflow that still publishes must fail closed",
 		);
 	}
 
@@ -193,28 +191,38 @@ function runSelfTests() {
 		`${healthyWorkflow}          NPM_TOKEN: \${{ secrets.NPM_TOKEN }}\n`,
 		healthyReleaseScript,
 	);
-	if (!leakedToken.some((problem) => problem.includes("must not set NPM_TOKEN"))) {
-		throw new Error("self-test: NPM_TOKEN in the workflow must fail closed");
+	if (
+		!leakedToken.some((problem) =>
+			problem.includes("must not set NPM_TOKEN"),
+		)
+	) {
+		throw new Error(
+			"self-test: NPM_TOKEN in the workflow must fail closed",
+		);
 	}
 
 	const missingTags = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\npublish: env -u NODE_AUTH_TOKEN pnpm release\n",
+		"version-script: pnpm version-packages\n",
 		healthyReleaseScript,
 	);
 	if (!missingTags.some((problem) => problem.includes("fetch tags"))) {
 		throw new Error("self-test: a checkout without tags must fail closed");
 	}
 
-	const missingNpmCli = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.0.0\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
+	const publishCli = provenanceWorkflowProblems(
+		`${healthyWorkflow}run: npm install -g npm@11.5.1\n`,
 		healthyReleaseScript,
 	);
-	if (!missingNpmCli.some((problem) => problem.includes("npm CLI"))) {
-		throw new Error("self-test: missing npm 11 install must fail closed");
+	if (
+		!publishCli.some((problem) => problem.includes("publish-only npm CLI"))
+	) {
+		throw new Error(
+			"self-test: a publish-only npm CLI install must fail closed",
+		);
 	}
 
 	const actionV1 = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nuses: changesets/action@deadbeef # v1.9.0\nversion-script: pnpm version-packages\npublish-script: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
+		`${healthyWorkflow}uses: changesets/action@deadbeef # v1.9.0\n`,
 		healthyReleaseScript,
 	);
 	if (!actionV1.some((problem) => problem.includes("changesets/action v2"))) {
@@ -222,12 +230,12 @@ function runSelfTests() {
 	}
 
 	const v1Inputs = provenanceWorkflowProblems(
-		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\nrun: npm install -g npm@11.5.1\nversion: pnpm version-packages\npublish: env -u NODE_AUTH_TOKEN pnpm release\nfetch-depth: 0\nfetch-tags: true\n",
+		"version: pnpm version-packages\nfetch-depth: 0\nfetch-tags: true\n",
 		healthyReleaseScript,
 	);
 	if (!v1Inputs.some((problem) => problem.includes("version-script"))) {
 		throw new Error(
-			"self-test: changesets/action v1 version/publish inputs must fail closed",
+			"self-test: changesets/action v1 version input must fail closed",
 		);
 	}
 
@@ -253,7 +261,9 @@ function runSelfTests() {
 
 	const emptyFixed = fixedGroupProblems({ fixed: [] }, ["@input/pen-core"]);
 	if (
-		!emptyFixed.some((problem) => problem.includes("exactly one fixed group"))
+		!emptyFixed.some((problem) =>
+			problem.includes("exactly one fixed group"),
+		)
 	) {
 		throw new Error("self-test: an empty fixed list must fail closed");
 	}
@@ -264,13 +274,16 @@ function runSelfTests() {
 	if (versionScriptOk.length !== 0) {
 		throw new Error("self-test: version-packages with the stamp must pass");
 	}
-	const versionScriptBare = versionPackagesScriptProblems("changeset version");
+	const versionScriptBare =
+		versionPackagesScriptProblems("changeset version");
 	if (
 		!versionScriptBare.some((problem) =>
 			problem.includes("stamp the first train"),
 		)
 	) {
-		throw new Error("self-test: version-packages without the stamp must fail");
+		throw new Error(
+			"self-test: version-packages without the stamp must fail",
+		);
 	}
 
 	const split = versionSyncGroups([
@@ -289,7 +302,7 @@ function runSelfTests() {
 	}
 
 	console.log(
-		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, changeset --provenance, NPM_TOKEN, npm 11, action v1, and a short fixed group fail closed)",
+		"release-check self-test ok (a publishing workflow, changeset --provenance, NPM_TOKEN, action v1, and a short fixed group fail closed)",
 	);
 }
 
@@ -366,7 +379,7 @@ async function checkProvenancePreconditions(packages) {
 	const cliSpec = rootPackage.devDependencies?.["@changesets/cli"];
 	if (typeof cliSpec !== "string" || !/^[\^~]?3(\.|$)/.test(cliSpec)) {
 		problems.push(
-			'root package.json must depend on @changesets/cli 3.x (changesets/action v2 requires it)',
+			"root package.json must depend on @changesets/cli 3.x (changesets/action v2 requires it)",
 		);
 	}
 
@@ -409,7 +422,7 @@ async function checkProvenancePreconditions(packages) {
 	);
 
 	if (problems.length > 0) {
-		console.error("Provenance preconditions failed:");
+		console.error("Release prep preconditions failed:");
 		for (const problem of problems) {
 			console.error(`  ${problem}`);
 		}
@@ -417,12 +430,11 @@ async function checkProvenancePreconditions(packages) {
 	}
 
 	console.log(
-		`Provenance preconditions: ${packages.length} packages share ${EXPECTED_REPOSITORY_URL}; ` +
-			"release.yml has id-token: write, npm 11, no NPM_TOKEN, and unsets NODE_AUTH_TOKEN; provenance is NPM_CONFIG_PROVENANCE.",
+		`Release prep: ${packages.length} packages share ${EXPECTED_REPOSITORY_URL}; ` +
+			"release.yml versions only (no publish-script, no NPM_TOKEN, no OIDC). Publish is local `pnpm release`.",
 	);
 	console.log(
-		`Provenance UNEXERCISED: ${tagCount} git tag(s), ${changelogPaths.length} packages/**/CHANGELOG.md. ` +
-			"Preconditions are not a publish. The first real provenance run still has not happened.",
+		`Release trail: ${tagCount} git tag(s), ${changelogPaths.length} packages/**/CHANGELOG.md.`,
 	);
 	return false;
 }
@@ -467,14 +479,19 @@ async function checkVersionSync(packages) {
 	}
 
 	const changesetConfig = JSON.parse(
-		await fs.readFile(path.join(repoRoot, ".changeset", "config.json"), "utf8"),
+		await fs.readFile(
+			path.join(repoRoot, ".changeset", "config.json"),
+			"utf8",
+		),
 	);
 	const fixedProblems = fixedGroupProblems(
 		changesetConfig,
 		packages.map((pkg) => pkg.name),
 	);
 	if (fixedProblems.length > 0) {
-		console.error("Version-sync failed: the changesets fixed group is not the train.");
+		console.error(
+			"Version-sync failed: the changesets fixed group is not the train.",
+		);
 		for (const problem of fixedProblems) {
 			console.error(`  ${problem}`);
 		}
@@ -492,7 +509,9 @@ async function checkVersionSync(packages) {
 		rootPackage.scripts?.["version-packages"],
 	);
 	if (versionScriptProblems.length > 0) {
-		console.error("Version-sync failed: version-packages does not stamp the first train.");
+		console.error(
+			"Version-sync failed: version-packages does not stamp the first train.",
+		);
 		for (const problem of versionScriptProblems) {
 			console.error(`  ${problem}`);
 		}

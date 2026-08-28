@@ -81,8 +81,7 @@ export function decideStamp({ tags, versions }) {
 	}
 	return {
 		action: "fail",
-		reason:
-			`first train must land at ${FIRST_TRAIN_VERSION}; changeset version produced ${version}`,
+		reason: `first train must land at ${FIRST_TRAIN_VERSION}; changeset version produced ${version}`,
 	};
 }
 
@@ -204,8 +203,52 @@ export function runSelfTests() {
 		"0.1.0",
 	);
 	assert(
-		changelog.includes("## 0.1.0") && changelog.includes("Mentions 1.0.0 in body."),
+		changelog.includes("## 0.1.0") &&
+			changelog.includes("Mentions 1.0.0 in body."),
 		"self-test: only the CHANGELOG heading is rewritten",
+	);
+
+	const specPlan = planSpecVersionStamps({
+		specs: [
+			{
+				file: "spec/packages/core.md",
+				text: "Path in workspace: `packages/core`\n\nWorkspace package at version `0.1.1`;",
+			},
+			{
+				file: "spec/packages/types.md",
+				text: "Path in workspace: `packages/types`\n\nWorkspace package at version `0.1.2`;",
+			},
+			{
+				file: "spec/packages/ghost.md",
+				text: "Workspace package at version `0.1.1`; but states no workspace path",
+			},
+		],
+		packages: [
+			{ name: "@input/pen-core", dir: "packages/core", version: "0.1.2" },
+			{
+				name: "@input/pen-types",
+				dir: "packages/types",
+				version: "0.1.2",
+			},
+		],
+	});
+	assert(
+		specPlan.length === 1 &&
+			specPlan[0].file === "spec/packages/core.md" &&
+			specPlan[0].from === "0.1.1" &&
+			specPlan[0].to === "0.1.2",
+		"self-test: a stale spec version claim is planned; a matching one and an unmapped one are not",
+	);
+
+	const specClaim = rewriteSpecVersionClaim(
+		"Workspace package at version `0.1.1`; intended usage is current-state.\n",
+		"0.1.1",
+		"0.1.2",
+	);
+	assert(
+		specClaim.includes("at version `0.1.2`") &&
+			!specClaim.includes("at version `0.1.1`"),
+		"self-test: spec version claims rewrite the train number",
 	);
 
 	const remote = parseLsRemoteTags(
@@ -260,7 +303,9 @@ function gitTags(repoRoot) {
 	// Depth-1 checkouts omit tags. A remote v* still means the first train
 	// already shipped, so the stamp must no-op rather than fail closed.
 	try {
-		return parseLsRemoteTags(gitOutput(repoRoot, ["ls-remote", "--tags", "origin"]));
+		return parseLsRemoteTags(
+			gitOutput(repoRoot, ["ls-remote", "--tags", "origin"]),
+		);
 	} catch {
 		return local;
 	}
@@ -288,18 +333,29 @@ function loadPublishedPackages(repoRoot) {
 	for (const packageJsonPath of collectPackageJsonPaths(
 		path.join(repoRoot, "packages"),
 	)) {
-		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-		if (packageJson.private === true || typeof packageJson.name !== "string") {
+		const packageJson = JSON.parse(
+			fs.readFileSync(packageJsonPath, "utf8"),
+		);
+		if (
+			packageJson.private === true ||
+			typeof packageJson.name !== "string"
+		) {
 			continue;
 		}
 		if (typeof packageJson.version !== "string") {
-			throw new Error(`${packageJsonPath} is published but has no version`);
+			throw new Error(
+				`${packageJsonPath} is published but has no version`,
+			);
 		}
 		packages.push({
 			name: packageJson.name,
 			version: packageJson.version,
 			packageJsonPath,
 			packageRoot: path.dirname(packageJsonPath),
+			dir: path
+				.relative(repoRoot, path.dirname(packageJsonPath))
+				.split(path.sep)
+				.join("/"),
 		});
 	}
 	packages.sort((left, right) => left.name.localeCompare(right.name));
@@ -308,7 +364,9 @@ function loadPublishedPackages(repoRoot) {
 
 function stampPackages(packages, from, to) {
 	for (const pkg of packages) {
-		const packageJson = JSON.parse(fs.readFileSync(pkg.packageJsonPath, "utf8"));
+		const packageJson = JSON.parse(
+			fs.readFileSync(pkg.packageJsonPath, "utf8"),
+		);
 		if (packageJson.version !== from) {
 			throw new Error(
 				`${pkg.name} version is ${packageJson.version}, expected ${from} before stamp`,
@@ -330,6 +388,53 @@ function stampPackages(packages, from, to) {
 			fs.writeFileSync(changelogPath, after);
 		}
 	}
+}
+
+function collectMarkdownPaths(directory) {
+	const found = [];
+	for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+		const entryPath = path.join(directory, entry.name);
+		if (entry.isDirectory()) {
+			if (!IGNORE_DIR_NAMES.has(entry.name)) {
+				found.push(...collectMarkdownPaths(entryPath));
+			}
+			continue;
+		}
+		if (entry.isFile() && entry.name.endsWith(".md")) {
+			found.push(entryPath);
+		}
+	}
+	return found;
+}
+
+function loadSpecFiles(repoRoot) {
+	const specsRoot = path.join(repoRoot, "spec", "packages");
+	if (!fs.existsSync(specsRoot)) {
+		return [];
+	}
+	return collectMarkdownPaths(specsRoot).map((filePath) => ({
+		file: path.relative(repoRoot, filePath).split(path.sep).join("/"),
+		text: fs.readFileSync(filePath, "utf8"),
+	}));
+}
+
+function stampSpecVersions(repoRoot, packages) {
+	const planned = planSpecVersionStamps({
+		specs: loadSpecFiles(repoRoot),
+		packages,
+	});
+	for (const item of planned) {
+		const fullPath = path.join(repoRoot, item.file);
+		const before = fs.readFileSync(fullPath, "utf8");
+		const after = rewriteSpecVersionClaim(before, item.from, item.to);
+		if (after === before) {
+			throw new Error(
+				`stamp-first-train: failed to rewrite ${item.file} from ${item.from} to ${item.to}`,
+			);
+		}
+		fs.writeFileSync(fullPath, after);
+	}
+	return planned;
 }
 
 function parseArgs(argv) {
@@ -355,7 +460,7 @@ function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
 	console.log(
-		"stamp-first-train self-test ok (tagged trees and surprise versions fail closed; 1.0.0 stamps to 0.1.0)",
+		"stamp-first-train self-test ok (tagged trees and surprise versions fail closed; 1.0.0 stamps to 0.1.0; stale spec version claims are planned)",
 	);
 	if (args.selfTestOnly) {
 		return;
@@ -363,7 +468,9 @@ function main() {
 
 	const packages = loadPublishedPackages(args.repoRoot);
 	if (packages.length === 0) {
-		throw new Error("stamp-first-train: no published packages under packages/");
+		throw new Error(
+			"stamp-first-train: no published packages under packages/",
+		);
 	}
 	const decision = decideStamp({
 		tags: gitTags(args.repoRoot),
@@ -372,15 +479,29 @@ function main() {
 	if (decision.action === "fail") {
 		throw new Error(`stamp-first-train: ${decision.reason}`);
 	}
-	if (decision.action === "noop") {
+	if (decision.action === "stamp") {
+		stampPackages(packages, decision.from, decision.to);
+		console.log(
+			`stamp-first-train: rewrote ${packages.length} published packages from ${decision.from} to ${decision.to}`,
+		);
+	} else {
 		console.log(`stamp-first-train: ${decision.reason}`);
-		return;
 	}
 
-	stampPackages(packages, decision.from, decision.to);
-	console.log(
-		`stamp-first-train: rewrote ${packages.length} published packages from ${decision.from} to ${decision.to}`,
-	);
+	const currentPackages =
+		decision.action === "stamp"
+			? loadPublishedPackages(args.repoRoot)
+			: packages;
+	const specRewrites = stampSpecVersions(args.repoRoot, currentPackages);
+	if (specRewrites.length === 0) {
+		console.log(
+			"stamp-first-train: spec version claims already match the train",
+		);
+	} else {
+		console.log(
+			`stamp-first-train: rewrote ${specRewrites.length} spec version claim(s) to the train`,
+		);
+	}
 }
 
 const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
