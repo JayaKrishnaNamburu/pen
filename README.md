@@ -6,7 +6,7 @@
 </h3>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@input/pen-core"><img src="https://img.shields.io/npm/v/@input/pen-core?style=flat&color=00C2FF" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@input/pen"><img src="https://img.shields.io/npm/v/@input/pen?style=flat&color=00C2FF" alt="npm version" /></a>
   <a href="https://github.com/input-systems/pen/stargazers"><img src="https://img.shields.io/github/stars/input-systems/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-FF2B6E" alt="license" /></a>
 </p>
@@ -370,7 +370,7 @@ Prefer scoped runs while iterating: `pnpm --filter @input/pen-core test`. Browse
 
 ## Authors
 
-Pen is created and maintained by [Krijn Rijshouwer](https://www.x.com/krijnrijshouwer) and [Input](https://www.input.so/).
+Pen is created and maintained by [Krijn Rijshouwer](https://www.x.com/krijnrijshouwer), [Noud Adrichem](https://www.x.com/noudadrichem), [Jan Gladines](https://www.x.com/_janglad), [Mattèo Gauthier](https://www.x.com/MatteoGauthier_) from [Input](https://www.input.so).
 
 ## License
 
