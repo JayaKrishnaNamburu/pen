@@ -1,5 +1,23 @@
 # @input/pen-react
 
+## 0.1.4
+
+### Patch Changes
+
+- 9fdb74d: Yield block-selection Enter to the host (HOST8) and keep DOM focus on the editor sink while a block or cell is selected (HOST9). Enter is now a bubbling default like Escape, so a listener on the editor element can preventDefault first; hosts that relied on document-capture Enter will see the key reach the subtree. Focus is parked on the sink in the same selectionChange turn so two composers in one document no longer race for a body-targeted Enter.
+- Updated dependencies [9fdb74d]
+- Updated dependencies [9fdb74d]
+  - @input/pen-dom@0.1.4
+  - @input/pen-core@0.1.4
+  - @input/pen-ai@0.1.4
+  - @input/pen-interop@0.1.4
+  - @input/pen-multiplayer@0.1.4
+  - @input/pen-search@0.1.4
+  - @input/pen-shortcuts@0.1.4
+  - @input/pen-snapshots@0.1.4
+  - @input/pen-schema@0.1.4
+  - @input/pen-types@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes
