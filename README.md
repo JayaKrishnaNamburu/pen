@@ -26,6 +26,12 @@
 
 **Runs without a DOM.** The same runtime works in Node, so agents, servers, and pipelines edit documents through the API the editor uses.
 
+## Try it out
+
+https://pen-playground.input.so/
+
+<img width="1543" alt="Web preview of the Pen playground" src="https://input-pr-z1wpxj.s3.us-west-2.amazonaws.com/pen/playground-preview.png" />
+
 ## Quick Start
 
 Every host follows the same two steps: build an editor, then mount it. `createEditor()` from `@input/pen` comes with the batteries preset applied; the default schema, undo, formatting shortcuts, document tools, and the streaming writer. The React and Vue hooks own the editor's lifetime themselves, so they take the preset as an option instead.
@@ -342,7 +348,7 @@ Expanded field-editor mode and table-cell editing always use contenteditable, ev
 
 - **[Documentation](https://input-systems.github.io/pen/)**: getting started per host, core concepts, selection, extensions, commands, collaboration, AI, import and export, security, and accessibility.
 - **Examples**: minimal Vite apps at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each is a workspace member consuming the built packages, so `pnpm build` once and then `pnpm --filter @input/pen-example-react dev`. CI mounts each one and types into it. A drifted quickstart fails the build.
-- **[Playground](https://pen-playground.input-systems.workers.dev)**: the reference app (editor, AI agent, document inspector, and live collaboration). Hosted on Cloudflare. Locally, `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
+- **[Playground](https://pen-playground.input.so/)**: the reference app (editor, AI agent, document inspector, and live collaboration). Hosted on Cloudflare. Locally, `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
 
 ## Development
 

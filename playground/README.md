@@ -23,7 +23,7 @@ anything.
 
 The same app ships as a Cloudflare Worker: static UI, `POST /api/chat`, and
 one Durable Object per Yjs room at `/collaboration/<room>`. Live at
-[pen-playground.input-systems.workers.dev](https://pen-playground.input-systems.workers.dev).
+[pen-playground.input.so](https://pen-playground.input.so/).
 Build the workspace packages first, then:
 
 ```bash
