@@ -282,6 +282,7 @@
 - InlineAtomRenderers
 - InlineAtomRenderProps
 - InlineContentProps
+- ListItemHostAttributes
 - PasteImporters
 - PenEditorProps
 - PenFocusController

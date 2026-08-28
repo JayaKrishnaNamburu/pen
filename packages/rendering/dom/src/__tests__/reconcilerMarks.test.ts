@@ -70,6 +70,97 @@ describe("applyElementAttributes", () => {
 	});
 });
 
+describe("createMarkedNode RI7 colour marks", () => {
+	it("RI7: textColor exposes data-color and paints through --pen-text-color fallback", () => {
+		const node = createMarkedNode(
+			"hello",
+			{ textColor: { color: "red" } },
+			registry,
+		) as HTMLElement;
+
+		expect(node.tagName).toBe("SPAN");
+		expect(node.dataset.markType).toBe("textColor");
+		expect(node.dataset.color).toBe("red");
+		expect(node.getAttribute("data-color")).toBe("red");
+		expect(node.style.getPropertyValue("color")).toBe(
+			"var(--pen-text-color, red)",
+		);
+		expect(node.style.getPropertyValue("--pen-text-color")).toBe("");
+		expect(node.style.backgroundColor).toBe("");
+	});
+
+	it("RI7: backgroundColor exposes data-color and paints through --pen-background-color fallback", () => {
+		const node = createMarkedNode(
+			"hello",
+			{ backgroundColor: { color: "red" } },
+			registry,
+		) as HTMLElement;
+
+		expect(node.tagName).toBe("SPAN");
+		expect(node.dataset.markType).toBe("backgroundColor");
+		expect(node.dataset.color).toBe("red");
+		expect(node.style.getPropertyValue("background-color")).toBe(
+			"var(--pen-background-color, red)",
+		);
+		expect(node.style.getPropertyValue("--pen-background-color")).toBe("");
+		expect(node.style.color).toBe("");
+	});
+
+	it("RI7: highlight exposes data-color and paints through --pen-highlight-color fallback", () => {
+		const node = createMarkedNode(
+			"hello",
+			{ highlight: { color: "yellow" } },
+			registry,
+		) as HTMLElement;
+
+		// <mark> is semantic, so it carries no data-mark-type
+		expect(node.tagName).toBe("MARK");
+		expect(node.dataset.markType).toBeUndefined();
+		expect(node.dataset.color).toBe("yellow");
+		expect(node.style.getPropertyValue("background-color")).toBe(
+			"var(--pen-highlight-color, yellow)",
+		);
+		expect(node.style.getPropertyValue("--pen-highlight-color")).toBe("");
+		expect(node.style.color).toBe("");
+	});
+
+	it("RI7: a colour mark without a color prop paints nothing", () => {
+		const highlight = createMarkedNode(
+			"hello",
+			{ highlight: {} },
+			registry,
+		) as HTMLElement;
+		const textColor = createMarkedNode(
+			"hello",
+			{ textColor: { color: "" } },
+			registry,
+		) as HTMLElement;
+
+		expect(highlight.tagName).toBe("MARK");
+		expect(highlight.hasAttribute("data-color")).toBe(false);
+		expect(highlight.style.cssText).toBe("");
+
+		expect(textColor.dataset.markType).toBe("textColor");
+		expect(textColor.hasAttribute("data-color")).toBe(false);
+		expect(textColor.style.cssText).toBe("");
+	});
+
+	it("RI7: unknown marks stay on the default span with data-mark-type only", () => {
+		const node = createMarkedNode(
+			"hello",
+			{ customMark: { color: "red", extra: "ignored" } },
+			registry,
+		) as HTMLElement;
+
+		expect(node.tagName).toBe("SPAN");
+		expect(node.dataset.markType).toBe("customMark");
+		expect(node.hasAttribute("data-color")).toBe(false);
+		expect(node.style.color).toBe("");
+		expect(node.style.backgroundColor).toBe("");
+		expect(node.style.cssText).toBe("");
+	});
+});
+
 describe("createMarkedNode link href", () => {
 	it("SEC1 / F1: javascript: mark does not land in the DOM href", () => {
 		const node = createMarkedNode(

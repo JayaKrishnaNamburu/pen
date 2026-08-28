@@ -46,6 +46,34 @@ Every `--pen-*` token the library **reads** is listed with its fallback and purp
 | `--pen-peer-color`       | The peer's `user.color`, else `currentColor` | Remote caret and label background, and the ring on table cells a peer occupies. Written per caret and per cell; override on a parent if every peer should share one color. |
 | `--pen-peer-label-color` | `#fff`                                       | Remote caret label text.                                                                                                                                                   |
 
+### Inline colour marks
+
+Read by the field-editor mark wrappers in `@input/pen-dom` (`createMarkElement`, RI7). The library sets `color` / `background-color` to `var(<token>, <stored value>)` and does **not** assign the token, so a host rule that sets the token on the mark wins at normal specificity. Because the paint is an inline style, setting `color` or `background-color` on the mark itself will **not** apply — set the token instead.
+
+| Token                    | Default                        | Purpose                                                                                     |
+| ------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `--pen-text-color`       | The mark's stored `color` prop | `textColor` mark fill. Unset by the library; the stored value is the `var()` fallback.       |
+| `--pen-background-color` | The mark's stored `color` prop | `backgroundColor` mark fill. Unset by the library; the stored value is the `var()` fallback. |
+| `--pen-highlight-color`  | The mark's stored `color` prop | `highlight` mark fill on `<mark>`. Unset by the library; the stored value is the fallback.   |
+
+A host that stores palette names rather than CSS colours remaps like this — no `!important`. `<mark>` carries no `data-mark-type`, so select the element:
+
+```css
+[data-mark-type="textColor"][data-color="red"] {
+  --pen-text-color: var(--palette-red);
+}
+
+[data-mark-type="backgroundColor"][data-color="red"] {
+  --pen-background-color: var(--palette-red);
+}
+
+mark[data-color="red"] {
+  --pen-highlight-color: var(--palette-red);
+}
+```
+
+Scope these rules to the mark. These tokens inherit, so setting one on the editor root or any other ancestor repaints **every** mark of that kind with the same colour regardless of its stored value.
+
 ### Suggestion line
 
 Read by `@input/pen-ai-suggestions` decorations; remapped by the injected sheet on `<Pen.AISuggestions.Root>`.
@@ -165,11 +193,22 @@ State attributes below are written when the state is true — **present** (value
 | `data-pen-ignore-pointer-gesture`    | Opt out of editor pointer gestures (menus, handles, overlays).                                                                                                                                                                                                                  |
 | `data-pen-ignore-transfer`           | Opt out of cut/copy/paste transfer handling.                                                                                                                                                                                                                                    |
 
+### Inline marks
+
+Written by `@input/pen-dom` mark wrappers (RI7), not as React `className` / JSX attributes.
+
+| Attribute                | Role                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `data-mark-type`         | Mark type on `suggestion`, `textColor`, `backgroundColor`, and unknown marks. Absent on semantic elements including `<mark>`.   |
+| `data-color`             | Stored `color` prop on `textColor`, `backgroundColor`, and `highlight` (CSS value or opaque host token). Absent when unset.     |
+| `data-suggestion-id`     | Suggestion mark id, when present.                                                                                              |
+| `data-suggestion-action` | Suggestion mark action (`insert` or `delete`).                                                                                  |
+
 ### Blocks and layout
 
 | Attribute                          | Role                                                              |
 | ---------------------------------- | ----------------------------------------------------------------- |
-| `data-pen-list-item-layout`        | List row. Also `data-block-type`, `data-indent`, `data-selected`. |
+| `data-pen-list-item-layout`        | List row. Also `data-block-type`, `data-indent`, `data-selected`, `data-counter` on numbered items, and `data-checked` on check list items. Host `data-*` / `extraAttributes` land here, but are written before those, so they cannot overwrite them (HB8). |
 | `data-pen-list-item-marker`        | List marker column.                                               |
 | `data-pen-list-item-content`       | List text column.                                                 |
 | `data-pen-list-marker`             | List marker glyph (`-` / `N.`).                                   |

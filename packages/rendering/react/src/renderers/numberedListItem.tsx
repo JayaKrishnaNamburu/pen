@@ -1,34 +1,43 @@
 import React from "react";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { useNumberedListItemValue } from "../hooks/useNumberedListItemValue";
-import { ListItemLayout } from "../utils/listItemLayout";
+import {
+	ListItemLayout,
+	type ListItemHostAttributes,
+} from "../utils/listItemLayout";
+
+type NumberedListItemViewProps = {
+	block: BlockHandle;
+	ctx: BlockRenderContext;
+} & ListItemHostAttributes;
 
 export function NumberedListItemRenderer(
 	block: BlockHandle,
 	ctx: BlockRenderContext,
-): React.ReactElement {
+): React.ReactElement<ListItemHostAttributes> {
 	return <NumberedListItemView block={block} ctx={ctx} />;
 }
 
 function NumberedListItemView({
 	block,
 	ctx,
-}: {
-	block: BlockHandle;
-	ctx: BlockRenderContext;
-}): React.ReactElement {
+	extraAttributes,
+	...rest
+}: NumberedListItemViewProps): React.ReactElement {
 	const indent = (block.props?.indent as number) ?? 0;
 	const counterValue = useNumberedListItemValue(block);
 
 	return (
 		<ListItemLayout
+			{...rest}
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			blockId={block.id}
 			blockType="numberedListItem"
 			indent={indent}
 			selected={ctx.selected}
 			decorations={ctx.decorations}
-			extraAttributes={{ "data-counter": counterValue }}
+			extraAttributes={extraAttributes}
+			libraryAttributes={{ "data-counter": counterValue }}
 			marker={
 				<span
 					data-pen-list-marker=""

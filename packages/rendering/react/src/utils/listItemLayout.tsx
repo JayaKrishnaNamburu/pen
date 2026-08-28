@@ -8,7 +8,11 @@ const LIST_ITEM_INDENT_PX = 24;
 const LIST_ITEM_COLUMN_GAP_PX = 8;
 const LIST_ITEM_CONTENT_MIN_HEIGHT_EM = 1.5;
 
-export interface ListItemLayoutProps {
+export type ListItemHostAttributes = {
+	extraAttributes?: Record<string, unknown>;
+} & Record<`data-${string}`, unknown>;
+
+export interface ListItemLayoutProps extends ListItemHostAttributes {
 	blockId: string;
 	blockType: "bulletListItem" | "numberedListItem" | "checkListItem";
 	indent: number;
@@ -16,7 +20,8 @@ export interface ListItemLayoutProps {
 	decorations?: InlineContentProps["decorations"];
 	marker: React.ReactNode;
 	ref?: React.Ref<HTMLDivElement>;
-	extraAttributes?: Record<string, unknown>;
+	/** Renderer-owned attributes, written after host attributes so a host cannot replace them. */
+	libraryAttributes?: Record<string, unknown>;
 }
 
 export function ListItemLayout(props: ListItemLayoutProps): React.ReactElement {
@@ -29,15 +34,13 @@ export function ListItemLayout(props: ListItemLayoutProps): React.ReactElement {
 		marker,
 		ref,
 		extraAttributes,
+		libraryAttributes,
+		...rest
 	} = props;
 
 	return (
 		<div
 			ref={ref}
-			data-block-type={blockType}
-			data-indent={indent}
-			data-selected={selected ? "" : undefined}
-			data-pen-list-item-layout=""
 			style={{
 				paddingLeft: `${indent * LIST_ITEM_INDENT_PX}px`,
 				display: "grid",
@@ -45,7 +48,13 @@ export function ListItemLayout(props: ListItemLayoutProps): React.ReactElement {
 				columnGap: `${LIST_ITEM_COLUMN_GAP_PX}px`,
 				alignItems: "start",
 			}}
+			{...rest}
 			{...extraAttributes}
+			data-block-type={blockType}
+			data-indent={indent}
+			data-selected={selected ? "" : undefined}
+			data-pen-list-item-layout=""
+			{...libraryAttributes}
 		>
 			<div
 				data-pen-list-item-marker=""

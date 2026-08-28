@@ -3,6 +3,10 @@ import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
 import { urlPolicy, type UrlPolicy } from "../security/urlPolicy";
 import { INLINE_DECORATION_ATTRIBUTE_KEY } from "../utils/inlineDecorations";
 
+const TEXT_COLOR_CUSTOM_PROPERTY = "--pen-text-color";
+const BACKGROUND_COLOR_CUSTOM_PROPERTY = "--pen-background-color";
+const HIGHLIGHT_CUSTOM_PROPERTY = "--pen-highlight-color";
+
 export function wrapWithMarks(
 	node: Node,
 	attributes: Record<string, unknown>,
@@ -91,15 +95,26 @@ function createMarkElement(
 			}
 			return anchor;
 		}
-		case "highlight": {
-			const mark = document.createElement("mark");
-			if (typeof props === "object" && props !== null) {
-				const record = props as Record<string, unknown>;
-				if (record.color)
-					mark.style.backgroundColor = record.color as string;
-			}
-			return mark;
-		}
+		case "highlight":
+			return createColorMarkElement(props, {
+				tagName: "mark",
+				cssProperty: "background-color",
+				customProperty: HIGHLIGHT_CUSTOM_PROPERTY,
+			});
+		case "textColor":
+			return createColorMarkElement(props, {
+				tagName: "span",
+				markType: "textColor",
+				cssProperty: "color",
+				customProperty: TEXT_COLOR_CUSTOM_PROPERTY,
+			});
+		case "backgroundColor":
+			return createColorMarkElement(props, {
+				tagName: "span",
+				markType: "backgroundColor",
+				cssProperty: "background-color",
+				customProperty: BACKGROUND_COLOR_CUSTOM_PROPERTY,
+			});
 		case "suggestion": {
 			const span = document.createElement("span");
 			span.dataset.markType = markType;
@@ -133,6 +148,45 @@ function createMarkElement(
 			return span;
 		}
 	}
+}
+
+type ColorMarkShape = {
+	tagName: "span" | "mark";
+	/** Omitted for `mark`, which identifies itself as a semantic element. */
+	markType?: "textColor" | "backgroundColor";
+	cssProperty: "color" | "background-color";
+	customProperty: string;
+};
+
+function createColorMarkElement(
+	props: unknown,
+	shape: ColorMarkShape,
+): HTMLElement {
+	const element = document.createElement(shape.tagName);
+	if (shape.markType) {
+		element.dataset.markType = shape.markType;
+	}
+
+	const color = readColorProp(props);
+	if (color === null) {
+		return element;
+	}
+
+	element.dataset.color = color;
+	// RI7: var() fallback so hosts can set the token without !important
+	element.style.setProperty(
+		shape.cssProperty,
+		`var(${shape.customProperty}, ${color})`,
+	);
+	return element;
+}
+
+function readColorProp(props: unknown): string | null {
+	if (typeof props !== "object" || props === null) {
+		return null;
+	}
+	const color = (props as Record<string, unknown>).color;
+	return typeof color === "string" && color.length > 0 ? color : null;
 }
 
 /**

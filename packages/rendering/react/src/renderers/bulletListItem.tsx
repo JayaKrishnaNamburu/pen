@@ -1,11 +1,14 @@
 import React from "react";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
-import { ListItemLayout } from "../utils/listItemLayout";
+import {
+	ListItemLayout,
+	type ListItemHostAttributes,
+} from "../utils/listItemLayout";
 
 export function BulletListItemRenderer(
 	block: BlockHandle,
 	ctx: BlockRenderContext,
-): React.ReactElement {
+): React.ReactElement<ListItemHostAttributes> {
 	const indent = (block.props?.indent as number) ?? 0;
 
 	return (

@@ -17,6 +17,7 @@ import { ToggleRenderer } from "./toggle";
 import { BlockquoteRenderer } from "./blockquote";
 import { SubdocumentRenderer } from "./subdocument";
 import { DefaultRenderer } from "./defaultRenderer";
+import type { ListItemHostAttributes } from "../utils/listItemLayout";
 
 const RENDERER_MAP: Record<string, BlockRenderer> = {
 	paragraph: ParagraphRenderer,
@@ -61,3 +62,5 @@ export {
 	SubdocumentRenderer,
 	DefaultRenderer,
 };
+
+export type { ListItemHostAttributes };

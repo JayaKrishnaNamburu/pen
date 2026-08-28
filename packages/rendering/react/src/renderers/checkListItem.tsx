@@ -2,12 +2,15 @@ import React from "react";
 import { resolveEditorMessage } from "@input/pen-core";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
-import { ListItemLayout } from "../utils/listItemLayout";
+import {
+	ListItemLayout,
+	type ListItemHostAttributes,
+} from "../utils/listItemLayout";
 
 export function CheckListItemRenderer(
 	block: BlockHandle,
 	ctx: BlockRenderContext,
-): React.ReactElement {
+): React.ReactElement<ListItemHostAttributes> {
 	const indent = (block.props?.indent as number) ?? 0;
 	const checked = (block.props?.checked as boolean) ?? false;
 
@@ -19,7 +22,7 @@ export function CheckListItemRenderer(
 			indent={indent}
 			selected={ctx.selected}
 			decorations={ctx.decorations}
-			extraAttributes={{ "data-checked": checked ? "" : undefined }}
+			libraryAttributes={{ "data-checked": checked ? "" : undefined }}
 			marker={<CheckboxToggle blockId={block.id} checked={checked} />}
 		/>
 	);

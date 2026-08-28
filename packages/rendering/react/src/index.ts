@@ -335,6 +335,7 @@ export {
 	SubdocumentRenderer,
 	DefaultRenderer,
 } from "./renderers/index";
+export type { ListItemHostAttributes } from "./renderers/index";
 
 // ── Extensions ───────────────────────────────────────────────
 export {
