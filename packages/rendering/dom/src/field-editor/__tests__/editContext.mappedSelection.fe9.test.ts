@@ -138,4 +138,33 @@ describe("FE9 EditContext mapped caret after apply", () => {
 		expect(editContext!.selectionStart).toBe(3);
 		expect(editContext!.selectionEnd).toBe(3);
 	});
+
+	it("FE9: an ordinary selection change keeps textupdate authority", () => {
+		const { editor, fieldEditor, blockId, inline } =
+			mountEditContextEditor("aa :sm bb");
+		const editContext = (
+			inline as HTMLElement & { editContext?: FakeEditContext }
+		).editContext;
+		expect(editContext).toBeDefined();
+
+		fieldEditor.activateTextSelection(blockId, 6, 6);
+		fieldEditor.setBackendSelectionAuthority("edit-context-textupdate", {
+			blockId,
+			anchorOffset: 6,
+			focusOffset: 6,
+		});
+		editContext!.updateSelection(6, 6);
+
+		// not a mapped remap, so the stamp is still the last trusted typing
+		// caret that resolveEditContextTextUpdateRange needs when EditContext
+		// reports a stale range. clearing it on every projection loses that.
+		editor.selectText(blockId, 2, 2);
+
+		expect(
+			fieldEditor.getBackendSelectionAuthority(
+				"edit-context-textupdate",
+				blockId,
+			),
+		).toMatchObject({ anchorOffset: 6, focusOffset: 6 });
+	});
 });

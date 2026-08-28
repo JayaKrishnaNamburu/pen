@@ -231,13 +231,6 @@ export class EditContextBackend {
 	updateSelection(): void {
 		if (!this.editContext || !this.ytext) return;
 
-		// FE9: this write is from selection authority, not a textupdate.
-		// a leftover stamp is enough for the next keystroke to insert
-		// at a pre-apply offset.
-		this.fieldEditor.clearBackendSelectionAuthority(
-			"edit-context-textupdate",
-		);
-
 		const selection = this.fieldEditor.selection;
 		const blockId = this.fieldEditor.focusBlockId;
 		if (

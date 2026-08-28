@@ -221,6 +221,13 @@ export class FieldEditorImpl implements FieldEditorSession {
 		});
 		this._unsubscribeSelection = this._editor.onSelectionChange(
 			(record) => {
+				if (record.origin === "mapped") {
+					// FE9: A5 remapped the caret after apply. the last
+					// textupdate stamp is a pre-apply offset.
+					this.clearBackendSelectionAuthority(
+						"edit-context-textupdate",
+					);
+				}
 				const selection = this._editor.selection;
 				if (
 					selection?.type !== "text" ||
