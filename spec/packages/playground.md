@@ -16,7 +16,7 @@ It stays narrow on purpose. A surface is added here only when a first-time embed
 - Workspace scripts: `build`, `dev`, `dev:e2e`, `deploy`, `test`, `typecheck`, `lint`
 - Client entry: `src/main.tsx` mounts `src/App.tsx`, a three-pane shell over one `Editor`.
 - Server entry: `server/aiPlugin.ts` and `server/collaborationPlugin.ts`, Vite middleware that serves `POST /api/chat` and the Yjs websocket at `/collaboration`. There is no second process to start.
-- Hosted entry: `worker/index.ts` is the Cloudflare Worker. It serves the Vite `dist/` as a single-page app, the same `POST /api/chat`, and the same `/collaboration/<room>` y-websocket protocol on a Durable Object per room (`worker/yjsRoom.ts`). Live at `https://pen-playground.input-systems.workers.dev`. `pnpm --dir playground run deploy` (and the Playground ship job on `main`) publishes it.
+- Hosted entry: `worker/index.ts` is the Cloudflare Worker. It serves the Vite `dist/` as a single-page app, the same `POST /api/chat`, and the same `/collaboration/<room>` y-websocket protocol on a Durable Object per room (`worker/yjsRoom.ts`). Live at `https://pen-playground.input.so/`. `pnpm --dir playground run deploy` (and the Playground ship job on `main`) publishes it.
 
 ## Dependencies And Boundaries
 
