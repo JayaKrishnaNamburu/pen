@@ -1,5 +1,15 @@
 # @input/pen-dom
 
+## 0.1.4
+
+### Patch Changes
+
+- 9fdb74d: Yield block-selection Enter to the host (HOST8) and keep DOM focus on the editor sink while a block or cell is selected (HOST9). Enter is now a bubbling default like Escape, so a listener on the editor element can preventDefault first; hosts that relied on document-capture Enter will see the key reach the subtree. Focus is parked on the sink in the same selectionChange turn so two composers in one document no longer race for a body-targeted Enter.
+- 9fdb74d: Start a pointer selection from host chrome (FE10). A drag whose mousedown lands beside the column — the content element's padding, or the editor root next to it — now anchors at the nearest block edge (G4) and selects, across blocks or within one, instead of leaving a collapsed caret. Within one block it resolves the range itself, because a drag that never entered a field has no native range to inherit. Clicks are unchanged: a host-chrome gesture that never reached a block still finishes on the click path, so the click-outside affordance keeps owning insert-or-focus. A host asserting that a drag from the background leaves the selection untouched will now see a text selection; a marquee still requires the region-selector primitive and still respects `blockSelection={false}`.
+- @input/pen-core@0.1.4
+  - @input/pen-shortcuts@0.1.4
+  - @input/pen-types@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes
