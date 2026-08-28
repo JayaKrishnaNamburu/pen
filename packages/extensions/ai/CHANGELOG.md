@@ -1,5 +1,14 @@
 # @input/pen-ai
 
+## 0.1.3
+
+### Patch Changes
+
+- @input/pen-core@0.1.3
+  - @input/pen-tools@0.1.3
+  - @input/pen-ingest@0.1.3
+  - @input/pen-types@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes
