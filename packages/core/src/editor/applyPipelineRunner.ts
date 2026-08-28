@@ -577,6 +577,22 @@ function executeOps(
 		if (!validateOp(pipeline, op)) continue;
 
 		if (op.type === "insert-block") {
+			// The executor builds a fresh block map and sets it unconditionally,
+			// so an insert naming a live block replaces its text, props, and
+			// meta, and normalization then strips the duplicate order entry —
+			// silent content loss. An id is claimed once per document.
+			if (
+				blockExists(pipeline, op.blockId) ||
+				pendingBlockIds.has(op.blockId)
+			) {
+				emitPipelineDiagnostic(pipeline, {
+					code: "PEN_APPLY_010",
+					level: "warn",
+					source: "apply",
+					message: `apply: skipping insert-block for already-present block "${op.blockId}"`,
+				});
+				continue;
+			}
 			pendingBlockIds.add(op.blockId);
 			pendingBlockTypes.set(op.blockId, op.blockType);
 		}

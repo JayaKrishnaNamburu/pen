@@ -699,9 +699,9 @@ _no exports_
 
 - appendParentIdChildBlock
 - getAdjacentVisibleBlockId
+- getChildBlockIds
 - getInsertSiblingBlockOp
 - getLastDescendantBlockId
-- getParentIdChildBlockIds
 - getRootBlockIds
 - getVisibleBlockIds
 - isInsideParentIdContainer

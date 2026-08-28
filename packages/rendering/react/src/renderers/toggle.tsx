@@ -6,8 +6,8 @@ import { InlineContent } from "../primitives/editor/inlineContent";
 import { useEditorContext } from "../context/editorContext";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
 import { appendParentIdChildBlock } from "../utils/parentIdTree";
-import { useParentIdChildBlockIds } from "../hooks/useParentIdChildBlockIds";
-import { ParentIdChildren } from "../primitives/editor/parentIdChildren";
+import { useChildBlockIds } from "../hooks/useChildBlockIds";
+import { BlockChildren } from "../primitives/editor/blockChildren";
 
 export function ToggleRenderer(
 	block: BlockHandle,
@@ -25,7 +25,7 @@ function ToggleView({
 }): React.ReactElement {
 	const open = (block.props?.open as boolean) ?? false;
 	const { editor } = useEditorContext();
-	const childBlockIds = useParentIdChildBlockIds(editor, block.id);
+	const childBlockIds = useChildBlockIds(editor, block.id);
 	const toggleBodyProps: React.HTMLAttributes<HTMLDivElement> &
 		Record<string, unknown> = {
 		"data-pen-toggle-body": "",
@@ -48,7 +48,7 @@ function ToggleView({
 			</div>
 			{open ? (
 				childBlockIds.length > 0 ? (
-					<ParentIdChildren
+					<BlockChildren
 						parentBlockId={block.id}
 						containerProps={toggleBodyProps}
 					/>

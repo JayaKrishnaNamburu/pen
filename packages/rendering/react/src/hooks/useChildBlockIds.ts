@@ -1,10 +1,10 @@
 import type { Editor } from "@input/pen-types";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
-import { getParentIdChildBlockIds } from "../utils/parentIdTree";
+import { getChildBlockIds } from "../utils/parentIdTree";
 
 const SSR_BLOCK_ORDER: readonly string[] = [];
 
-export function useParentIdChildBlockIds(
+export function useChildBlockIds(
 	editor: Editor,
 	parentBlockId: string,
 ): readonly string[] {
@@ -12,7 +12,7 @@ export function useParentIdChildBlockIds(
 		(callback) => editor.on("commit", () => callback()),
 		() => editor.documentState.blockOrder,
 		() => SSR_BLOCK_ORDER,
-		() => getParentIdChildBlockIds(editor, parentBlockId),
+		() => getChildBlockIds(editor, parentBlockId),
 		areBlockListsEqual,
 	);
 }

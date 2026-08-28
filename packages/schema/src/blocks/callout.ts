@@ -25,6 +25,7 @@ export const callout = defineBlock("callout", {
   },
   content: "inline",
   fieldEditor: "richtext",
+  isContainer: true,
   display: {
     title: "Callout",
     description: "Highlighted callout box",

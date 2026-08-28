@@ -26,8 +26,8 @@ import {
 	resolveExpandedSurfaceRole,
 	resolveNumberedListValue,
 	useBlockModel,
+	useChildBlockIds,
 	useFieldEditorState,
-	useParentIdChildBlockIds,
 } from "../internal/editorState";
 import { useEditorContext } from "../internal/editorContext";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
@@ -55,7 +55,7 @@ export const PenBlock = defineComponent({
 		const selection = useSelection(editor);
 		const fieldEditorState = useFieldEditorState(fieldEditor);
 		const blockModel = useBlockModel(editor, props.blockId);
-		const childBlockIds = useParentIdChildBlockIds(editor, props.blockId);
+		const childBlockIds = useChildBlockIds(editor, props.blockId);
 		const blockElement = ref<HTMLElement | null>(null);
 
 		const ackMounted = () => {

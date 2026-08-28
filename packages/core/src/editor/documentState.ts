@@ -12,9 +12,12 @@ import { createBlockHandle } from "../schema/handles";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
+const EMPTY_CHILD_IDS: readonly string[] = Object.freeze([]);
+
 export class DocumentStateImpl implements DocumentState {
 	private _positionIndex: Map<string, number>;
 	private _parentIndex: Map<string, string>;
+	private _childIndex: Map<string, string[]>;
 	private _blockOrder: string[];
 	private _generation = 0;
 	private _documentProfile: DocumentProfile;
@@ -34,6 +37,7 @@ export class DocumentStateImpl implements DocumentState {
 		this._documentProfile = documentProfile;
 		this._positionIndex = new Map();
 		this._parentIndex = new Map();
+		this._childIndex = new Map();
 		this._blockOrder = [];
 		this.rebuild();
 	}
@@ -82,6 +86,10 @@ export class DocumentStateImpl implements DocumentState {
 		return this._parentIndex.get(blockId) ?? null;
 	}
 
+	childrenOf(blockId: string): readonly string[] {
+		return this._childIndex.get(blockId) ?? EMPTY_CHILD_IDS;
+	}
+
 	*allBlocks(): Iterable<BlockHandle> {
 		const seen = new Set<string>();
 		for (const id of this._blockOrder) {
@@ -102,6 +110,7 @@ export class DocumentStateImpl implements DocumentState {
 		this._blockOrder = [];
 		this._positionIndex = new Map();
 		this._parentIndex = new Map();
+		this._childIndex = new Map();
 
 		for (let i = 0; i < order.length; i++) {
 			const id = order.get(i) as string;
@@ -109,20 +118,49 @@ export class DocumentStateImpl implements DocumentState {
 			this._positionIndex.set(id, i);
 		}
 
+		const nestedChildIds = new Set<string>();
+		const parentIdChildIds: string[] = [];
+
 		for (const [blockId, blockMap] of (
 			this._doc.blocks as CRDTBlockMap
 		).entries()) {
 			const props = blockMap.get("props") as CRDTMap<unknown> | undefined;
 			if (props?.get?.("parentId")) {
 				this._parentIndex.set(blockId, props.get("parentId") as string);
+				parentIdChildIds.push(blockId);
 			}
 			const children = blockMap.get("children") as
 				| CRDTArray<string>
 				| undefined;
-			if (children) {
+			if (children && children.length > 0) {
+				const childIds: string[] = [];
 				for (let i = 0; i < children.length; i++) {
-					this._parentIndex.set(children.get(i), blockId);
+					const childId = children.get(i);
+					this._parentIndex.set(childId, blockId);
+					nestedChildIds.add(childId);
+					childIds.push(childId);
 				}
+				this._childIndex.set(blockId, childIds);
+			}
+		}
+
+		// the block map iterates in arbitrary order, so `parentId` children are
+		// sorted back into `blockOrder` sequence before being indexed
+		parentIdChildIds.sort(
+			(a, b) =>
+				(this._positionIndex.get(a) ?? -1) -
+				(this._positionIndex.get(b) ?? -1),
+		);
+
+		for (const childId of parentIdChildIds) {
+			if (nestedChildIds.has(childId)) continue;
+			const parentId = this._parentIndex.get(childId);
+			if (parentId === undefined) continue;
+			const siblings = this._childIndex.get(parentId);
+			if (siblings === undefined) {
+				this._childIndex.set(parentId, [childId]);
+			} else {
+				siblings.push(childId);
 			}
 		}
 
@@ -132,6 +170,7 @@ export class DocumentStateImpl implements DocumentState {
 	clear(): void {
 		this._positionIndex.clear();
 		this._parentIndex.clear();
+		this._childIndex.clear();
 		this._blockOrder = [];
 		this._generation++;
 	}

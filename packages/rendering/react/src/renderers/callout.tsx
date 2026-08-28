@@ -1,7 +1,7 @@
 import React from "react";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { InlineContent } from "../primitives/editor/inlineContent";
-import { ParentIdChildren } from "../primitives/editor/parentIdChildren";
+import { BlockChildren } from "../primitives/editor/blockChildren";
 
 export function CalloutRenderer(
 	block: BlockHandle,
@@ -35,7 +35,7 @@ export function CalloutRenderer(
 					blockId={block.id}
 					decorations={ctx.decorations}
 				/>
-				<ParentIdChildren
+				<BlockChildren
 					parentBlockId={block.id}
 					containerProps={{ "data-pen-callout-children": "" }}
 				/>

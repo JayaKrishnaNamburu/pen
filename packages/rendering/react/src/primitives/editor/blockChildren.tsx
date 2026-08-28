@@ -1,20 +1,26 @@
 import React from "react";
 import { useEditorContext } from "../../context/editorContext";
-import { useParentIdChildBlockIds } from "../../hooks/useParentIdChildBlockIds";
+import { useChildBlockIds } from "../../hooks/useChildBlockIds";
 import { EditorBlock } from "./block";
 
-export interface ParentIdChildrenProps {
+export interface BlockChildrenProps {
 	parentBlockId: string;
 	containerProps?: React.HTMLAttributes<HTMLDivElement> &
 		Record<string, unknown>;
 }
 
-export function ParentIdChildren(
-	props: ParentIdChildrenProps,
+/**
+ * Renders a container block's child blocks, by either nesting route.
+ *
+ * Custom container renderers compose this to get an editable children outlet;
+ * without it a host-defined container can hold children that never render.
+ */
+export function BlockChildren(
+	props: BlockChildrenProps,
 ): React.ReactElement | null {
 	const { parentBlockId, containerProps } = props;
 	const { editor } = useEditorContext();
-	const childBlockIds = useParentIdChildBlockIds(editor, parentBlockId);
+	const childBlockIds = useChildBlockIds(editor, parentBlockId);
 
 	if (childBlockIds.length === 0) {
 		return null;

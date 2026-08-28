@@ -6,6 +6,7 @@
 
 ### function
 
+- BlockChildren
 - BlockquoteRenderer
 - BulletListItemRenderer
 - CalloutRenderer
@@ -261,6 +262,7 @@
 
 ### type
 
+- BlockChildrenProps
 - BlockControlsProps
 - BlockControlsRenderer
 - BlockDragAndDropOptions

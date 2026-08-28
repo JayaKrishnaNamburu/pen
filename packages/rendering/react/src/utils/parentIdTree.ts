@@ -1,6 +1,6 @@
 export {
 	appendParentIdChildBlock,
 	getInsertSiblingBlockOp,
-	getParentIdChildBlockIds,
+	getChildBlockIds,
 	getRootBlockIds,
 } from "@input/pen-dom/utils/parentIdTree";

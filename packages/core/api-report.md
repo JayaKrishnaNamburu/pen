@@ -79,6 +79,7 @@
 - interpolateMessage
 - isBlockSelected
 - isCollapsed
+- isContainerBlockType
 - isContinuousTextFlowCapability
 - isMultiBlock
 - isPseudoLocaleText
@@ -127,6 +128,7 @@
 - shouldAllowFlowInsertionInSlashMenu
 - shouldExposeBlockInTooling
 - shouldForceBlockScopedSelectAll
+- shouldRenderContainerChildren
 - shouldShowBlockInDefaultMenus
 - singleController
 - slashMenuGroupOf

@@ -1,7 +1,7 @@
 import React from "react";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { InlineContent } from "../primitives/editor/inlineContent";
-import { ParentIdChildren } from "../primitives/editor/parentIdChildren";
+import { BlockChildren } from "../primitives/editor/blockChildren";
 
 export function BlockquoteRenderer(
 	block: BlockHandle,
@@ -14,7 +14,7 @@ export function BlockquoteRenderer(
 			data-selected={ctx.selected ? "" : undefined}
 		>
 			<InlineContent blockId={block.id} decorations={ctx.decorations} />
-			<ParentIdChildren
+			<BlockChildren
 				parentBlockId={block.id}
 				containerProps={{ "data-pen-blockquote-children": "" }}
 			/>

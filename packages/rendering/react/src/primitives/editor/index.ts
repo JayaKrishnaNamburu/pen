@@ -8,6 +8,7 @@ export type {
 } from "../../context/editorContext";
 export { EditorContent, type EditorContentProps } from "./content";
 export { EditorBlock, type EditorBlockProps } from "./block";
+export { BlockChildren, type BlockChildrenProps } from "./blockChildren";
 export { InlineContent, type InlineContentProps } from "./inlineContent";
 export {
 	CARET,

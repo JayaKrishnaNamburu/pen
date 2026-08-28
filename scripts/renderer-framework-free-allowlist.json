@@ -46,6 +46,10 @@
       "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
     },
     {
+      "file": "packages/rendering/react/src/hooks/useChildBlockIds.ts",
+      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
+    },
+    {
       "file": "packages/rendering/react/src/hooks/useEditorMessage.ts",
       "reason": "React hook; framework coupling is through useEditorContext, not a react import"
     },
@@ -63,10 +67,6 @@
     },
     {
       "file": "packages/rendering/react/src/hooks/useInlineCompletionState.ts",
-      "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
-    },
-    {
-      "file": "packages/rendering/react/src/hooks/useParentIdChildBlockIds.ts",
       "reason": "React hook; framework coupling is through a local store wrapper, not a react import"
     },
     {
