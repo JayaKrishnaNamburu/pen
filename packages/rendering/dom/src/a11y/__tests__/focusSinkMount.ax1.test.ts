@@ -57,6 +57,26 @@ describe("FieldEditorImpl focus sink mount (AX1)", () => {
 		expect(sink?.getAttribute("aria-hidden")).toBeNull();
 		expect(sink?.getAttribute("role")).toBe("group");
 		expect(sink?.getAttribute("aria-label")).toBe("1 block selected");
+		expect(document.activeElement).toBe(sink);
+	});
+
+	it("HOST9: a block selection does not steal focus from a foreign input", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const fieldEditor = new FieldEditorImpl(editor);
+		const root = document.createElement("div");
+		const input = document.createElement("input");
+		document.body.append(root, input);
+		fixtures.push({ editor, fieldEditor, root });
+		fieldEditor.setRootElement(root);
+		input.focus();
+		expect(document.activeElement).toBe(input);
+
+		const first = editor.firstBlock();
+		expect(first).not.toBeNull();
+		editor.selectBlocks([first!.id]);
+
+		expect(document.activeElement).toBe(input);
+		input.remove();
 	});
 
 	it("AX1: empty-document text caret leaves the mounted sink hidden", () => {

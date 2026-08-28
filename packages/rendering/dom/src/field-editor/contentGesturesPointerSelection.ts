@@ -557,14 +557,14 @@ export function createPointerSelectionGestures<
 			if (tryHandleMappedDomSelection()) {
 				return;
 			}
-			const blockId =
-				resolveClickedBlockId(ctx, event) ?? gesture.blockId;
-			if (!blockId) {
-				if (handleClickOutsideBlocks(event)) {
-					skipNextClickRef.current = true;
-				}
+			const clickedBlockId = resolveClickedBlockId(ctx, event);
+			// A host-chrome origin is a drag anchor, not a clicked block.
+			// A gesture that never reached one is still `handleClick`'s to
+			// finish, and that is where the click-outside affordance lives.
+			if (!clickedBlockId && gesture.startedInHostChrome) {
 				return;
 			}
+			const blockId = clickedBlockId ?? gesture.blockId;
 			const block = editor.getBlock(blockId);
 			if (!block) return;
 			if (tryHandleCellSelection(blockId)) {

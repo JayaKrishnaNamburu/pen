@@ -151,7 +151,10 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 	// trailing space has no advance width under `normal`, so the caret was
 	// painted at the same x before and after one was typed.
 	// 67 -> 68 is FE9: suites/input/fe9-editcontext-mapped-caret.spec.ts.
-	const expectedPlaywrightSpecs = 68;
+	// 68 -> 69 is FE10: suites/geometry/host-chrome-drag.spec.ts, where the
+	// drag anchors beside the column rather than on a block, so the gesture
+	// only exists if the host-chrome fallback opened it.
+	const expectedPlaywrightSpecs = 69;
 	assert.equal(
 		playwrightSpecs.length,
 		expectedPlaywrightSpecs,

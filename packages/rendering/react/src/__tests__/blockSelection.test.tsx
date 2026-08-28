@@ -166,7 +166,11 @@ describe("@input/pen-react block selection", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toBeNull();
+		// The drag starts in host chrome, so FE10 makes it a text drag.
+		// What this scenario guards is the block range: `blockSelection`
+		// off must keep the region selector from writing one.
+		expect(editor.selection?.type).toBe("text");
+		expect(container.querySelector("[data-pen-selection-rect]")).toBeNull();
 
 		await cleanupEditor(editor, root, container);
 	});

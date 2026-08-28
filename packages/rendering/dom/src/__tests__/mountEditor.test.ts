@@ -9,6 +9,7 @@ import {
 import { defaultSchema } from "@input/pen-schema";
 import type { Editor } from "@input/pen-types";
 import { mountEditor } from "../host/mountEditor";
+import { FOCUS_SINK_ATTR } from "../a11y/focusSink";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 
 const noDefaultExtensionsPreset = {
@@ -141,6 +142,93 @@ describe("mountEditor", () => {
 
 		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
 		expect(inline?.textContent).toContain("Hello");
+	});
+
+	it("HOST8: a host listener on the editor element sees block-selection Enter", () => {
+		const editor = createBareEditor();
+		const blockId = editor.firstBlock()!.id;
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		editor.selectBlocks([blockId]);
+		const sink = root.querySelector(`[${FOCUS_SINK_ATTR}]`);
+		expect(sink).toBeInstanceOf(HTMLElement);
+		expect(document.activeElement).toBe(sink);
+
+		let hostSawEnter = false;
+		const onHostEnter = (event: KeyboardEvent): void => {
+			if (event.key !== "Enter") {
+				return;
+			}
+			hostSawEnter = true;
+			event.preventDefault();
+			event.stopPropagation();
+		};
+		root.addEventListener("keydown", onHostEnter, true);
+		cleanups.push(() => {
+			root.removeEventListener("keydown", onHostEnter, true);
+		});
+
+		sink!.dispatchEvent(
+			new KeyboardEvent("keydown", {
+				key: "Enter",
+				bubbles: true,
+				cancelable: true,
+			}),
+		);
+
+		expect(hostSawEnter).toBe(true);
+		expect(editor.blockCount()).toBe(1);
+		expect(editor.selection).toMatchObject({
+			type: "block",
+			blockIds: [blockId],
+		});
+	});
+
+	it("HOST9: two composers, only the focused editor handles body Enter", () => {
+		const editorA = createBareEditor();
+		const editorB = createBareEditor();
+		const rootA = document.createElement("div");
+		const rootB = document.createElement("div");
+		document.body.append(rootA, rootB);
+		const mountedA = mountEditor(editorA, rootA);
+		const mountedB = mountEditor(editorB, rootB);
+		cleanups.push(() => {
+			mountedA.destroy();
+			mountedB.destroy();
+			editorA.destroy();
+			editorB.destroy();
+		});
+
+		const blockA = editorA.firstBlock()!.id;
+		const blockB = editorB.firstBlock()!.id;
+		editorA.selectBlocks([blockA]);
+		editorB.selectBlocks([blockB]);
+
+		const sinkA = rootA.querySelector(`[${FOCUS_SINK_ATTR}]`);
+		expect(sinkA).toBeInstanceOf(HTMLElement);
+		expect(document.activeElement).toBe(sinkA);
+		expect(rootB.contains(document.activeElement)).toBe(false);
+
+		document.body.dispatchEvent(
+			new KeyboardEvent("keydown", {
+				key: "Enter",
+				bubbles: true,
+				cancelable: true,
+			}),
+		);
+
+		expect(editorA.blockCount()).toBe(2);
+		expect(editorB.blockCount()).toBe(1);
+		expect(editorB.selection).toMatchObject({
+			type: "block",
+			blockIds: [blockB],
+		});
 	});
 
 	it("HOST7: a later capture overlay keeps Escape from the selection ladder", () => {

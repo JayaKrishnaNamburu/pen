@@ -110,4 +110,22 @@ describe("syncFocusSink (AX1)", () => {
 		);
 		editor.destroy();
 	});
+
+	it("HOST9: a connected sink takes document focus for a block selection", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const sink = makeSink();
+		const root = document.createElement("div");
+		document.body.append(root);
+		root.append(sink.element);
+		document.body.focus();
+
+		syncFocusSink(sink, editor, {
+			type: "block",
+			blockIds: ["a"],
+		});
+
+		expect(document.activeElement).toBe(sink.element);
+		root.remove();
+		editor.destroy();
+	});
 });

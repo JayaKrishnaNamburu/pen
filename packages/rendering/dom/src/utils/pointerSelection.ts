@@ -9,6 +9,13 @@ export interface PointerSelectionGesture {
 	anchorPoint: { blockId: string; offset: number } | null;
 	startSelection: SelectionState | null;
 	promotedDuringDrag: boolean;
+	/**
+	 * `blockId` came from the nearest block edge (G4) rather than a block
+	 * under the pointer (FE10). The gesture never entered a field, so it has
+	 * no native range to inherit within one block, and a gesture that never
+	 * reached a block leaves mouseup to the click-outside affordance.
+	 */
+	startedInHostChrome: boolean;
 }
 
 export type ResolvedPointerDragSelection =
@@ -28,10 +35,12 @@ export function createPointerSelectionGesture(
 		blockId: string;
 		clientX: number;
 		clientY: number;
+		startedInHostChrome?: boolean;
 	},
 ): PointerSelectionGesture {
 	return {
 		...input,
+		startedInHostChrome: input.startedInHostChrome ?? false,
 		anchorPoint: null,
 		startSelection: editor.getSelection(),
 		promotedDuringDrag: false,
@@ -89,7 +98,18 @@ export function resolvePointerDragSelection(
 	}
 
 	const anchorPoint = resolvePointerGestureAnchorPoint(gesture, root);
-	if (!anchorPoint || focusPoint.blockId === anchorPoint.blockId) {
+	if (!anchorPoint) {
+		return null;
+	}
+	// Within one block the browser owns the range and the mapped read at
+	// mouseup commits it. A drag anchored in host chrome never entered a
+	// field, so there is no native range to inherit (FE10) and Pen has to
+	// resolve that one itself.
+	if (
+		focusPoint.blockId === anchorPoint.blockId &&
+		(!gesture.startedInHostChrome ||
+			focusPoint.offset === anchorPoint.offset)
+	) {
 		return null;
 	}
 

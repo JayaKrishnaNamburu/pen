@@ -34,7 +34,23 @@ export function createDragGestures<
 		if (fieldEditor.isComposing) return;
 		if (shouldIgnorePointerGesture(ctx, event)) return;
 
-		const blockId = resolveClickedBlockId(ctx, event);
+		const root = gestureEl.closest(
+			EDITOR_ROOT_SELECTOR,
+		) as HTMLElement | null;
+		const clickedBlockId = resolveClickedBlockId(ctx, event);
+		// A drag starting in host chrome (the content padding beside the
+		// column, or the root next to it) anchors at the nearest block
+		// edge (G4); mousemove and mouseup are both guarded on this
+		// gesture, so without one there is no drag at all.
+		const hostChromePoint =
+			clickedBlockId || !root
+				? null
+				: pointToEditorSelectionPoint(
+						root,
+						event.clientX,
+						event.clientY,
+					);
+		const blockId = clickedBlockId ?? hostChromePoint?.blockId;
 		if (!blockId) return;
 
 		pointerGestureVersionRef.current += 1;
@@ -42,7 +58,11 @@ export function createDragGestures<
 			blockId,
 			clientX: event.clientX,
 			clientY: event.clientY,
+			startedInHostChrome: hostChromePoint != null,
 		});
+		if (hostChromePoint) {
+			pointerGestureRef.current.anchorPoint = hostChromePoint;
+		}
 		fieldEditor.notifyGestureEvent?.("pointerdown");
 		skipNextClickRef.current = false;
 
@@ -50,9 +70,6 @@ export function createDragGestures<
 		const clickedSchema = clickedBlock
 			? editor.schema.resolve(clickedBlock.type)
 			: null;
-		const root = gestureEl.closest(
-			EDITOR_ROOT_SELECTOR,
-		) as HTMLElement | null;
 
 		if (
 			pointerGestureRef.current &&

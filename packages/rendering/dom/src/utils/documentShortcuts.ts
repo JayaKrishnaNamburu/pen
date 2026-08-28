@@ -32,10 +32,15 @@ export type BindEditorDocumentKeyDownOptions = {
 	getInteractionModel?: () => InteractionModel | undefined;
 };
 
+function isDocumentBubbleKey(key: string): boolean {
+	return key === "Escape" || key === "Enter";
+}
+
 /**
- * Document key routing for an editor root. Non-Escape shortcuts stay in
- * capture. Escape is a bubbling default so capture-phase overlays (menus,
- * host chrome) can preventDefault first (HOST7).
+ * Document key routing for an editor root. Escape (HOST7) and
+ * block-selection Enter (HOST8) are bubbling defaults so a host or
+ * overlay can preventDefault first. Other document shortcuts stay in
+ * capture.
  */
 export function bindEditorDocumentKeyDown(
 	options: BindEditorDocumentKeyDownOptions,
@@ -73,14 +78,14 @@ export function bindEditorDocumentKeyDown(
 	};
 
 	const onCapture = (event: KeyboardEvent): void => {
-		if (event.key === "Escape") {
+		if (isDocumentBubbleKey(event.key)) {
 			return;
 		}
 		route(event);
 	};
 
 	const onBubble = (event: KeyboardEvent): void => {
-		if (event.key !== "Escape") {
+		if (!isDocumentBubbleKey(event.key)) {
 			return;
 		}
 		route(event);
@@ -159,6 +164,7 @@ function handleBlockSelectionEnter(
 	interactionModel: InteractionModel = "content-first",
 ): boolean {
 	if (
+		event.defaultPrevented ||
 		event.key !== "Enter" ||
 		event.altKey ||
 		event.ctrlKey ||

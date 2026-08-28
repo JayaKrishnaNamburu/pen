@@ -17,6 +17,7 @@ export function syncFocusSink(
 				{ count: selection.blockIds.length },
 			),
 		});
+		claimBlockSelectionFocus(sink);
 		return;
 	}
 	if (selection?.type === "cell") {
@@ -30,7 +31,38 @@ export function syncFocusSink(
 				{ rows, columns },
 			),
 		});
+		claimBlockSelectionFocus(sink);
 		return;
 	}
 	sink.hide();
+}
+
+/**
+ * Park DOM focus on the revealed sink so a host can attribute a
+ * keystroke to this editor by containment (HOST9). Synchronous — S4
+ * forbids a deferred restore. Do not steal from a foreign control.
+ */
+function claimBlockSelectionFocus(sink: FocusSink): void {
+	const element = sink.element;
+	if (!element.isConnected) {
+		return;
+	}
+	const doc = element.ownerDocument;
+	const root = element.parentElement;
+	if (!doc || !root) {
+		return;
+	}
+	const active = doc.activeElement;
+	if (active === element) {
+		return;
+	}
+	const editorOwnsFocus = active instanceof Node && root.contains(active);
+	const lostToDocument =
+		active === null ||
+		active === doc.body ||
+		active === doc.documentElement;
+	if (!editorOwnsFocus && !lostToDocument) {
+		return;
+	}
+	element.focus({ preventScroll: true });
 }

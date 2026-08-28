@@ -412,7 +412,10 @@ describe("@input/pen-react region selection: background click and marquee", () =
 				document.dispatchEvent(createMouseEvent("mouseup", 180, 85));
 			});
 
-			expect(editor.selection).toBeNull();
+			// The drag starts on the background, so FE10 makes it a text
+			// drag. What this scenario guards is the marquee: without the
+			// primitive there is no block selection and no rect.
+			expect(editor.selection?.type).toBe("text");
 			expect(
 				container.querySelector("[data-pen-selection-rect]"),
 			).toBeNull();

@@ -1237,6 +1237,18 @@ export class FieldEditorImpl implements FieldEditorSession {
 	}
 
 	protected _restoreFocusAfterDeactivate(blockId: string | null): void {
+		const selection = this._editor.selection;
+		if (
+			this._focusSink &&
+			(selection?.type === "block" || selection?.type === "cell")
+		) {
+			this._focusController.requestDomFocus(
+				this._focusSink.element,
+				"restore",
+				{ preventScroll: true },
+			);
+			return;
+		}
 		this._focusController.restoreFocusAfterDeactivate(blockId);
 	}
 
