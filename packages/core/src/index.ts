@@ -255,7 +255,11 @@ export {
 	splitBlock,
 	toggleMark,
 } from "./commands/text";
-export { convertBlockOps } from "./commands/commandBlockContext";
+export {
+	convertBlockOps,
+	isContainerBlockType,
+	shouldRenderContainerChildren,
+} from "./commands/commandBlockContext";
 export type {
 	ConvertBlockParam,
 	DeleteGranularity,

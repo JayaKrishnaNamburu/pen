@@ -1,5 +1,7 @@
 import {
+	isContainerBlockType,
 	resolveBlockDirection,
+	shouldRenderContainerChildren,
 	usesInlineTextSelection,
 } from "@input/pen-core";
 import type { BlockHandle, Editor } from "@input/pen-types";
@@ -7,12 +9,7 @@ import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { fullReconcileDeltasToDOM } from "../field-editor/reconciler";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
-import {
-	getParentIdChildBlockIds,
-	getRootBlockIds,
-} from "../utils/parentIdTree";
-
-const PARENT_ID_CONTAINER_TYPES = new Set(["toggle", "callout", "blockquote"]);
+import { getChildBlockIds, getRootBlockIds } from "../utils/parentIdTree";
 
 export interface DocumentTree {
 	readonly content: HTMLElement;
@@ -126,7 +123,7 @@ function createBlockNodes(
 	}
 
 	const childrenHost =
-		block && PARENT_ID_CONTAINER_TYPES.has(block.type)
+		block && isContainerBlockType(editor, block.type)
 			? ownerDocument.createElement("div")
 			: null;
 	if (childrenHost) {
@@ -197,14 +194,12 @@ function visibleChildBlockIds(
 	editor: Editor,
 	parentBlockId: string,
 ): readonly string[] {
-	const parent = editor.getBlock(parentBlockId);
-	if (!parent || !PARENT_ID_CONTAINER_TYPES.has(parent.type)) {
+	if (
+		!shouldRenderContainerChildren(editor, editor.getBlock(parentBlockId))
+	) {
 		return [];
 	}
-	if (parent.type === "toggle" && !parent.props.open) {
-		return [];
-	}
-	return getParentIdChildBlockIds(editor, parentBlockId);
+	return getChildBlockIds(editor, parentBlockId);
 }
 
 function isFieldEditorOwned(

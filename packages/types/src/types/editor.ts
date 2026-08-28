@@ -68,6 +68,15 @@ export interface DocumentState {
 	blockAt(index: number): string | null;
 	indexOf(blockId: string): number;
 	parentOf(blockId: string): string | null;
+	/**
+	 * Ordered child ids, covering both nesting routes: a block's `children`
+	 * array and the `parentId` convention. Children-array order is authoritative
+	 * for that route; `parentId` children follow `blockOrder`.
+	 *
+	 * The inverse of {@link parentOf}. Prefer this over filtering `blockOrder`,
+	 * which cannot see children-array children — they are not in `blockOrder`.
+	 */
+	childrenOf(blockId: string): readonly string[];
 }
 
 // ── Undo Manager ────────────────────────────────────────────

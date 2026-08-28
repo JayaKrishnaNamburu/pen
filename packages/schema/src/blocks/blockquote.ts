@@ -11,6 +11,7 @@ export const blockquote = defineBlock("blockquote", {
   },
   content: "inline",
   fieldEditor: "richtext",
+  isContainer: true,
   display: {
     title: "Quote",
     description: "Block quotation",

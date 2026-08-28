@@ -26,9 +26,9 @@
 
 **Runs without a DOM.** The same runtime works in Node, so agents, servers, and pipelines edit documents through the API the editor uses.
 
-## Try it out
+## Playground
 
-https://pen-playground.input.so/
+The [playground](https://pen-playground.input.so/) is a complete Pen app you can open in the browser: an editor in the middle, an AI agent on the left, a live view of the document on the right, and optional collaboration. The agent provides simulated answers without an API key.
 
 <img width="1543" alt="Web preview of the Pen playground" src="https://input-pr-z1wpxj.s3.us-west-2.amazonaws.com/pen/playground-preview.png" />
 
@@ -344,11 +344,10 @@ The current-state specs in [`spec/README.md`](spec/README.md) are the contract: 
 
 Expanded field-editor mode and table-cell editing always use contenteditable, even when EditContext is present. APIs newer than this floor (EditContext, `structuredClone`, `ResizeObserver`, `color-mix()`, `crypto.randomUUID`) are feature-detected with a documented fallback and do not raise the minimum. Published packages declare `engines.node: ">=22"`, and CI verifies both declared endpoints (Node 22 and current Node 26) plus one non-Linux runner in [`.github/workflows/node-matrix.yml`](.github/workflows/node-matrix.yml). Raising the floor is a minor-version change; lowering it is never silent. The reasoning is in [`spec/rules/host.md`](spec/rules/host.md) (HOST3, HOST4).
 
-## Docs, Examples, And Playground
+## Docs And Examples
 
 - **[Documentation](https://input-systems.github.io/pen/)**: getting started per host, core concepts, selection, extensions, commands, collaboration, AI, import and export, security, and accessibility.
 - **Examples**: minimal Vite apps at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each is a workspace member consuming the built packages, so `pnpm build` once and then `pnpm --filter @input/pen-example-react dev`. CI mounts each one and types into it. A drifted quickstart fails the build.
-- **[Playground](https://pen-playground.input.so/)**: the reference app (editor, AI agent, document inspector, and live collaboration). Hosted on Cloudflare. Locally, `pnpm --dir playground run dev` after `pnpm build`. It is the host for `pnpm test:e2e`, not a starter template.
 
 ## Development
 
@@ -360,7 +359,7 @@ pnpm typecheck
 pnpm lint
 ```
 
-Prefer scoped runs while iterating: `pnpm --filter @input/pen-core test`. Browser coverage is `pnpm test:e2e`. Any change to a published package needs a changeset (`pnpm changeset`). [`CONTRIBUTING.md`](CONTRIBUTING.md) has the full loop, including which gates run in CI.
+Prefer scoped runs while iterating: `pnpm --filter @input/pen-core test`. Browser coverage is `pnpm test:e2e`, which drives the playground. After `pnpm build`, `pnpm --dir playground run dev` runs that app locally; see [`playground/README.md`](playground/README.md). Any change to a published package needs a changeset (`pnpm changeset`). [`CONTRIBUTING.md`](CONTRIBUTING.md) has the full loop, including which gates run in CI.
 
 ## Community
 

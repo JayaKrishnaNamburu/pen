@@ -164,6 +164,90 @@ describe("ops primitives PR1–PR10", () => {
 		editor.destroy();
 	});
 
+	it("PR3: insert-block naming a live block is dropped, not applied as a reset", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "p1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "splice-text",
+				blockId: "p1",
+				from: 0,
+				to: 0,
+				insert: "user content",
+			},
+		]);
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "p1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		expect(editor.getBlock("p1")!.textContent()).toBe("user content");
+		expect(
+			editor.documentState.blockOrder.filter((id) => id === "p1"),
+		).toEqual(["p1"]);
+		expect(diagnostics).toEqual([
+			expect.objectContaining({ code: "PEN_APPLY_010" }),
+		]);
+		editor.destroy();
+	});
+
+	it("PR3: a second insert-block for the same id in one batch is dropped", () => {
+		const editor = createEditor();
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "dup",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "splice-text",
+				blockId: "dup",
+				from: 0,
+				to: 0,
+				insert: "kept",
+			},
+			{
+				type: "insert-block",
+				blockId: "dup",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		expect(editor.getBlock("dup")!.textContent()).toBe("kept");
+		expect(
+			editor.documentState.blockOrder.filter((id) => id === "dup"),
+		).toEqual(["dup"]);
+		expect(diagnostics).toEqual([
+			expect.objectContaining({ code: "PEN_APPLY_010" }),
+		]);
+		editor.destroy();
+	});
+
 	it("PR4: delete-block removes the block", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

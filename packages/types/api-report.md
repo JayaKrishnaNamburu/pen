@@ -7,6 +7,7 @@
 ### function
 
 - generateId
+- isContainerBlock
 
 ### guard
 

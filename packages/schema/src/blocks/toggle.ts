@@ -16,6 +16,7 @@ export const toggle = defineBlock("toggle", {
   },
   content: "inline",
   fieldEditor: "richtext",
+  isContainer: true,
   display: {
     title: "Toggle",
     description: "Collapsible content block",

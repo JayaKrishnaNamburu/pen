@@ -15,7 +15,7 @@ import {
 	isEditableTextBlock,
 	LIST_BLOCK_TYPES,
 	logicalInline,
-	PARENT_ID_CONTAINER_TYPES,
+	isContainerBlockType,
 } from "./commandBlockContext";
 import { blockSelectionResult, textSelectionResult } from "./commandSelection";
 
@@ -177,11 +177,11 @@ function parentContainerKind(
 	if (!parent) {
 		return null;
 	}
-	if (PARENT_ID_CONTAINER_TYPES.has(parent.type)) {
-		return "layout-cell";
-	}
 	if (parent.type === "table") {
 		return "table";
+	}
+	if (isContainerBlockType(editor, parent.type)) {
+		return "layout-cell";
 	}
 	return null;
 }

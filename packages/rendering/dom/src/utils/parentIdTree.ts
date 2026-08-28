@@ -1,6 +1,8 @@
+import {
+	isContainerBlockType,
+	shouldRenderContainerChildren,
+} from "@input/pen-core";
 import type { DocumentOp, Editor } from "@input/pen-types";
-
-const PARENT_ID_CONTAINER_TYPES = new Set(["toggle", "callout", "blockquote"]);
 
 export function getRootBlockIds(editor: Editor): readonly string[] {
 	return editor.documentState.blockOrder.filter(
@@ -8,14 +10,18 @@ export function getRootBlockIds(editor: Editor): readonly string[] {
 	);
 }
 
-export function getParentIdChildBlockIds(
+export function getChildBlockIds(
 	editor: Editor,
 	parentBlockId: string,
 ): readonly string[] {
-	return editor.documentState.blockOrder.filter(
-		(blockId) => editor.documentState.parentOf(blockId) === parentBlockId,
-	);
+	return editor.documentState.childrenOf(parentBlockId);
 }
+
+/**
+ * @deprecated Renamed to {@link getChildBlockIds}, which covers both nesting
+ * routes rather than only `parentId`. Kept for 0.1.x consumers of this subpath.
+ */
+export const getParentIdChildBlockIds = getChildBlockIds;
 
 export function getVisibleBlockIds(editor: Editor): readonly string[] {
 	const visibleBlockIds: string[] = [];
@@ -48,7 +54,7 @@ export function isInsideParentIdContainer(
 	const parentId = editor.documentState.parentOf(blockId);
 	if (!parentId) return false;
 	const parent = editor.getBlock(parentId);
-	return !!parent && PARENT_ID_CONTAINER_TYPES.has(parent.type);
+	return !!parent && isContainerBlockType(editor, parent.type);
 }
 
 export function appendParentIdChildBlock(
@@ -137,21 +143,13 @@ function collectVisibleBlockIds(
 ): void {
 	visibleBlockIds.push(blockId);
 
-	if (!shouldShowParentIdChildren(editor, blockId)) {
+	if (!shouldRenderContainerChildren(editor, editor.getBlock(blockId))) {
 		return;
 	}
 
-	for (const childBlockId of getParentIdChildBlockIds(editor, blockId)) {
+	for (const childBlockId of getChildBlockIds(editor, blockId)) {
 		collectVisibleBlockIds(editor, childBlockId, visibleBlockIds);
 	}
-}
-
-function shouldShowParentIdChildren(editor: Editor, blockId: string): boolean {
-	const block = editor.getBlock(blockId);
-	if (!block) return false;
-	if (!PARENT_ID_CONTAINER_TYPES.has(block.type)) return false;
-	if (block.type !== "toggle") return true;
-	return Boolean(block.props?.open);
 }
 
 function isDescendantOf(

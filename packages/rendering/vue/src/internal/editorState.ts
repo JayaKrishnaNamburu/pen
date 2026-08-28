@@ -9,7 +9,7 @@ import type {
   FieldEditorStoreSnapshot,
 } from "@input/pen-dom/field-editor/store";
 import { computeDocumentPlaceholderVisible } from "@input/pen-dom/utils/editorEmptyState";
-import { getParentIdChildBlockIds } from "@input/pen-dom/utils/parentIdTree";
+import { getChildBlockIds } from "@input/pen-dom/utils/parentIdTree";
 import type {
   Decoration,
   Editor,
@@ -138,10 +138,10 @@ export function useBlockModel(editor: Editor, blockId: string) {
   );
 }
 
-export function useParentIdChildBlockIds(editor: Editor, parentBlockId: string) {
+export function useChildBlockIds(editor: Editor, parentBlockId: string) {
   return useExternalStore(
     (callback) => editor.on("commit", () => callback()),
-    () => [...getParentIdChildBlockIds(editor, parentBlockId)],
+    () => [...getChildBlockIds(editor, parentBlockId)],
     stringArrayEqual,
   );
 }

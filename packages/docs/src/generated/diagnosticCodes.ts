@@ -231,6 +231,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/editor/applyInlineAndMetaOps.ts", "core/src/editor/applyPipelineRunner.ts"],
 	},
 	{
+		code: "PEN_APPLY_010",
+		levels: ["warn"],
+		sources: ["core/src/editor/applyPipelineRunner.ts"],
+	},
+	{
 		code: "PEN_CLIPBOARD_001",
 		levels: ["warn"],
 		sources: ["rendering/dom/src/utils/tableCellClipboard.ts"],

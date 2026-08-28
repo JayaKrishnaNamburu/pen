@@ -1,9 +1,10 @@
-import type {
-	BlockHandle,
-	DiagnosticEvent,
-	DocumentOp,
-	Editor,
-	FlowBlockCapability,
+import {
+	type BlockHandle,
+	type DiagnosticEvent,
+	type DocumentOp,
+	type Editor,
+	type FlowBlockCapability,
+	isContainerBlock,
 } from "@input/pen-types";
 
 import {
@@ -34,11 +35,36 @@ export const BACKSPACE_EXIT_TYPES = new Set([
 	...HEADING_TYPES,
 ]);
 
-export const PARENT_ID_CONTAINER_TYPES = new Set([
-	"toggle",
-	"callout",
-	"blockquote",
-]);
+/**
+ * Whether a block type holds child blocks, resolved from its schema rather than
+ * from a hardcoded type list — host-defined containers count too.
+ */
+export function isContainerBlockType(
+	editor: Editor,
+	blockType: string | null | undefined,
+): boolean {
+	if (!blockType) {
+		return false;
+	}
+	return isContainerBlock(editor.schema.resolve(blockType));
+}
+
+/**
+ * Whether a container's children participate in rendering and navigation.
+ *
+ * Collapsing is expressed by the block's own `open` prop, so any container that
+ * declares one is collapsible. `toggle` defaults `open` to `false` and so stays
+ * collapsed until opened; containers without the prop always show children.
+ */
+export function shouldRenderContainerChildren(
+	editor: Editor,
+	block: BlockHandle | null | undefined,
+): boolean {
+	if (!block || !isContainerBlockType(editor, block.type)) {
+		return false;
+	}
+	return block.props?.open !== false;
+}
 
 export type DeleteDirection = "backward" | "forward";
 
@@ -116,21 +142,12 @@ export function isInsideParentIdContainer(
 		return false;
 	}
 	const parent = editor.getBlock(parentId);
-	return !!parent && PARENT_ID_CONTAINER_TYPES.has(parent.type);
+	return !!parent && isContainerBlockType(editor, parent.type);
 }
 
 export function getRootBlockIds(editor: Editor): readonly string[] {
 	return editor.documentState.blockOrder.filter(
 		(blockId) => editor.documentState.parentOf(blockId) == null,
-	);
-}
-
-function getParentIdChildBlockIds(
-	editor: Editor,
-	parentBlockId: string,
-): readonly string[] {
-	return editor.documentState.blockOrder.filter(
-		(blockId) => editor.documentState.parentOf(blockId) === parentBlockId,
 	);
 }
 
@@ -314,21 +331,10 @@ function collectVisibleBlockIds(
 	visibleBlockIds: string[],
 ): void {
 	visibleBlockIds.push(blockId);
-	if (!shouldShowParentIdChildren(editor, blockId)) {
+	if (!shouldRenderContainerChildren(editor, editor.getBlock(blockId))) {
 		return;
 	}
-	for (const childBlockId of getParentIdChildBlockIds(editor, blockId)) {
+	for (const childBlockId of editor.documentState.childrenOf(blockId)) {
 		collectVisibleBlockIds(editor, childBlockId, visibleBlockIds);
 	}
-}
-
-function shouldShowParentIdChildren(editor: Editor, blockId: string): boolean {
-	const block = editor.getBlock(blockId);
-	if (!block || !PARENT_ID_CONTAINER_TYPES.has(block.type)) {
-		return false;
-	}
-	if (block.type !== "toggle") {
-		return true;
-	}
-	return Boolean(block.props?.open);
 }
