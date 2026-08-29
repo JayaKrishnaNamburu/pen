@@ -1,5 +1,13 @@
 # @input/pen-assets
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [c926c5e]
+- Updated dependencies [c926c5e]
+  - @input/pen-types@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes
