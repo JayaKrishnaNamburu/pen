@@ -1,5 +1,20 @@
 # @input/pen-core
 
+## 0.1.5
+
+### Patch Changes
+
+- c926c5e: Widen `BlockSchema`'s `Content` default from `"inline"` to `ContentType` so nested, `none`, `table`, and `subdocument` blocks are bare `BlockSchema` values and belong in `SchemaRegistry.extend` without a cast (API10). `DefinedBlockSchema.a11y` is now the resolved spec intersected with the AX4 fluent attach, so `defineBlock()` is assignable to `BlockSchema`. Serialize/normalize callbacks on `BlockSchema` use method syntax so a specific `Type` remains assignable to the wide schema.
+
+  This is graded patch, not minor: existing call sites that passed a correct `BlockSchema` still type-check, and hosts that already cast (the previous workaround) can delete the cast. The inference change is that `BlockSchema["content"]` is the `ContentType` union instead of the `"inline"` literal — that is the truthful type, not a break of a documented contract. Same grading as HOST8/HOST9, which shipped a real behavior change as patch with the reason written down; this change is types-only.
+
+- 67bf230: Reject inline-atom schemas that declare a prop named `type`. Y.Text embed records use `type` as the atom discriminator and flatten props onto the same record, so that prop cannot be stored. Registration now throws at schema build time (SCH1). Hosts that declared the prop should rename it. Kept as `patch` so the 0.1.x train stays on `0.1.5`.
+- c926c5e: Escalate a geometry-path vertical caret that lands on a non-text block to `BlockSelection`, matching the logical `crossBlock` path and N2. Hosts whose `setVerticalCaretMeasure` mapped the next line onto a textless block previously got a collapsed text caret there (`anchor-target-missing`, DOM focus on `document.body`). A measured collapsed caret on a table stays a text point so table autocomplete stays enabled. An existing host now receives a `BlockSelection` where this path previously wrote a collapsed text caret. Downstream composers that kept a window-level Enter listener alive only because this path left focus on `document.body` can drop that workaround after they bump. Kept as `patch` so the 0.1.x train stays on `0.1.5`.
+- Updated dependencies [c926c5e]
+- Updated dependencies [c926c5e]
+  - @input/pen-types@0.1.5
+  - @input/pen-yjs@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes

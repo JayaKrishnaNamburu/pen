@@ -1,5 +1,27 @@
 # @input/pen-react
 
+## 0.1.5
+
+### Patch Changes
+
+- 67bf230: Keep `InlineAtomRenderInteractionProps` imported in the published `@input/pen-react` declarations so `InlineAtomRenderProps.interaction` type-checks with `skipLibCheck: false`.
+- c926c5e: Mount inline-atom portal renderers with `createElement` so host renderers that call hooks keep a stable hook order when an atom appears after the first paint.
+- Updated dependencies [c926c5e]
+- Updated dependencies [c926c5e]
+- Updated dependencies [67bf230]
+- Updated dependencies [67bf230]
+- Updated dependencies [c926c5e]
+  - @input/pen-types@0.1.5
+  - @input/pen-core@0.1.5
+  - @input/pen-schema@0.1.5
+  - @input/pen-dom@0.1.5
+  - @input/pen-ai@0.1.5
+  - @input/pen-multiplayer@0.1.5
+  - @input/pen-search@0.1.5
+  - @input/pen-shortcuts@0.1.5
+  - @input/pen-snapshots@0.1.5
+  - @input/pen-interop@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes

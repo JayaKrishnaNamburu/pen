@@ -1,5 +1,21 @@
 # @input/pen-dom
 
+## 0.1.5
+
+### Patch Changes
+
+- c926c5e: Keep inline atoms in sliced Pen JSON clipboard deltas and rebuild them on paste (IOP7). Add optional `InlineSchema.serialize.toText` and emit atom interchange text through the existing `toMarkdown` / `toHTML` hooks, defaulting to skip when none are set (IOP8).
+
+  Copy now writes embed inserts into the Pen JSON flavor and paste rebuilds them, so an existing host that read or wrote that flavor sees a different clipboard payload. `toText` on `@input/pen-types` is an optional hook. Kept as `patch` so the 0.1.x train stays on `0.1.5`.
+
+- Updated dependencies [c926c5e]
+- Updated dependencies [c926c5e]
+- Updated dependencies [67bf230]
+- Updated dependencies [c926c5e]
+  - @input/pen-types@0.1.5
+  - @input/pen-core@0.1.5
+  - @input/pen-shortcuts@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes

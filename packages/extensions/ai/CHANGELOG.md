@@ -1,5 +1,19 @@
 # @input/pen-ai
 
+## 0.1.5
+
+### Patch Changes
+
+- 67bf230: Re-export `REVIEW_SURFACE_CLASSES` and `REVIEW_SURFACE_CUSTOM_PROPERTIES` from `@input/pen-ai` so hosts following the review APIs do not have to import the contract layer separately. `PEN_REVIEW_STYLESHEET` stays on `@input/pen-dom` because an extension cannot depend on a renderer (API1).
+- Updated dependencies [c926c5e]
+- Updated dependencies [c926c5e]
+- Updated dependencies [67bf230]
+- Updated dependencies [c926c5e]
+  - @input/pen-types@0.1.5
+  - @input/pen-core@0.1.5
+  - @input/pen-tools@0.1.5
+  - @input/pen-ingest@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes
