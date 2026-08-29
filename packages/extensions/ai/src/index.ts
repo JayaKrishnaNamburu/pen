@@ -102,7 +102,7 @@ export type {
 	ApplySuggestedAIOperationsResult,
 } from "./suggestions/applySuggestedAIOperations";
 
-export {
-	REVIEW_SURFACE_CLASSES,
-	REVIEW_SURFACE_CUSTOM_PROPERTIES,
-} from "@input/pen-types";
+/** Class vocabulary for the review surface (RS4). */
+export { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
+/** Theme custom properties for the review surface (RS4). */
+export { REVIEW_SURFACE_CUSTOM_PROPERTIES } from "@input/pen-types";

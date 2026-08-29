@@ -1,7 +1,6 @@
 import { yjsAdapter } from "@input/pen-yjs";
 import { createDefaultSchema } from "./fixtures/testSchema";
 import {
-	type BlockSchema,
 	type DocumentSession,
 	type PenStreamPart,
 } from "@input/pen-types";
@@ -56,7 +55,7 @@ const flowDisallowedWidget = defineBlock("widget", {
 const flowPolicySchema = mergeSchemas(
 	createDefaultSchema(),
 	new SchemaRegistryImpl({
-		blocks: [flowDisallowedWidget as unknown as BlockSchema],
+		blocks: [flowDisallowedWidget],
 		inlines: [],
 	}),
 );

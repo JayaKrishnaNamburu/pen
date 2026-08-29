@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore } from "react";
+import React, { createElement, useSyncExternalStore } from "react";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { createPortal } from "react-dom";
 import type { Editor, SelectionState } from "@input/pen-types";
@@ -62,7 +62,7 @@ export function InlineAtomPortalLayer(props: {
 		);
 		return [
 			createPortal(
-				renderer({
+				createElement(renderer, {
 					blockId,
 					offset: target.offset,
 					type: target.type,

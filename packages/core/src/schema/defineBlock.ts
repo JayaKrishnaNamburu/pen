@@ -107,13 +107,17 @@ function generateValidator(
 	};
 }
 
+// spec plus AX4 fluent attach so DefinedBlockSchema assigns to BlockSchema
+type DefinedA11y<Type extends string> = BlockA11ySpec &
+	((
+		spec: BlockA11ySpec,
+	) => BlockSchema<Type, Record<string, PropSchema>, ContentType>);
+
 export type DefinedBlockSchema<Type extends string = string> = Omit<
 	BlockSchema<Type, Record<string, PropSchema>, ContentType>,
 	"a11y"
 > & {
-	a11y(
-		spec: BlockA11ySpec,
-	): BlockSchema<Type, Record<string, PropSchema>, ContentType>;
+	a11y: DefinedA11y<Type>;
 };
 
 export function defineBlock<Type extends string>(

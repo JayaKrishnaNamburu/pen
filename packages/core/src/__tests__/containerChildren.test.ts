@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { BlockSchema } from "@input/pen-types";
 import {
 	defineBlock,
 	isContainerBlockType,
@@ -55,9 +54,9 @@ const schema = mergeSchemas(
 	createDefaultSchema(),
 	new SchemaRegistryImpl({
 		blocks: [
-			emailQuote as unknown as BlockSchema,
-			section as unknown as BlockSchema,
-			collapsedQuote as unknown as BlockSchema,
+			emailQuote,
+			section,
+			collapsedQuote,
 		],
 		inlines: [],
 	}),

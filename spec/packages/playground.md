@@ -54,7 +54,7 @@ Important rules:
 - Path in workspace: `playground`
 - Spec path mirrors workspace path: `packages/playground.md`
 - This package is private to the workspace and exists to support docs, demos, or local development flows.
-- `pnpm test:e2e` drives `playground/e2e` against `dev:e2e` on port 4173.
+- `pnpm test:e2e` drives `playground/e2e` against `dev:e2e` on port 4173. Besides the boot smoke, that suite covers the gesture paths unit tests cannot: IOP7/IOP8 mention copy/paste through the real clipboard (Chromium; WebKit and Firefox skip because Playwright cannot grant clipboard-read there), and N2/G5/HOST9 ArrowDown from a text caret onto an image (`BlockSelection` plus focus-sink parking) or a table (collapsed text caret). SCH1 stays a schema-registration unit test — it is not a user gesture.
 - `playground/README.md` is the contributor-facing tour and should stay true to the file layout.
 - Hosted rooms share a document for as long as the Durable Object keeps it. There is no auth on the public Worker; a peer who knows the room name can write.
 

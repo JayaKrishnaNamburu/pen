@@ -128,7 +128,7 @@ describe("SchemaRegistryImpl", () => {
 					toHTML: () => "<div></div>",
 				},
 			});
-			const schema = defaultSchema.extend([myBlock as unknown as BlockSchema]);
+			const schema = defaultSchema.extend([myBlock]);
 			expect(schema.resolve("myCustomBlock")).not.toBeNull();
 			expect(schema.resolve("myCustomBlock")!.type).toBe("myCustomBlock");
 		});
@@ -180,7 +180,7 @@ describe("SchemaRegistryImpl", () => {
 					toHTML: () => "<p>new</p>",
 				},
 			});
-			const schema = defaultSchema.extend([newParagraph as unknown as BlockSchema]);
+			const schema = defaultSchema.extend([newParagraph]);
 			expect(schema.resolve("paragraph")!.display?.title).toBe("New Paragraph");
 		});
 	});
@@ -216,7 +216,7 @@ describe("SchemaRegistryImpl", () => {
 				},
 			});
 			const registryB = new SchemaRegistryImpl({
-				blocks: [customHeading as unknown as BlockSchema],
+				blocks: [customHeading],
 			});
 
 			const merged = mergeSchemas(defaultSchema, registryB);
@@ -349,7 +349,7 @@ describe("SchemaRegistryImpl", () => {
 				serialize: {},
 			});
 			const reg = new SchemaRegistryImpl({
-				onUnknownBlock: () => custom as unknown as BlockSchema,
+				onUnknownBlock: () => custom,
 			});
 			expect(reg.resolve("anything")!.type).toBe("custom");
 		});

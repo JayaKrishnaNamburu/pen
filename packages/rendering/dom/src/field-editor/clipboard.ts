@@ -114,11 +114,10 @@ function copyInlineSelection(
 	if (!block) return;
 
 	const selectedText = block.textContent().slice(from, to);
-	if (!selectedText) return;
-
 	const schema = editor.schema.resolve(block.type);
-	const isFullBlock = from === 0 && to >= block.textContent().length;
-	const selectedDeltas = sliceDeltas(block.textDeltas(), from, to);
+	const isFullBlock = from === 0 && to >= block.length();
+	const selectedDeltas = sliceDeltas(block.inlineDeltas(), from, to);
+	if (selectedDeltas.length === 0) return;
 
 	const penBlock: PenBlock = {
 		type: block.type,
@@ -162,7 +161,8 @@ function copyInlineSelection(
 		});
 	}
 
-	const plainText = mdContent || selectedText;
+	const inlineText = serializeDeltasToFormat(selectedDeltas, editor, "text");
+	const plainText = mdContent || inlineText || selectedText;
 	writePenClipboard([penBlock], htmlContent, plainText, event, editor);
 }
 
@@ -199,7 +199,7 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 		const content = isPartial
 			? fullText.slice(sliceFrom, sliceTo)
 			: fullText;
-		const deltas = block.textDeltas();
+		const deltas = block.inlineDeltas();
 		const slicedDeltas = isPartial
 			? sliceDeltas(deltas, sliceFrom, sliceTo)
 			: deltas;
@@ -251,7 +251,14 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 
 	const htmlContent = htmlParts.join("\n");
 	const plainText =
-		mdParts.join("\n") || blocks.map((b) => b.textContent()).join("\n");
+		mdParts.join("\n") ||
+		penBlocks
+			.map((block) =>
+				serializeDeltasToFormat(block.deltas ?? [], editor, "text"),
+			)
+			.filter(Boolean)
+			.join("\n") ||
+		blocks.map((b) => b.textContent()).join("\n");
 
 	writePenClipboard(penBlocks, htmlContent, plainText, event, editor);
 }

@@ -144,7 +144,7 @@ const testBlocks = [
 	table,
 	image,
 	subdocument,
-] as BlockSchema[];
+];
 
 export function createDefaultSchema(): SchemaRegistry {
 	const blocks = new Map(testBlocks.map((schema) => [schema.type, schema]));

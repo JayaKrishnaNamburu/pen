@@ -260,6 +260,69 @@ describe("caret commands", () => {
 		editor.destroy();
 	});
 
+	it("N2: pen.caretDown geometry landing on a non-text block selects the block", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hi" },
+			{ id: "div", type: "divider" },
+		]);
+		const registry = createCommandHarness(editor);
+		setVerticalCaretMeasure(editor, () => ({
+			point: { blockId: "div", offset: 0 },
+			goalX: 40,
+		}));
+		editor.selectText("a", 1, 1);
+
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: ["div"],
+			head: "div",
+		});
+		expect(getVerticalCaretGoalX(editor)).toBeNull();
+		editor.destroy();
+	});
+
+	it("N2: pen.caretDown extend geometry landing on a non-text block matches crossBlock", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hi" },
+			{ id: "div", type: "divider" },
+		]);
+		const registry = createCommandHarness(editor);
+		setVerticalCaretMeasure(editor, () => ({
+			point: { blockId: "div", offset: 0 },
+			goalX: 40,
+		}));
+		editor.selectText("a", 1, 1);
+
+		expect(registry.dispatch(caretDown, { extend: true })).toBe(true);
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: ["div"],
+			head: "div",
+		});
+		expect(getVerticalCaretGoalX(editor)).toBeNull();
+		editor.destroy();
+	});
+
+	it("N2: pen.caretDown geometry landing on a table keeps a collapsed text caret", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hi" },
+			{ id: "t", type: "table" },
+		]);
+		const registry = createCommandHarness(editor);
+		setVerticalCaretMeasure(editor, () => ({
+			point: { blockId: "t", offset: 0 },
+			goalX: 40,
+		}));
+		editor.selectText("a", 1, 1);
+
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(editor.selection?.type).toBe("text");
+		expect(caretOf(editor)).toEqual({ blockId: "t", offset: 0 });
+		expect(getVerticalCaretGoalX(editor)).toBe(40);
+		editor.destroy();
+	});
+
 	it("pen.caretUp/Down use the injected geometry measure and persist goalX", () => {
 		const editor = createCommandEditor([
 			{ id: "a", type: "paragraph", text: "hello" },

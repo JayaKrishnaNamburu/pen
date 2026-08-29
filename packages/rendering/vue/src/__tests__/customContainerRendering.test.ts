@@ -8,7 +8,7 @@ import {
 	shouldRenderContainerChildren,
 } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema";
-import type { BlockSchema, Editor } from "@input/pen-types";
+import type { Editor } from "@input/pen-types";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
@@ -37,7 +37,7 @@ const emailQuote = defineBlock("emailQuote", {
 const schema = mergeSchemas(
 	defaultSchema,
 	new SchemaRegistryImpl({
-		blocks: [emailQuote as unknown as BlockSchema],
+		blocks: [emailQuote],
 		inlines: [],
 	}),
 );

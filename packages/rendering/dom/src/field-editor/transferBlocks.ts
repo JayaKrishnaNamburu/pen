@@ -1,4 +1,9 @@
-import type { DocumentOp, Editor, Position } from "@input/pen-types";
+import type {
+	DocumentOp,
+	Editor,
+	InlineInsert,
+	Position,
+} from "@input/pen-types";
 import type { FieldEditorTransferController } from "./controller";
 import type { Delta, PenBlock } from "../utils/clipboardPayload";
 import type { TransferCursorContext } from "./transferSelection";
@@ -255,8 +260,12 @@ function pasteInlineFragment(
 	if (!cursor?.isInline) return;
 
 	const plainText = deltasToPlainText(deltas);
-	if (!plainText) return;
-	if (plainText.includes("\n") || !hasAttributedDeltas(deltas)) {
+	const hasEmbeds = deltas.some((delta) => isEmbedInsert(delta.insert));
+	if (!plainText && !hasEmbeds) return;
+	if (
+		(plainText.includes("\n") || !hasStructuredDeltas(deltas)) &&
+		!hasEmbeds
+	) {
 		pasteInlineText(editor, fieldEditor, plainText, cursor, options);
 		return;
 	}
@@ -264,16 +273,17 @@ function pasteInlineFragment(
 	const ops: DocumentOp[] = [];
 	let offset = cursor.offset;
 	for (const delta of deltas) {
-		if (typeof delta.insert !== "string" || !delta.insert) continue;
+		const fragment = spliceFragmentFromDelta(delta);
+		if (!fragment) continue;
 		ops.push({
 			type: "splice-text",
 			blockId: cursor.blockId,
 			from: offset,
 			to: offset,
-			insert: delta.insert,
-			...(delta.attributes ? { marks: delta.attributes } : {}),
+			insert: fragment.insert,
+			...(fragment.marks ? { marks: fragment.marks } : {}),
 		});
-		offset += delta.insert.length;
+		offset += fragment.length;
 	}
 
 	if (ops.length === 0) return;
@@ -286,13 +296,7 @@ function pasteInlineFragment(
 
 function getPenBlockInlineDeltas(block: PenBlock): Delta[] {
 	if (Array.isArray(block.deltas)) {
-		const deltas = block.deltas.filter(
-			(delta) =>
-				delta &&
-				typeof delta === "object" &&
-				typeof delta.insert === "string" &&
-				delta.insert.length > 0,
-		);
+		const deltas = block.deltas.filter(isClipboardInlineDelta);
 		if (deltas.length > 0) return deltas;
 	}
 
@@ -311,16 +315,17 @@ function appendInlineContentOps(
 	let offset = 0;
 
 	for (const delta of deltas) {
-		if (typeof delta.insert !== "string" || !delta.insert) continue;
+		const fragment = spliceFragmentFromDelta(delta);
+		if (!fragment) continue;
 		ops.push({
 			type: "splice-text",
 			blockId,
 			from: offset,
 			to: offset,
-			insert: delta.insert,
-			...(delta.attributes ? { marks: delta.attributes } : {}),
+			insert: fragment.insert,
+			...(fragment.marks ? { marks: fragment.marks } : {}),
 		});
-		offset += delta.insert.length;
+		offset += fragment.length;
 	}
 
 	return offset;
@@ -332,10 +337,61 @@ function deltasToPlainText(deltas: Delta[]): string {
 		.join("");
 }
 
-function hasAttributedDeltas(deltas: Delta[]): boolean {
-	return deltas.some(
-		(delta) => delta.attributes && Object.keys(delta.attributes).length > 0,
+function hasStructuredDeltas(deltas: Delta[]): boolean {
+	return deltas.some((delta) => {
+		if (isEmbedInsert(delta.insert)) {
+			return true;
+		}
+		return !!delta.attributes && Object.keys(delta.attributes).length > 0;
+	});
+}
+
+function isEmbedInsert(
+	insert: Delta["insert"],
+): insert is { type: string; props?: Record<string, unknown> } {
+	return (
+		typeof insert === "object" &&
+		insert !== null &&
+		typeof insert.type === "string" &&
+		insert.type.length > 0
 	);
+}
+
+function isClipboardInlineDelta(delta: Delta): boolean {
+	if (!delta || typeof delta !== "object") {
+		return false;
+	}
+	if (typeof delta.insert === "string") {
+		return delta.insert.length > 0;
+	}
+	return isEmbedInsert(delta.insert);
+}
+
+function spliceFragmentFromDelta(delta: Delta): {
+	insert: InlineInsert;
+	marks?: Record<string, unknown>;
+	length: number;
+} | null {
+	if (typeof delta.insert === "string") {
+		if (!delta.insert) {
+			return null;
+		}
+		return {
+			insert: delta.insert,
+			marks: delta.attributes,
+			length: delta.insert.length,
+		};
+	}
+	if (!isEmbedInsert(delta.insert)) {
+		return null;
+	}
+	return {
+		insert: {
+			nodeType: delta.insert.type,
+			props: { ...(delta.insert.props ?? {}) },
+		},
+		length: 1,
+	};
 }
 
 function appendTableChildrenOps(

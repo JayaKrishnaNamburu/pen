@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-	type BlockSchema,
 	type Editor,
 	type KeyBinding,
 } from "@input/pen-types";
@@ -86,7 +85,7 @@ describe("collectKeyBindings K1", () => {
 			schema: mergeSchemas(
 				createDefaultSchema(),
 				new SchemaRegistryImpl({
-					blocks: [keyed as unknown as BlockSchema],
+					blocks: [keyed],
 					inlines: [],
 				}),
 			),

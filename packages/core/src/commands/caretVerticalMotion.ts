@@ -1,7 +1,9 @@
 import type { CommandResult, Editor } from "@input/pen-types";
 
 import {
+	blockSelectionResult,
 	emitCommandDiagnostic,
+	getBlockInputMode,
 	isEditableTextBlock,
 	readTextFocus,
 } from "./helpers";
@@ -50,6 +52,22 @@ export function handleVerticalCaret(
 
 	const measured = measureVerticalStep(editor, focus, direction);
 	if (measured) {
+		const measuredBlockId = measured.point.blockId;
+		if (
+			!isEditableTextBlock(editor, measuredBlockId) &&
+			getBlockInputMode(editor, measuredBlockId) !== "table"
+		) {
+			// Block selection has no column. Drop goalX so the next
+			// geometry step does not reuse a stale horizontal target (G5).
+			setVerticalCaretGoalX(editor, null);
+			return {
+				selection: extendSelection(
+					editor,
+					param.extend,
+					blockSelectionResult([measuredBlockId]),
+				),
+			};
+		}
 		setVerticalCaretGoalX(editor, measured.goalX);
 		return {
 			selection: extendSelection(editor, param.extend, measured.point),

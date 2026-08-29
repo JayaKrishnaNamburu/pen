@@ -1,5 +1,5 @@
 import { createDefaultSchema } from "./fixtures/testSchema";
-import type { BlockSchema, CommitEvent, Editor } from "@input/pen-types";
+import type { CommitEvent, Editor } from "@input/pen-types";
 import {
 	defineBlock,
 	mergeSchemas,
@@ -51,8 +51,8 @@ const countedSchema = mergeSchemas(
 	createDefaultSchema(),
 	new SchemaRegistryImpl({
 		blocks: [
-			counted as unknown as BlockSchema,
-			columns as unknown as BlockSchema,
+			counted,
+			columns,
 		],
 		inlines: [],
 	}),

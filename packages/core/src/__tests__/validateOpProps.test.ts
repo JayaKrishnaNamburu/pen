@@ -1,4 +1,4 @@
-import type { BlockSchema, DiagnosticEvent } from "@input/pen-types";
+import type { DiagnosticEvent } from "@input/pen-types";
 import { defineBlock, prop } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
@@ -26,7 +26,7 @@ function createEditor() {
 	return createCoreEditor({
 		preset: noDefaultExtensionsPreset,
 		schema: createDefaultSchema().extend([
-			widget as unknown as BlockSchema,
+			widget,
 		]),
 	});
 }

@@ -17,6 +17,8 @@ This is the contract package for the monorepo. It is the place where packages ag
 - Editor events: `PenEventMap` — `commit` (`CommitEvent`, whose `summary.affectedBlockIds` is the touched-block list), `selectionChange`, `historyApplied`, `decorationsChange`, `diagnostic`, `crdt:corruption`, `crdt:recovered`
 - Operation origin contracts such as `OpOriginType`, `StructuredOpOrigin` (including optional `intent`), `MutationGroupMetadata`, and helpers for resolving origin/group metadata
 - The closed `DocumentOp` union and its ten payloads (`splice-text`, `format-text`, `insert-block`, `delete-block`, `move-block`, `set-props`, `set-meta`, `grid`, `app`, `stream-open`)
+- `BlockSchema<Type, Props, Content>` defaults `Content` to `ContentType` (`"inline" | "none" | "table" | "subdocument" | BlockSchema[]`), not `"inline"`, so a nested-content or `content: "none"` block is a bare `BlockSchema` and belongs in `BlockSchema[]` / `SchemaRegistry.extend` without a cast (API10)
+- `InlineSchema.serialize.toText?(props)` is the optional plain-text interchange hook for inline atoms (`kind: "node"`). Marks keep `toMarkdown` / `toHTML` `(text, props)` and ignore `toText` (IOP8)
 - Change-summary contracts (`ChangeSummary`, `BlockTextChange`, `StructuralChange`, `TextSplice`)
 - Anchor contracts (`EditorAnchors`, `Anchor`, `AnchorRange`, `AnchorTarget`) and adapter relative-position method types
 - Document format stamp `PEN_DOCUMENT_FORMAT` (`3`)

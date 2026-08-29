@@ -14,7 +14,6 @@ import {
 import type {
 	BlockHandle,
 	BlockRenderContext,
-	BlockSchema,
 } from "@input/pen-types";
 import { defaultPreset } from "@input/pen";
 import { defaultSchema } from "@input/pen-schema";
@@ -43,7 +42,7 @@ const emailQuote = defineBlock("emailQuote", {
 const schema = mergeSchemas(
 	defaultSchema,
 	new SchemaRegistryImpl({
-		blocks: [emailQuote as unknown as BlockSchema],
+		blocks: [emailQuote],
 		inlines: [],
 	}),
 );

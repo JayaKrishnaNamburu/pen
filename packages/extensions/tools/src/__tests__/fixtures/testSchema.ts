@@ -126,7 +126,7 @@ const testBlocks = [
 	bulletListItem,
 	table,
 	subdocument,
-] as BlockSchema[];
+];
 
 function createTestSchema(): SchemaRegistry {
 	const blocks = new Map(testBlocks.map((schema) => [schema.type, schema]));

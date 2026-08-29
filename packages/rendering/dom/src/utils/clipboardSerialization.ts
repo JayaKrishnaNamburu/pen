@@ -95,8 +95,21 @@ export function writePenClipboard(
 		});
 }
 
+function deltaInsertLength(insert: Delta["insert"]): number {
+	if (typeof insert === "string") {
+		return insert.length;
+	}
+	return 1;
+}
+
+function isEmbedInsert(
+	insert: Delta["insert"],
+): insert is { type: string; props?: Record<string, unknown> } {
+	return typeof insert === "object" && insert !== null && "type" in insert;
+}
+
 export function sliceDeltas(
-	deltas: Delta[],
+	deltas: readonly Delta[],
 	from: number,
 	to: number,
 ): Delta[] {
@@ -104,19 +117,32 @@ export function sliceDeltas(
 	let offset = 0;
 
 	for (const delta of deltas) {
-		const text = typeof delta.insert === "string" ? delta.insert : null;
-		const len = text?.length ?? 1;
+		const len = deltaInsertLength(delta.insert);
 		const segStart = offset;
 		const segEnd = offset + len;
 
-		if (text == null || segEnd <= from || segStart >= to) {
+		if (segEnd <= from || segStart >= to) {
+			offset += len;
+			continue;
+		}
+
+		if (isEmbedInsert(delta.insert)) {
+			result.push({
+				insert: delta.insert,
+				...(delta.attributes ? { attributes: delta.attributes } : {}),
+			});
+			offset += len;
+			continue;
+		}
+
+		if (typeof delta.insert !== "string" || len === 0) {
 			offset += len;
 			continue;
 		}
 
 		const sliceStart = Math.max(from - segStart, 0);
 		const sliceEnd = Math.min(to - segStart, len);
-		const sliced = text.slice(sliceStart, sliceEnd);
+		const sliced = delta.insert.slice(sliceStart, sliceEnd);
 
 		if (sliced) {
 			result.push({
@@ -130,15 +156,46 @@ export function sliceDeltas(
 	return result;
 }
 
-export function serializeDeltasToFormat(
-	deltas: Delta[],
+function atomInterchangeText(
 	editor: Editor,
-	format: "html" | "markdown",
+	insert: { type: string; props?: Record<string, unknown> },
+	format: "html" | "markdown" | "text",
+): string {
+	const inlineSchema = editor.schema.resolveInline(insert.type);
+	if (!inlineSchema || inlineSchema.kind !== "node") {
+		return "";
+	}
+	const props = insert.props ?? {};
+	const toText = inlineSchema.serialize?.toText;
+	const toMarkdown = inlineSchema.serialize?.toMarkdown;
+	const toHTML = inlineSchema.serialize?.toHTML;
+	const plain = toText?.(props) ?? toMarkdown?.("", props) ?? "";
+
+	if (format === "html") {
+		if (toHTML) {
+			return toHTML("", props);
+		}
+		return plain ? escapeHtmlText(plain) : "";
+	}
+	if (format === "markdown") {
+		return toMarkdown?.("", props) ?? toText?.(props) ?? "";
+	}
+	return plain;
+}
+
+export function serializeDeltasToFormat(
+	deltas: readonly Delta[],
+	editor: Editor,
+	format: "html" | "markdown" | "text",
 ): string {
 	if (deltas.length === 0) return "";
 
 	let result = "";
 	for (const delta of deltas) {
+		if (isEmbedInsert(delta.insert)) {
+			result += atomInterchangeText(editor, delta.insert, format);
+			continue;
+		}
 		if (typeof delta.insert !== "string") continue;
 		let text = delta.insert;
 		if (!text) continue;
@@ -165,7 +222,7 @@ export function serializeDeltasToFormat(
 							? admitClipboardLinkProps(editor, rawProps)
 							: rawProps,
 					);
-				} else {
+				} else if (format === "markdown") {
 					if (!inlineSchema?.serialize?.toMarkdown) continue;
 					text = inlineSchema.serialize.toMarkdown(
 						text,
@@ -195,4 +252,3 @@ function admitClipboardLinkProps(
 	}
 	return { ...props, href };
 }
-

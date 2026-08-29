@@ -16,7 +16,7 @@ import {
 	link,
 } from "@input/pen-schema";
 import { initBlockMap, wrapYjsDocument, yjsAdapter } from "@input/pen-yjs";
-import type { BlockSchema, LayoutSchema } from "@input/pen-types";
+import type { LayoutSchema } from "@input/pen-types";
 import {
 	createTestDocument,
 	createTestEditor,
@@ -67,7 +67,7 @@ describe("SchemaEngineImpl — layout containers and deep comparison", () => {
       const reg = mergeSchemas(
         defaultSchema,
         new SchemaRegistryImpl({
-          blocks: [layoutBlock as unknown as BlockSchema],
+          blocks: [layoutBlock],
         }),
       );
 
@@ -239,7 +239,7 @@ describe("SchemaEngineImpl — layout containers and deep comparison", () => {
       const reg = mergeSchemas(
         defaultSchema,
         new SchemaRegistryImpl({
-          blocks: [layoutBlock as unknown as BlockSchema],
+          blocks: [layoutBlock],
         }),
       );
 
@@ -280,7 +280,7 @@ describe("SchemaEngineImpl — layout containers and deep comparison", () => {
       const reg = mergeSchemas(
         defaultSchema,
         new SchemaRegistryImpl({
-          blocks: [layoutBlock as unknown as BlockSchema],
+          blocks: [layoutBlock],
         }),
       );
 

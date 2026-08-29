@@ -56,7 +56,7 @@ function passthroughBlockSchema(type: string): BlockSchema {
 			selectionRole: "structural",
 			flowCapability: "flow-structural",
 		},
-	} as unknown as BlockSchema;
+	};
 }
 
 export class SchemaRegistryImpl implements ComposableSchema {

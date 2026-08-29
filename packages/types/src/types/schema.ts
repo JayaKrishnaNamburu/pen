@@ -102,7 +102,7 @@ export interface BlockAuthoring {
 export interface BlockSchema<
   Type extends string = string,
   Props extends Record<string, PropSchema> = Record<string, PropSchema>,
-  Content extends ContentType = "inline",
+  Content extends ContentType = ContentType,
 > {
   type: Type;
   propSchema: Props;
@@ -110,18 +110,18 @@ export interface BlockSchema<
   layout?: LayoutSchema;
 
   serialize: {
-    toMarkdown?: (block: Block<Type, InferProps<Props>>) => string;
-    fromMarkdown?: (node: MarkdownNode) => BlockImportMatch<Type, InferProps<Props>> | null;
-    toHTML?: (block: Block<Type, InferProps<Props>>) => string;
-    fromHTML?: (
+    toMarkdown?(block: Block<Type, InferProps<Props>>): string;
+    fromMarkdown?(node: MarkdownNode): BlockImportMatch<Type, InferProps<Props>> | null;
+    toHTML?(block: Block<Type, InferProps<Props>>): string;
+    fromHTML?(
       element: HTMLImportElement,
-    ) => BlockImportMatch<Type, InferProps<Props>> | null;
-    toXML?: (block: Block<Type, InferProps<Props>>) => string;
-    fromXML?: (element: XMLElement) => Block<Type, InferProps<Props>> | null;
+    ): BlockImportMatch<Type, InferProps<Props>> | null;
+    toXML?(block: Block<Type, InferProps<Props>>): string;
+    fromXML?(element: XMLElement): Block<Type, InferProps<Props>> | null;
   };
 
-  normalize?: (block: Block<Type, InferProps<Props>>) => Block<Type, InferProps<Props>>;
-  validateProps?: (raw: Record<string, unknown>) => InferProps<Props>;
+  normalize?(block: Block<Type, InferProps<Props>>): Block<Type, InferProps<Props>>;
+  validateProps?(raw: Record<string, unknown>): InferProps<Props>;
   fieldEditor?: FieldEditorType;
   keyBindings?: readonly KeyBinding[];
   placeholder?: string;
@@ -147,6 +147,8 @@ export interface InlineSchema<
     fromMarkdown?: (node: MarkdownNode) => Record<string, unknown> | null;
     toHTML?: (text: string, props: Record<string, unknown>) => string;
     toXML?: (text: string, props: Record<string, unknown>) => string;
+    /** Plain-text interchange for inline atoms (`kind: "node"`). Marks ignore this. */
+    toText?: (props: Record<string, unknown>) => string;
   };
 
   apply?(content: unknown, range: Range, value: unknown): void;

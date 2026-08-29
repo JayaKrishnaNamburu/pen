@@ -7,7 +7,7 @@ import {
 	PEN_CLIPBOARD_JSON_MIME_LEGACY,
 	type Editor,
 } from "@input/pen-types";
-import { handleCopy } from "../field-editor/clipboard";
+import { handleCopy, handleCut } from "../field-editor/clipboard";
 import { executePasteTransfer } from "../field-editor/transferPaste";
 import type { FieldEditorTransferController } from "../field-editor/controller";
 import {
@@ -259,6 +259,90 @@ describe("clipboard JSON-flavor paste", () => {
 
 		source.destroy();
 		target.destroy();
+	});
+
+	it("IOP7: cut then paste keeps an inline atom in the Pen JSON flavor", async () => {
+		const editor = createBareEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
+				to: 0,
+				insert: [
+					"hello ",
+					{
+						nodeType: "mention",
+						props: { id: "user-1", label: "Ada" },
+					},
+					" world",
+				],
+			},
+		]);
+
+		expect(editor.getBlock(blockId)!.inlineDeltas()).toEqual([
+			{ insert: "hello " },
+			{
+				insert: {
+					type: "mention",
+					props: { id: "user-1", label: "Ada" },
+				},
+			},
+			{ insert: " world" },
+		]);
+
+		const clipboardData = createClipboardData({});
+		editor.selectText(blockId, 0, editor.getBlock(blockId)!.length());
+		handleCut(editor, { clipboardData } as ClipboardEvent);
+
+		const specFlavor = clipboardData.getData(PEN_CLIPBOARD_JSON_MIME);
+		const copied = parsePenClipboardPayload(specFlavor);
+		expect(copied.status).toBe("ok");
+		if (copied.status === "ok") {
+			expect(copied.payload.blocks[0]?.deltas).toEqual([
+				{ insert: "hello " },
+				{
+					insert: {
+						type: "mention",
+						props: { id: "user-1", label: "Ada" },
+					},
+				},
+				{ insert: " world" },
+			]);
+		}
+
+		const remaining = editor.firstBlock()!;
+		expect(remaining.textContent()).toBe("");
+		expect(
+			remaining
+				.inlineDeltas()
+				.some((delta) => typeof delta.insert !== "string"),
+		).toBe(false);
+
+		editor.selectText(remaining.id, 0, 0);
+		await executePasteTransfer({
+			source: "paste",
+			editor,
+			dataTransfer: createClipboardData({
+				[PEN_CLIPBOARD_JSON_MIME]: specFlavor,
+			}),
+			fieldEditor: createFieldEditorStub(),
+		});
+
+		const pasted = editor.getBlock(editor.firstBlock()!.id)!;
+		expect(pasted.inlineDeltas()).toEqual([
+			{ insert: "hello " },
+			{
+				insert: {
+					type: "mention",
+					props: { id: "user-1", label: "Ada" },
+				},
+			},
+			{ insert: " world" },
+		]);
+
+		editor.destroy();
 	});
 
 	it("SEC4: oversized clipboard JSON emits import-truncated", async () => {

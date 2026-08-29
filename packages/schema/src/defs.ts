@@ -26,7 +26,7 @@ import {
 } from "./inlines/marks";
 import { mention, inlineApp } from "./inlines/nodes";
 
-export const defaultBlocks = [
+export const defaultBlocks: BlockSchema[] = [
   paragraph,
   heading,
   bulletListItem,
@@ -40,7 +40,7 @@ export const defaultBlocks = [
   toggle,
   blockquote,
   subdocument,
-] as BlockSchema[];
+];
 
 export const defaultInlines = [
   bold,

@@ -1,5 +1,4 @@
 import type {
-	BlockSchema,
 	CommitEvent,
 	DiagnosticEvent,
 	DocumentOp,
@@ -602,7 +601,7 @@ describe("apply pipeline contract (Lane 179)", () => {
 	it("walks layout children from editor.blocks and documentState.allBlocks", () => {
 		const editor = createEditor({
 			schema: createDefaultSchema().extend([
-				columns as unknown as BlockSchema,
+				columns,
 			]),
 		});
 		const rootId = editor.firstBlock()!.id;

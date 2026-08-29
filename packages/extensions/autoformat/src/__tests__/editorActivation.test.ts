@@ -5,7 +5,6 @@ import {
 	SchemaRegistryImpl,
 } from "@input/pen-core";
 import type {
-	BlockSchema,
 	ComposableSchema,
 	InlineSchema,
 } from "@input/pen-types";
@@ -44,7 +43,7 @@ const bold: InlineSchema = {
 
 function createTestSchema(): ComposableSchema {
 	return new SchemaRegistryImpl({
-		blocks: [paragraph, heading] as unknown as BlockSchema[],
+		blocks: [paragraph, heading],
 		inlines: [bold],
 	});
 }

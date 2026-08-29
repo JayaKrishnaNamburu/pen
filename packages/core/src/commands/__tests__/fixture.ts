@@ -1,5 +1,4 @@
 import type {
-	BlockSchema,
 	Editor,
 	FacetProvider,
 	InlineSchema,
@@ -161,7 +160,7 @@ export function createCommandTestSchema() {
 			divider,
 			table,
 			codeBlock,
-		] as unknown as BlockSchema[],
+		],
 		inlines: [
 			bold,
 			italic,

@@ -1,5 +1,4 @@
 import type {
-	BlockSchema,
 	ComposableSchema,
 	InlineSchema,
 	PropSchema,
@@ -202,7 +201,7 @@ const testBlocks = [
 	codeBlock,
 	bulletListItem,
 	image,
-] as BlockSchema[];
+];
 
 const testInlines = [bold, mention] as InlineSchema[];
 

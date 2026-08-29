@@ -1,4 +1,3 @@
-import type { BlockSchema } from "@input/pen-types";
 import { defineBlock, mergeSchemas, SchemaRegistryImpl } from "../index";
 import { describe, expect, it } from "vitest";
 
@@ -22,7 +21,7 @@ const flowDisallowedWidget = defineBlock("widget", {
 const flowPolicySchema = mergeSchemas(
 	createDefaultSchema(),
 	new SchemaRegistryImpl({
-		blocks: [flowDisallowedWidget as unknown as BlockSchema],
+		blocks: [flowDisallowedWidget],
 		inlines: [],
 	}),
 );

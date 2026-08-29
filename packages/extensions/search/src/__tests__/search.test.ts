@@ -1,5 +1,5 @@
 import { createHeadlessEditor, defineBlock } from "@input/pen-core";
-import type { BlockSchema, DiagnosticEvent, Editor } from "@input/pen-types";
+import type { DiagnosticEvent, Editor } from "@input/pen-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDefaultSchema, defaultSchema } from "@input/pen-schema";
 import {
@@ -307,7 +307,7 @@ describe("@input/pen-search helpers", () => {
 		});
 		const editor = createHeadlessEditor({
 			schema: createDefaultSchema().extend([
-				columns as unknown as BlockSchema,
+				columns,
 			]),
 		});
 

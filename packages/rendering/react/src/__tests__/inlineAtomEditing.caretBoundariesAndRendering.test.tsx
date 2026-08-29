@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import React, { act } from "react";
+import React, { act, createContext, useContext, useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
@@ -386,6 +386,89 @@ describe("Pen inline atom editing: caret boundaries and rendering", () => {
 			expect(renderedAtom?.getAttribute("data-selected")).toBe("true");
 			expect(atom?.hasAttribute(DATA_ATTRS.selected)).toBe(true);
 		} finally {
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		}
+	});
+
+	it("keeps hook order stable when an inline atom renderer uses hooks", async () => {
+		const editor = createPresetEditor();
+		const blockId = seedInlineAtomDocument(editor);
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		const AtomRenderContext = createContext("chip");
+		const hookErrors: string[] = [];
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation((...args: unknown[]) => {
+				hookErrors.push(args.map(String).join(" "));
+			});
+
+		function MentionRenderer(props: {
+			props: Record<string, unknown>;
+			text: string;
+		}) {
+			const label = useContext(AtomRenderContext);
+			useLayoutEffect(() => {
+				void label;
+			}, [label]);
+			return (
+				<span data-testid="hooked-mention">
+					{String(props.props.label)}:{props.text}
+				</span>
+			);
+		}
+
+		try {
+			await act(async () => {
+				root.render(
+					<AtomRenderContext.Provider value="chip">
+						<Pen.Editor.Root
+							editor={editor}
+							inlineAtomRenderers={{
+								mention: MentionRenderer,
+							}}
+						>
+							<Pen.Editor.Content />
+						</Pen.Editor.Root>
+					</AtomRenderContext.Provider>,
+				);
+				await flushAnimationFrames(2);
+			});
+
+			expect(
+				container.querySelector("[data-testid='hooked-mention']")
+					?.textContent,
+			).toBe("Ada:@Ada");
+			expect(
+				hookErrors.some((message) =>
+					/change in the order of Hooks|Rendered more hooks than during the previous render/i.test(
+						message,
+					),
+				),
+			).toBe(false);
+
+			await act(async () => {
+				editor.selectTextRange(
+					{ blockId, offset: 1 },
+					{ blockId, offset: 2 },
+				);
+				await flushAnimationFrames(2);
+			});
+
+			expect(
+				hookErrors.some((message) =>
+					/change in the order of Hooks|Rendered more hooks than during the previous render/i.test(
+						message,
+					),
+				),
+			).toBe(false);
+		} finally {
+			consoleError.mockRestore();
 			await act(async () => {
 				root.unmount();
 			});
