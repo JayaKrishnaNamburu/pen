@@ -36,6 +36,7 @@ function embedRecordFromAtom(atom: {
 			embed[key] = atom.props[key];
 		}
 	}
+	// SCH1: `type` is the embed discriminator, not a host prop.
 	embed.type = atom.nodeType;
 	return embed;
 }
@@ -294,16 +295,14 @@ export function getPreservedInlineDeltas(
 	if (!content || typeof content.toDelta !== "function") {
 		return [];
 	}
-	return content
-		.toDelta()
-		.filter(
-			(
-				delta,
-			): delta is {
-				insert: string;
-				attributes?: Record<string, unknown>;
-			} => typeof delta.insert === "string",
-		);
+	return content.toDelta().filter(
+		(
+			delta,
+		): delta is {
+			insert: string;
+			attributes?: Record<string, unknown>;
+		} => typeof delta.insert === "string",
+	);
 }
 
 export function setMeta(

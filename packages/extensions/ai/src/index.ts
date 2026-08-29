@@ -23,10 +23,7 @@ export {
 export { AICommandRegistry } from "./commands/registry";
 export { defaultAICommands } from "./commands/defaultCommands";
 export { AI_TARGET_KINDS } from "./runtime/contracts";
-export type {
-	AIMutationPreference,
-	AITargetKind,
-} from "./runtime/contracts";
+export type { AIMutationPreference, AITargetKind } from "./runtime/contracts";
 export {
 	acceptSuggestion,
 	rejectSuggestion,
@@ -104,3 +101,8 @@ export type {
 	ApplySuggestedAIOperationsOptions,
 	ApplySuggestedAIOperationsResult,
 } from "./suggestions/applySuggestedAIOperations";
+
+export {
+	REVIEW_SURFACE_CLASSES,
+	REVIEW_SURFACE_CUSTOM_PROPERTIES,
+} from "@input/pen-types";

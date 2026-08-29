@@ -2,6 +2,7 @@ node_modules/
 dist/
 .generated/
 .turbo/
+.tmp-dts-consumer/
 coverage/
 *.tsbuildinfo
 .DS_Store

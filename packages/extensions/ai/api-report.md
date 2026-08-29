@@ -39,6 +39,8 @@
 - aiEgressFacet
 - defaultAICommands
 - filterAIRequest
+- REVIEW_SURFACE_CLASSES
+- REVIEW_SURFACE_CUSTOM_PROPERTIES
 - streamThroughEgress
 - SUGGESTION_RESOLUTION_ORIGIN
 

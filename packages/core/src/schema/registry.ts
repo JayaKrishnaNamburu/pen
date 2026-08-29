@@ -24,6 +24,26 @@ export interface SchemaRegistryConfig {
 	) => InlineSchema | "drop" | "passthrough";
 }
 
+/** Embed records store the atom discriminator on `type` and flatten props beside it. */
+const RESERVED_INLINE_ATOM_PROP = "type";
+
+function assertInlineAtomPropKeys(schema: InlineSchema): void {
+	if (schema.kind !== "node") {
+		return;
+	}
+	if (
+		schema.propSchema != null &&
+		Object.prototype.hasOwnProperty.call(
+			schema.propSchema,
+			RESERVED_INLINE_ATOM_PROP,
+		)
+	) {
+		throw new Error(
+			`Inline atom schema "${schema.type}" cannot declare a prop named "${RESERVED_INLINE_ATOM_PROP}": that key is the Y.Text embed discriminator, so the prop cannot be stored (SCH1). Rename the prop.`,
+		);
+	}
+}
+
 function passthroughBlockSchema(type: string): BlockSchema {
 	return {
 		type,
@@ -54,6 +74,13 @@ export class SchemaRegistryImpl implements ComposableSchema {
 	) => InlineSchema | "drop" | "passthrough";
 
 	constructor(config: SchemaRegistryConfig) {
+		for (const schema of config.inlines ?? []) {
+			assertInlineAtomPropKeys(schema);
+		}
+		for (const schema of config.systemMarks ?? []) {
+			assertInlineAtomPropKeys(schema);
+		}
+
 		this._blocks = new Map(
 			config.blocks?.map((schema) => [schema.type, schema]),
 		);

@@ -91,7 +91,7 @@ Headless editors default to the core apply pipeline only, same as bare `createEd
 - React and Vue `useEditor()` inject `defaultSchema` and still install no preset. Same empty extension list as bare `createEditor()`.
 - On core's constructors, use `createEditor({ preset: defaultPreset(...) })` or explicit `extensions` for feature composition.
 - Server/workflow adoption starts with `createHeadlessEditor()` plus a wrapped CRDT document, then a preset or extensions when the workflow needs more than apply; `@input/pen`'s `createHeadlessEditor()` carries the batteries default for workflows that want the standard stack.
-- Schema composition happens here through the registry/merge APIs, not in renderer packages
+- Schema composition happens here through the registry/merge APIs, not in renderer packages. SCH1: an inline atom (`InlineSchema.kind === "node"`) may not declare a prop named `type`. Y.Text embed records store the atom discriminator on `type` and flatten the remaining keys beside it (`embedRecordFromAtom` / `toInlineDeltaInsert`); a host prop of that name cannot be stored without changing the layout. `SchemaRegistryImpl` throws at construction. Marks are unaffected. Hosts that need a type-like field rename it (for example `contextType`).
 - Serialization packages and tool packages should treat the editor as the authority boundary, even when they export convenience helpers
 
 ## Current Maturity / Intended Usage

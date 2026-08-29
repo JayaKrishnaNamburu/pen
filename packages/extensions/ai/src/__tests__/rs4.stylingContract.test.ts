@@ -7,6 +7,10 @@ import {
 	REVIEW_SURFACE_CLASSES,
 	REVIEW_SURFACE_CUSTOM_PROPERTIES,
 } from "@input/pen-types";
+import {
+	REVIEW_SURFACE_CLASSES as REVIEW_SURFACE_CLASSES_FROM_AI,
+	REVIEW_SURFACE_CUSTOM_PROPERTIES as REVIEW_SURFACE_CUSTOM_PROPERTIES_FROM_AI,
+} from "../index";
 
 /**
  * RS4: one styling contract, exported once.
@@ -25,6 +29,13 @@ const VOCABULARY = [
 ];
 
 describe("RS4: review class names resolve from one vocabulary", () => {
+	it("RS4: pen-ai re-exports the class and theme vocabulary from types", () => {
+		expect(REVIEW_SURFACE_CLASSES_FROM_AI).toBe(REVIEW_SURFACE_CLASSES);
+		expect(REVIEW_SURFACE_CUSTOM_PROPERTIES_FROM_AI).toBe(
+			REVIEW_SURFACE_CUSTOM_PROPERTIES,
+		);
+	});
+
 	it("RS4: the vocabulary is a closed set of distinct names", () => {
 		expect(VOCABULARY.length).toBeGreaterThan(0);
 		expect(new Set(VOCABULARY).size).toBe(VOCABULARY.length);

@@ -12,7 +12,7 @@ Ship the default block and inline definitions used by most applications and test
 
 - Export map: `.`, `./defs`
 - `createDefaultSchema()` and the prebuilt `defaultSchema`
-- Named block defs such as `paragraph`, `heading`, `table`, `callout`, `blockquote`, `toggle`, `checkListItem`, and `subdocument`, plus named marks/inlines such as `bold`, `link`, `mention`
+- Named block defs such as `paragraph`, `heading`, `table`, `callout`, `blockquote`, `toggle`, `checkListItem`, and `subdocument`, plus named marks/inlines such as `bold`, `link`, `mention`. Inline atoms reserve `type` as the embed discriminator (SCH1 in `packages/core.md`); none of the shipped node inlines declare that prop.
 - `./defs` also exports the `defaultBlocks` and `defaultInlines` collections
 - Display-catalog helpers: `SCHEMA_DISPLAY_CATALOG`, `resolveDisplayCopy()`, `resolveDisplayGroup()`, `schemaDisplayKey()`, `schemaGroupKey()`
 - Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
