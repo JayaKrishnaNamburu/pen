@@ -14,7 +14,7 @@ This package sits just outside the editor runtime. It turns untrusted external m
 
 - Export map: `.`, `./html`, `./markdown`, `./json`, `./xml`, `./package.json`
 - Root re-exports the format barrels. Prefer the format subpath when a host only needs one format.
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

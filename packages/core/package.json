@@ -44,6 +44,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
+    "dev": "tsup --watch --no-clean",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "catalog:check": "node ../../scripts/catalog-check.mjs",

@@ -12,7 +12,7 @@ Provide shared lower-level helpers used by higher-level packages.
 
 - Export map: `.`
 - Owned here: `exportMarkdownForBlocks()`, `exportMarkdownRange()`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

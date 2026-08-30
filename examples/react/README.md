@@ -12,7 +12,7 @@ From the repository root:
 
 ```bash
 pnpm install
-pnpm dev -- --filter=@input/pen-example-react
+pnpm dev -- --filter=@input/pen-example-react...
 ```
 
 The post-publish consumer command, including peers, will be:
@@ -46,4 +46,4 @@ Pen ships no required stylesheet — the editor is functional unstyled, includin
 
 ## Run
 
-Requires Node 22+ and pnpm 10. The install commands above start Vite at `http://localhost:5173`.
+Requires Node 22+ and pnpm 10. The install commands above start Vite at `http://localhost:5175`.

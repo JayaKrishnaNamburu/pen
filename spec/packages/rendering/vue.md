@@ -15,7 +15,7 @@ This package gives Vue applications a lean but real renderer surface: core edito
 - Composables such as `useEditor`, `useSelection`, `useBlockList`, and `useDecorations`
 - Plugin export: `PenVuePlugin`
 - Public renderer and paste-importer types such as `RendererOverrides` and `PasteImporters`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

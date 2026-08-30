@@ -6,7 +6,7 @@
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --concurrency=32",
     "sync:package-metadata": "node scripts/sync-package-metadata.mjs",
     "test": "turbo run test",
     "test:e2e": "playwright test",

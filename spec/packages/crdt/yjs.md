@@ -22,7 +22,7 @@ Bridge Pen contracts to a specific CRDT implementation.
 - Document lifecycle: `validateDocument()`, `createYjsSubdocument()`, `getDocumentProfile()` / `setDocumentProfile()`, `getDocumentLoadReport()`, `readFormatStamp()` / `refreshFormatStamp()`
 - Awareness wire helpers `encodeYjsAwarenessUpdate()` and `applyYjsAwarenessUpdate()`
 - Format stamp helpers; new documents stamp `PEN_DOCUMENT_FORMAT` (`3`)
-- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

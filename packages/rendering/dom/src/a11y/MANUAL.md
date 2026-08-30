@@ -10,7 +10,7 @@ Do not mark a row complete without a dated pass of all five scripted scenarios b
 
 Do **VO-mac first** (VoiceOver + Safari on macOS). That is the cheapest required row and takes one sitting if the host is already running.
 
-1. From the repo root, start the playground UI: `pnpm --filter @input/pen-playground dev` — open `http://localhost:5173`.
+1. From the repo root, start the playground UI: `pnpm dev -- --filter=@input/pen-playground...` — open `http://localhost:5173`.
 2. Build a fixture that matches **Host and fixture** below (or load a document that already has those blocks). Confirm the surface has an `aria-label` from `pen.a11yLabel`.
 3. Enable VoiceOver (`Cmd-F5`). Keyboard only after the page is loaded.
 4. Run scenarios 1–5 in order. Tick the VO-mac boxes only after that session. Record tester, date, OS, VO version, Safari version, and host in the matrix row.

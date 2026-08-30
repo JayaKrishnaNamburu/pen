@@ -24,7 +24,7 @@ Every higher-level package depends on the contracts and runtime behavior establi
 - Core facets including `keymapFacet` (`pen.keymap`), `inputRulesFacet`, `beforeApplyFacet`, `decorationsFacet`, `commandsFacet`, `ariaReadOnlyFacet`, `clipboardFacet` (R8: merged paste-importer table), `urlPolicyFacet`, `localeFacet` (`pen.locale`), `messagesFacet` (`pen.messages`), `a11yLabelFacet` (`pen.a11yLabel`), and `aiEgressFacet` (`pen.aiEgress`)
 - `streamThroughEgress()` / `aiEgressExtension()` — generation, suggestions, and autocomplete share this single egress seam
 - The SEC1 URL admission policy (`urlPolicy`, `UrlContext`, `UrlPolicy`) next to `urlPolicyFacet`; `@input/pen-dom` re-exports it for renderer hosts, and the exporters read it from here so no extension depends on a renderer
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

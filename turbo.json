@@ -15,6 +15,9 @@
     "test": {
       "dependsOn": ["build", "^build"]
     },
+    // ^build produces dist/ once so Vite can boot. Library `dev` scripts are
+    // `tsup --watch`; they stay persistent beside the apps and rebuild dist/
+    // as sources change. Do not dependsOn ^dev: persistent tasks never finish.
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

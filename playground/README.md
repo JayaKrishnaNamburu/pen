@@ -11,13 +11,15 @@ way — just React, plain CSS, and Pen.
 
 ```bash
 pnpm install
-pnpm build        # the playground imports the built packages
-pnpm --filter @input/pen-playground dev
+pnpm dev
 ```
 
 Open http://localhost:5173. The agent works immediately: with no API key a
 scripted model answers, so you can see the whole path without signing up for
-anything.
+anything. `pnpm dev` also watches the library packages and starts docs plus
+the examples on fixed ports (5174–5177). If 5173 is taken, Vite exits instead
+of hopping. Filter to this app and its watchers with
+`pnpm dev -- --filter=@input/pen-playground...`.
 
 ## Host it
 
@@ -44,8 +46,8 @@ and restart:
 echo 'ANTHROPIC_API_KEY=sk-ant-...' > playground/.env.local
 ```
 
-While hacking on Pen itself, run `pnpm build --watch` (or rebuild the package you
-are changing) so the playground picks it up.
+While hacking on Pen itself, `pnpm dev` rebuilds library `dist/` as you
+edit and reloads the playground on the new build.
 
 ## What is where
 

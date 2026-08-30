@@ -14,7 +14,7 @@ This package is the reversible-editing layer for live editing sessions. It does 
 - Primary extension entrypoint: `undoExtension()`
 - Public options surface: `UndoExtensionOptions`
 - Runtime manager: `UndoManagerImpl` — **internal since 2026-08-23, no longer on the barrel.** It is still the runtime manager; it is reached through `undoExtension()` rather than imported. Removed in the pre-publish surface shrink after a repo-wide grep found its only importers were `undo/src/**` and its own tests.
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

@@ -19,7 +19,7 @@ This package is the bridge between Pen's headless editor and tool-driven executi
 - `edit_document`: the block-addressed AI write tool, registered by `toolsExtension()`. Seven operations (`replace_block_text`, `replace_blocks`, `insert_blocks`, `delete_blocks`, `move_block`, `format_text`, `set_block_props`) returning an `EditDocumentResult`. Specified in `packages/extensions/ai.md` under Edit Channel.
 - Mutation policy: `assertToolCanMutateBlock()` throws for the older block tools; the non-throwing `check*` predicates behind it stay in-package because a returned refusal is what `edit_document` needs and a host needs neither.
 - Re-exported shared write helper: `buildDocumentWriteOps()`
-- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

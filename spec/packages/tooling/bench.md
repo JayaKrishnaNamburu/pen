@@ -16,7 +16,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 - Envelope and scale baselines: `buildEnvelopeRecord()`, `compareEnvelopeDrift()`, and their tolerance helpers
 - Fixtures: `createLargeDocument()`, `createScale3Editor()`, `createEnvelopeEditor()`
 - Reporters: `reportConsole()`, `reportJSON()`
-- Workspace scripts: `bench`, `bench:ci`, `bench:envelope`, `bench:anchors`, `build`, `clean`, `lint`, `test`, `typecheck`
+- Workspace scripts: `bench`, `bench:ci`, `bench:envelope`, `bench:anchors`, `build`, `clean`, `dev`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

@@ -14,7 +14,7 @@ This package used to sit _under_ core (core imported it) and later re-exported t
 - Implemented here: `parseMarkdownToBlocks()`, `splitPlainTextLineBlocks()`, `buildDocumentWriteOps()`, and the structured-target types
 - Import, profile-policy, and block-capability helpers (`blocksToOps()`, `normalizePendingBlocksForImport()`, `shouldExposeBlockInTooling()`, and siblings) export from `@input/pen-core` only
 - Structured-target descriptor types for tools and autocomplete write flows
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

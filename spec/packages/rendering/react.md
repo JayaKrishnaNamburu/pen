@@ -17,7 +17,7 @@ This package is where most adopters start when embedding Pen in a React applicat
 - Toolbar, slash-menu, selection-toolbar, search, AI, AI suggestions, history, and multiplayer primitives
 - Hooks such as `useEditor`, `useSelection`, `useDecorations`, `useBlockList`, `useSearch`, `useAI`, and related state hooks
 - Advanced contexts and renderer options for custom composition
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

@@ -12,7 +12,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 - Export map: `.`
 - Primary extension entrypoint: `richTextShortcutsExtension()`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

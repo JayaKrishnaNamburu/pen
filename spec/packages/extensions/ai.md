@@ -23,7 +23,7 @@ In current usage, `@input/pen-ai` is the headless orchestration layer for both i
 - Shared AI mutation contracts for selection-backed rewrites, scoped-range rewrites, block rewrites, and document transforms
 - Edit-channel configuration on `aiExtension()`: durable edits always go through `edit_document` (`tool-edit`); `editStreaming` (`AIEditStreaming`) and `mutationPreference` with runtime `setMutationPreference()`
 - Egress re-exports: `aiEgressFacet`, `aiEgressExtension()`, `streamThroughEgress()` from `@input/pen-core`
-- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

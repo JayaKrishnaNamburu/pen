@@ -12,7 +12,7 @@ Package the standard runtime stack for most adopters so they can start from a co
 
 - Export map: `.`
 - Root exports: `createEditor()` and `createHeadlessEditor()` (core's constructors with an omitted `preset` defaulted to `defaultPreset()`), `defaultPreset()`, `DefaultPresetOptions`, and the re-exported types `CreateEditorOptions` and `Editor`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

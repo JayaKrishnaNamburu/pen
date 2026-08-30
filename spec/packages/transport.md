@@ -15,7 +15,7 @@ Provide transport-specific wiring around Pen protocols and sessions. The live `E
 - `./sse`: server `createSSEHandler()`, client `sseTransport()`, types `SSEServerOptions`, `SSEClientOptions`, `SSEEvent`.
 - The root export re-exports both variants; the subpaths are the documented way to name the one in use.
 - `parsePenStreamRequest()` is internal to the SSE handler and deliberately not on any barrel.
-- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

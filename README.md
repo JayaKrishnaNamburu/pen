@@ -353,13 +353,29 @@ Expanded field-editor mode and table-cell editing always use contenteditable, ev
 
 ```bash
 pnpm install
+pnpm dev
+```
+
+`pnpm dev` builds workspace `dist/` once, then watches the libraries and starts every Vite app on a fixed port. If a port is taken, Vite exits instead of hopping:
+
+| App             | URL                   |
+| --------------- | --------------------- |
+| Playground      | http://localhost:5173 |
+| Docs            | http://localhost:5174 |
+| React example   | http://localhost:5175 |
+| Vue example     | http://localhost:5176 |
+| Vanilla example | http://localhost:5177 |
+
+A library edit rebuilds that package's `dist/` and reloads the open app; no manual rebuild or restart. To run one app and its watchers: `pnpm dev -- --filter=@input/pen-playground...`.
+
+```bash
 pnpm build
 pnpm test
 pnpm typecheck
 pnpm lint
 ```
 
-Prefer scoped runs while iterating: `pnpm --filter @input/pen-core test`. Browser coverage is `pnpm test:e2e`, which drives the playground. After `pnpm build`, `pnpm --dir playground run dev` runs that app locally; see [`playground/README.md`](playground/README.md). Any change to a published package needs a changeset (`pnpm changeset`). [`CONTRIBUTING.md`](CONTRIBUTING.md) has the full loop, including which gates run in CI.
+Prefer scoped runs while iterating: `pnpm --filter @input/pen-core test`. Browser coverage is `pnpm test:e2e`, which drives the playground. See [`playground/README.md`](playground/README.md). Any change to a published package needs a changeset (`pnpm changeset`). [`CONTRIBUTING.md`](CONTRIBUTING.md) has the full loop, including which gates run in CI.
 
 ## Community
 

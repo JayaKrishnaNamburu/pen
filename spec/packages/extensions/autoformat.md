@@ -11,7 +11,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

@@ -17,7 +17,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 - Fixtures: `encodeFixtureUpdate()`, `normalizeDocumentForSnapshot()`, `DEFAULT_PEN_ROOTS`, `PenFixtureError`
 - AI doubles: `createModelDouble()` and its types, used by the AI and transport suites
 - `simulateTyping()` / `simulateKeypress()` are methods on `TestEditor` rather than barrel exports
-- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

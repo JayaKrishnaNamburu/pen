@@ -28,6 +28,7 @@ The docs app should stay package-first and explicit about ownership. Use it to d
 - Path in workspace: `packages/docs`
 - Spec path mirrors workspace path: `packages/docs.md`
 - This package is workspace-only and exists to support docs, demos, and local development flows.
+- `pnpm --filter @input/pen-docs dev` (and `pnpm dev` from the root) binds the site to `http://localhost:5174` with `strictPort`.
 
 ## Current Maturity / Intended Usage
 

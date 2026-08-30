@@ -12,7 +12,7 @@ From the repository root:
 
 ```bash
 pnpm install
-pnpm dev -- --filter=@input/pen-example-vue
+pnpm dev -- --filter=@input/pen-example-vue...
 ```
 
 The post-publish consumer command, including peers, will be:
@@ -46,4 +46,4 @@ Client-only mount: Vue has no `"use client"` directive, so `@input/pen-vue` does
 
 ## Run
 
-Requires Node 22+ and pnpm 10. The install commands above start Vite at `http://localhost:5173`.
+Requires Node 22+ and pnpm 10. The install commands above start Vite at `http://localhost:5176`.

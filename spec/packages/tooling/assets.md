@@ -15,7 +15,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 - Upload enforces `maxSize` and reports `onProgress(0)` then `onProgress(1)` with no intermediate ticks, so hosts cannot accidentally depend on a progress curve this store does not have
 - `delete()` is implemented; nothing in Pen calls it
 - Falls back to a data URL when `URL.createObjectURL` is absent, which is what makes the store usable under Node
-- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

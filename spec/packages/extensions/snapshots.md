@@ -16,7 +16,7 @@ This package adds document-history capabilities around the editor without replac
 - `HistoryControllerImpl`, `SnapshotManager`, and `AutoSnapshotScheduler` are runtime internals; they are reached through `snapshotsExtension()` / `getSnapshotsController()`, not the barrel
 - Attribution helpers such as `getCharacterAttribution()` and `buildBlameRanges()`
 - Public history types covering config, controller state, authors, blame ranges, and auto-snapshot options
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

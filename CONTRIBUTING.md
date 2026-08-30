@@ -14,7 +14,32 @@ pnpm verify
 `pnpm verify` runs the same checks your pull request will meet, in the
 same order, and ends with a summary naming the GitHub check behind each
 failure. Prefer it over guessing which of the individual commands
-applies to your change. Useful flags:
+applies to your change.
+
+To run the playground, docs, and examples while hacking on library
+code:
+
+```bash
+pnpm dev
+```
+
+That command builds workspace `dist/` once, then watches every `tsup`
+package and starts each Vite app on a fixed port. Vite exits if the
+port is taken instead of hopping to a random one:
+
+| App             | URL                   |
+| --------------- | --------------------- |
+| Playground      | http://localhost:5173 |
+| Docs            | http://localhost:5174 |
+| React example   | http://localhost:5175 |
+| Vue example     | http://localhost:5176 |
+| Vanilla example | http://localhost:5177 |
+
+Edit a file under `packages/` and the matching `dist/` rebuilds, and the
+open app reloads on the new build. Filter to one app and its watchers
+with `pnpm dev -- --filter=@input/pen-playground...`.
+
+`pnpm verify` flags:
 
 ```bash
 pnpm verify --list          # print the plan without running it

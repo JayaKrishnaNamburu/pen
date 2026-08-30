@@ -6,7 +6,7 @@ Workspace package in the Pen monorepo.
 
 ## Public Role
 
-The reference app: the shortest honest example of embedding Pen. Someone who has never seen this repository should be able to clone it, run `pnpm dev`, and read the whole app in one sitting.
+The reference app: the shortest honest example of embedding Pen. Someone who has never seen this repository should be able to clone it, run `pnpm dev`, and read the whole app in one sitting. That command binds this app to `http://localhost:5173` with `strictPort`, so a collision exits instead of hopping; docs and the examples take 5174–5177. Library packages run `tsup --watch` beside it so a source edit rebuilds `dist/` and reloads this app, without a manual rebuild or restart.
 
 It stays narrow on purpose. A surface is added here only when a first-time embedder needs to see it — editor, AI agent, document inspector, optional collaboration. Package tests and the examples cover the rest.
 
@@ -23,7 +23,7 @@ It stays narrow on purpose. A surface is added here only when a first-time embed
 - Runtime dependencies: `@input/pen-ai`, `@input/pen-assets`, `@input/pen-core`, `@input/pen-dom`, `@input/pen-yjs`, `@input/pen-autoformat`, `@input/pen-multiplayer`, `@input/pen`, `@input/pen-react`, `@input/pen-types`, `@y/websocket-server`, `lib0`, `react`, `react-dom`, `ws`, `y-protocols`, `yjs`, `y-websocket`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This is a private app for development, experimentation, and demos.
-- It resolves Pen from built packages rather than source aliases, so it fails the way a real consumer would when an export map or `dist` build is wrong.
+- It resolves Pen from built packages rather than source aliases, so it fails the way a real consumer would when an export map or `dist` build is wrong. Vite excludes those workspace packages from dependency pre-bundling so a watch rebuild is visible without restarting the dev server.
 
 ## Data Flow / Runtime Model
 

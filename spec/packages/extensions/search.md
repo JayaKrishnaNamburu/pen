@@ -16,7 +16,7 @@ This package adds optional search behavior to an editor instance without couplin
 - `SearchControllerImpl` is the runtime controller; it is reached through `searchExtension()` / `getSearchController()`, not the barrel
 - Pure helpers such as `buildSearchRegex()`, `findDocumentMatches()`, `buildReplaceOps()`, and `buildReplaceAllOps()`
 - Search state and typing such as `SearchState`, `SearchMatch`, and `SearchOptions`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

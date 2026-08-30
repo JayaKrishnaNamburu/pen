@@ -673,9 +673,14 @@ async function collectFiles(directory, predicate, acc = []) {
 }
 
 export async function loadNamedPackages(repoRoot) {
+	// pnpm-workspace.yaml also lists `playground`. It is private, so the
+	// published-set walks below skip it, but prose that names it must still
+	// resolve — DOC1 asks whether a name exists in the workspace, not whether
+	// it ships.
 	const packageJsonPaths = [
 		...(await collectFiles(path.join(repoRoot, "packages"), (_p, name) => name === "package.json")),
 		...(await collectFiles(path.join(repoRoot, "examples"), (_p, name) => name === "package.json")),
+		path.join(repoRoot, "playground", "package.json"),
 	];
 	const packages = [];
 	for (const packageJsonPath of packageJsonPaths) {

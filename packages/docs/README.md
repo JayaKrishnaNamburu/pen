@@ -37,7 +37,9 @@ From the repository root, after `pnpm install`:
 pnpm --filter @input/pen-docs dev
 ```
 
-Vite serves the site at `http://localhost:5173`.
+Vite serves the site at `http://localhost:5174`. If that port is taken, Vite
+exits instead of hopping. `pnpm dev` from the repository root starts this app
+alongside the playground and the examples.
 
 ```bash
 pnpm --filter @input/pen-docs build

@@ -15,7 +15,7 @@ This package sits between `@input/pen-core` and renderer packages. It owns DOM-s
 - Also on the root: the geometry reader (`createGeometryReader()`, `measureWithRoot()`, `verticalCaretTarget()`, `collapsedRect()`, `getRootGeometry()`), `DomScheduler`, the URL policy surface (`urlPolicy`, `resolveEditorUrl()`, `urlPolicyFromEditor()`, `urlPolicyExtension()`), region selection (`RegionSelectionStore`, `attachContentGestures()`), inline-atom interaction helpers (`attachInlineAtomWrapperInteractions()`, `canDestructure()`, `destructureInlineAtom()`), and `createReducedMotionSignal()`
 - Field-editor exports such as `fullReconcileToDOM()`, `applyDeltaToDOM()`, selection bridge helpers, cross-block selection helpers, clipboard handlers, and field-editor store types. `fullReconcileDeltasToDOM()` is on `./field-editor/reconciler` only, not on the `./field-editor` barrel. Clipboard copy slices `inlineDeltas()` so embed inserts survive the JSON flavor (IOP7), and interchange flavors call the atom serialize hooks (IOP8).
 - DOM utility subpaths for renderer packages that need shared data-attribute or decoration helpers
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

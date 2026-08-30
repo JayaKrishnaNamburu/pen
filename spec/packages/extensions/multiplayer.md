@@ -17,7 +17,7 @@ This package adds collaboration awareness around the editor without turning itse
 - Presence helpers such as `assignMultiplayerColor()` and `normalizeMultiplayerColor()`
 - Public multiplayer state and snapshot types covering users, peers, cursors, selections, remote AI streaming, and session context
 - `MultiplayerController.getRemoteStreaming()` and `RemoteStreamingState` for the peers whose AI is generating
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `dev`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

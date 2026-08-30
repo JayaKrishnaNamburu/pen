@@ -27,10 +27,10 @@ Pen is unpublished. `pnpm add @input/pen-*` 404s. From the repository root:
 
 ```bash
 pnpm install
-pnpm dev -- --filter=@input/pen-example-react
+pnpm dev -- --filter=@input/pen-example-react...
 ```
 
-Same filter for `vue` and `vanilla`. Turbo builds workspace package `dist/` first, then Vite serves the app at `http://localhost:5173`.
+Same filter for `vue` and `vanilla`. Turbo builds workspace package `dist/` first, then watches those packages and Vite serves the app at a fixed port: React on `http://localhost:5175`, Vue on `http://localhost:5176`, vanilla on `http://localhost:5177`. Vite exits if the port is taken instead of hopping. `pnpm dev` from the repository root starts every app at those same URLs.
 
 ## Smoke
 
