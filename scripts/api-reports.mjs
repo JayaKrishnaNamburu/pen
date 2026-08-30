@@ -2,7 +2,7 @@
 /**
  * API4 API-report check (spec/rules/api.md).
  *
- * Asserts two properties, named separately because they are not the same:
+ * Asserts three properties, named separately because they are not the same:
  *
  * 1. Report drift — the committed `api-report.md` matches the export names
  *    parsed from that package's published `.d.ts`. A mismatch is the
@@ -23,6 +23,14 @@
  *    package's published root `.d.ts`. This is an mtime comparison, not a
  *    content-identity check. A format-only touch can trip it.
  *
+ * 3. Unbound value exports — a published `.d.ts` `export { Name }` (no
+ *    `type` keyword, no `from`) whose `Name` is neither imported nor
+ *    declared in that file. That is the declaration-bundler flatten of a
+ *    type-only `export { Name }`: the identifier is in the file and in the
+ *    name inventory, and a host still cannot resolve it. Workspace `tsc`
+ *    uses `skipLibCheck` and will not see it. A `from` re-export is bound
+ *    to the named module and is not this class.
+ *
  * Freshness is a local guard. CI runs `pnpm build` first, so the `.d.ts` is
  * current by construction and this path does not fire there. Do not add a
  * CI flag for it.
@@ -33,8 +41,8 @@
  * packages; `--write` is also refused unless that flag is set, so a stale
  * `.d.ts` cannot be recorded as the public surface.
  *
- * "stale" in older output meant report drift only. The two questions now
- * have two names.
+ * "stale" in older output meant report drift only. The three questions now
+ * have three names.
  */
 
 import fs from "node:fs/promises";
@@ -86,6 +94,7 @@ export function splitExportSpecifiers(inner) {
 		const renamed = rest.match(/^(\S+)\s+as\s+(\S+)$/);
 		specs.push({
 			typeOnly,
+			local: renamed ? renamed[1] : rest,
 			exported: renamed ? renamed[2] : rest,
 		});
 	}
@@ -126,7 +135,9 @@ function declarationKind(text, name) {
 		`(?:export\\s+)?(?:declare\\s+)?(?:async\\s+)?function\\s+${escaped}\\b[^{;]*`,
 		"g",
 	);
-	const functionHits = [...text.matchAll(functionRe)].map((match) => match[0]);
+	const functionHits = [...text.matchAll(functionRe)].map(
+		(match) => match[0],
+	);
 	if (functionHits.length > 0) {
 		if (functionHits.some((hit) => /\):\s*\S+\s+is\b/.test(hit))) {
 			return "guard";
@@ -142,6 +153,59 @@ function declarationKind(text, name) {
 	return "value";
 }
 
+export function collectImportedBindingNames(text) {
+	const names = new Set();
+	for (const match of text.matchAll(/\bimport\s*(?:type\s*)?\{([^}]+)\}/g)) {
+		for (const spec of splitExportSpecifiers(match[1])) {
+			names.add(spec.exported);
+		}
+	}
+	return names;
+}
+
+export function collectLocalBindingNames(text) {
+	const names = new Set();
+	const patterns = [
+		/(?:export\s+)?(?:declare\s+)?(?:async\s+)?function\s+(\w+)/g,
+		/(?:export\s+)?(?:declare\s+)?class\s+(\w+)/g,
+		/(?:export\s+)?(?:declare\s+)?const\s+(\w+)/g,
+		/(?:export\s+)?(?:declare\s+)?enum\s+(\w+)/g,
+		/(?:export\s+)?type\s+(\w+)/g,
+		/(?:export\s+)?interface\s+(\w+)/g,
+	];
+	for (const pattern of patterns) {
+		for (const match of text.matchAll(pattern)) {
+			names.add(match[1]);
+		}
+	}
+	return names;
+}
+
+/**
+ * Value-style `export { Name }` with no `from` and no local/import binding.
+ * `export { type Name }` and `export { Name } from "mod"` are not this class.
+ */
+export function findUnboundValueExports(text) {
+	const imported = collectImportedBindingNames(text);
+	const local = collectLocalBindingNames(text);
+	const unbound = [];
+	for (const match of text.matchAll(
+		/export\s*\{([^}]+)\}(\s*from\s*('[^']+'|"[^"]+"))?/g,
+	)) {
+		const from = match[2] ?? null;
+		for (const spec of splitExportSpecifiers(match[1])) {
+			if (spec.typeOnly || from != null) {
+				continue;
+			}
+			if (imported.has(spec.local) || local.has(spec.local)) {
+				continue;
+			}
+			unbound.push(spec.exported);
+		}
+	}
+	return unbound;
+}
+
 export function classifyExports(text) {
 	const names = collectExportNames(text);
 	const entries = [];
@@ -153,7 +217,8 @@ export function classifyExports(text) {
 		entries.push({ name, kind: declarationKind(text, name) });
 	}
 	entries.sort((left, right) => {
-		const kind = KIND_ORDER.indexOf(left.kind) - KIND_ORDER.indexOf(right.kind);
+		const kind =
+			KIND_ORDER.indexOf(left.kind) - KIND_ORDER.indexOf(right.kind);
 		if (kind !== 0) {
 			return kind;
 		}
@@ -260,7 +325,10 @@ export async function loadPublishedPackages(repoRoot) {
 	const packages = [];
 	for (const filePath of files) {
 		const packageJson = JSON.parse(await fs.readFile(filePath, "utf8"));
-		if (packageJson.private === true || typeof packageJson.name !== "string") {
+		if (
+			packageJson.private === true ||
+			typeof packageJson.name !== "string"
+		) {
 			continue;
 		}
 		packages.push({
@@ -277,6 +345,7 @@ export async function loadPublishedPackages(repoRoot) {
 export async function buildPackageReport(pkg) {
 	const surfaces = [];
 	const missing = [];
+	const unboundExports = [];
 	const exportsField = pkg.packageJson.exports;
 	for (const key of pkg.keys) {
 		const entry =
@@ -285,7 +354,9 @@ export async function buildPackageReport(pkg) {
 				: exportsField[key];
 		const specifier =
 			typesSpecifier(entry) ??
-			(key === "." ? (pkg.packageJson.types ?? "./dist/index.d.ts") : null);
+			(key === "."
+				? (pkg.packageJson.types ?? "./dist/index.d.ts")
+				: null);
 		if (specifier == null) {
 			missing.push(`${pkg.name} ${key}: no types specifier`);
 			continue;
@@ -293,7 +364,9 @@ export async function buildPackageReport(pkg) {
 		if (specifier.includes("*")) {
 			const expanded = await expandTypesGlob(pkg.dir, specifier);
 			if (expanded.status === "missing") {
-				missing.push(`${pkg.name} ${key}: missing ${specifier} (run pnpm build)`);
+				missing.push(
+					`${pkg.name} ${key}: missing ${specifier} (run pnpm build)`,
+				);
 				continue;
 			}
 			surfaces.push({
@@ -312,9 +385,16 @@ export async function buildPackageReport(pkg) {
 				typesPath: specifier,
 				entries: classifyExports(text),
 			});
+			for (const name of findUnboundValueExports(text)) {
+				unboundExports.push(
+					`${pkg.name} ${key}: ${name} in ${specifier}`,
+				);
+			}
 		} catch (error) {
 			if (error && error.code === "ENOENT") {
-				missing.push(`${pkg.name} ${key}: missing ${specifier} (run pnpm build)`);
+				missing.push(
+					`${pkg.name} ${key}: missing ${specifier} (run pnpm build)`,
+				);
 				continue;
 			}
 			throw error;
@@ -323,6 +403,7 @@ export async function buildPackageReport(pkg) {
 	return {
 		report: renderApiReport({ packageName: pkg.name, surfaces }),
 		missing,
+		unboundExports,
 		reportPath: path.join(pkg.dir, REPORT_NAME),
 	};
 }
@@ -347,7 +428,9 @@ type Foo = { ok: true };
 export { type Foo, isFoo, isBar, doWork, Box, FLAG };
 `;
 	const entries = classifyExports(dts);
-	const byName = Object.fromEntries(entries.map((entry) => [entry.name, entry.kind]));
+	const byName = Object.fromEntries(
+		entries.map((entry) => [entry.name, entry.kind]),
+	);
 	if (byName.Foo !== "type") {
 		throw new Error("self-test: type export");
 	}
@@ -375,7 +458,9 @@ export { type Foo, isFoo, isBar, doWork, Box, FLAG };
 		throw new Error("self-test: typed subpath stays an entry point");
 	}
 	if (merged.includes("./package.json")) {
-		throw new Error("self-test: manifest passthrough is not an entry point");
+		throw new Error(
+			"self-test: manifest passthrough is not an entry point",
+		);
 	}
 
 	const rendered = renderApiReport({
@@ -419,10 +504,60 @@ export { type Rec, type Aff, make, type Extra };
 			],
 		});
 	if (shapeSurface(shapeBefore) !== shapeSurface(shapeAfter)) {
-		throw new Error("self-test: name inventory is stable across breaking shape changes");
+		throw new Error(
+			"self-test: name inventory is stable across breaking shape changes",
+		);
 	}
 	if (shapeSurface(shapeBefore) === shapeSurface(nameAdded)) {
-		throw new Error("self-test: adding an exported name must change the report");
+		throw new Error(
+			"self-test: adding an exported name must change the report",
+		);
+	}
+
+	const unbound = findUnboundValueExports("export { PhantomName };\n");
+	if (unbound.length !== 1 || unbound[0] !== "PhantomName") {
+		throw new Error(
+			"self-test: bare value export with no binding is unbound",
+		);
+	}
+	if (
+		findUnboundValueExports("export { type PhantomName };\n").length !== 0
+	) {
+		throw new Error(
+			"self-test: type-only specifier is not an unbound value",
+		);
+	}
+	if (
+		findUnboundValueExports(
+			'export { PhantomName } from "@input/pen-types";\n',
+		).length !== 0
+	) {
+		throw new Error(
+			"self-test: from-reexport is bound to the named module",
+		);
+	}
+	if (
+		findUnboundValueExports(
+			"type PhantomName = { ok: true };\nexport { PhantomName };\n",
+		).length !== 0
+	) {
+		throw new Error(
+			"self-test: local type declaration binds a value-style export",
+		);
+	}
+	if (
+		findUnboundValueExports(
+			'import { PhantomName } from "@input/pen-types";\nexport { PhantomName };\n',
+		).length !== 0
+	) {
+		throw new Error("self-test: imported name binds a value-style export");
+	}
+	if (
+		findUnboundValueExports(
+			"export { MissingLocal as PublicName };\n",
+		).join(",") !== "PublicName"
+	) {
+		throw new Error("self-test: unbound alias reports the exported name");
 	}
 
 	if (isTypeInputFile("src/index.ts") !== true) {
@@ -447,7 +582,9 @@ export { type Rec, type Aff, make, type Extra };
 
 async function runFreshnessSelfTests() {
 	await runSharedFreshnessSelfTests();
-	const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pen-api-reports-"));
+	const tmpRoot = await fs.mkdtemp(
+		path.join(os.tmpdir(), "pen-api-reports-"),
+	);
 	try {
 		await runFreshnessSelfTestsIn(tmpRoot);
 	} finally {
@@ -562,8 +699,14 @@ async function runFreshnessSelfTestsIn(tmpRoot) {
 	}
 
 	const allowed = formatReport(named, { allowStaleDist: true });
-	if (!allowed.includes("OK: committed API reports match the published .d.ts surfaces.")) {
-		throw new Error("self-test: --allow-stale-dist may still pass the report check");
+	if (
+		!allowed.includes(
+			"OK: committed API reports match the published .d.ts surfaces.",
+		)
+	) {
+		throw new Error(
+			"self-test: --allow-stale-dist may still pass the report check",
+		);
 	}
 
 	await fs.appendFile(reportPath, "- FakeLane151Symbol\n");
@@ -592,6 +735,37 @@ async function runFreshnessSelfTestsIn(tmpRoot) {
 
 	if (named.packageCount !== 1) {
 		throw new Error("self-test: package count is the examined population");
+	}
+
+	const phantomDts = "export { PhantomName };\n";
+	await fs.writeFile(dtsPath, phantomDts);
+	await fs.utimes(dtsPath, recent, recent);
+	await fs.utimes(srcPath, past, past);
+	const phantomReport = renderApiReport({
+		packageName: fixturePkg.name,
+		surfaces: [
+			{
+				key: ".",
+				typesPath: "./dist/index.d.ts",
+				entries: classifyExports(phantomDts),
+			},
+		],
+	});
+	await fs.writeFile(reportPath, phantomReport);
+	const phantom = await evaluateApiReports({
+		packages: [fixturePkg],
+		write: false,
+	});
+	if (phantom.reportDrift.length !== 0) {
+		throw new Error(
+			"self-test: phantom name still matches the name inventory",
+		);
+	}
+	if (phantom.unboundExports.length !== 1) {
+		throw new Error("self-test: phantom value export is unbound");
+	}
+	if (!phantom.unboundExports[0].includes("PhantomName")) {
+		throw new Error("self-test: unbound export names the identifier");
 	}
 }
 
@@ -626,6 +800,7 @@ export async function evaluateApiReports({
 }) {
 	const reportDrift = [];
 	const missing = [];
+	const unboundExports = [];
 	const written = [];
 	const writeBlocked = [];
 	const outdatedDist = [];
@@ -639,6 +814,7 @@ export async function evaluateApiReports({
 		}
 		const built = await buildPackageReport(pkg);
 		missing.push(...built.missing);
+		unboundExports.push(...built.unboundExports);
 		if (built.missing.length > 0) {
 			continue;
 		}
@@ -671,6 +847,7 @@ export async function evaluateApiReports({
 		packageCount: packages.length,
 		reportDrift,
 		missing,
+		unboundExports,
 		written,
 		writeBlocked,
 		outdatedDist,
@@ -683,11 +860,10 @@ export function formatReport(result, { allowStaleDist = false } = {}) {
 	lines.push(`published packages     ${result.packageCount}`);
 	lines.push(`report drift           ${result.reportDrift.length}`);
 	lines.push(`missing .d.ts          ${result.missing.length}`);
+	lines.push(`unbound value exports  ${result.unboundExports.length}`);
 	lines.push(
 		`outdated dist          ${result.outdatedDist.length}${
-			allowStaleDist && result.outdatedDist.length > 0
-				? " (allowed)"
-				: ""
+			allowStaleDist && result.outdatedDist.length > 0 ? " (allowed)" : ""
 		}`,
 	);
 	if (result.written.length > 0) {
@@ -698,15 +874,28 @@ export function formatReport(result, { allowStaleDist = false } = {}) {
 	}
 	if (result.reportDrift.length > 0) {
 		lines.push("");
-		lines.push("report drift (run `node scripts/api-reports.mjs --write` after a fresh build):");
+		lines.push(
+			"report drift (run `node scripts/api-reports.mjs --write` after a fresh build):",
+		);
 		for (const hit of result.reportDrift) {
-			lines.push(`  ${hit.package}${hit.missing ? " (missing file)" : ""}`);
+			lines.push(
+				`  ${hit.package}${hit.missing ? " (missing file)" : ""}`,
+			);
 		}
 	}
 	if (result.missing.length > 0) {
 		lines.push("");
 		lines.push("missing type artifacts:");
 		for (const hit of result.missing) {
+			lines.push(`  ${hit}`);
+		}
+	}
+	if (result.unboundExports.length > 0) {
+		lines.push("");
+		lines.push(
+			"unbound value exports (name in the .d.ts export list with no binding):",
+		);
+		for (const hit of result.unboundExports) {
 			lines.push(`  ${hit}`);
 		}
 	}
@@ -722,17 +911,23 @@ export function formatReport(result, { allowStaleDist = false } = {}) {
 	}
 
 	const hasDrift =
-		result.reportDrift.length > 0 || result.missing.length > 0;
+		result.reportDrift.length > 0 ||
+		result.missing.length > 0 ||
+		result.unboundExports.length > 0;
 	const hasOutdated = result.outdatedDist.length > 0;
 	if (!hasDrift && !hasOutdated && result.writeBlocked.length === 0) {
 		lines.push("");
-		lines.push("OK: committed API reports match the published .d.ts surfaces.");
+		lines.push(
+			"OK: committed API reports match the published .d.ts surfaces.",
+		);
 	} else if (!hasDrift && hasOutdated && allowStaleDist) {
 		lines.push("");
 		lines.push(
 			"warning: verdict is against a .d.ts that may predate source.",
 		);
-		lines.push("OK: committed API reports match the published .d.ts surfaces.");
+		lines.push(
+			"OK: committed API reports match the published .d.ts surfaces.",
+		);
 	} else if (!hasDrift && hasOutdated && !allowStaleDist) {
 		lines.push("");
 		lines.push(
@@ -748,7 +943,11 @@ export function formatReport(result, { allowStaleDist = false } = {}) {
 }
 
 function hasGateFailure(result, allowStaleDist) {
-	if (result.reportDrift.length > 0 || result.missing.length > 0) {
+	if (
+		result.reportDrift.length > 0 ||
+		result.missing.length > 0 ||
+		result.unboundExports.length > 0
+	) {
 		return true;
 	}
 	if (result.writeBlocked.length > 0) {

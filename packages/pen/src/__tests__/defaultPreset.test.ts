@@ -46,7 +46,9 @@ function installedExtensionNames(editor: Editor): string[] {
 }
 
 function dispatchShortcut(editor: Editor, key: string): boolean {
-	const binding = editor.facet(keymapFacet).find((entry) => entry.key === key);
+	const binding = editor
+		.facet(keymapFacet)
+		.find((entry) => entry.key === key);
 	if (!binding) {
 		return false;
 	}
@@ -59,9 +61,15 @@ function seedSelectedHello(editor: Editor): string {
 		throw new Error("expected an initial paragraph");
 	}
 	editor.apply(
-		[{ type: "splice-text", blockId: block.id, from: 0,
+		[
+			{
+				type: "splice-text",
+				blockId: block.id,
+				from: 0,
 				to: 0,
-				insert: "hello" }],
+				insert: "hello",
+			},
+		],
 		{ origin: "user" },
 	);
 	editor.selectText(block.id, 0, 5);
@@ -91,9 +99,11 @@ describe("@input/pen", () => {
 		expect(result.extensions?.map((extension) => extension.name)).toEqual([
 			...PRESET_RESOLVE_ORDER,
 		]);
-		expect(result.schema?.allBlocks().some((schema) => schema.type === "paragraph")).toBe(
-			true,
-		);
+		expect(
+			result.schema
+				?.allBlocks()
+				.some((schema) => schema.type === "paragraph"),
+		).toBe(true);
 	});
 
 	it("supports disabling individual default features", () => {
@@ -127,7 +137,9 @@ describe("bare createEditor vs defaultPreset — live inventory", () => {
 
 	it("a live createEditor({ schema }) registers exactly no extensions", async () => {
 		await withEditor({ schema }, (editor) => {
-			expect(installedExtensionNames(editor)).toEqual([...BARE_EXTENSIONS]);
+			expect(installedExtensionNames(editor)).toEqual([
+				...BARE_EXTENSIONS,
+			]);
 		});
 	});
 });
@@ -155,19 +167,28 @@ describe("bare createEditor vs defaultPreset — bold/italic shortcuts", () => {
 		await withEditor({ schema }, (editor) => {
 			const blockId = seedSelectedHello(editor);
 
-			expect(editor.facet(keymapFacet).map((binding) => binding.key)).toEqual([]);
+			expect(
+				editor.facet(keymapFacet).map((binding) => binding.key),
+			).toEqual([]);
 			expect(dispatchShortcut(editor, "Mod-b")).toBe(false);
 			expect(dispatchShortcut(editor, "Mod-i")).toBe(false);
-			expect(editor.getBlock(blockId)?.textDeltas()).toEqual([{ insert: "hello" }]);
+			expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
+				{ insert: "hello" },
+			]);
 		});
 	});
 
 	it("defaultPreset({ shortcuts: false }) does not apply bold", async () => {
-		await withEditor({ preset: defaultPreset({ shortcuts: false }) }, (editor) => {
-			const blockId = seedSelectedHello(editor);
-			expect(dispatchShortcut(editor, "Mod-b")).toBe(false);
-			expect(editor.getBlock(blockId)?.textDeltas()).toEqual([{ insert: "hello" }]);
-		});
+		await withEditor(
+			{ preset: defaultPreset({ shortcuts: false }) },
+			(editor) => {
+				const blockId = seedSelectedHello(editor);
+				expect(dispatchShortcut(editor, "Mod-b")).toBe(false);
+				expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
+					{ insert: "hello" },
+				]);
+			},
+		);
 	});
 });
 
@@ -191,13 +212,16 @@ describe("defaultPreset() batteries actually work", () => {
 	});
 
 	it("defaultPreset({ undo: false }) leaves undo inert: the document stays changed", async () => {
-		await withEditor({ preset: defaultPreset({ undo: false }) }, (editor) => {
-			const blockId = seedSelectedHello(editor);
-			expect(editor.facet(undoManagerFacet)).toBeFalsy();
-			expect(editor.undoManager.canUndo()).toBe(false);
-			expect(editor.undoManager.undo()).toBe(false);
-			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
-		});
+		await withEditor(
+			{ preset: defaultPreset({ undo: false }) },
+			(editor) => {
+				const blockId = seedSelectedHello(editor);
+				expect(editor.facet(undoManagerFacet)).toBeFalsy();
+				expect(editor.undoManager.canUndo()).toBe(false);
+				expect(editor.undoManager.undo()).toBe(false);
+				expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
+			},
+		);
 	});
 
 	it("createHeadlessEditor({ useDefaultExtensions: true }) is a no-op: undo stays inert", async () => {
@@ -233,7 +257,9 @@ describe("defaultPreset() batteries actually work", () => {
 				{} as never,
 			)) as { blockId: string };
 
-			expect(editor.getBlock(result.blockId)?.textContent()).toBe("from preset");
+			expect(editor.getBlock(result.blockId)?.textContent()).toBe(
+				"from preset",
+			);
 		});
 
 		await withEditor(
@@ -253,8 +279,40 @@ describe("defaultPreset() batteries actually work", () => {
 
 		await withEditor({ schema: createDefaultSchema() }, (editor) => {
 			const value = editor.facet(clipboardFacet);
-			expect(value).toEqual([]);
+			expect(value).toEqual({});
 		});
+	});
+
+	it("R8: a second clipboardFacet provider merges without disabling the preset HTML importer", async () => {
+		const markdown = {
+			name: "markdown",
+			mimeType: "text/markdown",
+			parse: () => [],
+			import: () => undefined,
+		};
+		await withEditor(
+			{
+				preset: defaultPreset({
+					tools: false,
+					deltaStream: false,
+					undo: false,
+					shortcuts: false,
+				}),
+				extensions: [
+					{
+						name: "host-markdown-clipboard",
+						version: "0.0.0",
+						facets: [clipboardFacet.of({ markdown })],
+					},
+				],
+			},
+			(editor) => {
+				expect(editor.facet(clipboardFacet)).toMatchObject({
+					html: htmlImporter,
+					markdown,
+				});
+			},
+		);
 	});
 
 	it("a partial host importer table keeps the preset HTML importer", async () => {
@@ -266,8 +324,7 @@ describe("defaultPreset() batteries actually work", () => {
 				import: () => undefined,
 			};
 			const current = editor.facet(clipboardFacet);
-			const base =
-				current && !Array.isArray(current) ? current : {};
+			const base = current && !Array.isArray(current) ? current : {};
 			editor.internals.assignSlot("paste:importers", {
 				...base,
 				markdown,

@@ -376,7 +376,11 @@ export type {
 export type { BlockRenderContext, BlockRenderer } from "./rendering";
 
 // ── Suggestions ─────────────────────────────────────────────
-export type { BlockSuggestion } from "./suggestions";
+export type {
+	BlockSuggestion,
+	BlockSuggestionAction,
+	BlockSuggestionPreviousState,
+} from "./suggestions";
 
 // ── Anchors ─────────────────────────────────────────────────
 export type {

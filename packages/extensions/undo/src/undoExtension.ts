@@ -55,8 +55,8 @@ export interface UndoExtensionOptions {
  *
  *   This gives us "undo by phrase" grouping driven by Yjs's captureTimeout
  *   (matching the spec's groupTimeout, default 400ms). Pen's idle timer
- *   adds additional boundaries at explicit points (paste, block switch, etc.)
- *   via stopCapturing().
+ *   adds additional boundaries at explicit points (paste, cut, drop,
+ *   block switch, etc.) via stopCapturing().
  *
  * ### During undo():
  *   1. transact() reverses CRDT changes

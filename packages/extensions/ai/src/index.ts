@@ -71,6 +71,7 @@ export type {
 	PersistentSuggestion,
 	PersistentTextSuggestion,
 	PersistentBlockSuggestion,
+	BlockSuggestion,
 	BlockSuggestionMeta,
 	AICommandBinding,
 	AICommandContext,
@@ -104,5 +105,7 @@ export type {
 
 /** Class vocabulary for the review surface (RS4). */
 export { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
+/** Per-action block-suggestion class vocabulary (RS4). */
+export { REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES } from "@input/pen-types";
 /** Theme custom properties for the review surface (RS4). */
 export { REVIEW_SURFACE_CUSTOM_PROPERTIES } from "@input/pen-types";

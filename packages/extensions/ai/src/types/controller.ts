@@ -1,5 +1,7 @@
 import type {
 	AIRequestContext,
+	BlockSuggestionAction,
+	BlockSuggestionPreviousState,
 	Editor,
 	ModelAdapter,
 	ModelMessage,
@@ -32,25 +34,9 @@ import type {
 	PersistentTextSuggestion,
 } from "./session";
 
-export type BlockSuggestionPreviousState = {
-	type?: string;
-	position?: import("@input/pen-types").Position;
-	props?: Record<string, unknown>;
-	format?: {
-		from: number;
-		to: number;
-		marks: Record<string, unknown | null>;
-		cell?: { row: number; col: number };
-	};
-};
+export type { BlockSuggestionPreviousState };
 
-export type PersistentBlockSuggestionAction =
-	| "insert-block"
-	| "delete-block"
-	| "move-block"
-	| "convert-block"
-	| "split-block"
-	| "format-text";
+export type PersistentBlockSuggestionAction = BlockSuggestionAction;
 
 export interface PersistentBlockSuggestion extends PersistentSuggestionBase {
 	kind: "block";

@@ -23,10 +23,31 @@ type PasteInputEvent = InputEvent & {
 
 export function getPasteImporters(editor: Editor): PasteImporters | undefined {
 	const value = editor.facet(clipboardFacet);
-	if (!value || Array.isArray(value)) {
+	const table = pasteImporterTableFromFacet(value);
+	if (!table.html && !table.markdown && !table.assets) {
 		return undefined;
 	}
-	return value as PasteImporters;
+	return table;
+}
+
+function pasteImporterTableFromFacet(value: unknown): PasteImporters {
+	if (!value) {
+		return {};
+	}
+	if (Array.isArray(value)) {
+		const merged: PasteImporters = {};
+		for (const entry of value) {
+			if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+				continue;
+			}
+			Object.assign(merged, entry);
+		}
+		return merged;
+	}
+	if (typeof value === "object") {
+		return value as PasteImporters;
+	}
+	return {};
 }
 
 // ── Paste entry points ──────────────────────────────────────
@@ -284,5 +305,6 @@ function admitHtmlBlockProps(
 
 export function handleCut(editor: Editor, event?: ClipboardEvent): void {
 	handleCopy(editor, event);
+	editor.undoManager.stopCapturing();
 	editor.deleteSelection();
 }

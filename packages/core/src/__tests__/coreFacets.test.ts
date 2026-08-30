@@ -70,23 +70,55 @@ describe("core facets 1.3", () => {
 		).toEqual(["Mod-Shift-Z", "Mod-Z"]);
 	});
 
-	it("1.3: pen.beforeApply / decorations / clipboard stay ordered lists", () => {
+	it("1.3: pen.beforeApply / decorations stay ordered lists", () => {
 		const hookA = () => [];
 		const hookB = () => [];
 		const source = () => emptyDecorationSet();
-		const handler = { id: "html" };
 		const registry = createFacetRegistry({
 			providers: [
 				beforeApplyFacet.of(hookB, "low"),
 				beforeApplyFacet.of(hookA, "highest"),
 				decorationsFacet.of(source),
-				clipboardFacet.of(handler),
 			],
 		});
 		registry.markReady();
 		expect(registry.read(beforeApplyFacet)).toEqual([hookA, hookB]);
 		expect(registry.read(decorationsFacet)).toEqual([source]);
-		expect(registry.read(clipboardFacet)).toEqual([handler]);
+	});
+
+	it("R8: pen.clipboard merges importer tables last-wins per key", () => {
+		const htmlA = {
+			name: "html-a",
+			mimeType: "text/html",
+			import: () => {},
+		};
+		const htmlB = {
+			name: "html-b",
+			mimeType: "text/html",
+			import: () => {},
+		};
+		const markdown = {
+			name: "markdown",
+			mimeType: "text/markdown",
+			import: () => {},
+		};
+		const registry = createFacetRegistry({
+			providers: [
+				clipboardFacet.of({ html: htmlA }),
+				clipboardFacet.of({ html: htmlB, markdown }),
+			],
+		});
+		registry.markReady();
+		expect(registry.read(clipboardFacet)).toEqual({
+			html: htmlB,
+			markdown,
+		});
+	});
+
+	it("R8: an unregistered clipboard facet combines to an empty table", () => {
+		const empty = createFacetRegistry();
+		empty.markReady();
+		expect(empty.read(clipboardFacet)).toEqual({});
 	});
 
 	it("1.3: pen.commands groups handlers by command name", () => {

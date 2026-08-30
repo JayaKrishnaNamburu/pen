@@ -113,6 +113,8 @@
 - BlockSelection
 - BlockSelectionRole
 - BlockSuggestion
+- BlockSuggestionAction
+- BlockSuggestionPreviousState
 - BlockTextChange
 - BlockUpdatePart
 - BorderDef

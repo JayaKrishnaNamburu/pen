@@ -45,13 +45,75 @@ describe("sanitizeHTML", () => {
 		expect(result).toContain("alt");
 	});
 
-	it("SEC3: hook-based style filter keeps only color and background-color", () => {
+	it("SEC3: hook-based style filter keeps color, background-color, and enumerated text-align", () => {
 		const result = sanitizeHTML(
-			'<p style="color: red; position: fixed; background-color: blue; z-index: 1">styled</p>',
+			'<p style="color: red; position: fixed; background-color: blue; text-align: center; z-index: 1">styled</p>',
 		);
-		expect(result).toContain('style="color: red; background-color: blue"');
+		expect(result).toContain(
+			'style="color: red; background-color: blue; text-align: center"',
+		);
 		expect(result).not.toContain("position:");
 		expect(result).not.toContain("z-index:");
+	});
+
+	it("SEC3: admits each enumerated text-align keyword and drops inherit", () => {
+		for (const value of ["left", "right", "center", "justify", "start", "end"]) {
+			const result = sanitizeHTML(
+				`<p style="text-align: ${value}">aligned</p>`,
+			);
+			expect(result).toContain(`text-align: ${value}`);
+		}
+		const inherit = sanitizeHTML('<p style="text-align: inherit">plain</p>');
+		expect(inherit).not.toContain("text-align");
+		expect(inherit).toContain("plain");
+	});
+
+	it("SEC3: canonicalizes text-align case and strips !important", () => {
+		const result = sanitizeHTML(
+			'<p style="text-align: CENTER !important">aligned</p>',
+		);
+		expect(result).toContain("text-align: center");
+		expect(result).not.toContain("important");
+	});
+
+	it("SEC3: validated HTML align survives; other values are dropped", () => {
+		expect(sanitizeHTML('<p align="right">aligned</p>')).toContain(
+			'align="right"',
+		);
+		expect(sanitizeHTML('<p align="CENTER">aligned</p>')).toContain(
+			'align="center"',
+		);
+		const hostile = sanitizeHTML('<p align="javascript:alert(1)">plain</p>');
+		expect(hostile).toContain("plain");
+		expect(hostile.toLowerCase()).not.toMatch(/\balign\s*=/);
+	});
+
+	it("SEC3: hostile text-align values stay blocked", () => {
+		const payloads = [
+			'<p style="text-align: expression(alert(1))">plain</p>',
+			'<p style="text-align: url(https://evil.example/x)">plain</p>',
+			'<p style="text-align: /**/center">plain</p>',
+			'<p style="text-align: \\63 enter">plain</p>',
+			'<p style="text-align: left url(javascript:alert(1))">plain</p>',
+			'<p style="-webkit-text-align: center">plain</p>',
+		];
+		for (const html of payloads) {
+			const result = sanitizeHTML(html);
+			expect(result).toContain("plain");
+			expect(result.toLowerCase()).not.toContain("text-align");
+			expect(result.toLowerCase()).not.toContain("expression");
+			expect(result.toLowerCase()).not.toContain("url(");
+		}
+	});
+
+	it("SEC3: mixed style keeps validated text-align and drops url-bearing props", () => {
+		const result = sanitizeHTML(
+			'<p style="text-align: center; background-image: url(https://exfil.example)">plain</p>',
+		);
+		expect(result).toContain("plain");
+		expect(result).toContain("text-align: center");
+		expect(result.toLowerCase()).not.toContain("background-image");
+		expect(result.toLowerCase()).not.toContain("url(");
 	});
 
 	it("SEC3: drops id and data-* that conversion does not read", () => {

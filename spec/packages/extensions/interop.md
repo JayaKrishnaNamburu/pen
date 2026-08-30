@@ -87,7 +87,8 @@ flowchart TD
 
 - `capRawHtmlSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` (preferring a newline boundary) before sanitize/parse. Overflow is a `text-size-exceeded` drop, not a hard refuse. `parseHtmlSource()` throws if a caller bypasses the cap and hands it a longer string.
 - `admitProviderImageUrl()` decides on the parsed URL protocol (`new URL(...)`), not a regex over the raw string. Local provider schemes (`blob:`, `memory:`) pass; everything else goes through `urlPolicy`.
-- Sanitize after the cap, then parse, then normalize. Imported content only becomes document state after conversion into operations and `editor.apply(...)`.
+- Sanitize after the cap, then parse, then normalize. Imported content only becomes document state after conversion into operations and `editor.apply(...)`. The SEC3 style hook admits `color`, `background-color`, and enumerated `text-align` keywords (`left` / `right` / `center` / `justify` / `start` / `end`), plus a validated HTML `align` attribute (`left` / `right` / `center` / `justify`). Mapping those onto block props stays a host `fromHTML` concern.
+
 - HTML export walks the full block tree. It is a fragment exporter, not a delivery-document builder.
 
 ## Markdown (`@input/pen-interop/markdown`)
@@ -185,7 +186,7 @@ flowchart TD
 
 - Path in workspace: `packages/extensions/interop`
 - Spec path mirrors workspace path: `packages/extensions/interop.md`
-- `@input/pen` takes the default HTML paste importer from `./html` (`htmlClipboardExtension` assigns `htmlImporter` to `paste:importers`). `@input/pen-vue` still defaults `paste:importers.html` to `htmlImporter` when the host does not pass one. `@input/pen-react` does not install a default HTML importer. Markdown ingest stays an optional React peer on `@input/pen-interop`.
+- `@input/pen` takes the default HTML paste importer from `./html` (`htmlClipboardExtension` contributes `htmlImporter` through `clipboardFacet`, R8). `@input/pen-vue` still defaults `paste:importers.html` to `htmlImporter` when the host does not pass one. `@input/pen-react` does not install a default HTML importer. Markdown ingest stays an optional React peer on `@input/pen-interop`.
 - `@input/pen-test` uses JSON export from `./json` for headless export contracts.
 - Prefer `./json` as the conceptual starting point when reasoning about data shape; XML stays aligned with that shape.
 - `parse*ToBlocks()` / `parse*WithReport()` are useful when a host wants pending blocks without immediately applying them. `*Importer.import()` is the live-editor path.

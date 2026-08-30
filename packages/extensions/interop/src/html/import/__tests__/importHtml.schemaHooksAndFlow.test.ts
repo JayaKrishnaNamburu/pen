@@ -3,7 +3,7 @@ import { createEditor } from "@input/pen-core";
 import type { HTMLImportElement, SchemaRegistry } from "@input/pen-types";
 import { createDefaultSchema } from "@input/pen-schema";
 import { htmlExporter } from "../../export";
-import { htmlImporter, parseHtmlToBlocks } from "../importer";
+import { htmlImporter, parseHtmlToBlocks, parseHtmlWithReport } from "../importer";
 import { sanitizeHTML } from "../sanitize";
 import { parseHTML } from "../domAdapter";
 import { domToBlocks } from "../domToBlocks";
@@ -149,6 +149,74 @@ describe("@input/pen-interop/html dom-to-blocks: schema hooks and flow documents
 				content: "From hook",
 			},
 		]);
+	});
+
+	it("SEC3: parseHtmlWithReport keeps enumerated text-align and align for fromHTML", () => {
+		const seen: Array<{ style: string | null; align: string | null }> = [];
+		const base = createDefaultSchema();
+		const paragraph = base.resolve("paragraph");
+		if (!paragraph) {
+			throw new Error("Expected default paragraph schema");
+		}
+		const alignedParagraph = {
+			...paragraph,
+			serialize: {
+				...paragraph.serialize,
+				fromHTML(element: HTMLImportElement) {
+					if (element.tagName !== "p") {
+						return null;
+					}
+					seen.push({
+						style: element.getAttribute("style"),
+						align: element.getAttribute("align"),
+					});
+					return {
+						type: "paragraph",
+						props: {
+							style: element.getAttribute("style") ?? "",
+							align: element.getAttribute("align") ?? "",
+						},
+					};
+				},
+			},
+		};
+		const registry: SchemaRegistry = {
+			...base,
+			allBlocks: () =>
+				base
+					.allBlocks()
+					.map((block) => (block.type === "paragraph" ? alignedParagraph : block)),
+			resolve: (type) =>
+				type === "paragraph" ? alignedParagraph : base.resolve(type),
+		};
+		const editor = createEditor({
+			schema: registry,
+			preset: noDefaultExtensionsPreset,
+		});
+
+		const { blocks } = parseHtmlWithReport(
+			'<p style="text-align:center;color:red;position:fixed">Centered</p><p align="right">Right</p>',
+			editor,
+		);
+
+		expect(seen).toEqual([
+			{ style: "text-align: center; color: red", align: null },
+			{ style: null, align: "right" },
+		]);
+		expect(blocks).toMatchObject([
+			{
+				type: "paragraph",
+				content: "Centered",
+				props: { style: "text-align: center; color: red", align: "" },
+			},
+			{
+				type: "paragraph",
+				content: "Right",
+				props: { style: "", align: "right" },
+			},
+		]);
+
+		editor.destroy();
 	});
 
 	it("<details open> → toggle block with open=true", () => {

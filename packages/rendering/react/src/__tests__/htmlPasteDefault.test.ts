@@ -99,7 +99,11 @@ describe("HTML paste default lives on the preset, not react", () => {
 		});
 
 		const value = editor.facet(clipboardFacet);
-		expect(value == null || Array.isArray(value)).toBe(true);
+		expect(
+			value == null ||
+				Array.isArray(value) ||
+				Object.keys(value).length === 0,
+		).toBe(true);
 
 		await act(async () => {
 			root.unmount();

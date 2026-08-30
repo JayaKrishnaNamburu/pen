@@ -1,3 +1,5 @@
+import type { BlockSuggestion as ContractBlockSuggestion } from "@input/pen-types";
+
 export type {
 	AIExtensionConfig,
 	AIContentFormatOptions,
@@ -36,6 +38,10 @@ export type {
 	AIInlineCompletionController,
 	PersistentTextSuggestion,
 } from "./types/session";
+
+/** Contract-layer block-suggestion shape; matches runtime actions (RS7). */
+export type BlockSuggestion = ContractBlockSuggestion;
+
 export type {
 	PersistentBlockSuggestion,
 	PersistentSuggestion,

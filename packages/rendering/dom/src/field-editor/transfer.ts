@@ -64,6 +64,7 @@ export async function executeTransfer(
 		return true;
 	}
 
+	editor.undoManager.stopCapturing();
 	const lastInsertedBlockId = insertUploadedImagesAtDropTarget(
 		editor,
 		uploaded,

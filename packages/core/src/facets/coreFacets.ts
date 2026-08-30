@@ -1,10 +1,12 @@
 import type {
 	ApplyOptions,
+	AssetProvider,
 	CommandHandlerRegistration,
 	DecorationSet,
 	DocumentOp,
 	DocumentState,
 	Editor,
+	Importer,
 	InputRule,
 	KeyBinding,
 } from "@input/pen-types";
@@ -19,10 +21,42 @@ export type BeforeApplyHook = (
 ) => DocumentOp[];
 
 export type DecorationSource =
-	| ((state: DocumentState, editor: Editor) => DecorationSet)
-	| DecorationSet;
+	((state: DocumentState, editor: Editor) => DecorationSet) | DecorationSet;
 
-export type ClipboardHandler = unknown;
+export type ClipboardHandler = {
+	readonly html?: Importer;
+	readonly markdown?: Importer;
+	readonly assets?: AssetProvider;
+};
+
+function isClipboardHandlerTable(value: unknown): value is ClipboardHandler {
+	return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function mergeClipboardHandlers(
+	inputs: readonly ClipboardHandler[],
+): ClipboardHandler {
+	const merged: {
+		html?: Importer;
+		markdown?: Importer;
+		assets?: AssetProvider;
+	} = {};
+	for (const input of inputs) {
+		if (!isClipboardHandlerTable(input)) {
+			continue;
+		}
+		if (input.html !== undefined) {
+			merged.html = input.html;
+		}
+		if (input.markdown !== undefined) {
+			merged.markdown = input.markdown;
+		}
+		if (input.assets !== undefined) {
+			merged.assets = input.assets;
+		}
+	}
+	return merged;
+}
 
 export type CommandHandlerTable = {
 	readonly [commandName: string]: readonly CommandHandlerRegistration[];
@@ -79,10 +113,7 @@ export const ariaReadOnlyFacet = defineFacet<boolean, boolean>({
 	combine: (inputs) => inputs.some((value) => value),
 });
 
-export const clipboardFacet = defineFacet<
-	ClipboardHandler,
-	readonly ClipboardHandler[]
->({
+export const clipboardFacet = defineFacet<ClipboardHandler, ClipboardHandler>({
 	name: "pen.clipboard",
-	combine: (inputs) => inputs,
+	combine: mergeClipboardHandlers,
 });
