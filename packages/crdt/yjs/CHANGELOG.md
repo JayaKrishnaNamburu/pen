@@ -1,5 +1,12 @@
 # @input/pen-yjs
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [d6a3b79]
+  - @input/pen-types@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes
