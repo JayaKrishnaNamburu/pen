@@ -1,5 +1,17 @@
 # @input/pen-interop
 
+## 0.1.6
+
+### Patch Changes
+
+- d6a3b79: Admit validated `text-align` style keywords and the HTML `align` attribute through HTML sanitization so paste can preserve block alignment.
+- Updated dependencies [d6a3b79]
+- Updated dependencies [d6a3b79]
+  - @input/pen-core@0.1.6
+  - @input/pen-types@0.1.6
+  - @input/pen-ingest@0.1.6
+  - @input/pen-markdown@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

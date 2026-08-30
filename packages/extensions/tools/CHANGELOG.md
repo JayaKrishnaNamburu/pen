@@ -1,5 +1,16 @@
 # @input/pen-tools
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [d6a3b79]
+- Updated dependencies [d6a3b79]
+  - @input/pen-core@0.1.6
+  - @input/pen-types@0.1.6
+  - @input/pen-ingest@0.1.6
+  - @input/pen-markdown@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

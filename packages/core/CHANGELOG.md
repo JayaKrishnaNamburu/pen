@@ -1,5 +1,14 @@
 # @input/pen-core
 
+## 0.1.6
+
+### Patch Changes
+
+- d6a3b79: Cut and image drop close the undo capture window the same way paste already does. `clipboardFacet` now merges paste-importer tables (last-wins per key) so multiple providers compose, and the starter HTML clipboard contributes through that facet instead of `assignSlot`.
+- Updated dependencies [d6a3b79]
+  - @input/pen-types@0.1.6
+  - @input/pen-yjs@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

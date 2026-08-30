@@ -35,7 +35,7 @@ The preset's `resolve()` returns `createDefaultSchema()` plus, unless turned off
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.1.5`; intended usage is current-state but still evolving.
+Workspace package at version `0.1.6`; intended usage is current-state but still evolving.
 
 ## Non-goals
 
