@@ -40,7 +40,7 @@ export function App() {
 
 That file is `src/App.tsx`.
 
-Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke. Tokens live in `STYLING.md`, the property reference that ships inside the `@input/pen-react` package.
+`PenEditor` and `mountEditor` adopt editor-field chrome by default. Pass `chrome={false}` for the HOST6 unstyled path: clicks still land and the first keystroke works with no CSS. Tokens live in `STYLING.md`, the property reference that ships inside the `@input/pen-react` package.
 
 `@input/pen-react` is a client module (`"use client"`). In Next.js App Router, import `PenEditor` from a Client Component; do not import it from a Server Component.
 

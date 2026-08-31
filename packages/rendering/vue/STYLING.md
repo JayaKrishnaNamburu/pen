@@ -2,11 +2,11 @@
 
 This is the HOST6 styling contract for `@input/pen-vue` (`spec/rules/host.md`).
 
-`@input/pen-vue` ships no stylesheet and injects none. An editor with no host CSS is functional: editable, caret visible, blocks in document order. The host owns taste — typography, spacing, colors, list markers, callout chrome, table chrome.
+`@input/pen-vue` ships no required stylesheet. `PenEditor` adopts `PEN_EDITOR_CHROME_STYLESHEET` from `@input/pen-dom` by default so an empty field fills its block, placeholders paint, and `:focus-visible` uses `--pen-focus-ring`. Pass `:chrome="false"` for the HOST6 unstyled path. The host owns taste — typography, spacing, colors, list markers, callout chrome, table chrome.
 
-This package reads no CSS custom properties. Tokens that other Pen packages read (`@input/pen-react`, `@input/pen-dom` overlays) are documented in the canonical reference: `STYLING.md`, which ships inside the `@input/pen-react` package.
+This package reads no CSS custom properties of its own. Tokens that other Pen packages read (`@input/pen-react`, `@input/pen-dom` overlays and chrome) are documented in the canonical reference: `STYLING.md`, which ships inside the `@input/pen-react` package.
 
-The library never sets `outline: none`. The UA focus ring is the focus signal (AX5). Selection fill is native `::selection`. Vue does not paint caret overlays or selection rectangles; those belong to `@input/pen-dom` when the shared field-editor is installed.
+The default chrome sheet sets `outline: none` on the editor surfaces and restores a `:focus-visible` ring (AX5). Selection fill is native `::selection`. Vue does not paint caret overlays or selection rectangles; those belong to `@input/pen-dom` when the shared field-editor is installed.
 
 ## What Vue applies itself
 
@@ -18,7 +18,7 @@ Vue sets a few inline styles for layout, not theme:
 - Table cell text (`PenTableCellContent`): `min-width: 6rem`, `min-height: 1.5rem`, `display: block`, `width: 100%`, and `position: relative` while a placeholder is shown.
 - Text entry surfaces (`PenInlineContent`, `PenTableCellContent`): `white-space: pre-wrap`. This one is correctness, not layout, and is not meant to be overridden — a soft break is stored as `\n` and repeated spaces are stored verbatim, so the initial `normal` would collapse characters the document actually contains (RI5 in `spec/rules/dom.md`).
 
-There are no `.css` files in this package.
+There are no `.css` files in this package. Editor chrome is the shared text sheet from `@input/pen-dom`, adopted at mount.
 
 ## Class hooks
 

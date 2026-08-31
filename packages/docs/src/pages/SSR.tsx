@@ -96,8 +96,10 @@ function renderHtml(hostDocument: CRDTDocument) {
 					server for rendering.
 				</li>
 				<li>
-					<strong>No required stylesheet.</strong> The editor is
-					functional unstyled. Override tokens are listed in{" "}
+					<strong>No required stylesheet.</strong> Default mounts
+					adopt editor-field chrome; pass{" "}
+					<code>chrome={"{false}"}</code> to stay unstyled. Override
+					tokens are listed in{" "}
 					<code>packages/rendering/react/STYLING.md</code>.
 				</li>
 			</ul>

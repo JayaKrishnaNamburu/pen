@@ -25,7 +25,7 @@ export function App() {
 }
 ```
 
-`PenEditor` requires `editor`. This package does not ship a stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke. The custom-property surface is listed in `STYLING.md`, which ships inside this package.
+`PenEditor` requires `editor`. It adopts editor-field chrome by default so an empty field fills its block, placeholders paint, and `:focus-visible` uses `--pen-focus-ring`. Pass `chrome={false}` for the HOST6 unstyled path. The custom-property surface is listed in `STYLING.md`, which ships inside this package.
 
 `useEditor` owns what it creates: one editor per component instance, destroyed on unmount, and rebuilt when StrictMode remounts the component. Passing an existing editor — `useEditor(editor)` — borrows it instead, leaving destruction to whoever created it.
 

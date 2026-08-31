@@ -77,6 +77,7 @@ export function App() {
 			key={generation}
 			editor={session.editor}
 			blockControls={showAx3Chrome ? Ax3BlockHandle : undefined}
+			chrome={!readQueryFlag("unstyled")}
 		>
 			<div
 				data-pen-conformance-harness=""

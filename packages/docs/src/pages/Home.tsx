@@ -25,8 +25,9 @@ export function HomePage() {
 				<code>examples/vue</code>, and <code>examples/vanilla</code>.
 			</p>
 			<p>
-				Pen ships no required stylesheet — the editor is functional
-				unstyled. Tokens live in the <code>STYLING.md</code> that ships
+				<code>PenEditor</code> adopts editor-field chrome by default.
+				Pass <code>chrome={"{false}"}</code> for the unstyled path.
+				Tokens live in the <code>STYLING.md</code> that ships
 				inside <code>@input/pen-react</code>.
 			</p>
 			<p>

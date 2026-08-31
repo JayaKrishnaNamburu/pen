@@ -1,8 +1,8 @@
 # Styling
 
-Pen is headless. `@input/pen-react` ships no required stylesheet, and an editor with no host CSS is functional: editable, with a visible caret, native text selection, and the user-agent focus outline. Hosts own taste. This file is the HOST6 contract (`spec/rules/host.md`) and the workspace custom-property catalog.
+Pen is headless. `@input/pen-react` ships no required stylesheet: `chrome={false}` on `EditorRoot` / `PenEditor` is the HOST6 unstyled path, and an editor with no CSS is still functional (editable, caret visible, empty-document clicks land on the block). Hosts own taste. This file is the HOST6 contract (`spec/rules/host.md`) and the workspace custom-property catalog.
 
-Set override tokens on a parent of the editor (typically `[data-pen-editor-root]` or `:root`). There is no `.css` file under `packages/rendering/{react,vue,dom}`. The only injected sheet is the AI suggestion underline hover/active remaps, mounted when `<Pen.AISuggestions.Root>` is in the tree (`#pen-ai-suggestions-styles`).
+The golden path is different. `PenEditor` and `Editor.Root` adopt `PEN_EDITOR_CHROME_STYLESHEET` from `@input/pen-dom` by default (`#pen-editor-chrome`) so `createEditor()` plus `<PenEditor />` is a usable field: the inline surface fills its block, empty placeholders paint, and `:focus-visible` uses `--pen-focus-ring`. Set override tokens on a parent of the editor (typically `[data-pen-editor-root]` or `:root`). There is no `.css` file under `packages/rendering/{react,vue,dom}`. The other injected sheet is the AI suggestion underline hover/active remaps, mounted when `<Pen.AISuggestions.Root>` is in the tree (`#pen-ai-suggestions-styles`).
 
 ## Required styles (stay)
 
@@ -12,13 +12,31 @@ These exist so the editor remains operable without host CSS. They are listed bec
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Caret overlay          | `[data-pen-editor-caret]` / `[data-pen-multiplayer-caret]` / `[data-pen-drop-caret]` via inline styles and the caret tokens below. Overlay carets stay `aria-hidden` (AX7).        | `--pen-editor-caret-*`, `--pen-caret-*`, `--pen-drop-caret-*`, `--pen-peer-*`.            |
 | Selection highlight    | Text selection stays native `::selection`. `[data-pen-selection-rect]` is geometry only (position/size, `pointer-events: none`, no fill). Block selection is `data-selected` only. | Host `::selection` and `[data-selected]`. Do not expect a library fill on the rect.       |
-| Focus ring             | Nothing of its own, and no `outline: none`. The UA `:focus-visible` ring is the AX5 signal.                                                                                        | Host `:focus-visible` on `[data-pen-inline-content]` / `[data-pen-field-editor-surface]`. |
+| Focus ring             | Default chrome drops the UA shrink-wrap ring and paints `[data-pen-inline-content]:focus-visible` via `--pen-focus-ring` (default `Highlight`). Overlay carets stay `aria-hidden` (AX7) and are not the only signal. Pass `chrome={false}` to keep the UA ring. | `--pen-focus-ring`. Set `transparent` when the host already paints a caret. |
 | Suggestion decorations | Underline on `[data-ai-suggestion-id]` via `--pen-ai-suggestion-line`. The injected sheet remaps that token on hover/active. AI review ranges use the review tokens below.         | Suggestion-line and review tokens.                                                        |
 | Whitespace rendering   | `white-space: pre-wrap` inline on `[data-pen-inline-content]` and every table cell content host, plus a marked trailing `<br>` when a field's text ends with `\n` (RI5).           | No override point is offered. Soft breaks and repeated spaces are stored document characters, so collapsing them loses content rather than styling it. A code block wanting `white-space: pre` needs `!important`, which does win over the inline style. |
+| Empty-field chrome     | Default chrome makes `[data-pen-inline-content]` `display: block; width: 100%; min-height: 1em` and paints `[data-placeholder-visible]::before` from `attr(data-placeholder)`. Without chrome the empty span is zero-width (HOST6). | `--pen-placeholder-color`. Hide with `content: none` when the host owns empty copy. Pass `chrome={false}` to skip. |
 
 ## Taste (custom properties)
 
 Every `--pen-*` token the library **reads** is listed with its fallback and purpose. Geometry variables the library **writes** (caret height, contextual-prompt top/left/width/height) are not host tokens.
+
+### Editor chrome
+
+Adopted by default from `@input/pen-dom` (`adoptEditorChrome()` / `PEN_EDITOR_CHROME_STYLESHEET`). Theme by setting the tokens on any ancestor; do not re-declare the rule blocks.
+
+```ts
+import { adoptEditorChrome } from "@input/pen-dom";
+
+const release = adoptEditorChrome(document);
+```
+
+`PenEditor`, `Editor.Root`, and `mountEditor` already call that. Pass `chrome={false}` to skip.
+
+| Token                       | Default     | Purpose                                                                                          |
+| --------------------------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| `--pen-focus-ring`          | `Highlight` | `:focus-visible` outline on `[data-pen-inline-content]`. Set `transparent` when a caret is enough. |
+| `--pen-placeholder-color`   | `GrayText`  | Empty-field `::before` color.                                                                    |
 
 ### Caret overlay
 
@@ -356,5 +374,5 @@ Replaceable primitives (toolbar, slash/suggestion menus, search, AI composer, co
 
 These HOST6 / HOST4 scenarios live in `@input/pen-conformance` (`pnpm --filter @input/pen-conformance run test:host-e7`):
 
-- **unstyled-render** — `/?unstyled=1` skips harness `styles.css`; assert editable, caret not transparent, and a UA ring or `[data-pen-editor-caret]`.
+- **unstyled-render** — `/?unstyled=1` skips harness `styles.css` and passes `chrome={false}` so library chrome is not adopted; assert editable, caret not transparent, and a UA ring or `[data-pen-editor-caret]`.
 - **non-secure-context HTTP** — Chromium maps `pen.test` to `127.0.0.1` so the origin is plain HTTP and not localhost (localhost HTTP is still a secure context). Construct, type, no throw, no error diagnostics (F24). Unit stand-in: `packages/core/src/__tests__/nonSecureContext.test.ts`.

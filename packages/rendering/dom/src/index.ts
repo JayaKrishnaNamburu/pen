@@ -128,3 +128,8 @@ export type {
 // The review surface's styling contract (RS4): one sheet here, and the class
 // vocabulary it styles stays exported once, from `@input/pen-types`.
 export { PEN_REVIEW_STYLESHEET } from "./styles/reviewStylesheet";
+export {
+	adoptEditorChrome,
+	EDITOR_CHROME_CUSTOM_PROPERTIES,
+	PEN_EDITOR_CHROME_STYLESHEET,
+} from "./styles/editorChrome";

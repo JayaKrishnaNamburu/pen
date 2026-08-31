@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Headless React Primitive Conventions
 
-- Keep React primitives unstyled and behavior-focused; do not bake in design system choices.
+- Keep React primitives behavior-focused; do not bake in design-system taste. Default editor-field chrome (`PEN_EDITOR_CHROME_STYLESHEET`) is adopted by `EditorRoot` / `PenEditor`; pass `chrome={false}` for the unstyled HOST6 path. Toolbar, slash-menu, and other replaceable primitives stay unstyled.
 - Maintain composable primitive API shape (Root, Trigger, Content, Group, Item, etc.) aligned with spec.
 - Preserve `asChild` and ref-forwarding patterns where composition requires DOM control transfer.
 - Expose stable `data-*` state attributes for styling/automation instead of internal class assumptions.

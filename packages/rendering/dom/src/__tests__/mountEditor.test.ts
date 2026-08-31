@@ -328,4 +328,33 @@ describe("mountEditor", () => {
 
 		expect(getVerticalCaretMeasure(editor)).toBeUndefined();
 	});
+
+	it("HOST6: adopts editor chrome by default", () => {
+		const editor = createBareEditor();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		const style = document.getElementById("pen-editor-chrome");
+		expect(style).toBeInstanceOf(HTMLStyleElement);
+		expect(style?.textContent).toContain(`[${DATA_ATTRS.inlineContent}]`);
+	});
+
+	it("HOST6: chrome false leaves the document unstyled", () => {
+		document.getElementById("pen-editor-chrome")?.remove();
+		const editor = createBareEditor();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root, { chrome: false });
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		expect(document.getElementById("pen-editor-chrome")).toBeNull();
+	});
 });

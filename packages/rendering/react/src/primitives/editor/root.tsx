@@ -27,15 +27,18 @@ import {
 } from "../../context/editorContext";
 import { FieldEditorContext } from "../../context/fieldEditorContext";
 import {
+	adoptEditorChrome,
 	bindEditorDocumentKeyDown,
 	FieldEditorImpl,
 	RegionSelectionStore,
+	registerInlineAtomInteractionRoot,
 	registerVerticalCaretMeasure,
 	type FieldEditorSession,
 	type PenFocusLifecycleListener,
 	type PenFocusPolicy,
 } from "@input/pen-dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { EditorRegionSelectionContext } from "./regionSelectionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
@@ -44,7 +47,6 @@ import {
 	DATA_ATTRS,
 } from "@input/pen-dom/utils/dataAttributes";
 import { BlockDragSessionProvider } from "./blockDragSession";
-import { registerInlineAtomInteractionRoot } from "@input/pen-dom";
 
 export interface EditorRootProps extends AsChildProps {
 	editor: Editor;
@@ -61,6 +63,11 @@ export interface EditorRootProps extends AsChildProps {
 	interactionModel?: InteractionModel;
 	blockDragAndDrop?: BlockDragAndDropOptions;
 	blockSelection?: BlockSelectionOptions;
+	/**
+	 * Adopt the editor chrome stylesheet. Default `true` so `PenEditor` /
+	 * `Editor.Root` is a usable field. Pass `false` for the unstyled HOST6 path.
+	 */
+	chrome?: boolean;
 	ref?: React.Ref<HTMLElement>;
 }
 
@@ -80,6 +87,7 @@ export function EditorRoot(props: EditorRootProps) {
 		interactionModel,
 		blockDragAndDrop,
 		blockSelection,
+		chrome = true,
 		ref,
 		...rest
 	} = props;
@@ -117,6 +125,17 @@ export function EditorRoot(props: EditorRootProps) {
 	if (!regionSelectionStoreRef.current) {
 		regionSelectionStoreRef.current = new RegionSelectionStore();
 	}
+
+	useIsomorphicLayoutEffect(() => {
+		if (chrome === false) {
+			return;
+		}
+		const doc = rootElement?.ownerDocument;
+		if (!doc) {
+			return;
+		}
+		return adoptEditorChrome(doc);
+	}, [chrome, rootElement]);
 
 	useEffect(() => {
 		fieldEditorRef.current?.setSelectAllBehavior(

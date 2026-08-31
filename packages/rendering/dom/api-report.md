@@ -10,6 +10,7 @@
 
 ### function
 
+- adoptEditorChrome
 - attachContentGestures
 - attachInlineAtomWrapperInteractions
 - bindEditorDocumentKeyDown
@@ -59,6 +60,7 @@
 - DomSchedulerOptions
 - DomSchedulerOwner
 - DomSchedulerPhase
+- EDITOR_CHROME_CUSTOM_PROPERTIES
 - EditorSelectAllBehavior
 - FieldEditorFocusReason
 - FieldEditorFocusRequest
@@ -67,6 +69,7 @@
 - FlushCollect
 - GeometryInvalidator
 - PasteImporters
+- PEN_EDITOR_CHROME_STYLESHEET
 - PEN_REVIEW_STYLESHEET
 - PenFieldEditorFocusOptions
 - PenFocusAction

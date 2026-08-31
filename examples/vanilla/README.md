@@ -41,7 +41,7 @@ mountEditor(editor, root);
 
 That file is `src/main.ts`. `mountEditor` is the same composition `@input/pen-react` and `@input/pen-vue` already assemble: `FieldEditorImpl`, the editor-root shell, and inline-content surfaces. Construct it in the browser, not during SSR.
 
-Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. An empty paragraph's inline surface lays out at zero width, so activation resolves the clicked _block_ rather than the inline span; you do not need a `min-width` rule to land the first keystroke. The rule in this example's `index.html` is cosmetic. Tokens the `@input/pen-dom` overlays read are catalogued in `STYLING.md`, which ships inside the `@input/pen-react` package.
+`mountEditor` adopts editor-field chrome by default. Pass `{ chrome: false }` for the HOST6 unstyled path: an empty paragraph's inline surface lays out at zero width, so activation resolves the clicked _block_ rather than the inline span. The rule in this example's `index.html` is cosmetic. Tokens the `@input/pen-dom` overlays read are catalogued in `STYLING.md`, which ships inside the `@input/pen-react` package.
 
 Client-only mount: `@input/pen-dom` is a browser module — construct `FieldEditorImpl` in the browser, not during SSR.
 

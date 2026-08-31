@@ -81,9 +81,9 @@ In Next.js App Router, import `PenEditor` from a Client Component. `defaultPrese
 
 `engines.node` is `>=22`. The workspace Node and browser floor is the browser-and-Node-support table in the repository root README.
 
-## HOST6 — no stylesheet
+## HOST6 — no required stylesheet
 
-This package ships no stylesheet. Pen has no required CSS; an editor is functional unstyled. The custom-property surface is documented in `STYLING.md`, which ships inside the `@input/pen-react` package.
+This package ships no stylesheet. Renderer mounts (`PenEditor`, `Editor.Root`, `mountEditor`) adopt editor-field chrome by default; pass `chrome={false}` for the unstyled path. The custom-property surface is documented in `STYLING.md`, which ships inside the `@input/pen-react` package.
 
 Mounted examples live in the repository under `examples/react`, `examples/vue`, and `examples/vanilla`.
 

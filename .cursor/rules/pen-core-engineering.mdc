@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Core Engineering Rules
 
-- Keep Pen headless and extension-first: implement behavior/state, not opinionated styling.
+- Keep Pen headless and extension-first: implement behavior/state, not a product theme. Default field chrome on renderer mounts is the golden path (`chrome={false}` is the unstyled contract).
 - Preserve the architecture split: schema/data, headless behavior, rendering UI.
 - Respect package boundaries:
   - `@input/pen-types` for contracts and lightweight helpers.

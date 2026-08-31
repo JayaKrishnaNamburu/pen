@@ -2,7 +2,7 @@
 
 Shared DOM field-editor engine for Pen renderers. `@input/pen-react` and `@input/pen-vue` mount `FieldEditorImpl` inside their document shells. Vanilla hosts call `mountEditor`, which is that same composition without a framework.
 
-This package does not assemble a schema, install a preset, or ship CSS. It is the DOM engine, not a product editor.
+This package does not assemble a schema or install a preset. Editor-field chrome (`PEN_EDITOR_CHROME_STYLESHEET`) is adopted by `mountEditor` by default; pass `{ chrome: false }` to skip. It is the DOM engine, not a product editor.
 
 ## Install
 
@@ -34,7 +34,7 @@ mountEditor(editor, root);
 
 That snippet is the vanilla mount path. `FieldEditorImpl.setRootElement` alone binds a focus sink and never builds the document tree — the page stays blank while it typechecks. React and Vue hosts should keep using those packages; they already construct `FieldEditorImpl` and the same document shell.
 
-Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke.
+`mountEditor` adopts editor-field chrome by default so an empty field fills its block, placeholders paint, and `:focus-visible` uses `--pen-focus-ring`. Pass `{ chrome: false }` for the HOST6 unstyled path: clicks still land and the first keystroke works with no CSS.
 
 The root export also includes `urlPolicy`, `urlPolicyExtension`, `DomScheduler`, and keyboard helpers such as `bindEditorDocumentKeyDown` and `handleEditorDocumentKeyDown`. Extra subpaths exist on the `exports` map (`./field-editor`, `./constants/selectAll`, and the listed `./utils/*` keys). Prefer the root export unless you already depend on a subpath.
 
@@ -42,7 +42,7 @@ The root export also includes `urlPolicy`, `urlPolicyExtension`, `DomScheduler`,
 
 The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the Pen repository. This package is the vanilla surface, and it is also where most capabilities are implemented for the framework bindings — so its column is mostly `bring-your-own-ui`: the behavior is here, and `mountEditor` renders no chrome for it.
 
-`supported` from `mountEditor` alone: single-block fields, expanded fields, document mutation, paste, and the review-surface styling contract (adopt `PEN_REVIEW_STYLESHEET`). Everything else — table chrome, AI review affordances, overlays, multiplayer presence, search UI — exports its state and utilities and leaves the rendering to you.
+`supported` from `mountEditor` alone: single-block fields, expanded fields, document mutation, paste, editor-field chrome (`PEN_EDITOR_CHROME_STYLESHEET`), and the review-surface styling contract (adopt `PEN_REVIEW_STYLESHEET`). Everything else — table chrome, AI review affordances, overlays, multiplayer presence, search UI — exports its state and utilities and leaves the rendering to you.
 
 ## Options
 
@@ -53,6 +53,7 @@ The normative per-surface matrix is `packages/docs/CAPABILITY-MATRIX.md` in the 
 | `readonly`         | `false`           | Declines typing and pointer activation; sets `data-readonly` (match with `[data-readonly]`, not `="true"`) and `aria-readonly="true"`. Does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`. |
 | `interactionModel` | `"content-first"` | Passed through `resolveSelectAllBehavior`                                                                                                                                                                                    |
 | `focusPolicy`      | unset             | Host focus policy passed to `FieldEditorImpl`                                                                                                                                                                                |
+| `chrome`           | `true`            | Adopt `PEN_EDITOR_CHROME_STYLESHEET`. Pass `false` for the unstyled HOST6 path.                                                                                                                                              |
 
 `FieldEditorImpl` accepts a second argument:
 

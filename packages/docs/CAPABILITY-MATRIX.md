@@ -56,8 +56,9 @@ The three AI rows are the parity story HB1 exists to tell. All three capabilitie
 | --- | --- | --- | --- | --- |
 | Overlays (carets, selection rects, block outlines) | `supported` — `packages/rendering/react/src/__tests__/regionSelection.marqueeBounds.test.tsx` | `bring-your-own-ui` — Vue paints no overlays, as `packages/rendering/vue/STYLING.md` states; native selection still renders | `bring-your-own-ui` — geometry and overlay utilities ship; `mountEditor` mounts no layer. `packages/tooling/conformance/suites/overlays/o1-ordinary-native.spec.ts` | `not-supported` — overlays are geometry, which needs layout |
 | Review surface styling | `supported` — `packages/extensions/ai/src/__tests__/rs4.stylingContract.test.ts` | `supported` — `packages/extensions/ai/src/__tests__/rs4.stylingContract.test.ts` | `supported` — `packages/extensions/ai/src/__tests__/rs4.stylingContract.test.ts` | `not-supported` — CSS needs a document |
+| Editor field chrome | `supported` — `packages/rendering/react/src/__tests__/editorChrome.test.ts` | `supported` — `packages/rendering/vue/src/__tests__/editorChrome.test.ts` | `supported` — `packages/rendering/dom/src/__tests__/editorChrome.test.ts` | `not-supported` — CSS needs a document |
 
-The styling contract is `supported` everywhere it can be because it is one exported sheet plus one class vocabulary (RS4), not per-binding code: `PEN_REVIEW_STYLESHEET` from `@input/pen-dom`, class names from `@input/pen-types`.
+The styling contract is `supported` everywhere it can be because it is one exported sheet plus one class vocabulary (RS4), not per-binding code: `PEN_REVIEW_STYLESHEET` from `@input/pen-dom`, class names from `@input/pen-types`. Editor-field chrome is the same idea: one sheet (`PEN_EDITOR_CHROME_STYLESHEET`), adopted by `EditorRoot`, `PenEditor`, and `mountEditor` unless `chrome={false}`.
 
 ## Data
 

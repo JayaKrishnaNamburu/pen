@@ -40,7 +40,7 @@ const editor = createEditor();
 
 That file is `src/App.vue`. Mount it from a browser entry (`src/main.ts` calls `createApp(App).mount("#app")`).
 
-Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. An empty paragraph's inline surface lays out at zero width, so activation resolves the clicked _block_ rather than the inline span; you do not need a `min-width` rule to land the first keystroke. The rule in this example's `index.html` is cosmetic. What Vue applies itself is in `STYLING.md` inside `@input/pen-vue`; the token catalog it defers to is `STYLING.md` inside `@input/pen-react`.
+`PenEditor` adopts editor-field chrome by default. Pass `:chrome="false"` for the HOST6 unstyled path: an empty paragraph's inline surface lays out at zero width, so activation resolves the clicked _block_ rather than the inline span. The rule in this example's `index.html` is cosmetic. What Vue applies itself is in `STYLING.md` inside `@input/pen-vue`; the token catalog it defers to is `STYLING.md` inside `@input/pen-react`.
 
 Client-only mount: Vue has no `"use client"` directive, so `@input/pen-vue` does not emit one — mount `PenEditor` in the browser, not during SSR.
 

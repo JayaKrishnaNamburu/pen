@@ -67,13 +67,16 @@
 
 [data-pen-editor-root] {
 	min-height: 100%;
+	--pen-focus-ring: transparent;
+	--pen-placeholder-color: var(--palette-b40);
 }
 
 /*
  * Pen moves focus between the root, the blocks host, and individual blocks as
  * the selection changes. All of them are `tabindex="-1"`, so none is a tab stop
  * and the global focus ring would only box in what the caret already marks.
- * The caret and the selection highlight are the focus indicator here.
+ * Default library chrome paints a `:focus-visible` ring; this host already
+ * paints a caret, so `--pen-focus-ring: transparent` is the AX5 replacement.
  */
 [data-pen-editor-root],
 [data-pen-editor-blocks-host],
@@ -94,13 +97,13 @@
 }
 
 /*
- * Empty-document and empty-block placeholders share one look. The library
- * sets `position: relative` on the surface when a placeholder is showing.
- * Empty inline surfaces are 0-wide until they contain text, so shrink-to-fit
- * would wrap the `::before` into a word column without `nowrap`.
+ * Empty-document placeholder (content host). Inline empty fields paint
+ * through library chrome; this host remaps `--pen-placeholder-color` above.
+ * Empty inline surfaces are 0-wide until they contain text when chrome is
+ * off, so shrink-to-fit would wrap the `::before` into a word column
+ * without `nowrap`.
  */
-[data-pen-editor-content][data-placeholder-visible]::before,
-[data-pen-inline-content][data-placeholder-visible]::before {
+[data-pen-editor-content][data-placeholder-visible]::before {
 	content: attr(data-placeholder);
 	position: absolute;
 	white-space: nowrap;

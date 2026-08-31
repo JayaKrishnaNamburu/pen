@@ -5,6 +5,7 @@ import {
 } from "@input/pen-core";
 import { htmlImporter } from "@input/pen-interop/html";
 import {
+	adoptEditorChrome,
 	bindEditorDocumentKeyDown,
 	FieldEditorImpl,
 	handleFieldEditorPointerActivate,
@@ -72,6 +73,10 @@ export const PenEditor = defineComponent({
 			type: Object as PropType<PasteImporters | undefined>,
 			default: undefined,
 		},
+		chrome: {
+			type: Boolean,
+			default: true,
+		},
 		assets: {
 			type: Object as PropType<AssetProvider | undefined>,
 			default: undefined,
@@ -114,6 +119,26 @@ export const PenEditor = defineComponent({
 		provideFieldEditorContext(fieldEditor);
 
 		props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+
+		watch(
+			() => [props.chrome, rootElement.value] as const,
+			([chrome, root], _previous, onCleanup) => {
+				if (chrome === false) {
+					return;
+				}
+				const doc =
+					root?.ownerDocument ??
+					(typeof document !== "undefined" ? document : undefined);
+				if (!doc) {
+					return;
+				}
+				const releaseChrome = adoptEditorChrome(doc);
+				onCleanup(() => {
+					releaseChrome();
+				});
+			},
+			{ immediate: true },
+		);
 
 		watch(
 			() => props.interactionModel,

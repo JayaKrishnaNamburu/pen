@@ -26,6 +26,7 @@ export function PenEditor(props: PenEditorProps) {
 		emptyPlaceholder,
 		children,
 		customCaret = false,
+		chrome,
 		...rest
 	} = props;
 
@@ -39,6 +40,7 @@ export function PenEditor(props: PenEditorProps) {
 			renderers={renderers}
 			editorViewMode={editorViewMode}
 			interactionModel={interactionModel}
+			chrome={chrome}
 		>
 			<EditorContent emptyPlaceholder={emptyPlaceholder} {...rest}>
 				{children}

@@ -16,7 +16,7 @@
 
 ## Why Pen
 
-**You own the UI.** Pen ships no required stylesheet and no built-in chrome. Toolbars, slash menus, and AI panels are your markup over Pen's state. Start with one component, or compose the `Pen.*` primitives and keep every pixel.
+**You own the UI.** Toolbars, slash menus, and AI panels are your markup over Pen's state. The editor field itself adopts a small chrome stylesheet by default so `createEditor()` plus `<PenEditor />` is a usable field; pass `chrome={false}` to stay unstyled. Start with one component, or compose the `Pen.*` primitives and keep every pixel.
 
 **One write path.** A keystroke, a paste, an AI rewrite, and a remote peer all become `DocumentOp[]` and go through `editor.apply(ops, { origin })`. There is no second way to change a document, so undo, review, and history read one stream instead of guessing.
 
@@ -110,7 +110,7 @@ mountEditor(editor, root);
 
 **Direct imports.** Sections below import `@input/pen-types` and `@input/pen-shortcuts` on top of a feature package each. Both arrive transitively with the starter, so the code resolves without them in your manifest, but list whatever you import directly, because a phantom dependency breaks as soon as the tree shifts underneath it.
 
-**Styling.** The editor is functional unstyled, including on an empty document: clicks land and the first keystroke works with no CSS at all. Design tokens live in the `STYLING.md` that ships inside `@input/pen-react`.
+**Styling.** `PenEditor` and `mountEditor` adopt editor-field chrome by default (full-width empty field, painted placeholders, a `:focus-visible` ring). Pass `chrome={false}` for the HOST6 unstyled path: clicks still land and the first keystroke works with no CSS at all. Design tokens live in the `STYLING.md` that ships inside `@input/pen-react`.
 
 ## The Document Model
 

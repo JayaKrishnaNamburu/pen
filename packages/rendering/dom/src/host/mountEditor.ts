@@ -14,11 +14,18 @@ import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
 import { computeDocumentEmpty } from "../utils/editorEmptyState";
 import { createDocumentTree } from "./documentTree";
 import { handleFieldEditorPointerActivate } from "./pointerActivation";
+import { adoptEditorChrome } from "../styles/editorChrome";
 
 export interface MountEditorOptions {
 	readonly?: boolean;
 	interactionModel?: InteractionModel;
 	focusPolicy?: PenFocusPolicy;
+	/**
+	 * Adopt the editor chrome stylesheet into the root's document.
+	 * Default `true` so `mountEditor()` is a usable field. Pass `false` for
+	 * the unstyled HOST6 path.
+	 */
+	chrome?: boolean;
 }
 
 export interface MountedEditor {
@@ -34,6 +41,10 @@ export function mountEditor(
 ): MountedEditor {
 	const readonly = options.readonly === true;
 	const interactionModel = options.interactionModel ?? "content-first";
+	const releaseChrome =
+		options.chrome === false
+			? undefined
+			: adoptEditorChrome(root.ownerDocument);
 	const fieldEditor = new FieldEditorImpl(editor, {
 		selectAllBehavior: resolveSelectAllBehavior(interactionModel),
 		focusPolicy: options.focusPolicy,
@@ -109,6 +120,7 @@ export function mountEditor(
 		fieldEditor.destroy();
 		tree.content.remove();
 		clearEditorRootAttrs(root);
+		releaseChrome?.();
 	};
 
 	return { fieldEditor, root, destroy };

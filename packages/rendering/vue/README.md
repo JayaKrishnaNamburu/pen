@@ -72,14 +72,14 @@ That second list is not a to-do list. Pen's capabilities live in `@input/pen-cor
 ## Notes
 
 - Client-only mount: Vue has no `"use client"` directive, so this package does not emit one — mount `PenEditor` in the browser.
-- Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke. The HOST6 styling contract is [STYLING.md](./STYLING.md).
+- `PenEditor` adopts editor-field chrome by default. Pass `:chrome="false"` for the HOST6 unstyled path. The HOST6 styling contract is [STYLING.md](./STYLING.md).
 - `PenEditor` installs the shared DOM field-editor engine from `@input/pen-dom`.
 - Renderer overrides let host apps customize block rendering without forking the editor runtime.
 - Paste importers can be passed through the `importers` prop on `PenEditor`.
 
 ## Options
 
-`PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional; when omitted, the editor uses the message-catalog string for `pen.schema.document.emptyPlaceholder` (`Start writing...`). `importers` is optional.
+`PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional; when omitted, the editor uses the message-catalog string for `pen.schema.document.emptyPlaceholder` (`Start writing...`). `importers` is optional. `chrome` defaults to `true` (adopts editor-field chrome); pass `:chrome="false"` to skip.
 
 `readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`.
 
