@@ -89,4 +89,19 @@ describe("createFocusSink (AX1)", () => {
 			"1 by 2 cells selected",
 		);
 	});
+
+	it("AX1: construction clip-hides the sink and reveal keeps it visually hidden", () => {
+		const sink = makeSink();
+
+		expect(sink.element.style.position).toBe("absolute");
+		expect(sink.element.style.width).toBe("1px");
+		expect(sink.element.style.height).toBe("1px");
+		expect(sink.element.style.overflow).toBe("hidden");
+		expect(sink.element.style.clip).toMatch(/^rect\(/);
+
+		sink.reveal({ kind: "block", label: "1 block selected" });
+
+		expect(sink.element.style.position).toBe("absolute");
+		expect(sink.element.style.clip).toMatch(/^rect\(/);
+	});
 });

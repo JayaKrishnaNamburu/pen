@@ -27,6 +27,8 @@
  * `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing.
  */
 
+import { hideVisually } from "./hideVisually";
+
 export const FOCUS_SINK_ATTR = "data-pen-focus-sink";
 
 export type FocusSinkKind = "block" | "cell";
@@ -51,6 +53,7 @@ export function createFocusSink(doc: Document = document): FocusSink {
 	// data-* identity, AT-neutral. Must be set before appendChild so
 	// same-turn [data-pen-focus-sink] queries find it.
 	element.setAttribute(FOCUS_SINK_ATTR, "");
+	hideVisually(element);
 	hideSink(element);
 
 	return {

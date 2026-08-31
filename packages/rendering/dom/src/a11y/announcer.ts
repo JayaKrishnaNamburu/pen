@@ -13,6 +13,8 @@
  * boolean). `aria-live` is a token (`polite`/`assertive`), not a boolean.
  */
 
+import { hideVisually } from "./hideVisually";
+
 export const ANNOUNCE_RATE_LIMIT_MS = 500;
 
 export type AnnouncerPriority = "polite" | "assertive";
@@ -134,18 +136,6 @@ function createLiveRegion(
 	hideVisually(region);
 	mount.appendChild(region);
 	return region;
-}
-
-function hideVisually(element: HTMLElement): void {
-	element.style.position = "absolute";
-	element.style.width = "1px";
-	element.style.height = "1px";
-	element.style.padding = "0";
-	element.style.margin = "-1px";
-	element.style.overflow = "hidden";
-	element.style.clip = "rect(0 0 0 0)";
-	element.style.whiteSpace = "nowrap";
-	element.style.border = "0";
 }
 
 function resolveDocument(root?: ParentNode): Document | undefined {
