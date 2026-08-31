@@ -81,6 +81,10 @@ function hideSink(element: HTMLElement): void {
 	element.tabIndex = -1;
 	element.removeAttribute("role");
 	element.removeAttribute("aria-label");
+	// Suppress :focus-visible on a non-interactive AT-management element.
+	// Host global styles (e.g. :focus-visible { outline: ... }) leak into
+	// the sink when it is programmatically focused for block/cell selection.
+	element.style.outline = "none";
 }
 
 function revealSink(element: HTMLElement, selection: FocusSinkReveal): void {
