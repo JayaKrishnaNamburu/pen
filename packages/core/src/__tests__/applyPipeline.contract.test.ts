@@ -312,6 +312,43 @@ describe("apply pipeline contract (Lane 179)", () => {
 		editor.destroy();
 	});
 
+	it("keeps enumerable symbol owner keys on onBeforeApply snapshots", () => {
+		const editor = createEditor();
+		const owner = Symbol("pen.editDocument.owner");
+		const token = Symbol("owner-token");
+		const blockId = editor.firstBlock()!.id;
+		const incomingTokens: symbol[] = [];
+
+		editor.onBeforeApply((incoming) => {
+			for (const op of incoming) {
+				const value = (op as unknown as Record<symbol, unknown>)[owner];
+				if (typeof value === "symbol") {
+					incomingTokens.push(value);
+				}
+			}
+			return incoming;
+		});
+
+		const op: DocumentOp = {
+			type: "splice-text",
+			blockId,
+			from: 0,
+			to: 0,
+			insert: "owned",
+		};
+		Object.defineProperty(op, owner, {
+			value: token,
+			enumerable: true,
+			configurable: true,
+			writable: true,
+		});
+		editor.apply([op]);
+
+		expect(incomingTokens).toEqual([token]);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("owned");
+		editor.destroy();
+	});
+
 	it("does not let an onBeforeApply hook mutate the caller's nested op fields", () => {
 		const editor = createEditor();
 		const props = { checked: false };
@@ -600,9 +637,7 @@ describe("apply pipeline contract (Lane 179)", () => {
 
 	it("walks layout children from editor.blocks and documentState.allBlocks", () => {
 		const editor = createEditor({
-			schema: createDefaultSchema().extend([
-				columns,
-			]),
+			schema: createDefaultSchema().extend([columns]),
 		});
 		const rootId = editor.firstBlock()!.id;
 

@@ -38,6 +38,10 @@ export {
 	destructureInlineAtom,
 	selectInlineAtomRangeFromShiftClick,
 } from "./field-editor/inlineAtomDestructure";
+export {
+	getInlineAtomAtOffset,
+	removeInlineAtom,
+} from "./field-editor/inlineAtomInteraction";
 export { attachContentGestures } from "./field-editor/contentGestures";
 export type {
 	AttachContentGesturesOptions,

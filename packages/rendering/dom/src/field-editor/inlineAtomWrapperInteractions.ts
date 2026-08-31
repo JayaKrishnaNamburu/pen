@@ -8,6 +8,7 @@ import {
 import {
 	getInlineAtomAtOffset,
 	moveInlineAtom,
+	removeInlineAtom,
 	resolveInlineAtomDropTarget,
 	type InlineAtomDropTarget,
 	type InlineAtomRenderInteractionProps,
@@ -167,7 +168,8 @@ export function getInlineAtomRenderInteractionProps(
 	options: InlineAtomWrapperInteractionOptions,
 	dragging = false,
 ): InlineAtomRenderInteractionProps | undefined {
-	if (!options.interactions.drag && !canDestructure(options)) {
+	const canRemove = !options.readonly;
+	if (!options.interactions.drag && !canDestructure(options) && !canRemove) {
 		return undefined;
 	}
 
@@ -175,8 +177,19 @@ export function getInlineAtomRenderInteractionProps(
 		draggable: options.interactions.drag && !options.readonly,
 		dragging,
 		canDestructure: canDestructure(options) && !options.readonly,
+		canRemove,
 		destructure: canDestructure(options)
 			? () => destructureInlineAtom(options)
+			: undefined,
+		remove: canRemove
+			? () =>
+					removeInlineAtom({
+						source: {
+							editor: options.editor,
+							blockId: options.blockId,
+							offset: options.offset,
+						},
+					})
 			: undefined,
 	};
 }

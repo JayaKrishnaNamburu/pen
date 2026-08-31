@@ -329,10 +329,22 @@ function snapshotPlain(value: unknown): unknown {
 	if (Array.isArray(value)) {
 		return value.map(snapshotPlain);
 	}
-	const next: Record<string, unknown> = {};
+	const next: Record<string | symbol, unknown> = {};
 	for (const key of Object.keys(value as object)) {
 		Object.defineProperty(next, key, {
 			value: snapshotPlain((value as Record<string, unknown>)[key]),
+			enumerable: true,
+			configurable: true,
+			writable: true,
+		});
+	}
+	for (const key of Object.getOwnPropertySymbols(value as object)) {
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (!descriptor?.enumerable) {
+			continue;
+		}
+		Object.defineProperty(next, key, {
+			value: snapshotPlain(descriptor.value),
 			enumerable: true,
 			configurable: true,
 			writable: true,

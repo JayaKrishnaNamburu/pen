@@ -1,4 +1,8 @@
-import { sortDeltaAttributes, urlPolicy, type UrlContext } from "@input/pen-core";
+import {
+	sortDeltaAttributes,
+	urlPolicy,
+	type UrlContext,
+} from "@input/pen-core";
 import type {
 	BlockHandle,
 	Editor,
@@ -62,7 +66,7 @@ export const htmlExporter: Exporter<string, HtmlExporterExtraOptions> = {
 			}
 
 			if (handle.type === "image") {
-				parts.push(serializeImageHTML(handle));
+				parts.push(serializeImageBlockHTML(handle, editor));
 				continue;
 			}
 
@@ -118,8 +122,7 @@ function serializeInlineContentHTML(
 		}
 
 		const suggestion = delta.attributes?.suggestion as
-			| { action?: string }
-			| undefined;
+			{ action?: string } | undefined;
 		if (
 			viewMode === "resolved" &&
 			suggestion?.action === DELETE_SUGGESTION_ACTION
@@ -227,8 +230,7 @@ function serializeTableCellHTML(
 		}
 
 		const suggestion = delta.attributes?.suggestion as
-			| { action?: string }
-			| undefined;
+			{ action?: string } | undefined;
 		if (
 			viewMode === "resolved" &&
 			suggestion?.action === DELETE_SUGGESTION_ACTION
@@ -314,7 +316,8 @@ function renderListRunHTML(
 			}
 		}
 
-		html += `${serializeMarkupOpenTag("li")}${renderListItemInnerHTML(handle, editor, viewMode)}`;
+		const item = renderListItemHTML(handle, editor, viewMode);
+		html += `${item.openTag}${item.inner}`;
 	}
 
 	while (stack.length > 0) {
@@ -324,14 +327,17 @@ function renderListRunHTML(
 	return { html, nextIndex: index };
 }
 
-function renderListItemInnerHTML(
+function renderListItemHTML(
 	handle: BlockHandle,
 	editor: Editor,
 	viewMode: HtmlExportViewMode,
-): string {
+): { openTag: string; inner: string } {
 	const schema = editor.schema.resolve(handle.type);
 	if (!schema?.serialize?.toHTML) {
-		return serializeMarkupText(handle.textContent());
+		return {
+			openTag: serializeMarkupOpenTag("li"),
+			inner: serializeMarkupText(handle.textContent()),
+		};
 	}
 
 	const block = {
@@ -340,8 +346,23 @@ function renderListItemInnerHTML(
 		props: handle.props,
 		content: serializeInlineContentHTML(handle, editor, viewMode),
 	};
-	const html = schema.serialize.toHTML(block);
-	return html.replace(/^<li>/, "").replace(/<\/li>$/, "");
+	return unwrapListItemHtml(schema.serialize.toHTML(block));
+}
+
+function unwrapListItemHtml(html: string): { openTag: string; inner: string } {
+	const openMatch = /^<li\b[^>]*>/i.exec(html);
+	if (!openMatch) {
+		return {
+			openTag: serializeMarkupOpenTag("li"),
+			inner: html,
+		};
+	}
+	const openTag = openMatch[0];
+	let inner = html.slice(openTag.length);
+	if (/<\/li>$/i.test(inner)) {
+		inner = inner.slice(0, -"</li>".length);
+	}
+	return { openTag, inner };
 }
 
 function urlAttributes(
@@ -356,6 +377,20 @@ function urlAttributes(
 	return { [name]: resolved };
 }
 
+function serializeImageBlockHTML(handle: BlockHandle, editor: Editor): string {
+	const schema = editor.schema.resolve(handle.type);
+	if (schema?.serialize?.toHTML) {
+		const block = {
+			id: handle.id,
+			type: handle.type,
+			props: handle.props,
+			content: "",
+		};
+		return applyImageUrlPolicyToHtml(schema.serialize.toHTML(block));
+	}
+	return serializeImageHTML(handle);
+}
+
 function serializeImageHTML(handle: BlockHandle): string {
 	const attributes: Record<string, MarkupAttributeValue> = {
 		...urlAttributes("src", handle.props.src, "image"),
@@ -366,8 +401,63 @@ function serializeImageHTML(handle: BlockHandle): string {
 	if (handle.props.width) {
 		attributes.width = String(handle.props.width);
 	}
+	return serializeSelfClosingImage(attributes);
+}
+
+function serializeSelfClosingImage(
+	attributes: Record<string, MarkupAttributeValue>,
+): string {
 	const open = serializeMarkupOpenTag("img", attributes);
 	return `${open.slice(0, -1)} />`;
+}
+
+const MARKUP_ENTITY_PATTERN = /&(?:amp|lt|gt|quot|apos);/g;
+
+const MARKUP_ENTITY_REPLACEMENTS: Record<string, string> = {
+	"&amp;": "&",
+	"&lt;": "<",
+	"&gt;": ">",
+	"&quot;": '"',
+	"&apos;": "'",
+};
+
+function unescapeMarkupAttribute(value: string): string {
+	return value.replace(
+		MARKUP_ENTITY_PATTERN,
+		(entity) => MARKUP_ENTITY_REPLACEMENTS[entity] ?? entity,
+	);
+}
+
+function parseMarkupAttributes(
+	blob: string,
+): Record<string, MarkupAttributeValue> {
+	const attributes: Record<string, MarkupAttributeValue> = {};
+	const pattern = /([^\s=]+)(?:=("([^"]*)"|'([^']*)'|(\S+)))?/g;
+	for (const match of blob.matchAll(pattern)) {
+		const name = match[1]!;
+		if (match[2] == null) {
+			attributes[name] = true;
+			continue;
+		}
+		const raw = match[3] ?? match[4] ?? match[5] ?? "";
+		attributes[name] = unescapeMarkupAttribute(raw);
+	}
+	return attributes;
+}
+
+function applyImageUrlPolicyToHtml(html: string): string {
+	return html.replace(
+		/<img\b([^>]*?)\s*\/?\s*>/gi,
+		(_full, attrBlob: string) => {
+			const attributes = parseMarkupAttributes(attrBlob);
+			const rawSrc = attributes.src;
+			delete attributes.src;
+			return serializeSelfClosingImage({
+				...urlAttributes("src", rawSrc, "image"),
+				...attributes,
+			});
+		},
+	);
 }
 
 function serializeLinkHTML(text: string, props: unknown): string {

@@ -7,6 +7,7 @@ import type {
 	LayoutSchema,
 	SchemaRegistry,
 } from "@input/pen-types";
+import { generateValidator } from "./generateValidator";
 import { suggestion } from "./system-marks/suggestion";
 
 export interface SchemaRegistryConfig {
@@ -241,6 +242,13 @@ export class SchemaRegistryImpl implements ComposableSchema {
 		};
 		if (patch.serialize) {
 			merged.serialize = { ...existing.serialize, ...patch.serialize };
+		}
+		if ("propSchema" in patch && !("validateProps" in patch)) {
+			const propSchema = merged.propSchema ?? {};
+			merged.validateProps =
+				Object.keys(propSchema).length > 0
+					? generateValidator(propSchema)
+					: undefined;
 		}
 
 		const blocks = new Map(this._blocks);

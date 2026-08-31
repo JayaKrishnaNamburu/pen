@@ -29,10 +29,10 @@ describe("InlineAtomRenderProps declaration emit", () => {
 				join(scratch, "consumer.ts"),
 				`import type { InlineAtomRenderProps } from "@input/pen-react";
 
-export function readCanDestructure(
+export function readCanRemove(
 	props: InlineAtomRenderProps,
 ): boolean | undefined {
-	return props.interaction?.canDestructure;
+	return props.interaction?.canRemove;
 }
 `,
 			);

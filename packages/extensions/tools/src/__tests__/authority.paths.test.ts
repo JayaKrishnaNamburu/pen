@@ -11,6 +11,7 @@ import { ToolContextImpl } from "../toolContext";
 import { ToolRuntimeImpl } from "../toolServer";
 import { insertBlockTool } from "../tools/insertBlock";
 import { writeDocumentTool } from "../tools/writeDocument";
+import { executeEditDocument } from "../tools/editDocument";
 import { applyValidatedOps } from "../utils/payloadValidation";
 import { getDocumentToolRuntime } from "../utils/toolServer";
 
@@ -29,6 +30,7 @@ import { getDocumentToolRuntime } from "../utils/toolServer";
  *   getDocumentToolRuntime slot  no      yes            live extension slot
  *   ToolContext.insert/update/   no      yes            programmatic API
  *   applyValidatedOps            no      yes            shared write helper
+ *   executeEditDocument          no      yes            host compile-and-apply
  *   executeAITool / openAITool   yes     (via grant)    out of this package
  *   SSE / direct transports      yes     (via grant)    out of this package
  *   processStream tool-input-*   yes     empty grant    out of this package
@@ -219,6 +221,16 @@ describe("tools execution path inventory", () => {
 					},
 					{} as never,
 				),
+			() =>
+				executeEditDocument(editor, {
+					operations: [
+						{
+							operation: "set_block_props",
+							blockId: "fixture-body",
+							blockType: "subdocument",
+						},
+					],
+				}),
 		];
 
 		for (const attempt of attempts) {
@@ -230,6 +242,64 @@ describe("tools execution path inventory", () => {
 		}
 
 		assertDocEquals(editor, FIXTURE_BLOCKS);
+		expect(encodeDocument(editor)).toEqual(before);
+	});
+
+	it("AIB3: executeEditDocument refuses a hidden existing block and leaves bytes identical", () => {
+		const editor = createLiveEditor([
+			...FIXTURE_BLOCKS,
+			{
+				id: "fixture-subdoc",
+				type: "subdocument",
+				props: { title: "Hidden" },
+				content: "secret",
+			},
+		]);
+		const before = encodeDocument(editor);
+
+		const result = executeEditDocument(editor, {
+			operations: [
+				{
+					operation: "replace_block_text",
+					blockId: "fixture-subdoc",
+					text: "Should not land",
+				},
+			],
+		});
+
+		expect(result.ok).toBe(false);
+		expect(result.appliedOperations).toEqual([]);
+		expect(result.rejected?.[0]?.reason).toMatch(/not editable/);
+		expect(encodeDocument(editor)).toEqual(before);
+	});
+
+	it("AIB3: executeEditDocument refuses a prototype-key payload and leaves bytes identical", () => {
+		const editor = createLiveEditor();
+		const before = encodeDocument(editor);
+		const level: Record<string, unknown> = {};
+		Object.defineProperty(level, "__proto__", {
+			value: { polluted: true },
+			enumerable: true,
+			configurable: true,
+			writable: true,
+		});
+		const props: Record<string, unknown> = { level };
+
+		const result = executeEditDocument(editor, {
+			operations: [
+				{
+					operation: "set_block_props",
+					blockId: "fixture-title",
+					props,
+				},
+			],
+		});
+
+		expect(result.ok).toBe(false);
+		expect(result.appliedOperations).toEqual([]);
+		expect(result.rejected?.[0]?.reason).toMatch(
+			/Prototype keys|invalid-payload/,
+		);
 		expect(encodeDocument(editor)).toEqual(before);
 	});
 });

@@ -1,6 +1,7 @@
 import { buildDocumentWriteOps } from "@input/pen-ingest";
 import { convertBlockOps, supportsInlineMarks } from "@input/pen-core";
 import type {
+	ApplyOptions,
 	DocumentOp,
 	Editor,
 	InlineSchema,
@@ -22,12 +23,16 @@ import { validateToolPayloads } from "../utils/payloadValidation";
  * carry them (EC18). The set is closed (EC4). Nothing here throws: a
  * rejected operation is a returned result the model can read and retry
  * against (EC5), and a payload that cannot be understood never becomes
- * document content (EC6).
+ * document content (EC6). Hosts that need a different apply origin or a
+ * wrapper around `editor.apply` use {@link executeEditDocument} or
+ * {@link editDocumentTool} with {@link ExecuteEditDocumentOptions} rather
+ * than compiling operations themselves (EC21).
  *
  * Spec: `spec/packages/extensions/ai.md`.
  */
 
-const EDIT_OPERATIONS = [
+/** Closed `edit_document` operation names (EC4). */
+export const EDIT_DOCUMENT_OPERATIONS = [
 	"replace_block_text",
 	"replace_blocks",
 	"insert_blocks",
@@ -37,9 +42,14 @@ const EDIT_OPERATIONS = [
 	"set_block_props",
 ] as const;
 
-type EditOperation = (typeof EDIT_OPERATIONS)[number];
+/** One member of {@link EDIT_DOCUMENT_OPERATIONS}. */
+export type EditDocumentOperation = (typeof EDIT_DOCUMENT_OPERATIONS)[number];
 
-interface EditRequest {
+/**
+ * One operation in an `edit_document` envelope. The planner reads these
+ * fields from untrusted input; extra keys are ignored (EC2).
+ */
+export interface EditDocumentOperationInput {
 	operation?: unknown;
 	blockId?: unknown;
 	blockIds?: unknown;
@@ -55,27 +65,199 @@ interface EditRequest {
 }
 
 /** One block's public handle, as handed back to the model on a refusal (EC5). */
-interface OutlineEntry {
+export interface EditDocumentOutlineEntry {
 	blockId: string;
 	blockType: string;
 	preview: string;
 }
 
-interface EditRejection {
+/** One semantic refusal inside an {@link EditDocumentResult} (EC5). */
+export interface EditDocumentRejection {
 	index: number;
 	operation: string;
 	reason: string;
 }
 
-interface EditDocumentResult {
+/** Result of {@link executeEditDocument} and the `edit_document` tool handler. */
+export interface EditDocumentResult {
 	ok: boolean;
 	appliedOperations: string[];
-	rejected?: EditRejection[];
-	outline?: OutlineEntry[];
+	rejected?: EditDocumentRejection[];
+	outline?: EditDocumentOutlineEntry[];
 	hint?: string;
 }
 
-export function editDocumentTool(editor: Editor): ToolDefinition {
+/** One compiled {@link DocumentOp} and the envelope operation that produced it. */
+export interface EditDocumentCompiledOp {
+	index: number;
+	operation: string;
+	op: DocumentOp;
+}
+
+/**
+ * Compiled `edit_document` operations, before payload validation or apply.
+ * Planning does not write: {@link compiledOperations} names operations that
+ * produced ops, not operations that landed (EC21).
+ */
+export interface EditDocumentPlan {
+	/** Flattened compiled ops, same order as {@link compiled}. */
+	ops: DocumentOp[];
+	/** Compiled ops tagged with the envelope index they belong to. */
+	compiled: EditDocumentCompiledOp[];
+	/** Operation names that compiled successfully, in envelope order. */
+	compiledOperations: string[];
+	rejected: EditDocumentRejection[];
+}
+
+/**
+ * Host options for {@link executeEditDocument} and {@link editDocumentTool}.
+ * The injected `apply` must still land through `editor.apply` (EC13).
+ */
+export interface ExecuteEditDocumentOptions {
+	/**
+	 * Apply origin. Default `"ai"`. Passed through to `apply` as
+	 * `applyOptions.origin`.
+	 */
+	origin?: ApplyOptions["origin"];
+	/**
+	 * Host write path. Default calls `editor.apply(ops, applyOptions)`.
+	 * Must not map results; {@link executeEditDocument} observes the apply
+	 * boundary and merges applied/rejected itself (EC5, EC21).
+	 */
+	apply?: (ops: DocumentOp[], applyOptions: ApplyOptions) => void;
+}
+
+/**
+ * Compile an `edit_document` envelope into {@link DocumentOp}s without applying.
+ *
+ * @param editor - Live editor used for target lookup, schema checks, and markdown compile.
+ * @param input - Tool envelope `{ operations: [...] }`. Extra keys are ignored (EC2).
+ * @returns A plan: compiled ops with envelope ownership, compiled operation names, and semantic refusals.
+ * @throws Never. Semantic failures are {@link EditDocumentPlan.rejected} (EC5).
+ */
+export function planEditDocument(
+	editor: Editor,
+	input: unknown,
+): EditDocumentPlan {
+	const requests = readRequests(input);
+	if (requests.length === 0) {
+		return emptyPlan([
+			{
+				index: 0,
+				operation: "(none)",
+				reason: "no-operations: expected a non-empty `operations` array.",
+			},
+		]);
+	}
+
+	const compiled: EditDocumentCompiledOp[] = [];
+	const rejected: EditDocumentRejection[] = [];
+	const compiledOperations: string[] = [];
+
+	for (const [index, request] of requests.entries()) {
+		const built = buildEditOps(editor, request);
+		if (!built.ok) {
+			rejected.push({
+				index,
+				operation: String(request.operation ?? "(missing)"),
+				reason: built.reason,
+			});
+			continue;
+		}
+		const operation = String(request.operation);
+		compiledOperations.push(operation);
+		for (const op of built.ops) {
+			compiled.push({ index, operation, op });
+		}
+	}
+
+	return {
+		ops: compiled.map((entry) => entry.op),
+		compiled,
+		compiledOperations,
+		rejected,
+	};
+}
+
+/**
+ * Plan, batch-validate, and apply an `edit_document` envelope.
+ *
+ * Writes go through `editor.apply` (EC13). The executor observes
+ * `onApplyBoundary` and only lists an operation as applied when every
+ * compiled op for that envelope index landed. Hosts that need a different
+ * origin or persistence wrapper inject {@link ExecuteEditDocumentOptions.apply};
+ * they do not remap results (EC5, EC21).
+ *
+ * @param editor - Live editor. Durable writes use its apply pipeline.
+ * @param input - Tool envelope `{ operations: [...] }`.
+ * @param options - Optional apply origin and write wrapper.
+ * @param options.origin - Apply origin. Default `"ai"`.
+ * @param options.apply - Host write path. Default `editor.apply(ops, applyOptions)`.
+ * @returns Result naming operations that landed and refusals. `ok` is true only when every operation applied.
+ * @throws If {@link ExecuteEditDocumentOptions.apply} throws. Semantic refusals and batch payload validation do not throw (EC5).
+ */
+export function executeEditDocument(
+	editor: Editor,
+	input: unknown,
+	options?: ExecuteEditDocumentOptions,
+): EditDocumentResult {
+	const plan = planEditDocument(editor, input);
+	if (plan.rejected[0]?.operation === "(none)") {
+		return {
+			ok: false,
+			appliedOperations: [],
+			rejected: plan.rejected,
+			outline: buildOutline(editor),
+			hint: "Nothing was applied.",
+		};
+	}
+
+	const validation = validateToolPayloads(editor, plan.ops);
+	if (!validation.ok) {
+		return {
+			ok: false,
+			appliedOperations: [],
+			rejected: [
+				...plan.rejected,
+				{
+					index: -1,
+					operation: "(batch)",
+					reason: `invalid-payload: ${validation.failures
+						.map((failure) => failure.message)
+						.join("; ")}`,
+				},
+			],
+			outline: buildOutline(editor),
+			hint: "Nothing was applied.",
+		};
+	}
+
+	const applyOutcome =
+		validation.ops.length > 0
+			? applyEditDocumentOps(
+					editor,
+					validation.ops,
+					plan.compiled,
+					options,
+				)
+			: { appliedIndexes: [], rejected: [] };
+
+	return mergeEditDocumentResult(editor, plan, applyOutcome);
+}
+
+/**
+ * Built-in `edit_document` tool. `toolsExtension()` registers it with the
+ * default apply path (`origin: "ai"`).
+ *
+ * @param editor - Editor the tool reads and writes.
+ * @param options - Same as {@link executeEditDocument}. `origin` defaults to `"ai"`; `apply` defaults to `editor.apply`.
+ * @returns A mutating, destructive {@link ToolDefinition} whose handler calls {@link executeEditDocument}.
+ * @throws Never from the factory. The handler rejects or throws if {@link ExecuteEditDocumentOptions.apply} throws. Semantic refusals do not throw (EC5).
+ */
+export function editDocumentTool(
+	editor: Editor,
+	options?: ExecuteEditDocumentOptions,
+): ToolDefinition {
 	return {
 		name: "edit_document",
 		description:
@@ -94,7 +276,7 @@ export function editDocumentTool(editor: Editor): ToolDefinition {
 						properties: {
 							operation: {
 								type: "string",
-								enum: [...EDIT_OPERATIONS],
+								enum: [...EDIT_DOCUMENT_OPERATIONS],
 							},
 							blockId: {
 								type: "string",
@@ -163,97 +345,190 @@ export function editDocumentTool(editor: Editor): ToolDefinition {
 			},
 		},
 		handler: async (input: unknown): Promise<EditDocumentResult> => {
-			const requests = readRequests(input);
-			if (requests.length === 0) {
-				return {
-					ok: false,
-					appliedOperations: [],
-					rejected: [
-						{
-							index: 0,
-							operation: "(none)",
-							reason: "no-operations: expected a non-empty `operations` array.",
-						},
-					],
-					outline: buildOutline(editor),
-					hint: "Nothing was applied.",
-				};
-			}
-
-			const ops: DocumentOp[] = [];
-			const rejections: EditRejection[] = [];
-			const applied: string[] = [];
-
-			for (const [index, request] of requests.entries()) {
-				const built = buildEditOps(editor, request);
-				if (!built.ok) {
-					rejections.push({
-						index,
-						operation: String(request.operation ?? "(missing)"),
-						reason: built.reason,
-					});
-					continue;
-				}
-				ops.push(...built.ops);
-				applied.push(String(request.operation));
-			}
-
-			// Validate the whole batch before anything lands, so a malformed op
-			// cannot leave a sibling half-applied (EC6).
-			const validation = validateToolPayloads(editor, ops);
-			if (!validation.ok) {
-				return {
-					ok: false,
-					appliedOperations: [],
-					rejected: [
-						...rejections,
-						{
-							index: -1,
-							operation: "(batch)",
-							reason: `invalid-payload: ${validation.failures
-								.map((failure) => failure.message)
-								.join("; ")}`,
-						},
-					],
-					outline: buildOutline(editor),
-					hint: "Nothing was applied.",
-				};
-			}
-
-			if (validation.ops.length > 0) {
-				editor.apply(validation.ops, { origin: "ai" });
-			}
-
-			if (rejections.length > 0) {
-				return {
-					ok: false,
-					appliedOperations: applied,
-					rejected: rejections,
-					outline: buildOutline(editor),
-					hint: "The rejected operations were not applied; the others were. Retry only the rejected ones, using the ids in `outline`.",
-				};
-			}
-
-			return { ok: true, appliedOperations: applied };
+			return executeEditDocument(editor, input, options);
 		},
 	};
 }
 
-function readRequests(input: unknown): EditRequest[] {
+const DROPPED_APPLY_REASON =
+	"dropped-apply: the mutation was filtered before write.";
+
+/**
+ * Enumerable own symbol so `{ ...op }` and apply-pipeline snapshots keep the
+ * unique owner token. Duplicate compiled ops never alias.
+ */
+const EDIT_DOCUMENT_OWNER = Symbol("pen.editDocument.owner");
+
+interface EditDocumentApplyOutcome {
+	appliedIndexes: number[];
+	rejected: EditDocumentRejection[];
+}
+
+interface OwnedCompiledOp {
+	index: number;
+	operation: string;
+	token: symbol;
+}
+
+function emptyPlan(rejected: EditDocumentRejection[]): EditDocumentPlan {
+	return {
+		ops: [],
+		compiled: [],
+		compiledOperations: [],
+		rejected,
+	};
+}
+
+function applyEditDocumentOps(
+	editor: Editor,
+	validatedOps: readonly DocumentOp[],
+	compiled: readonly EditDocumentCompiledOp[],
+	options: ExecuteEditDocumentOptions | undefined,
+): EditDocumentApplyOutcome {
+	const owned: OwnedCompiledOp[] = [];
+	const payload = validatedOps.map((op, i) => {
+		const entry = compiled[i];
+		const token = Symbol();
+		if (entry) {
+			owned.push({
+				index: entry.index,
+				operation: entry.operation,
+				token,
+			});
+		}
+		return stampOwner(op, token);
+	});
+
+	const applyOptions: ApplyOptions = {
+		origin: options?.origin ?? "ai",
+	};
+	const apply =
+		options?.apply ??
+		((nextOps, nextOptions) => editor.apply(nextOps, nextOptions));
+
+	const observed = new Set<symbol>();
+	const unsubscribe = editor.internals.onApplyBoundary((event) => {
+		if (event.phase !== "after" || !event.applied) {
+			return;
+		}
+		for (const op of event.ops) {
+			const token = readOwner(op);
+			if (token !== undefined) {
+				observed.add(token);
+			}
+		}
+	});
+
+	try {
+		apply(payload, applyOptions);
+	} finally {
+		unsubscribe();
+	}
+
+	return mapOwnedOutcome(owned, observed);
+}
+
+function stampOwner(op: DocumentOp, token: symbol): DocumentOp {
+	return Object.defineProperty({ ...op }, EDIT_DOCUMENT_OWNER, {
+		value: token,
+		enumerable: true,
+		configurable: true,
+		writable: true,
+	}) as DocumentOp;
+}
+
+function readOwner(op: unknown): symbol | undefined {
+	if (op === null || typeof op !== "object") {
+		return undefined;
+	}
+	const token = (op as unknown as Record<symbol, unknown>)[
+		EDIT_DOCUMENT_OWNER
+	];
+	return typeof token === "symbol" ? token : undefined;
+}
+
+function mapOwnedOutcome(
+	owned: readonly OwnedCompiledOp[],
+	observed: ReadonlySet<symbol>,
+): EditDocumentApplyOutcome {
+	const appliedIndexes: number[] = [];
+	const rejected: EditDocumentRejection[] = [];
+	const seen = new Set<number>();
+
+	for (const entry of owned) {
+		if (seen.has(entry.index)) {
+			continue;
+		}
+		seen.add(entry.index);
+		const tokens = owned
+			.filter((candidate) => candidate.index === entry.index)
+			.map((candidate) => candidate.token);
+		if (tokens.every((token) => observed.has(token))) {
+			appliedIndexes.push(entry.index);
+			continue;
+		}
+		rejected.push({
+			index: entry.index,
+			operation: entry.operation,
+			reason: DROPPED_APPLY_REASON,
+		});
+	}
+
+	return { appliedIndexes, rejected };
+}
+
+function mergeEditDocumentResult(
+	editor: Editor,
+	plan: EditDocumentPlan,
+	applyOutcome: EditDocumentApplyOutcome,
+): EditDocumentResult {
+	const appliedIndexes = new Set(applyOutcome.appliedIndexes);
+	const appliedOperations: string[] = [];
+	const seen = new Set<number>();
+	for (const entry of plan.compiled) {
+		if (seen.has(entry.index) || !appliedIndexes.has(entry.index)) {
+			continue;
+		}
+		seen.add(entry.index);
+		appliedOperations.push(entry.operation);
+	}
+	const rejected = [...plan.rejected, ...applyOutcome.rejected];
+
+	if (rejected.length > 0) {
+		return {
+			ok: false,
+			appliedOperations,
+			rejected,
+			outline: buildOutline(editor),
+			hint:
+				appliedOperations.length === 0
+					? "Nothing was applied."
+					: "The rejected operations were not applied; the others were. Retry only the rejected ones, using the ids in `outline`.",
+		};
+	}
+
+	return { ok: true, appliedOperations };
+}
+
+function readRequests(input: unknown): EditDocumentOperationInput[] {
 	const operations = (input as { operations?: unknown } | null)?.operations;
-	return Array.isArray(operations) ? (operations as EditRequest[]) : [];
+	return Array.isArray(operations)
+		? (operations as EditDocumentOperationInput[])
+		: [];
 }
 
 type BuildResult =
-	| { ok: true; ops: DocumentOp[] }
-	| { ok: false; reason: string };
+	{ ok: true; ops: DocumentOp[] } | { ok: false; reason: string };
 
-function buildEditOps(editor: Editor, request: EditRequest): BuildResult {
+function buildEditOps(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): BuildResult {
 	const operation = request.operation;
 	if (!isEditOperation(operation)) {
 		return {
 			ok: false,
-			reason: `unknown-operation: "${String(operation)}" is not one of ${EDIT_OPERATIONS.join(", ")}.`,
+			reason: `unknown-operation: "${String(operation)}" is not one of ${EDIT_DOCUMENT_OPERATIONS.join(", ")}.`,
 		};
 	}
 
@@ -284,7 +559,7 @@ function buildEditOps(editor: Editor, request: EditRequest): BuildResult {
 
 function buildReplaceBlockText(
 	editor: Editor,
-	request: EditRequest,
+	request: EditDocumentOperationInput,
 ): BuildResult {
 	const target = resolveOneBlock(editor, request.blockId);
 	if (!target.ok) {
@@ -315,7 +590,10 @@ function buildReplaceBlockText(
 	};
 }
 
-function buildReplaceBlocks(editor: Editor, request: EditRequest): BuildResult {
+function buildReplaceBlocks(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): BuildResult {
 	const targets = resolveBlockList(editor, request);
 	if (!targets.ok) {
 		return targets;
@@ -338,7 +616,10 @@ function buildReplaceBlocks(editor: Editor, request: EditRequest): BuildResult {
 	};
 }
 
-function buildInsertBlocks(editor: Editor, request: EditRequest): BuildResult {
+function buildInsertBlocks(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): BuildResult {
 	const target = resolveOneBlock(editor, request.blockId);
 	if (!target.ok) {
 		return target;
@@ -350,7 +631,10 @@ function buildInsertBlocks(editor: Editor, request: EditRequest): BuildResult {
 	return writeMarkdown(editor, request.markdown, "insert_blocks", position);
 }
 
-function buildDeleteBlocks(editor: Editor, request: EditRequest): BuildResult {
+function buildDeleteBlocks(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): BuildResult {
 	const targets = resolveBlockList(editor, request);
 	if (!targets.ok) {
 		return targets;
@@ -364,7 +648,10 @@ function buildDeleteBlocks(editor: Editor, request: EditRequest): BuildResult {
 	};
 }
 
-function buildMoveBlock(editor: Editor, request: EditRequest): BuildResult {
+function buildMoveBlock(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): BuildResult {
 	const target = resolveOneBlock(editor, request.blockId);
 	if (!target.ok) {
 		return target;
@@ -392,7 +679,10 @@ function buildMoveBlock(editor: Editor, request: EditRequest): BuildResult {
 	};
 }
 
-function buildFormatText(editor: Editor, request: EditRequest): BuildResult {
+function buildFormatText(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): BuildResult {
 	const target = resolveOneBlock(editor, request.blockId);
 	if (!target.ok) {
 		return target;
@@ -436,7 +726,10 @@ function buildFormatText(editor: Editor, request: EditRequest): BuildResult {
 	};
 }
 
-function buildSetBlockProps(editor: Editor, request: EditRequest): BuildResult {
+function buildSetBlockProps(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): BuildResult {
 	const target = resolveOneBlock(editor, request.blockId);
 	if (!target.ok) {
 		return target;
@@ -655,7 +948,7 @@ function markApplyValue(
 
 function resolveFormatRange(
 	text: string,
-	request: EditRequest,
+	request: EditDocumentOperationInput,
 ): { ok: true; from: number; to: number } | { ok: false; reason: string } {
 	if (request.matchText === undefined || request.matchText === null) {
 		if (request.occurrence !== undefined) {
@@ -809,10 +1102,12 @@ function resolveOneBlock(editor: Editor, blockId: unknown): ResolveOne {
 }
 
 type ResolveMany =
-	| { ok: true; blockIds: string[] }
-	| { ok: false; reason: string };
+	{ ok: true; blockIds: string[] } | { ok: false; reason: string };
 
-function resolveBlockList(editor: Editor, request: EditRequest): ResolveMany {
+function resolveBlockList(
+	editor: Editor,
+	request: EditDocumentOperationInput,
+): ResolveMany {
 	const raw = Array.isArray(request.blockIds)
 		? request.blockIds
 		: typeof request.blockId === "string"
@@ -836,14 +1131,14 @@ function resolveBlockList(editor: Editor, request: EditRequest): ResolveMany {
 	return { ok: true, blockIds };
 }
 
-function isEditOperation(value: unknown): value is EditOperation {
+function isEditOperation(value: unknown): value is EditDocumentOperation {
 	return (
 		typeof value === "string" &&
-		(EDIT_OPERATIONS as readonly string[]).includes(value)
+		(EDIT_DOCUMENT_OPERATIONS as readonly string[]).includes(value)
 	);
 }
 
-function buildOutline(editor: Editor): OutlineEntry[] {
+function buildOutline(editor: Editor): EditDocumentOutlineEntry[] {
 	return summarizeBlocks(resolveDocumentBlocks(editor, null, "resolved")).map(
 		(block) => ({
 			blockId: block.id,

@@ -116,6 +116,46 @@ applyValidatedOps(editor, payloads, { origin: "ai" });
 
 `validateToolPayloads` inspects without applying. `assertValidToolPayloads` emits the diagnostics and throws. `applyValidatedOps` asserts, then applies the validated batch.
 
+## `edit_document` for hosts (EC21)
+
+The built-in `edit_document` tool is one caller of a public compiler. A host that needs a different apply origin, undo grouping, or persistence wrapper uses the same path instead of forking the operation set:
+
+```ts
+import { createEditor } from "@input/pen";
+import { executeEditDocument, planEditDocument } from "@input/pen-tools";
+import type { DocumentOp } from "@input/pen-types";
+
+const editor = createEditor();
+
+const plan = planEditDocument(editor, {
+  operations: [
+    {
+      operation: "replace_block_text",
+      blockId: "intro",
+      text: "Rewritten.",
+    },
+  ],
+});
+// plan.compiledOperations names compiled ops; nothing is applied yet
+
+const result = executeEditDocument(
+  editor,
+  {
+    operations: [
+      { operation: "insert_blocks", blockId: "intro", markdown: "Hi" },
+    ],
+  },
+  {
+    origin: { type: "ai", groupId: "host-run" },
+    apply: (ops: DocumentOp[], applyOptions) => {
+      editor.apply(ops, applyOptions);
+    },
+  },
+);
+```
+
+`EDIT_DOCUMENT_OPERATIONS` is the closed EC4 set. `planEditDocument` compiles without writing and reports `compiledOperations`. `executeEditDocument` validates the batch, applies, then observes the apply boundary so a dropped op is not listed as applied. The injected `apply` must still call `editor.apply` and must not remap results. `editDocumentTool(editor, options)` is the same executor behind a `ToolDefinition`; `toolsExtension()` registers it with the default `{ origin: "ai" }` apply.
+
 ## Options
 
 `toolsExtension()` takes no options.

@@ -184,6 +184,13 @@ export {
 } from "./security/urlPolicy";
 export { blockLogicalText } from "./text/blockLogicalText";
 export {
+	inlineLogicalText,
+	resolveSuggestionMenuTarget,
+	type SuggestionMenuBoundary,
+	type SuggestionMenuTarget,
+	type SuggestionMenuTrigger,
+} from "./suggestion/resolveSuggestionMenuTarget";
+export {
 	applyDirectedBinding,
 	resolveDirectedBinding,
 	resolveDirectedCommand,

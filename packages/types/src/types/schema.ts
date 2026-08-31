@@ -110,18 +110,28 @@ export interface BlockSchema<
   layout?: LayoutSchema;
 
   serialize: {
-    toMarkdown?(block: Block<Type, InferProps<Props>>): string;
-    fromMarkdown?(node: MarkdownNode): BlockImportMatch<Type, InferProps<Props>> | null;
-    toHTML?(block: Block<Type, InferProps<Props>>): string;
+    toMarkdown?(this: void, block: Block<Type, InferProps<Props>>): string;
+    fromMarkdown?(
+      this: void,
+      node: MarkdownNode,
+    ): BlockImportMatch<Type, InferProps<Props>> | null;
+    toHTML?(this: void, block: Block<Type, InferProps<Props>>): string;
     fromHTML?(
+      this: void,
       element: HTMLImportElement,
     ): BlockImportMatch<Type, InferProps<Props>> | null;
-    toXML?(block: Block<Type, InferProps<Props>>): string;
-    fromXML?(element: XMLElement): Block<Type, InferProps<Props>> | null;
+    toXML?(this: void, block: Block<Type, InferProps<Props>>): string;
+    fromXML?(
+      this: void,
+      element: XMLElement,
+    ): Block<Type, InferProps<Props>> | null;
   };
 
-  normalize?(block: Block<Type, InferProps<Props>>): Block<Type, InferProps<Props>>;
-  validateProps?(raw: Record<string, unknown>): InferProps<Props>;
+  normalize?(
+    this: void,
+    block: Block<Type, InferProps<Props>>,
+  ): Block<Type, InferProps<Props>>;
+  validateProps?(this: void, raw: Record<string, unknown>): InferProps<Props>;
   fieldEditor?: FieldEditorType;
   keyBindings?: readonly KeyBinding[];
   placeholder?: string;

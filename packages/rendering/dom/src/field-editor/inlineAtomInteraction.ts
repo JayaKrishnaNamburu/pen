@@ -41,7 +41,9 @@ export interface InlineAtomRenderInteractionProps {
 	draggable: boolean;
 	dragging: boolean;
 	canDestructure: boolean;
+	canRemove: boolean;
 	destructure?: () => boolean;
+	remove?: () => boolean;
 }
 
 export type InlineAtomDestructureHandler = (
@@ -322,6 +324,53 @@ export function replaceInlineAtomWithText({
 	}
 
 	return true;
+}
+
+/**
+ * Options for {@link removeInlineAtom}.
+ *
+ * `source.offset` is logical: the atom occupies one unit, the same domain as
+ * caret offsets and `block.length()`.
+ */
+export interface RemoveInlineAtomOptions {
+	/** Editor, block, and logical offset of the atom to delete. Required. */
+	source: InlineAtomSource;
+	/**
+	 * Where to place the caret after a successful delete.
+	 * `"end"` collapses at the hole; `"none"` leaves selection untouched.
+	 * @default "end"
+	 */
+	selection?: "end" | "none";
+	/**
+	 * Passed through to `editor.apply`.
+	 * @default { origin: "user", undoGroup: true }
+	 */
+	apply?: ApplyOptions;
+}
+
+/**
+ * Deletes the inline atom at a logical offset and leaves surrounding text.
+ *
+ * A stale offset (no atom at `source.offset`) is a no-op so a renderer click
+ * cannot eat a neighboring character.
+ *
+ * @param options - Source position plus optional selection and apply overrides.
+ *   See {@link RemoveInlineAtomOptions} for field defaults.
+ * @returns `true` when the atom was deleted; `false` when the offset was stale
+ *   or the block is gone.
+ * @throws Never. Stale or missing atoms return `false`.
+ */
+export function removeInlineAtom({
+	source,
+	selection = "end",
+	apply,
+}: RemoveInlineAtomOptions): boolean {
+	return replaceInlineAtomWithText({
+		source,
+		text: "",
+		selection,
+		apply,
+	});
 }
 
 function moveInlineAtomWithinEditor({

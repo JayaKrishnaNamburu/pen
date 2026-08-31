@@ -17,6 +17,8 @@
 - assertValidToolPayloads
 - buildCursorContext
 - buildDocumentBlockSnapshots
+- editDocumentTool
+- executeEditDocument
 - exportDocumentRangeAsMarkdown
 - formatBlocksAsAnnotatedMarkdown
 - formatBlocksAsMarkdown
@@ -26,6 +28,7 @@
 - listDocumentBlockHandles
 - listValidOperationsForTarget
 - normalizeContextToolOptions
+- planEditDocument
 - resolveDocumentBlockHandles
 - resolveDocumentBlocks
 - resolveSelectedText
@@ -48,6 +51,7 @@
 - DOCUMENT_OP_TYPES
 - DocumentWriteBlockInput
 - DocumentWriteFormat
+- EDIT_DOCUMENT_OPERATIONS
 - INVALID_TOOL_PAYLOAD_CODE
 - MAX_OP_TEXT_FIELD_LENGTH
 - STRUCTURED_TARGET_OPERATION_IDS
@@ -55,6 +59,14 @@
 ### type
 
 - DocumentBlockSnapshot
+- EditDocumentCompiledOp
+- EditDocumentOperation
+- EditDocumentOperationInput
+- EditDocumentOutlineEntry
+- EditDocumentPlan
+- EditDocumentRejection
+- EditDocumentResult
+- ExecuteEditDocumentOptions
 - RetrievedDocumentSpan
 - RetrieveDocumentSpansInput
 - StructuredTargetInspection

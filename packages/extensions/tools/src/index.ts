@@ -8,6 +8,22 @@ export { assertToolCanUseBlockType } from "./utils/blockTypePolicy";
 export { ToolRuntimeImpl } from "./toolServer";
 export { ToolContextImpl } from "./toolContext";
 export {
+	EDIT_DOCUMENT_OPERATIONS,
+	editDocumentTool,
+	executeEditDocument,
+	planEditDocument,
+} from "./tools/editDocument";
+export type {
+	EditDocumentCompiledOp,
+	EditDocumentOperation,
+	EditDocumentOperationInput,
+	EditDocumentOutlineEntry,
+	EditDocumentPlan,
+	EditDocumentRejection,
+	EditDocumentResult,
+	ExecuteEditDocumentOptions,
+} from "./tools/editDocument";
+export {
 	buildCursorContext,
 	buildDocumentBlockSnapshots,
 	exportDocumentRangeAsMarkdown,

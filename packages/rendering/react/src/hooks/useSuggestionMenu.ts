@@ -1,30 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isCollapsed } from "@input/pen-core";
+import {
+	resolveSuggestionMenuTarget,
+	type SuggestionMenuTarget,
+	type SuggestionMenuTrigger,
+} from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 
+export type {
+	SuggestionMenuBoundary,
+	SuggestionMenuTarget,
+	SuggestionMenuTrigger,
+} from "@input/pen-core";
+export { resolveSuggestionMenuTarget } from "@input/pen-core";
+
 export type SuggestionMenuStatus = "idle" | "loading" | "ready" | "error";
-
-export type SuggestionMenuBoundary = "any" | "whitespace";
-
-export interface SuggestionMenuTrigger {
-	char: string;
-	minQueryLength?: number;
-	maxQueryLength?: number;
-	lookbehind?: number;
-	allowSpaces?: boolean;
-	boundary?: SuggestionMenuBoundary;
-	closingChar?: string;
-	queryPattern?: RegExp;
-}
-
-export interface SuggestionMenuTarget {
-	blockId: string;
-	startOffset: number;
-	endOffset: number;
-	query: string;
-	trigger: string;
-}
 
 export interface SuggestionMenuGetItemsOptions {
 	editor: Editor;
@@ -69,8 +59,6 @@ export interface SuggestionMenuActions {
 
 export type SuggestionMenuController<TItem> = SuggestionMenuState<TItem> &
 	SuggestionMenuActions;
-
-const DEFAULT_LOOKBEHIND = 80;
 
 export function useSuggestionMenu<TItem>(
 	options: UseSuggestionMenuOptions<TItem>,
@@ -316,75 +304,6 @@ export function useSuggestionMenu<TItem>(
 		confirm,
 		dismiss,
 		refresh,
-	};
-}
-
-export function resolveSuggestionMenuTarget(
-	editor: Editor,
-	trigger: SuggestionMenuTrigger,
-): SuggestionMenuTarget | null {
-	if (trigger.char.length === 0) {
-		return null;
-	}
-
-	const selection = editor.selection;
-	if (selection?.type !== "text" || !isCollapsed(selection)) {
-		return null;
-	}
-	if (selection.anchor.blockId !== selection.focus.blockId) {
-		return null;
-	}
-
-	const block = editor.getBlock(selection.focus.blockId);
-	if (!block) {
-		return null;
-	}
-
-	const offset = selection.focus.offset;
-	const lookbehind = trigger.lookbehind ?? DEFAULT_LOOKBEHIND;
-	const prefixStartOffset = Math.max(0, offset - lookbehind);
-	const textBefore = block.textContent().slice(prefixStartOffset, offset);
-	const triggerIndex = textBefore.lastIndexOf(trigger.char);
-	if (triggerIndex < 0) {
-		return null;
-	}
-
-	if (trigger.boundary === "whitespace") {
-		const previousChar = textBefore[triggerIndex - 1];
-		if (previousChar && !/\s/.test(previousChar)) {
-			return null;
-		}
-	}
-
-	const query = textBefore.slice(triggerIndex + trigger.char.length);
-	if (!trigger.allowSpaces && /\s/.test(query)) {
-		return null;
-	}
-	if (trigger.closingChar && query.includes(trigger.closingChar)) {
-		return null;
-	}
-	if (query.length < (trigger.minQueryLength ?? 0)) {
-		return null;
-	}
-	if (
-		trigger.maxQueryLength !== undefined &&
-		query.length > trigger.maxQueryLength
-	) {
-		return null;
-	}
-	if (trigger.queryPattern) {
-		trigger.queryPattern.lastIndex = 0;
-		if (!trigger.queryPattern.test(query)) {
-			return null;
-		}
-	}
-
-	return {
-		blockId: selection.focus.blockId,
-		startOffset: prefixStartOffset + triggerIndex,
-		endOffset: offset,
-		query,
-		trigger: trigger.char,
 	};
 }
 

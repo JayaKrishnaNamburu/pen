@@ -89,7 +89,7 @@ flowchart TD
 - `admitProviderImageUrl()` decides on the parsed URL protocol (`new URL(...)`), not a regex over the raw string. Local provider schemes (`blob:`, `memory:`) pass; everything else goes through `urlPolicy`.
 - Sanitize after the cap, then parse, then normalize. Imported content only becomes document state after conversion into operations and `editor.apply(...)`. The SEC3 style hook admits `color`, `background-color`, and enumerated `text-align` keywords (`left` / `right` / `center` / `justify` / `start` / `end`), plus a validated HTML `align` attribute (`left` / `right` / `center` / `justify`). Mapping those onto block props stays a host `fromHTML` concern.
 
-- HTML export walks the full block tree. It is a fragment exporter, not a delivery-document builder.
+- HTML export walks the full block tree. It is a fragment exporter, not a delivery-document builder. A registered block schema's `serialize.toHTML` is the markup for that block, including `image`: the built-in `serializeImageHTML` runs only when the schema has no `toHTML`. Schema image HTML still has every `<img src>` admitted through SEC1 `urlPolicy` (refused URLs become `data-pen-blocked-url=""` with no `src`, and the raw URL is not re-emitted). List export still builds `<ul>`/`<ol>` runs, but the schema's outer `<li …>` attributes are kept when the item is re-wrapped.
 
 ## Markdown (`@input/pen-interop/markdown`)
 
