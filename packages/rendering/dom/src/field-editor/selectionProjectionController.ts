@@ -13,6 +13,7 @@ import {
 	type GestureEventKind,
 	type GestureWindowState,
 } from "./selectionReader";
+import { isNativeTextEntryTarget } from "../utils/textEntryTarget";
 
 type ProjectionOptions = {
 	syncBackendImmediately?: boolean;
@@ -326,7 +327,8 @@ export class SelectionProjectionController {
 
 		const root = this._options.getRootElement();
 		if (!root || !root.contains(activeElement)) {
-			return true;
+			// do not steal from a native control outside this editor
+			return !isNativeTextEntryTarget(activeElement);
 		}
 
 		return attachedElement.contains(activeElement);
