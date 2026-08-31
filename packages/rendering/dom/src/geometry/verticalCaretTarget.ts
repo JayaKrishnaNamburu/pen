@@ -169,7 +169,10 @@ function clampY(currentRect: Rect | null, line: LineBox): number {
 		return mid;
 	}
 	const y = rectCenterY(currentRect);
-	if (y < line.top) return line.top;
-	if (y > line.bottom) return line.bottom;
+	// G5: the shared edge between adjacent line boxes hit-tests back onto the
+	// current block once chrome makes the inline surface full width (M5).
+	if (y < line.top || y > line.bottom) {
+		return mid;
+	}
 	return y;
 }
