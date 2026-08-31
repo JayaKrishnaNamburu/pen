@@ -1,5 +1,17 @@
 # @input/pen-vue
 
+## 0.1.7
+
+### Patch Changes
+
+- 56a7f6e: Adopt a default editor chrome stylesheet from PenEditor, EditorRoot, and mountEditor so an empty field fills its block and focus stays visible without host CSS. Opt out with chrome={false}.
+- Updated dependencies [56a7f6e]
+  - @input/pen-dom@0.1.7
+  - @input/pen-core@0.1.7
+  - @input/pen-interop@0.1.7
+  - @input/pen-schema@0.1.7
+  - @input/pen-types@0.1.7
+
 ## 0.1.6
 
 ### Patch Changes

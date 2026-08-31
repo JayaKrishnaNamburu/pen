@@ -1,5 +1,18 @@
 # @input/pen
 
+## 0.1.7
+
+### Patch Changes
+
+- @input/pen-core@0.1.7
+  - @input/pen-ai@0.1.7
+  - @input/pen-interop@0.1.7
+  - @input/pen-shortcuts@0.1.7
+  - @input/pen-tools@0.1.7
+  - @input/pen-undo@0.1.7
+  - @input/pen-schema@0.1.7
+  - @input/pen-types@0.1.7
+
 ## 0.1.6
 
 ### Patch Changes
