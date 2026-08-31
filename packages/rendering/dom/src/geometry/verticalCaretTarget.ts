@@ -41,7 +41,7 @@ export function verticalCaretTarget(
 		return { point: current, goalX: x };
 	}
 
-	const y = clampY(currentRect, targetLine);
+	const y = targetLineY(currentRect, targetLine);
 	const point = reader.pointAt(x, y) ?? current;
 	return { point, goalX: x };
 }
@@ -163,15 +163,15 @@ function findLineIndex(
 	return 0;
 }
 
-function clampY(currentRect: Rect | null, line: LineBox): number {
+function targetLineY(currentRect: Rect | null, line: LineBox): number {
 	const mid = (line.top + line.bottom) / 2;
 	if (!currentRect) {
 		return mid;
 	}
 	const y = rectCenterY(currentRect);
 	// G5: the shared edge between adjacent line boxes hit-tests back onto the
-	// current block once chrome makes the inline surface full width (M5).
-	if (y < line.top || y > line.bottom) {
+	// current block once chrome makes the inline surface full width (HOST6).
+	if (y <= line.top || y >= line.bottom) {
 		return mid;
 	}
 	return y;

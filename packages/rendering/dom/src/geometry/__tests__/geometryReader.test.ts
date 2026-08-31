@@ -73,6 +73,10 @@ function line(
 	);
 }
 
+function lineMid(top: number, bottom: number): number {
+	return (top + bottom) / 2;
+}
+
 function mountEditorRoot(): HTMLElement {
 	const root = document.createElement("div");
 	root.setAttribute(DATA_ATTRS.editorContent, "");
@@ -417,7 +421,13 @@ describe("GeometryReader G5", () => {
 				wrap: [line(0, 16, 0, 10), line(16, 32, 10, 20)],
 			},
 			rects: { wrap: rect(0, 0, 200, 32) },
-			hits: [{ x: 40, y: 16, point: { blockId: "wrap", offset: 14 } }],
+			hits: [
+				{
+					x: 40,
+					y: lineMid(16, 32),
+					point: { blockId: "wrap", offset: 14 },
+				},
+			],
 		});
 		expect(
 			verticalCaretTarget(
@@ -440,7 +450,13 @@ describe("GeometryReader G5", () => {
 				prev: rect(0, 0, 200, 16),
 				empty: rect(0, 40, 200, 16),
 			},
-			hits: [{ x: 12, y: 40, point: { blockId: "empty", offset: 0 } }],
+			hits: [
+				{
+					x: 12,
+					y: lineMid(40, 56),
+					point: { blockId: "empty", offset: 0 },
+				},
+			],
 		});
 		expect(
 			verticalCaretTarget(
@@ -459,7 +475,13 @@ describe("GeometryReader G5", () => {
 				atoms: [line(0, 18, 0, 2), line(18, 36, 2, 4)],
 			},
 			rects: { atoms: rect(0, 0, 200, 36) },
-			hits: [{ x: 8, y: 18, point: { blockId: "atoms", offset: 3 } }],
+			hits: [
+				{
+					x: 8,
+					y: lineMid(18, 36),
+					point: { blockId: "atoms", offset: 3 },
+				},
+			],
 		});
 		expect(
 			verticalCaretTarget(
@@ -483,8 +505,16 @@ describe("GeometryReader G5", () => {
 				b: rect(0, 32, 200, 16),
 			},
 			hits: [
-				{ x: 64, y: 32, point: { blockId: "b", offset: 2 } },
-				{ x: 64, y: 16, point: { blockId: "a", offset: 3 } },
+				{
+					x: 64,
+					y: lineMid(32, 48),
+					point: { blockId: "b", offset: 2 },
+				},
+				{
+					x: 64,
+					y: lineMid(0, 16),
+					point: { blockId: "a", offset: 3 },
+				},
 			],
 		});
 		const down = verticalCaretTarget(
@@ -518,7 +548,13 @@ describe("GeometryReader G5", () => {
 				p: [line(0, 16, 0, 8, 10, 80), line(16, 32, 8, 16, 10, 80)],
 			},
 			rects: { p: rect(10, 0, 80, 32) },
-			hits: [{ x: 50, y: 16, point: { blockId: "p", offset: 11 } }],
+			hits: [
+				{
+					x: 50,
+					y: lineMid(16, 32),
+					point: { blockId: "p", offset: 11 },
+				},
+			],
 		});
 		expect(
 			verticalCaretTarget(reader, { blockId: "p", offset: 3 }, "down"),
@@ -526,5 +562,29 @@ describe("GeometryReader G5", () => {
 			point: { blockId: "p", offset: 11 },
 			goalX: 50,
 		});
+	});
+
+	it("G5: ArrowUp leaves the current block when the shared edge hit-tests back onto it", () => {
+		const reader = mockReader({
+			lines: {
+				a: [line(0, 16, 0, 10)],
+				b: [line(16, 32, 0, 10)],
+			},
+			rects: {
+				a: rect(0, 0, 200, 16),
+				b: rect(0, 16, 200, 16),
+			},
+			hits: [
+				{ x: 64, y: 16, point: { blockId: "b", offset: 10 } },
+				{
+					x: 64,
+					y: lineMid(0, 16),
+					point: { blockId: "a", offset: 0 },
+				},
+			],
+		});
+		expect(
+			verticalCaretTarget(reader, { blockId: "b", offset: 0 }, "up", 64),
+		).toEqual({ point: { blockId: "a", offset: 0 }, goalX: 64 });
 	});
 });
