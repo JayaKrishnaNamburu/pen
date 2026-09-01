@@ -22,7 +22,7 @@ Most app integrations also pair it with a renderer such as `@input/pen-react`.
 - `./autocomplete` — low-latency inline completion (`autocompleteExtension`)
 - `./skills` — `SKILL.md` packaging from tool and provider descriptors
 - `./tools` — the canonical public tool surface (`getAIToolRuntime`, `executeAITool`)
-- `./stream` — streaming apply path (`deltaStreamExtension`, `processStream`)
+- `./stream` — streaming apply path (`deltaStreamExtension`, `processStream`) and paced paint (`smoothStreamExtension`)
 
 ## Minimal Setup
 
@@ -49,7 +49,11 @@ import { aiSuggestionsExtension } from "@input/pen-ai/suggestions";
 import { autocompleteExtension } from "@input/pen-ai/autocomplete";
 import { listDefaultAISkills, renderSkillFiles } from "@input/pen-ai/skills";
 import { getAIToolRuntime, executeAITool } from "@input/pen-ai/tools";
-import { deltaStreamExtension, processStream } from "@input/pen-ai/stream";
+import {
+  deltaStreamExtension,
+  processStream,
+  smoothStreamExtension,
+} from "@input/pen-ai/stream";
 ```
 
 ## Integration Notes
@@ -133,6 +137,20 @@ This subpath has no options. `listDefaultAISkills` always includes the document-
 | --------------- | ------- | --------------------------------------------- |
 | `batchInterval` | `50`    | Flush interval in milliseconds for the target |
 
+#### `smoothStreamExtension`
+
+Paces how streamed text appears without buffering the document: appends land immediately and `omitFromRender` holds back paint until a library-owned ticker advances a per-block frontier (ST7–ST9). Opt-in. Headless-safe (`setInterval`; no `window` / `matchMedia`). Reduced motion is the host's `enabled` / `setEnabled(false)` call.
+
+| Option        | Default                     | Effect                                                                             |
+| ------------- | --------------------------- | ---------------------------------------------------------------------------------- |
+| `intervalMs`  | `20`                        | Gap between reveal ticks                                                           |
+| `granularity` | `"word"`                    | Unit released per tick (`"word"` or `"character"`)                                 |
+| `drainMs`     | `1000`                      | Catch-up time constant; a burst drains fast, the tail settles to one unit per tick |
+| `enabled`     | `true`                      | When false, nothing is withheld                                                    |
+| `shouldPace`  | `event.source === "stream"` | Whether a commit's inserted text should be paced                                   |
+
+`getSmoothStreamController(editor)` reads `smoothStreamControllerFacet` and returns `null` when the extension is not installed. `subscribe` emits `SmoothStreamStatus` `{ isRevealing, hiddenCharCount, enabled }`; `setEnabled` notifies on a real value change even when nothing is withheld.
+
 #### `processStream`
 
 | Option                 | Default | Effect                                                                 |
@@ -151,7 +169,7 @@ This subpath has no options. `listDefaultAISkills` always includes the document-
 
 `autocompleteExtension` contributes the autocomplete controller facet (`aiAutocompleteControllerFacet` / `AI_AUTOCOMPLETE_CONTROLLER_SLOT`). It contributes no commands. Requires no other extensions. It shares the inline-completion controller with the package root when both are installed.
 
-`./skills`, `./tools`, and `./stream` contribute no facets and no commands. Tools depend on the tools tool runtime that `defaultPreset()` installs. `processStream` looks up that runtime when the stream contains tool parts, and works without it when those parts are absent.
+`./skills` and `./tools` contribute no facets and no commands. `./stream` contributes `smoothStreamControllerFacet` when `smoothStreamExtension()` is installed (`getSmoothStreamController`). Tools depend on the tools tool runtime that `defaultPreset()` installs. `processStream` looks up that runtime when the stream contains tool parts, and works without it when those parts are absent.
 
 ## Documentation
 

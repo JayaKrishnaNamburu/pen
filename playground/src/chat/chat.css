@@ -33,6 +33,16 @@
 	margin-right: var(--spacing-xs);
 }
 
+.chat-reveal-status {
+	margin-right: var(--spacing-xs);
+	color: var(--palette-b40);
+	font-size: var(--font-size-xs);
+	font-weight: 500;
+	line-height: 1;
+	white-space: nowrap;
+	user-select: none;
+}
+
 .chat-bar-icon {
 	display: inline-flex;
 	color: var(--palette-purple);

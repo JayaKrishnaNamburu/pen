@@ -44,9 +44,9 @@ export const snapshotsControllerFacet =
 	singleController<unknown>("history.controller");
 export const assetProviderFacet =
 	singleController<unknown>("pen.assetProvider");
-export const toolRuntimeFacet = singleController<unknown>(
-	"tools.toolRuntime",
-);
+export const toolRuntimeFacet = singleController<unknown>("tools.toolRuntime");
 export const announcerFacet = singleController<unknown>("pen.announcer");
 export const streamingTargetFacet =
 	singleController<unknown>("deltaStream.target");
+export const smoothStreamControllerFacet =
+	singleController<unknown>("ai.smoothStream");

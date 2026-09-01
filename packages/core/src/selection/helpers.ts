@@ -5,8 +5,8 @@ import type {
 	Point,
 	ReadonlySelectionState,
 	TextSelection,
-	CRDTArray,
 } from "@input/pen-types";
+import { documentPreorderBlockIdsFromDoc } from "../editor/documentPreorder";
 import { DocumentRangeImpl } from "../editor/range";
 
 type ReadonlyTextSelection = Extract<ReadonlySelectionState, { type: "text" }>;
@@ -48,9 +48,10 @@ export function isMultiBlock(sel: ReadonlySelectionState): boolean {
 }
 
 /**
- * Document-order block ids covered by `sel`. Pass a plain `blockOrder`
- * snapshot (`editor.documentState.blockOrder`) from a renderer effect —
- * walking a live `Y.Array` through a deep-proxied document writes back.
+ * Document-order block ids covered by `sel`. A live `PenDocument` walks
+ * nested `children` as well as top-level `blockOrder`. Pass a plain id
+ * snapshot from a renderer effect — walking a live `Y.Array` through a
+ * deep-proxied document writes back.
  */
 export function getSelectionBlockRange(
 	doc: PenDocument | readonly string[],
@@ -117,13 +118,10 @@ function blockIdsBetween(
 	anchorId: string,
 	focusId: string,
 ): string[] {
-	const order = doc.blockOrder as CRDTArray<string>;
-	return sliceBlockIds(
-		indexOfBlock(order, anchorId),
-		indexOfBlock(order, focusId),
+	return blockIdsFromOrder(
+		documentPreorderBlockIdsFromDoc(doc),
 		anchorId,
 		focusId,
-		(index) => order.get(index) as string,
 	);
 }
 
@@ -150,13 +148,4 @@ function sliceBlockIds(
 		ids.push(idAt(i));
 	}
 	return ids;
-}
-
-function indexOfBlock(order: CRDTArray<string>, blockId: string): number {
-	for (let i = 0; i < order.length; i++) {
-		if ((order.get(i) as string) === blockId) {
-			return i;
-		}
-	}
-	return -1;
 }

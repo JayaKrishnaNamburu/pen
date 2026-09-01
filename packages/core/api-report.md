@@ -211,6 +211,7 @@
 - selectAll
 - selectBlock
 - SelectionAuthority
+- smoothStreamControllerFacet
 - snapshotsControllerFacet
 - splitBlock
 - streamingTargetFacet

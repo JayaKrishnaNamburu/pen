@@ -136,6 +136,7 @@ function createReadDocumentEditor(): Editor {
 					get: (index: number) =>
 						["block-1", "block-2", "block-3"][index],
 				},
+				blocks: { get: () => undefined },
 			},
 		},
 		getSelection: () => ({

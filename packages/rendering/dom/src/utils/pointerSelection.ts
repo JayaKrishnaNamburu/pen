@@ -1,6 +1,7 @@
 import type { Editor, SelectionState } from "@input/pen-types";
 import { pointToEditorSelectionPoint } from "../field-editor/selectionBridge";
 import { getEditorBlockSelectionRole } from "./blockSelectionSemantics";
+import { getPreorderBlockIds } from "./documentPreorder";
 
 export interface PointerSelectionGesture {
 	blockId: string;
@@ -90,7 +91,7 @@ export function resolvePointerDragSelection(
 		focusPoint.blockId !== gesture.blockId
 	) {
 		const blockIds = resolveBlockIdRange(
-			editor.documentState.blockOrder,
+			getPreorderBlockIds(editor),
 			gesture.blockId,
 			focusPoint.blockId,
 		);
@@ -123,7 +124,7 @@ export function resolvePointerDragSelection(
 		};
 	}
 
-	const blockOrder = editor.documentState.blockOrder;
+	const blockOrder = getPreorderBlockIds(editor);
 	const anchorIdx = blockOrder.indexOf(anchorPoint.blockId);
 	const focusIdx = blockOrder.indexOf(focusPoint.blockId);
 	if (anchorIdx < 0 || focusIdx < 0) {

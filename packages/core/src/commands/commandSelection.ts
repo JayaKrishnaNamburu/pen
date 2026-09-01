@@ -6,6 +6,7 @@ import type {
 	TextSelection,
 } from "@input/pen-types";
 
+import { documentPreorderBlockIds } from "../editor/documentPreorder";
 import { createTextSelection } from "../selection/helpers";
 
 /** Command write payload. `blockOrder` is accepted for callers that still pass it. */
@@ -61,7 +62,7 @@ export function documentOrderedTextPoints(
 	editor: Editor,
 	selection: TextSelection,
 ): { start: Point; end: Point } | null {
-	const order = editor.documentState.blockOrder;
+	const order = documentPreorderBlockIds(editor);
 	const anchorIndex = order.indexOf(selection.anchor.blockId);
 	const focusIndex = order.indexOf(selection.focus.blockId);
 	if (anchorIndex < 0 || focusIndex < 0) {

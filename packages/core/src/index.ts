@@ -369,6 +369,7 @@ export {
 	toolRuntimeFacet,
 	announcerFacet,
 	streamingTargetFacet,
+	smoothStreamControllerFacet,
 } from "./facets/controllerFacets";
 export { collectEditorKeyBindings } from "./editor/extensionManager";
 export { affectedBlockIdsFromSummary } from "./changes/affectedBlocks";

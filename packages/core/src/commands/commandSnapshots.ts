@@ -12,6 +12,7 @@ import type {
 } from "../selection/transitions";
 import {
 	getRootBlockIds,
+	getVisibleBlockIds,
 	isEditableTextBlock,
 	LIST_BLOCK_TYPES,
 	logicalInline,
@@ -32,7 +33,7 @@ import { blockSelectionResult, textSelectionResult } from "./commandSelection";
 export function buildNormalPositionSnapshot(
 	editor: Editor,
 ): NormalPositionSnapshot {
-	const blockOrder = [...editor.documentState.blockOrder];
+	const blockOrder = [...getVisibleBlockIds(editor)];
 	const blocks: Record<string, NormalPositionBlock> = {};
 	for (const blockId of blockOrder) {
 		const block = editor.getBlock(blockId);
@@ -54,7 +55,7 @@ export function buildNormalPositionSnapshot(
 }
 
 export function buildTransitionSnapshot(editor: Editor): TransitionSnapshot {
-	const blockOrder = [...editor.documentState.blockOrder];
+	const blockOrder = [...getVisibleBlockIds(editor)];
 	const blocks: Record<string, TransitionBlock> = {};
 	for (const blockId of blockOrder) {
 		const block = editor.getBlock(blockId);

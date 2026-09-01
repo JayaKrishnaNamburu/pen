@@ -7,6 +7,7 @@ import { generateId, type Editor, type Point } from "@input/pen-types";
 import { getRootGeometry, measureWithRoot } from "../geometry/rootGeometry";
 import { getEditorBlockSelectionRole } from "../utils/blockSelectionSemantics";
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import { getPreorderBlockIds } from "../utils/documentPreorder";
 import {
 	isRepeatedCellSelection,
 	resolveBlockPointerIntent,
@@ -182,7 +183,7 @@ export function createPointerSelectionGestures<
 
 		const selectedIds = getBlockIdRange(ctx, anchorPoint.blockId, blockId);
 		if (!selectedIds) return;
-		const blockOrder = editor.documentState.blockOrder;
+		const blockOrder = getPreorderBlockIds(editor);
 		const selectingForward =
 			blockOrder.indexOf(anchorPoint.blockId) <=
 			blockOrder.indexOf(blockId);
@@ -234,9 +235,9 @@ export function createPointerSelectionGestures<
 			anchorPoint: Point,
 			focusPoint: Point,
 		): boolean => {
-			const blockOrder = editor.documentState.blockOrder;
-			const anchorIdx = blockOrder.indexOf(anchorPoint.blockId);
-			const focusIdx = blockOrder.indexOf(focusPoint.blockId);
+			const order = getPreorderBlockIds(editor);
+			const anchorIdx = order.indexOf(anchorPoint.blockId);
+			const focusIdx = order.indexOf(focusPoint.blockId);
 			if (anchorIdx === focusIdx) {
 				return anchorPoint.offset <= focusPoint.offset;
 			}

@@ -122,6 +122,23 @@ describe("@input/pen", () => {
 			"html-clipboard",
 		]);
 	});
+
+	it("opt-in smoothStream installs the paced-paint extension", () => {
+		const preset = defaultPreset({ smoothStream: true });
+		const result = preset.resolve({
+			schema: {} as never,
+			documentProfile: "structured",
+		});
+
+		expect(result.extensions?.map((extension) => extension.name)).toEqual([
+			"tools",
+			"delta-stream",
+			"ai-smooth-stream",
+			"undo",
+			"rich-text-shortcuts",
+			"html-clipboard",
+		]);
+	});
 });
 
 describe("bare createEditor vs defaultPreset — live inventory", () => {

@@ -10,6 +10,7 @@ import {
 	spliceDeleteOp,
 	spliceInsertOp,
 } from "../ops/recipes";
+import { documentPreorderBlockIds } from "../editor/documentPreorder";
 import { isEditableTextBlock } from "./commandBlockContext";
 import { documentOrderedTextPoints } from "./commandSelection";
 
@@ -68,7 +69,7 @@ function replaceMultiBlockRange(
 	text: string,
 	marks?: Record<string, unknown | null>,
 ): { ops: DocumentOp[]; caret: Point } | null {
-	const order = editor.documentState.blockOrder;
+	const order = documentPreorderBlockIds(editor);
 	const startIndex = order.indexOf(start.blockId);
 	const endIndex = order.indexOf(end.blockId);
 	if (startIndex < 0 || endIndex < 0 || startIndex >= endIndex) {
@@ -124,7 +125,7 @@ function replaceTextToTextRange(
 	endIndex: number,
 	startLength: number,
 ): RangeReplaceResult {
-	const order = editor.documentState.blockOrder;
+	const order = documentPreorderBlockIds(editor);
 	const ops: DocumentOp[] = [];
 	if (start.offset < startLength) {
 		ops.push(
@@ -205,7 +206,7 @@ function replaceMixedBoundaryRange(
 	endEditable: boolean,
 	startLength: number,
 ): { ops: DocumentOp[]; caret: Point } | null {
-	const order = editor.documentState.blockOrder;
+	const order = documentPreorderBlockIds(editor);
 	const ops: DocumentOp[] = [];
 
 	if (startEditable) {

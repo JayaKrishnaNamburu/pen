@@ -1,5 +1,6 @@
 import type { CommandResult, Editor, TextSelection } from "@input/pen-types";
 
+import { documentPreorderBlockIds } from "../editor/documentPreorder";
 import { isCollapsed } from "../selection/helpers";
 import {
 	collapsedAt,
@@ -109,7 +110,7 @@ function toggleMarkAcrossBlocks(
 	if (!range) {
 		return false;
 	}
-	const order = editor.documentState.blockOrder;
+	const order = documentPreorderBlockIds(editor);
 	const startIndex = order.indexOf(range.start.blockId);
 	const endIndex = order.indexOf(range.end.blockId);
 	if (startIndex < 0 || endIndex < 0) {

@@ -68,6 +68,7 @@ const editor = createEditor({
 | `undo`          | on        | `false` omits `undoExtension()`                                                                         |
 | `shortcuts`     | on (`{}`) | `false` omits `richTextShortcutsExtension()`; an object is passed through as `RichTextShortcutsOptions` |
 | `htmlClipboard` | on        | `false` omits `htmlClipboardExtension()`                                                                |
+| `smoothStream`  | off       | `true` installs `smoothStreamExtension()`; an object is passed through as `SmoothStreamOptions`         |
 
 The public exports are `defaultPreset`, `DefaultPresetOptions`, the preset-defaulting `createEditor` and `createHeadlessEditor`, and the re-exported types `CreateEditorOptions` and `Editor`.
 

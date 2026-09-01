@@ -66,6 +66,7 @@ import {
 	inputRulesEngineFacet,
 	multiplayerControllerFacet,
 	searchControllerFacet,
+	smoothStreamControllerFacet,
 	streamingTargetFacet,
 	undoManagerFacet,
 	undoMetadataControllerFacet,
@@ -129,6 +130,7 @@ const FACET_BY_SLOT_KEY: Record<string, Facet<unknown, unknown>> = {
 	"pen.messages": messagesFacet,
 	"pen.a11yLabel": a11yLabelFacet,
 	"delta-stream:target": streamingTargetFacet,
+	"smooth-stream:controller": smoothStreamControllerFacet,
 	[ANNOUNCER_SLOT_KEY]: announcerFacet,
 };
 
@@ -291,8 +293,7 @@ export function* iterateBlocks(
 			);
 		}
 		const children = blockMap?.get("children") as
-			| CRDTArray<string>
-			| undefined;
+			CRDTArray<string> | undefined;
 		if (!children) return;
 		for (let i = 0; i < children.length; i++) {
 			yield* walk(children.get(i));

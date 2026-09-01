@@ -180,10 +180,11 @@ Canonical AI tool surface. Transports authorize a model-driven call before execu
 
 Streaming protocol and processing pipeline. Optional runtime that turns a `PenStream` of parts into editor mutations. It is not installed by core's `createEditor()`. `defaultPreset()` is the path that includes it, which `@input/pen`'s constructors apply by default.
 
-- `deltaStreamExtension()`, `processStream()`
-- Install via `defaultPreset()` or `createEditor({ extensions: [deltaStreamExtension()] })`.
+- `deltaStreamExtension()`, `processStream()`, `smoothStreamExtension()`, `getSmoothStreamController()`
+- Install via `defaultPreset()` or `createEditor({ extensions: [deltaStreamExtension()] })`. Smooth streaming is opt-in: `smoothStreamExtension()` or `defaultPreset({ smoothStream: true })`.
 - Core `openTextStream` holds one `assoc: 1` local anchor as the write head; each flush repairs then resolves before splicing.
 - A run publishes `streaming: { blockId }` on awareness off its first `source: "stream"` commit (ST6) and clears it when the run ends. The write is skipped while the block id is unchanged: the payload is fixed for the zone's life, and republishing it per flush would spend the peer's whole `MAX_PRESENCE_UPDATES_PER_SECOND` budget. The zone id stays local — receivers key the presence by client and block, and `@input/pen-multiplayer` is what renders it.
+- `smoothStreamExtension()` withholds paint of paced appends (`source: "stream"` by default — ST6's streaming-write contract) behind `omitFromRender` decorations. The document is already complete; a library-owned ticker advances a per-block frontier (ST7–ST9). `getSmoothStreamController()` reads `smoothStreamControllerFacet`.
 
 ## Integration Notes
 

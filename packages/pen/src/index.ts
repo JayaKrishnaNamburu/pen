@@ -1,5 +1,11 @@
-import { deltaStreamExtension } from "@input/pen-ai/stream";
-import type { DeltaStreamOptions } from "@input/pen-ai/stream";
+import {
+	deltaStreamExtension,
+	smoothStreamExtension,
+} from "@input/pen-ai/stream";
+import type {
+	DeltaStreamOptions,
+	SmoothStreamOptions,
+} from "@input/pen-ai/stream";
 import {
 	createEditor as createBareEditor,
 	createHeadlessEditor as createBareHeadlessEditor,
@@ -47,10 +53,12 @@ export function createHeadlessEditor(
 	});
 }
 
-/** Switches for the extensions {@link defaultPreset} assembles. Every extension is on unless set to `false`. */
+/** Switches for the extensions {@link defaultPreset} assembles. Each battery defaults on unless set to `false`; `smoothStream` is opt-in. */
 export interface DefaultPresetOptions {
 	tools?: boolean;
 	deltaStream?: boolean | DeltaStreamOptions;
+	/** Opt-in paced paint of streamed text. Default off. */
+	smoothStream?: boolean | SmoothStreamOptions;
 	undo?: boolean;
 	shortcuts?: boolean | RichTextShortcutsOptions;
 	htmlClipboard?: boolean;
@@ -70,7 +78,17 @@ export function defaultPreset(
 
 			if (options.deltaStream !== false) {
 				extensions.push(
-					deltaStreamExtension(resolveDeltaStreamOptions(options.deltaStream)),
+					deltaStreamExtension(
+						resolveDeltaStreamOptions(options.deltaStream),
+					),
+				);
+			}
+
+			if (options.smoothStream) {
+				extensions.push(
+					smoothStreamExtension(
+						resolveSmoothStreamOptions(options.smoothStream),
+					),
 				);
 			}
 
@@ -103,6 +121,20 @@ function resolveDeltaStreamOptions(
 	}
 
 	return deltaStream;
+}
+
+function resolveSmoothStreamOptions(
+	smoothStream: DefaultPresetOptions["smoothStream"],
+): SmoothStreamOptions | undefined {
+	if (
+		smoothStream === false ||
+		smoothStream == null ||
+		smoothStream === true
+	) {
+		return undefined;
+	}
+
+	return smoothStream;
 }
 
 function resolveShortcutsOptions(

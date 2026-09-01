@@ -1,13 +1,12 @@
 import { aiExtension } from "@input/pen-ai";
-import type {
-	AIEditStreaming,
-	AIMutationPreference,
-} from "@input/pen-ai";
+import type { AIEditStreaming, AIMutationPreference } from "@input/pen-ai";
+import { smoothStreamExtension } from "@input/pen-ai/stream";
 import { createEditor } from "@input/pen";
 import { autoformatExtension } from "@input/pen-autoformat";
 import type { Editor, Extension } from "@input/pen-types";
 import { createPenModel } from "../ai/penModel";
 import { blobImageUrlExtension } from "./assets";
+import { prefersReducedMotion } from "./prefersReducedMotion";
 
 /**
  * Document tools the agent may call.
@@ -68,6 +67,11 @@ export function createPenEditor(extra: Extension[] = []): Editor {
 				contentFormat: { blockGeneration: "markdown" },
 				mutationPreference,
 				...(editStreaming ? { editStreaming } : {}),
+			}),
+			// Paint-only pacing for `openTextStream` writes. Reduced motion is
+			// this host's call; the media query is kept live in `usePenEditor`.
+			smoothStreamExtension({
+				enabled: !prefersReducedMotion(),
 			}),
 			// Markdown-style shortcuts while typing: `# ` for a heading,
 			// `- ` for a list item, and so on.

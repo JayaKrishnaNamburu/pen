@@ -1,6 +1,7 @@
 import type { Editor } from "@input/pen-types";
 import type { SelectionPoint } from "../field-editor/selectionBridge";
 import { getEditorBlockSelectionRole } from "./blockSelectionSemantics";
+import { getPreorderBlockIds } from "./documentPreorder";
 
 type DomSelectionPoints = {
 	anchor: SelectionPoint;
@@ -35,7 +36,7 @@ function coverMixedBoundaryStructuralEnds(
 	if (anchorStructural === focusStructural) {
 		return selection;
 	}
-	const order = editor.documentState.blockOrder;
+	const order = getPreorderBlockIds(editor);
 	const anchorIdx = order.indexOf(selection.anchor.blockId);
 	const focusIdx = order.indexOf(selection.focus.blockId);
 	if (anchorIdx < 0 || focusIdx < 0) {

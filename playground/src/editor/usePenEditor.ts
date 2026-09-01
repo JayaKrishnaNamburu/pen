@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAIController } from "@input/pen-ai";
+import { getSmoothStreamController } from "@input/pen-ai/stream";
 import {
 	getMultiplayerController,
 	type MultiplayerController,
@@ -10,6 +11,7 @@ import {
 	type CollaborationSession,
 } from "../collaboration/session";
 import { createPenEditor } from "./penEditor";
+import { subscribePrefersReducedMotion } from "./prefersReducedMotion";
 import { applyStarterDocument } from "./starterDocument";
 
 /**
@@ -46,9 +48,15 @@ export function usePenEditor(
 		window.penPlayground = {
 			editor: nextEditor,
 			aiController: getAIController(nextEditor),
+			smoothStream: getSmoothStreamController(nextEditor),
 		};
 
+		const stopReducedMotion = subscribePrefersReducedMotion((reduced) => {
+			getSmoothStreamController(nextEditor)?.setEnabled(!reduced);
+		});
+
 		return () => {
+			stopReducedMotion();
 			stopWaitingForRoom?.();
 			if (window.penPlayground?.editor === nextEditor) {
 				delete window.penPlayground;

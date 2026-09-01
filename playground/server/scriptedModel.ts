@@ -3,8 +3,13 @@ import { hasRunTools, type ChatEvent, type ChatRequest } from "./protocol";
 
 const SCRIPTED_PARAGRAPH =
 	"This paragraph came from the playground's scripted model, which answers " +
-	"when ANTHROPIC_API_KEY is not set. Pen streamed it into the document one " +
-	"delta at a time, exactly as it would a real model's reply.";
+	"when ANTHROPIC_API_KEY is not set. Pen streamed it into the document in " +
+	"clause-sized bursts, the way a real model dumps text — not one word per " +
+	"tick. Toggle Smooth off to see the jumps; leave it on to watch the paint " +
+	"catch up at reading speed.";
+
+/** Gap between prose bursts. Real models dump a clause, then stall. */
+export const SCRIPTED_PROSE_BURST_GAP_MS = 320;
 
 /** Characters per argument-JSON fragment, roughly a word. */
 const TOOL_INPUT_FRAGMENT = 6;
@@ -146,11 +151,27 @@ async function* streamToolCall(
 	yield { type: "tool-call", toolCallId, toolName, input };
 }
 
-/** Streams a word at a time so the document fills in the way it would live. */
+/**
+ * Split on sentence and clause boundaries so each delta is a burst, not a
+ * word. Smooth streaming is invisible against a word-at-a-time script.
+ */
+export function splitProseBursts(text: string): string[] {
+	return text.split(/(?<=[.!?;]|—)\s+/).filter((part) => part.length > 0);
+}
+
+/** Streams clause-sized bursts with a few-hundred-ms stall between them. */
 async function* streamText(text: string): AsyncGenerator<ChatEvent> {
-	for (const word of text.split(" ")) {
-		await sleep(25);
-		yield { type: "text-delta", delta: `${word} ` };
+	const bursts = splitProseBursts(text);
+	for (let index = 0; index < bursts.length; index++) {
+		if (index > 0) {
+			await sleep(SCRIPTED_PROSE_BURST_GAP_MS);
+		}
+		const burst = bursts[index]!;
+		const isLast = index === bursts.length - 1;
+		yield {
+			type: "text-delta",
+			delta: isLast ? burst : `${burst} `,
+		};
 	}
 }
 

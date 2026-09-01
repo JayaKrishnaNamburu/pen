@@ -1,16 +1,12 @@
-import type {
-	DocumentRange,
-	TextSelection,
-	PenDocument,
-	CRDTArray,
-} from "@input/pen-types";
+import type { DocumentRange, TextSelection, PenDocument } from "@input/pen-types";
+import { documentPreorderBlockIdsFromDoc } from "./documentPreorder";
 
 export class DocumentRangeImpl implements DocumentRange {
 	readonly start: { blockId: string; offset: number };
 	readonly end: { blockId: string; offset: number };
 	private readonly _anchor: { blockId: string; offset?: number };
 	private readonly _focus: { blockId: string; offset?: number };
-	private readonly _doc: PenDocument;
+	private readonly _order: readonly string[];
 
 	constructor(
 		anchor: { blockId: string; offset?: number },
@@ -19,7 +15,7 @@ export class DocumentRangeImpl implements DocumentRange {
 	) {
 		this._anchor = anchor;
 		this._focus = focus;
-		this._doc = doc;
+		this._order = documentPreorderBlockIdsFromDoc(doc);
 
 		const anchorIdx = this._indexOfBlock(anchor.blockId);
 		const focusIdx = this._indexOfBlock(focus.blockId);
@@ -56,13 +52,10 @@ export class DocumentRangeImpl implements DocumentRange {
 	get blockRange(): string[] {
 		const startIdx = this._indexOfBlock(this.start.blockId);
 		const endIdx = this._indexOfBlock(this.end.blockId);
-		const result: string[] = [];
-		for (let i = startIdx; i <= endIdx; i++) {
-			result.push(
-				(this._doc.blockOrder as CRDTArray<string>).get(i) as string,
-			);
+		if (startIdx < 0 || endIdx < 0) {
+			return [];
 		}
-		return result;
+		return this._order.slice(startIdx, endIdx + 1);
 	}
 
 	contains(point: { blockId: string; offset: number }): boolean {
@@ -111,9 +104,6 @@ export class DocumentRangeImpl implements DocumentRange {
 	}
 
 	private _indexOfBlock(blockId: string): number {
-		for (let i = 0; i < this._doc.blockOrder.length; i++) {
-			if ((this._doc.blockOrder.get(i) as string) === blockId) return i;
-		}
-		return -1;
+		return this._order.indexOf(blockId);
 	}
 }

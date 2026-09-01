@@ -73,6 +73,7 @@ import {
 	OVERLAY_ITEM_ATTR,
 	OVERLAY_LAYER_ATTR,
 } from "../utils/dataAttributes";
+import { getPreorderBlockIds } from "../utils/documentPreorder";
 
 type FieldEditorOptions = {
 	selectAllBehavior?: EditorSelectAllBehavior;
@@ -1103,9 +1104,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 			).includes(this._focusBlockId)
 				? selection.anchor
 				: { blockId: this._focusBlockId, offset: 0 };
-		const doc = this._editor.documentState;
-		const activeIdx = doc.indexOf(this._focusBlockId);
-		const targetIdx = doc.indexOf(blockId);
+		const order = getPreorderBlockIds(this._editor);
+		const activeIdx = order.indexOf(this._focusBlockId);
+		const targetIdx = order.indexOf(blockId);
 		if (activeIdx < 0 || targetIdx < 0) return;
 
 		const targetOffset =

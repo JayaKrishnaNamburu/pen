@@ -329,6 +329,7 @@ describe("@input/pen-tools tools: cursor traversal and table targets", () => {
 						get: (index: number) =>
 							["block-1", "block-2", "block-3"][index],
 					},
+					blocks: { get: () => undefined },
 				},
 			},
 			getSelection: () => ({

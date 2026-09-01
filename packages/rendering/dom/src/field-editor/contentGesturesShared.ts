@@ -1,6 +1,7 @@
 import type { Editor, Point } from "@input/pen-types";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import { getPreorderBlockIds } from "../utils/documentPreorder";
 import type { PointerInteractionModel } from "../utils/editorInteractionModel";
 import type { PointerSelectionGesture } from "../utils/pointerSelection";
 import type { RegionSelectionStore } from "../utils/regionSelection";
@@ -142,7 +143,7 @@ export function getBlockIdRange(
 	anchorBlockId: string,
 	targetBlockId: string,
 ): string[] | null {
-	const blockOrder = ctx.editor.documentState.blockOrder;
+	const blockOrder = getPreorderBlockIds(ctx.editor);
 	const anchorIdx = blockOrder.indexOf(anchorBlockId);
 	const targetIdx = blockOrder.indexOf(targetBlockId);
 	if (anchorIdx < 0 || targetIdx < 0) return null;

@@ -255,9 +255,18 @@
 ### function
 
 - deltaStreamExtension
+- getSmoothStreamController
 - processStream
+- smoothStreamExtension
+
+### value
+
+- SMOOTH_STREAM_EXTENSION_NAME
 
 ### type
 
 - DeltaStreamOptions
 - ProcessStreamOptions
+- SmoothStreamController
+- SmoothStreamOptions
+- SmoothStreamStatus

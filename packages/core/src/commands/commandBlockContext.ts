@@ -151,7 +151,12 @@ export function getRootBlockIds(editor: Editor): readonly string[] {
 	);
 }
 
-function getVisibleBlockIds(editor: Editor): readonly string[] {
+/**
+ * Caret navigation order: roots plus the children of every open container, in
+ * document order. `blockOrder` alone stops at the top level, so a caret inside
+ * an opened container child would have nowhere to step from.
+ */
+export function getVisibleBlockIds(editor: Editor): readonly string[] {
 	const visibleBlockIds: string[] = [];
 	for (const rootBlockId of getRootBlockIds(editor)) {
 		collectVisibleBlockIds(editor, rootBlockId, visibleBlockIds);
