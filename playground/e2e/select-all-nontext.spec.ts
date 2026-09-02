@@ -13,10 +13,11 @@ test.describe("T1 / O4 select-all across a non-text block", () => {
 		page,
 	}) => {
 		await openPlayground(page);
-		const { paragraphId, nonTextId } = await replaceWithParagraphThenNonText(
-			page,
-			{ blockId: "e2e-divider", blockType: "divider" },
-		);
+		const { paragraphId, nonTextId } =
+			await replaceWithParagraphThenNonText(page, {
+				blockId: "e2e-divider",
+				blockType: "divider",
+			});
 
 		await clickParagraphText(page, paragraphId);
 		await page.keyboard.press(`${MODIFIER}+a`);

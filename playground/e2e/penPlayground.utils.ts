@@ -111,7 +111,9 @@ export async function replaceWithParagraphThenNonText(
 	await expect(
 		page.locator(`[data-block-id="${ids.paragraphId}"]`),
 	).toBeVisible();
-	await expect(page.locator(`[data-block-id="${ids.nonTextId}"]`)).toBeVisible();
+	await expect(
+		page.locator(`[data-block-id="${ids.nonTextId}"]`),
+	).toBeVisible();
 	return ids;
 }
 
@@ -185,7 +187,7 @@ export async function readFocusSinkOwnsDocumentFocus(
 		const active = document.activeElement;
 		return Boolean(
 			active instanceof HTMLElement &&
-				active.hasAttribute("data-pen-focus-sink"),
+			active.hasAttribute("data-pen-focus-sink"),
 		);
 	});
 }
