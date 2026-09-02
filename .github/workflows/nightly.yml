@@ -1,5 +1,7 @@
 # Nightly property-based fuzz run.
 #
+# Builds workspace `dist/` first because the property suites import
+# published package entries (`@input/pen-core`, …) which resolve there.
 # Logs a seed every run and passes PEN_FUZZ_SEED into fuzz:nightly, which runs
 # every workspace *.properties.test.ts suite (I2/I3, DUR3, I1) at nightly
 # scale plus any packages/**/*an-fuzz*.test.ts file. Browser fuzz is not
@@ -53,6 +55,12 @@ jobs:
       - name: Set up Pen toolchain
         if: ${{ steps.conformance.outputs.present == 'true' }}
         uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: nightly
+
+      - name: Build packages
+        if: ${{ steps.conformance.outputs.present == 'true' }}
+        run: pnpm build
 
       - name: Run nightly property fuzz
         if: ${{ steps.conformance.outputs.present == 'true' }}
