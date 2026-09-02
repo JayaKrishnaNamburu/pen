@@ -31,19 +31,18 @@ const BRIDGE_VALUE_EXPORTS = [
 
 const SELECTION_POINT_RECT = ["get", "Selection", "Point", "Rect"].join("");
 
-function mountBlock(options: {
+interface BlockOptions {
 	blockId: string;
 	text?: string;
 	blockType?: string;
 	surfaceRole?: string;
 	includeInline?: boolean;
-}): {
-	root: HTMLElement;
-	block: HTMLElement;
-	inline: HTMLElement | null;
-} {
-	const root = document.createElement("div");
-	root.setAttribute(DATA_ATTRS.editorRoot, "");
+}
+
+function appendBlock(
+	root: HTMLElement,
+	options: BlockOptions,
+): { block: HTMLElement; inline: HTMLElement | null } {
 	const block = document.createElement("div");
 	block.setAttribute(DATA_ATTRS.editorBlock, "");
 	block.setAttribute(DATA_ATTRS.blockId, options.blockId);
@@ -63,6 +62,17 @@ function mountBlock(options: {
 		block.textContent = options.text;
 	}
 	root.append(block);
+	return { block, inline };
+}
+
+function mountBlock(options: BlockOptions): {
+	root: HTMLElement;
+	block: HTMLElement;
+	inline: HTMLElement | null;
+} {
+	const root = document.createElement("div");
+	root.setAttribute(DATA_ATTRS.editorRoot, "");
+	const { block, inline } = appendBlock(root, options);
 	document.body.append(root);
 	return { root, block, inline };
 }
@@ -209,6 +219,72 @@ describe("getBlockBoundaryPoint", () => {
 				blockId: "p1",
 				offset: 1,
 			});
+		} finally {
+			root.remove();
+		}
+	});
+});
+
+describe("editorSelectionToDOM", () => {
+	function mountParagraphThenStructural(): {
+		root: HTMLElement;
+		paragraphText: Text;
+		structural: HTMLElement;
+	} {
+		const root = document.createElement("div");
+		root.setAttribute(DATA_ATTRS.editorRoot, "");
+		const { inline } = appendBlock(root, {
+			blockId: "p1",
+			text: "Hello",
+			blockType: "paragraph",
+		});
+		const { block: structural } = appendBlock(root, {
+			blockId: "d1",
+			blockType: "divider",
+			includeInline: false,
+		});
+		document.body.append(root);
+		return {
+			root,
+			paragraphText: inline!.firstChild as Text,
+			structural,
+		};
+	}
+
+	it("spans a structural tail block whose 0..1 extent has no text position", () => {
+		const { root, paragraphText, structural } =
+			mountParagraphThenStructural();
+		try {
+			selectionBridge.editorSelectionToDOM(
+				root,
+				{ blockId: "p1", offset: 0 },
+				{ blockId: "d1", offset: 1 },
+			);
+
+			const selection = window.getSelection()!;
+			expect(selection.rangeCount).toBe(1);
+			const range = selection.getRangeAt(0);
+			expect(range.collapsed).toBe(false);
+			expect(range.startContainer).toBe(paragraphText);
+			expect(range.startOffset).toBe(0);
+			expect(range.intersectsNode(structural)).toBe(true);
+		} finally {
+			root.remove();
+		}
+	});
+
+	it("stops before a structural block selected from its start", () => {
+		const { root, structural } = mountParagraphThenStructural();
+		try {
+			selectionBridge.editorSelectionToDOM(
+				root,
+				{ blockId: "p1", offset: 0 },
+				{ blockId: "d1", offset: 0 },
+			);
+
+			const range = window.getSelection()!.getRangeAt(0);
+			expect(range.collapsed).toBe(false);
+			expect(range.intersectsNode(structural)).toBe(false);
 		} finally {
 			root.remove();
 		}

@@ -149,6 +149,35 @@ export async function readFirstBlockInlineDeltas(
 	});
 }
 
+export async function readNativeSelectionPaint(
+	page: Page,
+	blockId: string,
+): Promise<{
+	isCollapsed: boolean;
+	hasPaintedRects: boolean;
+	coversBlock: boolean;
+}> {
+	return page.evaluate((id) => {
+		const selection = window.getSelection();
+		if (!selection || selection.rangeCount === 0) {
+			return {
+				isCollapsed: true,
+				hasPaintedRects: false,
+				coversBlock: false,
+			};
+		}
+		const range = selection.getRangeAt(0);
+		const block = document.querySelector(`[data-block-id="${id}"]`);
+		return {
+			isCollapsed: selection.isCollapsed,
+			hasPaintedRects: [...range.getClientRects()].some(
+				(rect) => rect.width > 0 && rect.height > 0,
+			),
+			coversBlock: block !== null && range.intersectsNode(block),
+		};
+	}, blockId);
+}
+
 export async function readFocusSinkOwnsDocumentFocus(
 	page: Page,
 ): Promise<boolean> {

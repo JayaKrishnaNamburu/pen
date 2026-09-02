@@ -141,9 +141,27 @@ function findDOMPoint(
 	const inlineEl = blockEl.querySelector(
 		`[${DATA_ATTRS.inlineContent}]`,
 	) as HTMLElement | null;
-	if (!inlineEl) return null;
+	if (!inlineEl) return findBlockUnitDOMPoint(blockEl, charOffset);
 
 	return findLogicalDOMPoint(inlineEl, charOffset);
+}
+
+/**
+ * A block with no inline content — divider, image, a host's sealed region —
+ * holds no text position, so its `0..1` unit extent (N2) maps to the DOM
+ * points around the element instead of a point inside it.
+ */
+function findBlockUnitDOMPoint(
+	blockEl: HTMLElement,
+	charOffset: number,
+): { node: Node; offset: number } | null {
+	const parent = blockEl.parentNode;
+	if (!parent) return null;
+
+	const index = [...parent.childNodes].indexOf(blockEl);
+	if (index < 0) return null;
+
+	return { node: parent, offset: charOffset <= 0 ? index : index + 1 };
 }
 
 /**
