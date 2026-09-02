@@ -18,6 +18,7 @@ import {
 /** Slot mapped onto {@link smoothStreamControllerFacet} in `@input/pen-core`. */
 const SMOOTH_STREAM_CONTROLLER_SLOT = "smooth-stream:controller";
 
+/** Extension name under which paced stream paint registers. */
 export const SMOOTH_STREAM_EXTENSION_NAME = "ai-smooth-stream";
 
 const WORD_BOUNDARY_PATTERN = /\s/u;
@@ -25,6 +26,7 @@ const WORD_BOUNDARY_PATTERN = /\s/u;
 const DEFAULT_INTERVAL_MS = 20;
 const DEFAULT_DRAIN_MS = 1000;
 
+/** Options for {@link smoothStreamExtension}. Every field is optional. */
 export interface SmoothStreamOptions {
 	/** Gap between reveal ticks in ms. Default 20. */
 	intervalMs?: number;
@@ -49,12 +51,14 @@ export interface SmoothStreamOptions {
 	shouldPace?: (event: CommitEvent) => boolean;
 }
 
+/** Snapshot of whether streamed text is still withheld from paint. */
 export interface SmoothStreamStatus {
 	readonly isRevealing: boolean;
 	readonly hiddenCharCount: number;
 	readonly enabled: boolean;
 }
 
+/** Host control over paced paint of streamed text. */
 export interface SmoothStreamController {
 	/** Withholds `blockId` from `from` to its end, including text appended later. */
 	hide(blockId: string, from: number): void;

@@ -48,5 +48,6 @@ export const toolRuntimeFacet = singleController<unknown>("tools.toolRuntime");
 export const announcerFacet = singleController<unknown>("pen.announcer");
 export const streamingTargetFacet =
 	singleController<unknown>("deltaStream.target");
+/** Facet that publishes the smooth-stream controller, or null when the extension is not installed. */
 export const smoothStreamControllerFacet =
 	singleController<unknown>("ai.smoothStream");
